@@ -25,8 +25,6 @@
 		onRedo,
 		onDownload,
 		onToggleTools,
-		onZoomIn,
-		onZoomOut,
 		onFitToScreen,
 		onCompareStart,
 		onCompareEnd,
@@ -44,8 +42,6 @@
 		onRedo: () => void;
 		onDownload: () => void;
 		onToggleTools: () => void;
-		onZoomIn: () => void;
-		onZoomOut: () => void;
 		onFitToScreen: () => void;
 		onCompareStart: () => void;
 		onCompareEnd: () => void;

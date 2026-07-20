@@ -141,12 +141,6 @@
 		splitMode = !splitMode;
 	}
 
-	function handleZoomIn() {
-		viewport?.zoomIn();
-	}
-	function handleZoomOut() {
-		viewport?.zoomOut();
-	}
 	function handleFitToScreen() {
 		viewport?.fitImageToScreen();
 	}
@@ -196,8 +190,6 @@
 			{onRedo}
 			{onDownload}
 			onToggleTools={togglePanel}
-			onZoomIn={handleZoomIn}
-			onZoomOut={handleZoomOut}
 			onFitToScreen={handleFitToScreen}
 			onCompareStart={handleCompareStart}
 			onCompareEnd={handleCompareEnd}
