@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ZoomIn, ZoomOut, Maximize, Images, Columns2, Loader2 } from 'lucide-svelte';
+	import { Loader2 } from 'lucide-svelte';
 	import FileDropzone from './FileDropzone.svelte';
 	import SplitCompare from './SplitCompare.svelte';
 	import type { SampleImage } from '$lib/editor-types';
@@ -206,6 +206,7 @@
 	function onTouchStart(e: TouchEvent) {
 		if (showPlaceholder || e.touches.length !== 2) return;
 		e.preventDefault();
+		isPanning = false;
 		const dx = e.touches[0].clientX - e.touches[1].clientX;
 		const dy = e.touches[0].clientY - e.touches[1].clientY;
 		lastTouchDistance = Math.sqrt(dx * dx + dy * dy);
@@ -221,8 +222,7 @@
 		const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
 		const oldZoom = currentZoom;
 		const scaleFactor = newDistance / lastTouchDistance;
-		let newZoom = oldZoom * scaleFactor;
-		newZoom = Math.max(10, Math.min(5000, Math.floor(newZoom / 10) * 10));
+		let newZoom = Math.max(10, Math.min(5000, oldZoom * scaleFactor));
 		if (newZoom !== oldZoom && viewportRef) {
 			const rect = viewportRef.getBoundingClientRect();
 			const Px = centerX - (rect.left + rect.width / 2);
@@ -236,7 +236,10 @@
 	}
 
 	function onTouchEnd(e: TouchEvent) {
-		if (e.touches.length < 2) lastTouchDistance = null;
+		if (e.touches.length < 2) {
+			lastTouchDistance = null;
+			isPanning = false;
+		}
 	}
 
 	function handleKeyDown(e: KeyboardEvent) {
@@ -347,66 +350,4 @@
 		{/if}
 	</div>
 
-	<!-- Floating zoom/compare toolbar -->
-	{#if !showPlaceholder && !isInitializing}
-		<div
-			class="pointer-events-auto absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-0 border border-foreground/30 bg-[#f7f7f4]/85 px-1 font-mono text-[11px] dark:bg-background/85 backdrop-blur-sm animate-in fade-in slide-in-from-bottom-2 duration-200"
-		>
-		<button
-			onclick={zoomOut}
-			class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-			aria-label="Zoom out (Ctrl+-)"
-		>
-			<ZoomOut class="size-3.5" />
-		</button>
-		<span
-			class="w-12 text-center font-mono text-[11px] tabular-nums text-foreground"
-		>
-			{currentZoom}%
-		</span>
-		<button
-			onclick={zoomIn}
-			class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-			aria-label="Zoom in (Ctrl+=)"
-		>
-			<ZoomIn class="size-3.5" />
-		</button>
-		<button
-			onclick={resetView}
-			class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-			aria-label="Fit to screen (Ctrl+0)"
-		>
-			<Maximize class="size-3.5" />
-		</button>
-		<div class="mx-0.5 h-4 w-px bg-border"></div>
-		<button
-			onpointerdown={(e) => {
-				e.preventDefault();
-				isComparing = true;
-			}}
-			onpointerup={(e) => {
-				e.preventDefault();
-				isComparing = false;
-			}}
-			onpointerleave={() => (isComparing = false)}
-			disabled={!processedImageUrl}
-			class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-40 {isComparing
-				? 'bg-muted text-foreground'
-				: ''}"
-			aria-label="Hold to compare (Space)"
-		>
-			<Images class="size-3.5" />
-		</button>
-		<button
-			onclick={toggleSplitCompare}
-			disabled={!canSplit}
-			class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-40 {splitMode
-				? 'bg-muted text-foreground'
-				: ''}"
-			aria-label="Split compare (B)"
-		>
-			<Columns2 class="size-3.5" />
-		</button>
-		</div>
-	{/if}
 </main>

@@ -192,7 +192,6 @@
 			{isComparing}
 			isLoading={magick.isLoading}
 			zoomPct={viewportZoom}
-			onUploadClick={openFilePicker}
 			{onUndo}
 			{onRedo}
 			{onDownload}
@@ -203,7 +202,6 @@
 			onCompareStart={handleCompareStart}
 			onCompareEnd={handleCompareEnd}
 			onToggleSplitCompare={handleToggleSplit}
-			canSplit={!!magick.processedImageUrl && !!magick.originalImageUrl && magick.processedImageUrl !== magick.originalImageUrl}
 			{splitMode}
 			onReset={onResetRequest}
 			onClose={onCloseRequest}

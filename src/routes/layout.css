@@ -293,6 +293,10 @@ input[type='number'] {
 	overflow: hidden;
 }
 
+.viewport {
+	touch-action: none;
+}
+
 /* Floating toolbar at bottom */
 .mobile-toolbar-wrap {
 	position: fixed;
@@ -364,6 +368,11 @@ input[type='number'] {
 
 .mobile-btn-sm:active {
 	color: var(--foreground);
+}
+
+.mobile-btn-sm:disabled {
+	opacity: 0.35;
+	pointer-events: none;
 }
 
 /* Bottom sheet backdrop */
