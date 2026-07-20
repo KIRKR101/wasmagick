@@ -20,9 +20,24 @@
 <div
 	class="flex min-h-screen flex-col items-center justify-center bg-[#f7f7f4] px-4 font-mono dark:bg-background"
 >
-	<div class="mb-8 text-center">
-		<div class="text-[48px] text-muted-foreground/20">[ ]</div>
-	</div>
+    <div class="mb-8 text-center">
+    	<span class="inline-flex items-center text-[48px] leading-none text-muted-foreground/20">
+    		[
+            <svg
+               	xmlns="http://www.w3.org/2000/svg"
+               	viewBox="0 0 132 88"
+               	class="mx-2 h-[0.725em] w-auto text-muted-foreground"
+               	shape-rendering="crispEdges"
+               	aria-label="WASMagick logo"
+                    >
+               	<path
+              		d="M 0,0 H 16 V 72 H 41 V 56 H 66 V 72 H 116 V 0 H 132 V 88 H 66 V 72 H 41 V 88 H 0 Z"
+              		fill="currentColor"
+               	/>
+            </svg>
+    		]
+    	</span>
+    </div>
 
 	<h1
 		class="mb-3 text-center text-lg uppercase tracking-wider text-muted-foreground"

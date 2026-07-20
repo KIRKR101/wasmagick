@@ -75,7 +75,7 @@
 			>
 				<Maximize class="size-4" />
 			</button>
-			<span class="w-12 text-center font-mono text-[11px] tabular-nums text-muted-foreground">
+			<span class="w-12 text-center font-mono text-[11px] tabular-nums text-muted-foreground" class:opacity-35={!magick.originalImageUrl}>
 				{Math.round(zoomPct)}%
 			</span>
 		</div>
