@@ -23,10 +23,10 @@
 	let display = $derived(step < 1 ? value[0].toFixed(1) : String(value[0]));
 </script>
 
-<div class={cn('space-y-1.5', className)}>
+<div class={cn('space-y-2', className)}>
 	<div class="flex items-center justify-between">
-		<span class="text-xs font-medium text-muted-foreground">{label}</span>
-		<span class="font-mono text-xs font-semibold text-foreground tabular-nums"
+		<span class="font-mono text-xs uppercase text-foreground">{label}</span>
+		<span class="font-mono text-xs text-foreground tabular-nums"
 			>{display}{suffix}</span
 		>
 	</div>

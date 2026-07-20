@@ -1,0 +1,46 @@
+name: Parity Tests
+
+on:
+  push:
+    branches: [main, new-ui]
+    paths:
+      - 'src/lib/magick-process.ts'
+      - 'src/lib/magick.worker.ts'
+      - 'src/lib/types.ts'
+      - 'src/lib/useMagick.svelte.ts'
+      - 'test/parity/**'
+      - 'test/fixtures/**'
+      - 'tooling/setup-imagemagick.ts'
+      - 'tooling/magick-path.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.ts'
+      - '.github/workflows/parity.yml'
+  pull_request:
+    branches: [main, new-ui]
+    paths:
+      - 'src/lib/magick-process.ts'
+      - 'src/lib/magick.worker.ts'
+      - 'src/lib/types.ts'
+      - 'src/lib/useMagick.svelte.ts'
+      - 'test/parity/**'
+      - 'test/fixtures/**'
+      - 'tooling/setup-imagemagick.ts'
+      - 'tooling/magick-path.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.ts'
+      - '.github/workflows/parity.yml'
+
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx tsx tooling/setup-imagemagick.ts
+      - run: npx vitest run test/parity/

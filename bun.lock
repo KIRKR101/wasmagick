@@ -5,6 +5,7 @@
       "name": "wasmagick-svelte",
       "dependencies": {
         "@fontsource-variable/geist-mono": "^5.2.7",
+        "@fontsource-variable/jetbrains-mono": "^5.2.8",
         "@imagemagick/magick-wasm": "^0.0.39",
         "lucide-svelte": "^1.0.1",
       },
@@ -21,6 +22,8 @@
         "@tailwindcss/typography": "^0.5.19",
         "@tailwindcss/vite": "^4.1.18",
         "@types/node": "^24",
+        "@types/pixelmatch": "^5.2.6",
+        "@types/pngjs": "^6.0.5",
         "bits-ui": "^2.16.3",
         "clsx": "^2.1.1",
         "eslint": "^10.0.3",
@@ -28,6 +31,8 @@
         "eslint-plugin-svelte": "^3.15.2",
         "globals": "^17.4.0",
         "paneforge": "^1.0.2",
+        "pixelmatch": "^7.2.0",
+        "pngjs": "^7.0.0",
         "prettier": "^3.8.1",
         "prettier-plugin-svelte": "^3.4.1",
         "prettier-plugin-tailwindcss": "^0.7.2",
@@ -148,6 +153,8 @@
     "@fontsource-variable/geist": ["@fontsource-variable/geist@5.2.8", "", {}, ""],
 
     "@fontsource-variable/geist-mono": ["@fontsource-variable/geist-mono@5.2.7", "", {}, "sha512-ZKlZ5sjtalb2TwXKs400mAGDlt/+2ENLNySPx0wTz3bP3mWARCsUW+rpxzZc7e05d2qGch70pItt3K4qttbIYA=="],
+
+    "@fontsource-variable/jetbrains-mono": ["@fontsource-variable/jetbrains-mono@5.3.0", "", {}, "sha512-F32xpS2NsGYoQi2ADSkKTgpJj7ozajsGgDJ8woTnqjmIB+dxDIqImjl4pXZVEExu8UFZ2ndhmX18EBS/hdz3Lw=="],
 
     "@humanfs/core": ["@humanfs/core@0.19.1", "", {}, ""],
 
@@ -346,6 +353,10 @@
     "@types/json-schema": ["@types/json-schema@7.0.15", "", {}, ""],
 
     "@types/node": ["@types/node@24.12.2", "", { "dependencies": { "undici-types": "~7.16.0" } }, ""],
+
+    "@types/pixelmatch": ["@types/pixelmatch@5.2.6", "", { "dependencies": { "@types/node": "*" } }, "sha512-wC83uexE5KGuUODn6zkm9gMzTwdY5L0chiK+VrKcDfEjzxh1uadlWTvOmAbCpnM9zx/Ww3f8uKlYQVnO/TrqVg=="],
+
+    "@types/pngjs": ["@types/pngjs@6.0.5", "", { "dependencies": { "@types/node": "*" } }, "sha512-0k5eKfrA83JOZPppLtS2C7OUtyNAl2wKNxfyYl9Q5g9lPkgBl/9hNyAu6HuEH2J4XmIv2znEpkDd0SaZVxW6iQ=="],
 
     "@types/trusted-types": ["@types/trusted-types@2.0.7", "", {}, ""],
 
@@ -602,6 +613,8 @@
     "picocolors": ["picocolors@1.1.1", "", {}, ""],
 
     "picomatch": ["picomatch@4.0.4", "", {}, ""],
+
+    "pixelmatch": ["pixelmatch@7.2.0", "", { "dependencies": { "pngjs": "^7.0.0" }, "bin": { "pixelmatch": "bin/pixelmatch" } }, "sha512-xhcb4yHu9sM/G7foGzoLtXYcC0zHEaOXXjRKhGup0fw78Nf2Tkiapv4EQyMzrbcmQPsllAI7DbFY2UT7PlI9Pg=="],
 
     "playwright": ["playwright@1.59.1", "", { "dependencies": { "playwright-core": "1.59.1" }, "optionalDependencies": { "fsevents": "2.3.2" }, "bin": "cli.js" }, ""],
 

@@ -4,7 +4,7 @@
 
 	let {
 		ref = $bindable(null),
-		value = $bindable(),
+		value = $bindable([0]),
 		orientation = 'horizontal',
 		class: className,
 		...restProps
@@ -21,7 +21,7 @@ get along, so we shut typescript up by casting `value` to `never`.
 	data-slot="slider"
 	{orientation}
 	class={cn(
-		'relative flex w-full touch-none items-center select-none data-disabled:opacity-50 data-vertical:h-full data-vertical:min-h-40 data-vertical:w-auto data-vertical:flex-col',
+		'relative flex w-full touch-none cursor-pointer items-center select-none data-disabled:opacity-50 data-vertical:h-full data-vertical:min-h-40 data-vertical:w-auto data-vertical:flex-col',
 		className
 	)}
 	{...restProps}
@@ -43,7 +43,7 @@ get along, so we shut typescript up by casting `value` to `never`.
 			<SliderPrimitive.Thumb
 				data-slot="slider-thumb"
 				index={thumb.index}
-				class="relative block size-3 shrink-0 cursor-pointer rounded-none border border-ring bg-white ring-ring/50 transition-[color,box-shadow] select-none after:absolute after:-inset-2 hover:ring-1 focus-visible:ring-1 focus-visible:outline-hidden active:ring-1 disabled:pointer-events-none disabled:opacity-50"
+				class="relative block size-2.5 shrink-0 cursor-pointer rounded-none border bg-white transition-[color,box-shadow] select-none after:absolute after:-inset-2 focus-visible:ring-1 focus-visible:outline-hidden active:ring-1 disabled:pointer-events-none disabled:opacity-50"
 			/>
 		{/each}
 	{/snippet}

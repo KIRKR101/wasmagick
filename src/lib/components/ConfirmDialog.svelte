@@ -1,14 +1,5 @@
 <script lang="ts">
-	import {
-		Dialog,
-		DialogContent,
-		DialogDescription,
-		DialogFooter,
-		DialogHeader,
-		DialogTitle
-	} from '$lib/components/ui/dialog/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { AlertTriangle } from 'lucide-svelte';
+	import { Dialog, DialogPortal, DialogOverlay, DialogContent } from '$lib/components/ui/dialog/index.js';
 
 	let {
 		open = $bindable(false),
@@ -19,7 +10,7 @@
 	}: {
 		open?: boolean;
 		fileName?: string;
-		kind?: 'replace' | 'close';
+		kind?: 'replace' | 'close' | 'clear-history' | 'reset-all';
 		onConfirm: () => void;
 		onCancel: () => void;
 	} = $props();
@@ -35,34 +26,68 @@
 </script>
 
 <Dialog bind:open>
-	<DialogContent class="max-w-sm">
-		<DialogHeader>
+	<DialogPortal>
+		<DialogOverlay
+			class="fixed inset-0 isolate z-50 bg-black/5 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0"
+		/>
+		<DialogContent
+			class="fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-0 rounded-none border border-foreground/30 bg-[#f7f7f4] p-0 font-mono text-sm text-foreground duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 dark:bg-background"
+			showCloseButton={false}
+		>
 			<div
-				class="mb-2 flex size-9 items-center justify-center rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400"
+				class="border-b border-foreground/30 px-4 py-3 text-xs uppercase tracking-wider text-muted-foreground"
 			>
-				<AlertTriangle class="size-4" />
+				{#if kind === 'close'}
+					Close current image?
+				{:else if kind === 'clear-history'}
+					Clear entire history?
+				{:else if kind === 'reset-all'}
+					Reset all settings?
+				{:else}
+					Replace current image?
+				{/if}
 			</div>
-			{#if kind === 'close'}
-				<DialogTitle>Close current image?</DialogTitle>
-				<DialogDescription>
+
+			<div class="px-4 py-4 text-xs leading-relaxed text-muted-foreground">
+				{#if kind === 'close'}
 					You have unsaved edits to the current image
 					{#if fileName}<span class="font-medium text-foreground">({fileName})</span>{/if}. Closing
 					it will discard the processed result and history.
-				</DialogDescription>
-			{:else}
-				<DialogTitle>Replace current image?</DialogTitle>
-				<DialogDescription>
+				{:else if kind === 'clear-history'}
+					This will discard all history entries. This action cannot be undone.
+				{:else if kind === 'reset-all'}
+					This will reset all settings to their defaults. Processed result and history will be preserved.
+				{:else}
 					You have unsaved edits to the current image
 					{#if fileName}<span class="font-medium text-foreground">({fileName})</span>{/if}.
 					Replacing it will discard the processed result and history.
-				</DialogDescription>
-			{/if}
-		</DialogHeader>
-		<DialogFooter class="gap-2 sm:gap-2">
-			<Button variant="outline" onclick={cancel}>Cancel</Button>
-			<Button variant="destructive" onclick={confirm}>
-				{kind === 'close' ? 'Close' : 'Replace'}
-			</Button>
-		</DialogFooter>
-	</DialogContent>
+				{/if}
+			</div>
+
+			<div
+				class="flex items-center justify-end gap-2 border-t border-foreground/30 px-4 py-3"
+			>
+			<button
+				onclick={cancel}
+				class="cursor-pointer border border-foreground/30 px-3 py-1 font-mono text-[11px] uppercase text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+			>
+				[<span class="hover:underline"> Cancel </span>]
+			</button>
+			<button
+				onclick={confirm}
+				class="cursor-pointer border border-foreground/30 px-3 py-1 font-mono text-[11px] uppercase text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+			>
+				[<span class="hover:underline">{kind === 'close' ? 'Close' : kind === 'clear-history' ? 'Clear' : kind === 'reset-all' ? 'Reset' : 'Replace'}</span>]
+			</button>
+			</div>
+
+			<button
+				onclick={cancel}
+				class="absolute top-2 right-2 flex size-5 cursor-pointer items-center justify-center font-mono text-[11px] text-muted-foreground/40 focus:outline-none"
+				aria-label="Close"
+			>
+				[X]
+			</button>
+		</DialogContent>
+	</DialogPortal>
 </Dialog>

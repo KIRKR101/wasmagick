@@ -13,6 +13,12 @@ bun.lockb
 coverage/
 test-results/
 playwright-report/
+test/*-output*.png
+test/*-output*.jpg
+test/*-diff*.png
+
+# ImageMagick binaries (downloaded by tooling/setup-imagemagick.ts)
+tooling/imagemagick/
 
 # OS
 .DS_Store

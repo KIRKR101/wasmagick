@@ -73,8 +73,8 @@
 
 <!-- Handle line + grip -->
 <div
-	class="absolute inset-y-0 z-20 w-px cursor-ew-resize bg-foreground/80 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {dragging
-		? 'pointer-events-none'
+	class="absolute inset-y-0 z-20 w-1 cursor-ew-resize bg-foreground/60 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none hover:bg-foreground/90 transition-colors {dragging
+		? 'pointer-events-none bg-foreground'
 		: ''}"
 	style="left: {handlePct}%"
 	role="slider"
@@ -91,9 +91,9 @@
 	}}
 >
 	<div
-		class="absolute top-1/2 left-1/2 flex size-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-foreground bg-background shadow-md"
+		class="absolute top-1/2 left-1/2 flex size-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center border-2 border-foreground bg-[#f7f7f4] shadow-lg dark:bg-background hover:border-foreground/80"
 	>
-		<svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2">
+		<svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2">
 			<path d="M8 7l-4 5 4 5M16 7l4 5-4 5" stroke-linecap="round" stroke-linejoin="round" />
 		</svg>
 	</div>
@@ -101,14 +101,14 @@
 
 <!-- Labels -->
 <div
-	class="pointer-events-none absolute top-3 z-30 rounded-xs border bg-background/80 px-2 py-1 text-[11px] font-medium text-foreground shadow-sm backdrop-blur-sm"
+	class="pointer-events-none absolute top-3 z-30 border border-foreground/30 bg-[#f7f7f4] px-2 py-1 font-mono text-[11px] text-muted-foreground dark:bg-background"
 	style="left: 12px"
 >
-	Before
+	[ Before ]
 </div>
 <div
-	class="pointer-events-none absolute top-3 z-30 rounded-xs border bg-background/80 px-2 py-1 text-[11px] font-medium text-foreground shadow-sm backdrop-blur-sm"
+	class="pointer-events-none absolute top-3 z-30 border border-foreground/30 bg-[#f7f7f4] px-2 py-1 font-mono text-[11px] text-muted-foreground dark:bg-background"
 	style="right: 12px"
 >
-	After
+	[ After ]
 </div>

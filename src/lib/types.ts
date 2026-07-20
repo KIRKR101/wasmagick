@@ -10,7 +10,7 @@ export type ImageFormat = 'WebP' | 'JPEG' | 'PNG' | 'AVIF' | 'JXL' | 'TIFF' | 'G
 export type RotationAngle = '0' | '90' | '180' | '-90';
 
 /** Color space options */
-export type ColorSpaceOption = 'RGB' | 'Gray' | 'CMYK' | 'HSL' | 'HSV' | 'LAB';
+export type ColorSpaceOption = 'RGB' | 'Gray' | 'CMYK' | 'HSL' | 'HSV' | 'Lab';
 
 /** Level channel options */
 export type LevelChannel = 'All' | 'Red' | 'Green' | 'Blue';
@@ -18,14 +18,14 @@ export type LevelChannel = 'All' | 'Red' | 'Green' | 'Blue';
 /** Gravity position for canvas extent */
 export type GravityPosition =
 	| 'Center'
-	| 'NorthWest'
+	| 'Northwest'
 	| 'North'
-	| 'NorthEast'
+	| 'Northeast'
 	| 'West'
 	| 'East'
-	| 'SouthWest'
+	| 'Southwest'
 	| 'South'
-	| 'SouthEast';
+	| 'Southeast';
 
 /** Image effect presets */
 export type EffectPreset =
@@ -69,9 +69,9 @@ export interface MagickSettings {
 	normalizeImage: boolean;
 	autoLevel: boolean;
 	autoOrient: boolean;
-	levelBlackpoint: [number];
-	levelWhitepoint: [number];
-	levelGamma: [number];
+	levelBlackpoint: Record<LevelChannel, [number]>;
+	levelWhitepoint: Record<LevelChannel, [number]>;
+	levelGamma: Record<LevelChannel, [number]>;
 	levelChannels: LevelChannel;
 	thresholdPercentage: [number];
 	thresholdChannels: LevelChannel;
@@ -116,7 +116,7 @@ export interface AppliedOptions {
 	normalize?: boolean;
 	autoLevel?: boolean;
 	autoOrient?: boolean;
-	level?: { black: number; white: number; gamma: number; channels: string };
+	level?: { black: number; white: number; gamma: number; channels: string }[];
 	threshold?: { percent: number; channels: string };
 	sigmoidal?: { contrast: number; midpoint: number };
 	colorSpace?: string;

@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { Sun, Moon, Bug, Keyboard, RotateCcw, X } from 'lucide-svelte';
+	import { X } from 'lucide-svelte';
 	import type { MagickState } from '$lib/useMagick.svelte';
 	import type { HistoryState } from '$lib/hooks/useHistory.svelte';
 	import HoverTooltip from './controls/HoverTooltip.svelte';
@@ -31,21 +30,17 @@
 </script>
 
 <header
-	class="relative z-30 flex h-[var(--topbar-h)] shrink-0 items-center gap-2 border-b bg-background px-3"
+	class="relative z-30 flex h-[var(--topbar-h)] shrink-0 items-center gap-2 border-b border-foreground/30 bg-[#f7f7f4] px-3 font-mono text-[11px] uppercase dark:bg-background"
 >
-	<!-- Wordmark -->
-	<span class="text-sm font-semibold tracking-tight">WASMagick</span>
+	<span class="font-bold tracking-wider text-foreground">[ ] WASMAGICK.APP</span>
 
-	<!-- Filename -->
 	{#if magick.originalImageUrl}
-		<span class="text-muted-foreground/40 max-md:hidden">/</span>
-		<span class="truncate text-xs font-medium text-foreground/80 max-md:hidden"
-			>{magick.originalName}</span
-		>
+		<span class="text-muted-foreground/40">/</span>
+		<span class="truncate text-foreground/80 max-md:hidden">{magick.originalName}</span>
 		<HoverTooltip label="Close image">
 			<button
 				onclick={onClose}
-				class="flex size-5 items-center justify-center rounded-xs text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none max-md:hidden"
+				class="flex size-5 cursor-pointer items-center justify-center border border-foreground/30 text-muted-foreground/60 transition-colors focus:outline-none max-md:hidden"
 				aria-label="Close image"
 			>
 				<X class="size-3" />
@@ -53,63 +48,53 @@
 		</HoverTooltip>
 	{/if}
 
-	<!-- Right cluster -->
 	<div class="ml-auto flex items-center gap-1">
 		<HoverTooltip label="Undo (Ctrl+Z)">
-			<Button
+			<button
 				onclick={onUndo}
 				disabled={!history.canUndo}
-				variant="ghost"
-				size="icon-sm"
-				aria-label="Undo (Ctrl+Z)"
+				class="cursor-pointer px-1.5 py-1 text-muted-foreground transition-colors focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
 			>
-				<RotateCcw class="size-3.5" />
-			</Button>
+				[&lt;]
+			</button>
 		</HoverTooltip>
 		<HoverTooltip label="Redo (Ctrl+Shift+Z)">
-			<Button
+			<button
 				onclick={onRedo}
 				disabled={!history.canRedo}
-				variant="ghost"
-				size="icon-sm"
-				aria-label="Redo (Ctrl+Shift+Z)"
+				class="cursor-pointer px-1.5 py-1 text-muted-foreground transition-colors focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
 			>
-				<RotateCcw class="size-3.5 -scale-x-100" />
-			</Button>
+				[&gt;]
+			</button>
 		</HoverTooltip>
 
-		<div class="mx-1 h-5 w-px bg-border"></div>
+		<span class="mx-1 h-4 w-px bg-border"></span>
 
 		<HoverTooltip label="Debug Mode">
-			<Button
+			<button
 				onclick={onToggleDebug}
-				variant={debugMode ? 'secondary' : 'ghost'}
-				size="icon-sm"
-				aria-label="Debug Mode"
+				class="cursor-pointer px-1.5 py-1 transition-colors focus:outline-none {debugMode ? 'text-foreground' : 'text-muted-foreground'}"
 			>
-				<Bug class="size-3.5" />
-			</Button>
+				[BUG]
+			</button>
 		</HoverTooltip>
 
 		<HoverTooltip label="Toggle Theme">
-			<Button onclick={onToggleTheme} variant="ghost" size="icon-sm" aria-label="Toggle Theme">
-				{#if isDarkMode}
-					<Moon class="size-3.5" />
-				{:else}
-					<Sun class="size-3.5" />
-				{/if}
-			</Button>
+			<button
+				onclick={onToggleTheme}
+				class="cursor-pointer px-1.5 py-1 text-muted-foreground transition-colors focus:outline-none"
+			>
+				[{isDarkMode ? '~' : 'O'}]
+			</button>
 		</HoverTooltip>
 
 		<HoverTooltip label="Shortcuts (Ctrl+Shift+?)">
-			<Button
+			<button
 				onclick={onToggleShortcuts}
-				variant="ghost"
-				size="icon-sm"
-				aria-label="Shortcuts (Ctrl+Shift+?)"
+				class="cursor-pointer px-1.5 py-1 text-muted-foreground transition-colors focus:outline-none"
 			>
-				<Keyboard class="size-3.5" />
-			</Button>
+				[?]
+			</button>
 		</HoverTooltip>
 	</div>
 </header>

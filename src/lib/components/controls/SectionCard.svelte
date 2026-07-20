@@ -1,22 +1,19 @@
 <script lang="ts">
 	import { cn } from '$lib/utils';
 
-	let {
-		title = '',
-		children,
-		class: className
-	}: {
+	let props = $props<{
 		title?: string;
+		dirty?: boolean;
 		children?: import('svelte').Snippet;
 		class?: string;
-	} = $props();
+	}>();
 </script>
 
-<section class={cn('rounded-xs border border-border/50 bg-muted/20 p-3', className)}>
-	{#if title}
+<section class={cn('border border-foreground/30 bg-transparent p-3', props.class)}>
+	{#if props.title}
 		<h4 class="mb-2.5 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
-			{title}
+			{props.title} <span class="font-mono">{props.dirty ? '*' : ''}</span>
 		</h4>
 	{/if}
-	{@render children?.()}
+	{@render props.children?.()}
 </section>

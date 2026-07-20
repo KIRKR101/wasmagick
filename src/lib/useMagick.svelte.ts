@@ -18,12 +18,83 @@ import {
 	MagickColor,
 	Gravity,
 	Channels,
-	ColorSpace
+	ColorSpace,
+	PixelIntensityMethod
 } from '@imagemagick/magick-wasm';
 import { toast } from 'svelte-sonner';
-import type { MagickSettings, AppliedOptions } from './types';
+import type { MagickSettings, AppliedOptions, LevelChannel } from './types';
 
 const AUTO_PROCESS_DELAY = 300;
+
+const STORAGE_KEY = 'wasmagick-settings';
+
+const ARRAY_KEYS = new Set([
+	'quality',
+	'borderSize',
+	'deskewThreshold',
+	'brightness',
+	'saturation',
+	'hue',
+	'contrast',
+
+	'thresholdPercentage',
+	'sigmoidalContrast',
+	'sigmoidalMidpoint',
+	'blur',
+	'sharpen',
+	'sepiaThreshold',
+	'charcoalIntensity',
+	'cannyEdgeStrength',
+	'cannyEdgeLower',
+	'cannyEdgeUpper',
+	'oilpaintRadius',
+	'solarizeFactor',
+	'bilateralWidth',
+	'bilateralHeight',
+	'bilateralIntensitySigma',
+	'bilateralSpatialSigma'
+]);
+
+const PERSISTED_KEYS = new Set(['imageFormat', 'quality']);
+
+function loadPersistedSettings(): Partial<MagickSettings> {
+	try {
+		const raw = localStorage.getItem(STORAGE_KEY);
+		if (!raw) return {};
+		const parsed: Record<string, unknown> = JSON.parse(raw);
+		// Only load keys that persistSettings actually writes, so old/corrupt
+		// entries (e.g. stripMeta: false from a prior version) can't override defaults.
+		const result: Record<string, unknown> = {};
+		for (const key of PERSISTED_KEYS) {
+			if (key in parsed) {
+				result[key] = parsed[key];
+			}
+		}
+		// Normalize array values that may have been stored as plain numbers.
+		for (const key of ARRAY_KEYS) {
+			if (key in result && typeof result[key] === 'number') {
+				result[key] = [result[key]];
+			}
+		}
+		return result as Partial<MagickSettings>;
+	} catch {
+		return {};
+	}
+}
+
+function persistSettings(s: MagickSettings): void {
+	try {
+		localStorage.setItem(
+			STORAGE_KEY,
+			JSON.stringify({
+				imageFormat: s.imageFormat,
+				quality: s.quality
+			})
+		);
+	} catch {
+		// ignore
+	}
+}
 
 export const DEFAULT_SETTINGS: MagickSettings = {
 	imageFormat: 'WebP',
@@ -49,9 +120,9 @@ export const DEFAULT_SETTINGS: MagickSettings = {
 	normalizeImage: false,
 	autoLevel: false,
 	autoOrient: false,
-	levelBlackpoint: [0],
-	levelWhitepoint: [100],
-	levelGamma: [1.0],
+	levelBlackpoint: { All: [0], Red: [0], Green: [0], Blue: [0] },
+	levelWhitepoint: { All: [100], Red: [100], Green: [100], Blue: [100] },
+	levelGamma: { All: [1.0], Red: [1.0], Green: [1.0], Blue: [1.0] },
 	levelChannels: 'All',
 	thresholdPercentage: [50],
 	thresholdChannels: 'All',
@@ -233,7 +304,28 @@ export class MagickState {
 	processedWidth = $state(0);
 	processedHeight = $state(0);
 	currentProcessingStep = $state<string | null>(null);
-	settings = $state<MagickSettings>({ ...DEFAULT_SETTINGS });
+	settings = $state<MagickSettings>({
+		...DEFAULT_SETTINGS,
+		levelBlackpoint: {
+			All: [...DEFAULT_SETTINGS.levelBlackpoint.All],
+			Red: [...DEFAULT_SETTINGS.levelBlackpoint.Red],
+			Green: [...DEFAULT_SETTINGS.levelBlackpoint.Green],
+			Blue: [...DEFAULT_SETTINGS.levelBlackpoint.Blue]
+		},
+		levelWhitepoint: {
+			All: [...DEFAULT_SETTINGS.levelWhitepoint.All],
+			Red: [...DEFAULT_SETTINGS.levelWhitepoint.Red],
+			Green: [...DEFAULT_SETTINGS.levelWhitepoint.Green],
+			Blue: [...DEFAULT_SETTINGS.levelWhitepoint.Blue]
+		},
+		levelGamma: {
+			All: [...DEFAULT_SETTINGS.levelGamma.All],
+			Red: [...DEFAULT_SETTINGS.levelGamma.Red],
+			Green: [...DEFAULT_SETTINGS.levelGamma.Green],
+			Blue: [...DEFAULT_SETTINGS.levelGamma.Blue]
+		},
+		...loadPersistedSettings()
+	});
 	workerReady = $state(false);
 
 	private _worker: Worker | null = null;
@@ -267,13 +359,17 @@ export class MagickState {
 
 	async initWasm(debugMode = false): Promise<void> {
 		try {
+			this.currentProcessingStep = 'Downloading WASM binary...';
 			const response = await fetch('/magick.wasm', { cache: 'force-cache' });
 			if (!response.ok) {
 				throw new Error(`Failed to fetch WASM: ${response.status}`);
 			}
+			this.currentProcessingStep = 'Parsing WebAssembly module...';
 			const wasmBytes = new Uint8Array(await response.arrayBuffer());
+			this.currentProcessingStep = 'Initializing ImageMagick engine...';
 			await initializeImageMagick(wasmBytes);
 			this.wasmLoaded = true;
+			this.currentProcessingStep = null;
 
 			if (debugMode) {
 				console.log('ImageMagick WASM loaded, Version:', Magick.imageMagickVersion);
@@ -281,6 +377,7 @@ export class MagickState {
 		} catch (e) {
 			this.statsMessage = 'Error Loading WASM';
 			this.hasError = true;
+			this.currentProcessingStep = null;
 			const message = e instanceof Error ? e.message : 'Unknown error';
 			this.errorMessage = message;
 			console.error('WASM initialization failed:', message);
@@ -390,6 +487,7 @@ export class MagickState {
 		this.settings.extentBgColor = DEFAULT_SETTINGS.extentBgColor;
 		this.settings.deskewThreshold = [...DEFAULT_SETTINGS.deskewThreshold];
 		this.settings.deskewAutoCrop = DEFAULT_SETTINGS.deskewAutoCrop;
+		this.settings.autoOrient = DEFAULT_SETTINGS.autoOrient;
 	}
 
 	resetColor(): void {
@@ -400,10 +498,9 @@ export class MagickState {
 		this.settings.colorSpace = DEFAULT_SETTINGS.colorSpace;
 		this.settings.normalizeImage = DEFAULT_SETTINGS.normalizeImage;
 		this.settings.autoLevel = DEFAULT_SETTINGS.autoLevel;
-		this.settings.autoOrient = DEFAULT_SETTINGS.autoOrient;
-		this.settings.levelBlackpoint = [...DEFAULT_SETTINGS.levelBlackpoint];
-		this.settings.levelWhitepoint = [...DEFAULT_SETTINGS.levelWhitepoint];
-		this.settings.levelGamma = [...DEFAULT_SETTINGS.levelGamma];
+		this.settings.levelBlackpoint = { All: [0], Red: [0], Green: [0], Blue: [0] };
+		this.settings.levelWhitepoint = { All: [100], Red: [100], Green: [100], Blue: [100] };
+		this.settings.levelGamma = { All: [1.0], Red: [1.0], Green: [1.0], Blue: [1.0] };
 		this.settings.levelChannels = DEFAULT_SETTINGS.levelChannels;
 		this.settings.thresholdPercentage = [...DEFAULT_SETTINGS.thresholdPercentage];
 		this.settings.thresholdChannels = DEFAULT_SETTINGS.thresholdChannels;
@@ -433,6 +530,7 @@ export class MagickState {
 		this.settings.imageFormat = DEFAULT_SETTINGS.imageFormat;
 		this.settings.quality = [...DEFAULT_SETTINGS.quality];
 		this.settings.stripMeta = DEFAULT_SETTINGS.stripMeta;
+		persistSettings(this.settings);
 	}
 
 	resetSettings(): void {
@@ -714,27 +812,22 @@ export class MagickState {
 								appliedOptions.autoOrient = true;
 							}
 
-							if (
-								this.settings.levelBlackpoint[0] !== 0 ||
-								this.settings.levelWhitepoint[0] !== 100 ||
-								this.settings.levelGamma[0] !== 1.0
-							) {
-								const channels =
-									this.settings.levelChannels === 'All'
-										? Channels.All
-										: Channels[this.settings.levelChannels as keyof typeof Channels];
-								image.level(
-									new Percentage(this.settings.levelBlackpoint[0]),
-									new Percentage(this.settings.levelWhitepoint[0]),
-									this.settings.levelGamma[0],
-									channels as Channels
-								);
-								appliedOptions.level = {
-									black: this.settings.levelBlackpoint[0],
-									white: this.settings.levelWhitepoint[0],
-									gamma: this.settings.levelGamma[0],
-									channels: this.settings.levelChannels
-								};
+							{
+								const levelChs: LevelChannel[] = ['All', 'Red', 'Green', 'Blue'];
+								const levelApplied: { black: number; white: number; gamma: number; channels: string }[] = [];
+								for (const ch of levelChs) {
+									const bp = this.settings.levelBlackpoint[ch][0];
+									const wp = this.settings.levelWhitepoint[ch][0];
+									const gm = this.settings.levelGamma[ch][0];
+									if (bp !== 0 || wp !== 100 || gm !== 1.0) {
+										const channel = ch === 'All' ? Channels.All : Channels[ch as keyof typeof Channels];
+										image.level(new Percentage(bp), new Percentage(wp), gm, channel as Channels);
+										levelApplied.push({ black: bp, white: wp, gamma: gm, channels: ch });
+									}
+								}
+								if (levelApplied.length > 0) {
+									appliedOptions.level = levelApplied;
+								}
 							}
 
 							if (this.settings.thresholdPercentage[0] !== 50) {
@@ -759,7 +852,7 @@ export class MagickState {
 										: Channels[this.settings.sigmoidalChannels as keyof typeof Channels];
 								image.sigmoidalContrast(
 									this.settings.sigmoidalContrast[0],
-									this.settings.sigmoidalMidpoint[0],
+									this.settings.sigmoidalMidpoint[0] / 100,
 									sigmoidalChannels as Channels
 								);
 								appliedOptions.sigmoidal = {
@@ -793,7 +886,7 @@ export class MagickState {
 								switch (this.settings.effect) {
 									case 'grayscale':
 										this.currentProcessingStep = 'Applying Grayscale';
-										image.grayscale();
+										image.grayscale(PixelIntensityMethod.Rec709Luminance);
 										break;
 									case 'sepia':
 										this.currentProcessingStep = 'Applying Sepia';
@@ -813,7 +906,7 @@ export class MagickState {
 									}
 									case 'negate':
 										this.currentProcessingStep = 'Applying Negative';
-										image.negate();
+										image.negate(Channels.RGB as Channels);
 										break;
 									case 'cannyEdge': {
 										this.currentProcessingStep = 'Detecting Edges';
@@ -945,6 +1038,8 @@ export class MagickState {
 
 		this.isLoading = false;
 		this.currentProcessingStep = null;
+
+		persistSettings(this.settings);
 
 		const newSizeKB = (blob.size / 1024).toFixed(1);
 		const percentageChange =

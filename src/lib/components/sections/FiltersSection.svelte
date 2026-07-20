@@ -11,17 +11,17 @@
 
 	let { magick } = $props<{ magick: MagickState }>();
 
-	const EFFECT_LABELS: Record<string, string> = {
-		none: 'None (Original)',
-		grayscale: 'Grayscale',
-		sepia: 'Sepia Tone',
-		charcoal: 'Charcoal Sketch',
-		negate: 'Negative',
-		cannyEdge: 'Edge Detection',
-		oilpaint: 'Oil Paint',
-		solarize: 'Solarize',
-		bilateralBlur: 'Bilateral Blur'
-	};
+	const EFFECT_OPTIONS = [
+		{ value: 'none', label: 'None (Original)' },
+		{ value: 'grayscale', label: 'Grayscale' },
+		{ value: 'sepia', label: 'Sepia Tone' },
+		{ value: 'charcoal', label: 'Charcoal Sketch' },
+		{ value: 'negate', label: 'Negative' },
+		{ value: 'cannyEdge', label: 'Edge Detection' },
+		{ value: 'oilpaint', label: 'Oil Paint' },
+		{ value: 'solarize', label: 'Solarize' },
+		{ value: 'bilateralBlur', label: 'Bilateral Blur' }
+	];
 </script>
 
 <div class="space-y-5">
@@ -31,12 +31,12 @@
 			>Effect Preset</span
 		>
 		<Select type="single" bind:value={magick.settings.effect}>
-			<SelectTrigger class="h-9">
-				{EFFECT_LABELS[magick.settings.effect as string] ?? (magick.settings.effect as string)}
+			<SelectTrigger class="w-full h-9 text-xs mt-2 font-mono">
+				{EFFECT_OPTIONS.find(o => o.value === magick.settings.effect)?.label ?? magick.settings.effect}
 			</SelectTrigger>
 			<SelectContent>
-				{#each Object.entries(EFFECT_LABELS) as [value, label]}
-					<SelectItem {value}>{label}</SelectItem>
+				{#each EFFECT_OPTIONS as opt (opt.value)}
+					<SelectItem value={opt.value}>{opt.label}</SelectItem>
 				{/each}
 			</SelectContent>
 		</Select>
@@ -112,8 +112,10 @@
 	{/if}
 
 	<!-- Blur + Sharpen -->
-	<div class="grid grid-cols-2 gap-3 border-t border-dashed border-border/60 pt-4">
-		<SliderRow label="Blur" bind:value={magick.settings.blur} min={0} max={20} step={0.5} />
-		<SliderRow label="Sharpen" bind:value={magick.settings.sharpen} min={0} max={10} step={0.5} />
-	</div>
+	<SectionCard title="Blur / Sharpen" dirty={magick.settings.blur[0] > 0 || magick.settings.sharpen[0] > 0}>
+		<div class="grid grid-cols-2 gap-3">
+			<SliderRow label="Blur" bind:value={magick.settings.blur} min={0} max={20} step={0.5} />
+			<SliderRow label="Sharpen" bind:value={magick.settings.sharpen} min={0} max={10} step={0.5} />
+		</div>
+	</SectionCard>
 </div>

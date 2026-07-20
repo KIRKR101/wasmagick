@@ -1,7 +1,5 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { Input } from '$lib/components/ui/input/index.js';
-	import { Sparkles, Trash2, Check, Plus } from 'lucide-svelte';
+	import { Check } from 'lucide-svelte';
 	import { toast } from 'svelte-sonner';
 	import type { MagickState } from '$lib/useMagick.svelte';
 	import {
@@ -32,21 +30,18 @@
 
 <div class="space-y-5">
 	<div class="space-y-2">
-		<div class="flex items-center gap-1.5">
-			<Sparkles class="size-3.5 text-muted-foreground" />
-			<span class="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase"
-				>Built-in</span
-			>
-		</div>
-		<div class="grid grid-cols-1 gap-1.5">
+		<span class="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase"
+			>Built-in</span
+		>
+		<div class="grid grid-cols-1 gap-1.5 mt-2">
 			{#each BUILTIN_PRESETS as p (p.id)}
 				{@const active = presets.isBuiltInActive(magick, p)}
 				<button
 					onclick={() => applyBuiltIn(p)}
 					aria-pressed={active}
-					class="group flex items-center justify-between gap-3 rounded-xs border px-3 py-2 text-left transition-colors {active
-						? 'border-primary bg-primary/10 ring-1 ring-primary/30'
-						: 'border-border/50 bg-muted/30 hover:border-primary/40 hover:bg-muted/60'}"
+					class="group flex items-center justify-between gap-3 border px-3 py-2 text-left transition-colors focus:outline-none {active
+						? 'border-foreground bg-muted/50'
+						: 'border-foreground/30 bg-transparent hover:border-foreground/60 hover:bg-muted/30'}"
 				>
 					<span class="min-w-0">
 						<span
@@ -65,7 +60,7 @@
 		</div>
 	</div>
 
-	<div class="space-y-2 border-t border-dashed border-border/60 pt-4">
+	<div class="space-y-2 border-t border-border/60 pt-4">
 		<div class="flex items-center gap-1.5">
 			<span class="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase"
 				>My Presets</span
@@ -73,33 +68,33 @@
 		</div>
 
 		<div class="flex gap-2">
-			<Input
+			<input
 				bind:value={newName}
+				type="text"
 				placeholder="Preset name"
-				class="h-8 text-xs"
+				class="h-8 text-xs font-mono w-full px-2 placeholder:text-muted-foreground/50"
 				onkeydown={(e) => {
 					if (e.key === 'Enter') save();
 				}}
 			/>
-			<Button onclick={save} variant="outline" size="sm" class="shrink-0">
-				<Plus class="size-3.5" />
-				Save
-			</Button>
+			<button onclick={save} class="group shrink-0 cursor-pointer font-mono text-xs border border-foreground/30 px-3 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+				[+] <span class="group-hover:underline">SAVE</span>
+			</button>
 		</div>
 		<p class="text-[11px] text-muted-foreground">
 			Saves the current settings as a reusable preset.
 		</p>
 
 		{#if presets.userPresets.length === 0}
-			<p class="py-3 text-center text-[11px] text-muted-foreground/60">No saved presets yet</p>
+			<p class="py-6 text-center text-[11px] text-muted-foreground/60">No saved presets yet</p>
 		{:else}
 			<div class="grid grid-cols-1 gap-1.5">
 				{#each presets.userPresets as p (p.id)}
 					{@const active = presets.isUserActive(magick, p)}
 					<div
-						class="group flex items-center gap-2 rounded-xs border px-3 py-2 transition-colors {active
-							? 'border-primary bg-primary/10 ring-1 ring-primary/30'
-							: 'border-border/50 bg-muted/30 hover:bg-muted/60'}"
+						class="group flex items-center gap-2 border px-3 py-2 transition-colors {active
+							? 'border-foreground bg-muted/50'
+							: 'border-foreground/30 bg-transparent hover:bg-muted/30 hover:border-foreground/60'}"
 					>
 						<button
 							onclick={() => applyUser(p)}
@@ -116,15 +111,13 @@
 								<Check class="size-3.5 shrink-0 text-primary" />
 							{/if}
 						</button>
-						<Button
+						<button
 							onclick={() => presets.deleteUser(p.id)}
-							variant="ghost"
-							size="icon-xs"
-							class="shrink-0 text-muted-foreground hover:text-destructive"
+							class="shrink-0 cursor-pointer text-muted-foreground font-mono text-xs focus:outline-none"
 							aria-label="Delete preset"
 						>
-							<Trash2 class="size-3" />
-						</Button>
+							[x]
+						</button>
 					</div>
 				{/each}
 			</div>

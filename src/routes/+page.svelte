@@ -1,171 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { UploadCloud } from 'lucide-svelte';
-	import AppShell from '$lib/components/AppShell.svelte';
-	import KeyboardShortcuts from '$lib/components/KeyboardShortcuts.svelte';
-	import { useMagick } from '$lib/useMagick.svelte';
-	import { useHistory } from '$lib/hooks/useHistory.svelte';
-	import { usePresets } from '$lib/hooks/usePresets.svelte';
-	import { useReplaceGuard, installClipboardPaste } from '$lib/hooks/useReplaceGuard.svelte';
-	import type { EditorSection } from '$lib/editor-types';
 
-	const magick = useMagick();
-	const history = useHistory();
-	const presets = usePresets();
-	const guard = useReplaceGuard();
-
-	let debugMode = $state(false);
 	let isDarkMode = $state(false);
-	let globalDragging = $state(false);
-	let showShortcuts = $state(false);
-	let activeSection = $state<EditorSection>('geometry');
 
-	let viewport: import('$lib/components/CanvasViewport.svelte').default | null = $state(null);
-
-	// History label generator: a short description of the most recent change.
-	function describeSettings(): string {
-		const s = magick.settings;
-		const parts: string[] = [];
-		if (s.resizeW || s.resizeH) parts.push(`Resize ${s.resizeW ?? 'auto'}×${s.resizeH ?? 'auto'}`);
-		if (s.rotate !== '0') parts.push(`Rotate ${s.rotate}°`);
-		if (s.flip) parts.push('Flip');
-		if (s.flop) parts.push('Flop');
-		if (s.borderSize[0] > 0) parts.push(`Border ${s.borderSize[0]}px`);
-		if (s.extentW || s.extentH) parts.push('Canvas');
-		if (s.deskewThreshold[0] > 0) parts.push('Deskew');
-		if (s.brightness[0] !== 100 || s.saturation[0] !== 100 || s.hue[0] !== 100)
-			parts.push('Adjust');
-		if (s.contrast[0] !== 0) parts.push('Contrast');
-		if (s.normalizeImage) parts.push('Normalize');
-		if (s.autoLevel) parts.push('AutoLevel');
-		if (s.colorSpace !== 'RGB') parts.push(s.colorSpace);
-		if (s.effect !== 'none') parts.push(s.effect);
-		if (s.blur[0] > 0) parts.push(`Blur ${s.blur[0]}`);
-		if (s.sharpen[0] > 0) parts.push(`Sharpen ${s.sharpen[0]}`);
-		if (s.imageFormat !== 'WebP' || s.quality[0] !== 85) parts.push(`Export ${s.imageFormat}`);
-		return parts.length ? parts.slice(0, 3).join(' · ') : 'Processed';
-	}
-
-	function toggleDarkMode() {
-		isDarkMode = !isDarkMode;
-		if (isDarkMode) {
-			document.documentElement.classList.add('dark');
-			localStorage.setItem('theme', 'dark');
-		} else {
-			document.documentElement.classList.remove('dark');
-			localStorage.setItem('theme', 'light');
-		}
-	}
-
-	function processCurrent() {
-		if (!magick.sourceBytes) return;
-		magick.processImage(debugMode, () => {
-			// Push to history after a successful process.
-			void history.pushFromMagick(magick, describeSettings());
-			// Defer the reset so the new processed image has time to decode
-			// and expose its naturalWidth/Height to fitImageToScreen.
-			setTimeout(() => viewport?.resetView(), 100);
-		});
-	}
-
-	/** Replace the current image (called by the replace guard after confirmation). */
-	async function replaceImage(file: File): Promise<void> {
-		const ok = await magick.setSourceFile(file);
-		if (ok) {
-			history.clear();
-			await history.resetToOriginal(magick);
-			setTimeout(() => viewport?.fitImageToScreen(), 100);
-		}
-	}
-
-	/** Close the current image (called by the replace guard after confirmation). */
-	function closeCurrent(): void {
-		history.clear();
-		magick.clearSource();
-	}
-
-	function handleKeydown(e: KeyboardEvent) {
-		const cmdOrCtrl = e.ctrlKey || e.metaKey;
-
-		if (cmdOrCtrl && e.key === 'Enter') {
-			e.preventDefault();
-			processCurrent();
-			return;
-		}
-
-		if (
-			e.target instanceof HTMLInputElement ||
-			e.target instanceof HTMLTextAreaElement ||
-			e.target instanceof HTMLSelectElement
-		)
-			return;
-
-		// Undo / Redo
-		if (cmdOrCtrl && !e.shiftKey && (e.key === 'z' || e.key === 'Z')) {
-			e.preventDefault();
-			void history.undo(magick);
-			return;
-		}
-		if (cmdOrCtrl && e.shiftKey && (e.key === 'z' || e.key === 'Z')) {
-			e.preventDefault();
-			void history.redo(magick);
-			return;
-		}
-
-		if (cmdOrCtrl && (e.key === 's' || e.key === 'S')) {
-			e.preventDefault();
-			magick.downloadImage();
-		} else if (cmdOrCtrl && e.key === '0') {
-			e.preventDefault();
-			viewport?.resetView();
-		} else if (cmdOrCtrl && e.key === '=') {
-			e.preventDefault();
-			viewport?.zoomIn();
-		} else if (cmdOrCtrl && e.key === '-') {
-			e.preventDefault();
-			viewport?.zoomOut();
-		} else if (!cmdOrCtrl && (e.key === 'b' || e.key === 'B')) {
-			e.preventDefault();
-			viewport?.toggleSplitCompare();
-		} else if (!cmdOrCtrl && (e.key === 'v' || e.key === 'V')) {
-			// Paste shortcut hint: the global paste listener handles actual paste.
-			// 'V' alone triggers the file picker as an upload shortcut.
-			e.preventDefault();
-			document.querySelector<HTMLInputElement>('input[type=file]')?.click();
-		} else if (e.altKey && e.key === '1') {
-			e.preventDefault();
-			activeSection = 'geometry';
-		} else if (e.altKey && e.key === '2') {
-			e.preventDefault();
-			activeSection = 'color';
-		} else if (e.altKey && e.key === '3') {
-			e.preventDefault();
-			activeSection = 'filters';
-		} else if (e.altKey && e.key === '4') {
-			e.preventDefault();
-			activeSection = 'export';
-		} else if (e.altKey && e.key === '5') {
-			e.preventDefault();
-			activeSection = 'presets';
-		} else if (e.altKey && e.key === '6') {
-			e.preventDefault();
-			activeSection = 'history';
-		} else if (cmdOrCtrl && e.shiftKey && (e.key === '?' || e.key === '/')) {
-			e.preventDefault();
-			showShortcuts = !showShortcuts;
-		}
-	}
-
-	async function handleGlobalDrop(e: DragEvent) {
-		e.preventDefault();
-		globalDragging = false;
-		const files = e.dataTransfer?.files;
-		if (files && files.length > 0) {
-			guard.requestReplace(files[0], replaceImage);
-		}
-	}
-
-	onMount(async () => {
+	onMount(() => {
 		if (
 			localStorage.getItem('theme') === 'dark' ||
 			(!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
@@ -176,68 +14,93 @@
 			document.documentElement.classList.remove('dark');
 			isDarkMode = false;
 		}
-
-		presets.load();
-		guard.install(magick, history);
-		installClipboardPaste(guard, replaceImage);
-
-		magick.initWorker();
-		await magick.initWasm(debugMode);
 	});
 </script>
 
-<svelte:window onkeydown={handleKeydown} />
-<svelte:document
-	ondragover={(e) => {
-		e.preventDefault();
-		globalDragging = true;
-	}}
-	ondragleave={(e) => {
-		if (
-			!e.relatedTarget ||
-			!(e.relatedTarget instanceof Node && document.documentElement.contains(e.relatedTarget))
-		) {
-			globalDragging = false;
-		}
-	}}
-	ondrop={handleGlobalDrop}
-/>
+<div
+	class="flex min-h-screen flex-col items-center justify-center bg-[#f7f7f4] px-4 font-mono dark:bg-background"
+>
+	<div class="mb-8 text-center">
+		<div class="text-[48px] text-muted-foreground/20">[ ]</div>
+	</div>
 
-{#if globalDragging}
-	<div
-		class="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-primary/10 backdrop-blur-sm"
+	<h1
+		class="mb-3 text-center text-lg uppercase tracking-wider text-muted-foreground"
 	>
-		<div
-			class="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-primary bg-background/90 px-10 py-8 shadow-xl"
+		WASMAGICK
+	</h1>
+
+	<p class="mb-8 text-center text-sm text-muted-foreground/60">
+		Browser-based image processing powered by ImageMagick/WASM
+	</p>
+
+	<div class="flex flex-col items-center gap-3">
+		<a
+			href="/editor"
+			class="group cursor-pointer border border-foreground/30 px-8 py-3 text-xs uppercase tracking-wider text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
 		>
-			<div class="flex size-14 items-center justify-center rounded-full bg-primary/10">
-				<UploadCloud class="size-7 text-primary" />
-			</div>
-			<p class="text-sm font-semibold text-foreground">Drop your image anywhere</p>
+			[<span class="group-hover:underline"> Enter editor </span>]
+		</a>
+
+		<div class="flex gap-3 text-xs text-muted-foreground/40">
+			<button
+				onclick={() => {
+					isDarkMode = !isDarkMode;
+					if (isDarkMode) {
+						document.documentElement.classList.add('dark');
+						localStorage.setItem('theme', 'dark');
+					} else {
+						document.documentElement.classList.remove('dark');
+						localStorage.setItem('theme', 'light');
+					}
+				}}
+				class="group cursor-pointer border border-foreground/30 text-muted-foreground px-2 py-1 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+			>
+				[{isDarkMode ? '~' : 'O'}] <span class="group-hover:underline">THEME</span>
+			</button>
+			<a
+				href="https://github.com/KIRKR101/wasmagick-svelte"
+				target="_blank"
+				rel="noopener noreferrer"
+				class="group cursor-pointer border border-foreground/30 text-muted-foreground px-2 py-1 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+			>
+				[<span class="group-hover:underline"> GitHub </span>]
+			</a>
 		</div>
 	</div>
-{/if}
 
-<AppShell
-	{magick}
-	{history}
-	{presets}
-	{guard}
-	{debugMode}
-	{isDarkMode}
-	bind:activeSection
-	bind:viewport
-	isDragging={globalDragging}
-	onToggleDebug={() => (debugMode = !debugMode)}
-	onToggleTheme={toggleDarkMode}
-	onToggleShortcuts={() => (showShortcuts = !showShortcuts)}
-	onProcess={processCurrent}
-	onReset={() => magick.resetSettings()}
-	onDownload={() => magick.downloadImage()}
-	onUndo={() => history.undo(magick)}
-	onRedo={() => history.redo(magick)}
-	onReplace={replaceImage}
-	onClose={closeCurrent}
-/>
+	<!-- Quick-start shortcuts card -->
+	<div class="mt-10 border border-foreground/30 px-6 py-4">
+		<div class="mb-3 text-[11px] uppercase tracking-wider text-muted-foreground">Quick Start</div>
+		<div class="grid grid-cols-2 gap-x-6 gap-y-2 font-mono text-[11px] text-muted-foreground/70">
+			<span class="flex items-center gap-2">
+				<span class="border border-foreground/30 px-1.5 py-0.5 text-[10px] text-foreground/60">Ctrl+O</span>
+				Upload image
+			</span>
+			<span class="flex items-center gap-2">
+				<span class="border border-foreground/30 px-1.5 py-0.5 text-[10px] text-foreground/60">Ctrl+Enter</span>
+				Process
+			</span>
+			<span class="flex items-center gap-2">
+				<span class="border border-foreground/30 px-1.5 py-0.5 text-[10px] text-foreground/60">Ctrl+S</span>
+				Download
+			</span>
+			<span class="flex items-center gap-2">
+				<span class="border border-foreground/30 px-1.5 py-0.5 text-[10px] text-foreground/60">Space</span>
+				Compare before/after
+			</span>
+			<span class="flex items-center gap-2">
+				<span class="border border-foreground/30 px-1.5 py-0.5 text-[10px] text-foreground/60">Ctrl+Z</span>
+				Undo
+			</span>
+			<span class="flex items-center gap-2">
+				<span class="border border-foreground/30 px-1.5 py-0.5 text-[10px] text-foreground/60">Ctrl+0</span>
+				Fit to screen
+			</span>
+		</div>
+	</div>
 
-<KeyboardShortcuts bind:open={showShortcuts} />
+	<div class="mt-8 text-center text-[11px] text-muted-foreground/30">
+		powered by <a href="https://github.com/dlemstra/magick-wasm" class="underline decoration-dashed underline-offset-3 transition-colors hover:text-foreground">magick-wasm</a>, all processing happens locally in your browser
+	</div>
+</div>

@@ -9,6 +9,7 @@
 		processedImageUrl = null,
 		isLoading = false,
 		wasmLoaded = true,
+		magickSettings = null,
 		currentProcessingStep = null,
 		isDragging = false,
 		onBrowse = () => {},
@@ -25,6 +26,7 @@
 		processedWidth?: number;
 		processedHeight?: number;
 		processedFormat?: string | null;
+		magickSettings?: { rotate?: string; resizeW?: number | null; resizeH?: number | null } | null;
 		currentProcessingStep?: string | null;
 		isDragging?: boolean;
 		onBrowse?: () => void;
@@ -69,6 +71,13 @@
 	let canSplit = $derived(
 		!!processedImageUrl && !!originalImageUrl && processedImageUrl !== originalImageUrl
 	);
+
+	let rotationLabel = $derived.by(() => {
+		if (!magickSettings) return '';
+		const r = parseInt(magickSettings.rotate ?? '0');
+		if (r === 0) return '';
+		return r > 0 ? `${r}° CW` : `${Math.abs(r)}° CCW`;
+	});
 	// Report state (zoom) to parent for the status bar.
 	$effect(() => {
 		onStateChange({ zoom: currentZoom });
@@ -105,8 +114,17 @@
 	export function zoomOut() {
 		setZoom(currentZoom - zoomStep);
 	}
+	export function startCompare() {
+		if (processedImageUrl) isComparing = true;
+	}
+	export function endCompare() {
+		isComparing = false;
+	}
 	export function toggleSplitCompare() {
 		if (canSplit) splitMode = !splitMode;
+	}
+	export function zoomToOneToOne() {
+		setZoom(100);
 	}
 	export function getZoom() {
 		return currentZoom;
@@ -258,15 +276,15 @@
 		{#if isInitializing}
 			<div class="text-center text-muted-foreground">
 				<div class="mx-auto mb-4 flex size-16 items-center justify-center">
-					<div class="relative">
-						<div class="size-12 animate-pulse rounded-full border-4 border-muted"></div>
+					<div class="relative size-12">
+						<div class="absolute inset-0 rounded-full border-2 border-muted/30"></div>
 						<div
-							class="absolute inset-0 size-12 animate-spin rounded-full border-4 border-t-primary"
+							class="absolute inset-0 rounded-full border-2 border-t-primary animate-spin"
 						></div>
 					</div>
 				</div>
-				<h3 class="mb-1 text-base font-semibold text-foreground">Initializing WASM Engine</h3>
-				<p class="text-xs">Loading ImageMagick…</p>
+				<h3 class="mb-1 font-mono text-xs font-semibold uppercase tracking-wider text-foreground">Initializing WASM Engine</h3>
+				<p class="font-mono text-[11px]">Loading ImageMagick…</p>
 			</div>
 		{:else if showPlaceholder}
 			<FileDropzone {isDragging} {onBrowse} {onSelectSample} />
@@ -295,14 +313,21 @@
 				style={imageStyle}
 				alt={isComparing ? 'Original image before processing' : 'Processed image preview'}
 				draggable="false"
-				class="checkerboard max-h-none max-w-none origin-center object-contain transition-opacity duration-150 will-change-transform"
+				class="checkerboard max-h-none max-w-none origin-center object-contain"
 			/>
 			{#if isComparing}
 				<div
-					class="pointer-events-none absolute top-3 z-30 rounded-xs border bg-background/80 px-2 py-1 text-[11px] font-medium text-foreground shadow-sm backdrop-blur-sm"
+					class="pointer-events-none absolute top-3 z-30 border border-foreground/30 bg-[#f7f7f4] px-2 py-1 font-mono text-[11px] text-muted-foreground dark:bg-background"
 					style="left: 12px"
 				>
-					Before
+					[ Before ]
+				</div>
+			{/if}
+			{#if rotationLabel && !isComparing}
+				<div
+					class="pointer-events-none absolute top-3 right-3 z-30 border border-foreground/30 bg-[#f7f7f4] px-2 py-1 font-mono text-[11px] text-muted-foreground dark:bg-background"
+				>
+					↻ {rotationLabel}
 				</div>
 			{/if}
 		{/if}
@@ -310,11 +335,11 @@
 		<!-- Loading overlay -->
 		{#if isLoading}
 			<div
-				class="absolute inset-0 z-40 flex items-center justify-center bg-background/30 backdrop-blur-sm"
+				class="absolute inset-0 z-40 flex items-center justify-center bg-black/5 animate-in fade-in duration-200"
 			>
-				<div class="flex flex-col items-center gap-3 rounded-lg border bg-background p-5 shadow-lg">
-					<Loader2 class="size-8 animate-spin text-primary" />
-					<span class="text-xs font-medium text-foreground">
+				<div class="flex flex-col items-center gap-3 border border-foreground/30 bg-[#f7f7f4] p-5 dark:bg-background">
+					<Loader2 class="size-8 animate-spin text-muted-foreground" />
+					<span class="font-mono text-[11px] text-foreground">
 						{currentProcessingStep ?? 'Processing…'}
 					</span>
 				</div>
@@ -325,61 +350,63 @@
 	<!-- Floating zoom/compare toolbar -->
 	{#if !showPlaceholder && !isInitializing}
 		<div
-			class="pointer-events-auto absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 rounded-full border bg-background/90 p-1 shadow-md backdrop-blur-sm"
+			class="pointer-events-auto absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-0 border border-foreground/30 bg-[#f7f7f4]/85 px-1 font-mono text-[11px] dark:bg-background/85 backdrop-blur-sm animate-in fade-in slide-in-from-bottom-2 duration-200"
 		>
-			<button
-				onclick={zoomOut}
-				class="flex size-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-				aria-label="Zoom out (Ctrl+-)"
-			>
-				<ZoomOut class="size-4" />
-			</button>
-			<span class="w-12 text-center font-mono text-[11px] font-medium text-foreground tabular-nums"
-				>{currentZoom}%</span
-			>
-			<button
-				onclick={zoomIn}
-				class="flex size-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-				aria-label="Zoom in (Ctrl+=)"
-			>
-				<ZoomIn class="size-4" />
-			</button>
-			<button
-				onclick={resetView}
-				class="flex size-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-				aria-label="Fit to screen (Ctrl+0)"
-			>
-				<Maximize class="size-4" />
-			</button>
-			<div class="mx-0.5 h-4 w-px bg-border"></div>
-			<button
-				onpointerdown={(e) => {
-					e.preventDefault();
-					isComparing = true;
-				}}
-				onpointerup={(e) => {
-					e.preventDefault();
-					isComparing = false;
-				}}
-				onpointerleave={() => (isComparing = false)}
-				disabled={!processedImageUrl}
-				class="flex size-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-40 {isComparing
-					? 'bg-muted text-foreground'
-					: ''}"
-				aria-label="Hold to compare (Space)"
-			>
-				<Images class="size-4" />
-			</button>
-			<button
-				onclick={toggleSplitCompare}
-				disabled={!canSplit}
-				class="flex size-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-40 {splitMode
-					? 'bg-primary text-primary-foreground'
-					: ''}"
-				aria-label="Split compare (B)"
-			>
-				<Columns2 class="size-4" />
-			</button>
+		<button
+			onclick={zoomOut}
+			class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+			aria-label="Zoom out (Ctrl+-)"
+		>
+			<ZoomOut class="size-3.5" />
+		</button>
+		<span
+			class="w-12 text-center font-mono text-[11px] tabular-nums text-foreground"
+		>
+			{currentZoom}%
+		</span>
+		<button
+			onclick={zoomIn}
+			class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+			aria-label="Zoom in (Ctrl+=)"
+		>
+			<ZoomIn class="size-3.5" />
+		</button>
+		<button
+			onclick={resetView}
+			class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+			aria-label="Fit to screen (Ctrl+0)"
+		>
+			<Maximize class="size-3.5" />
+		</button>
+		<div class="mx-0.5 h-4 w-px bg-border"></div>
+		<button
+			onpointerdown={(e) => {
+				e.preventDefault();
+				isComparing = true;
+			}}
+			onpointerup={(e) => {
+				e.preventDefault();
+				isComparing = false;
+			}}
+			onpointerleave={() => (isComparing = false)}
+			disabled={!processedImageUrl}
+			class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-40 {isComparing
+				? 'bg-muted text-foreground'
+				: ''}"
+			aria-label="Hold to compare (Space)"
+		>
+			<Images class="size-3.5" />
+		</button>
+		<button
+			onclick={toggleSplitCompare}
+			disabled={!canSplit}
+			class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-40 {splitMode
+				? 'bg-muted text-foreground'
+				: ''}"
+			aria-label="Split compare (B)"
+		>
+			<Columns2 class="size-3.5" />
+		</button>
 		</div>
 	{/if}
 </main>

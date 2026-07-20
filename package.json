@@ -12,8 +12,12 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
+		"setup:imagemagick": "npx tsx tooling/setup-imagemagick.ts",
+		"golden-gen": "npm run setup:imagemagick && npx tsx test/golden-gen/generate.ts",
 		"test:unit": "vitest",
-		"test": "npm run test:unit -- --run"
+		"test:unit:run": "vitest run --exclude 'test/parity/**'",
+		"test:parity": "npm run setup:imagemagick && vitest run test/parity/",
+		"test": "npm run setup:imagemagick && vitest run"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^2.0.3",
@@ -28,6 +32,8 @@
 		"@tailwindcss/typography": "^0.5.19",
 		"@tailwindcss/vite": "^4.1.18",
 		"@types/node": "^24",
+		"@types/pixelmatch": "^5.2.6",
+		"@types/pngjs": "^6.0.5",
 		"bits-ui": "^2.16.3",
 		"clsx": "^2.1.1",
 		"eslint": "^10.0.3",
@@ -35,6 +41,8 @@
 		"eslint-plugin-svelte": "^3.15.2",
 		"globals": "^17.4.0",
 		"paneforge": "^1.0.2",
+		"pixelmatch": "^7.2.0",
+		"pngjs": "^7.0.0",
 		"prettier": "^3.8.1",
 		"prettier-plugin-svelte": "^3.4.1",
 		"prettier-plugin-tailwindcss": "^0.7.2",
@@ -53,6 +61,7 @@
 	},
 	"dependencies": {
 		"@fontsource-variable/geist-mono": "^5.2.7",
+		"@fontsource-variable/jetbrains-mono": "^5.2.8",
 		"@imagemagick/magick-wasm": "^0.0.39",
 		"lucide-svelte": "^1.0.1"
 	}

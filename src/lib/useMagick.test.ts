@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useMagick, type MagickState } from './useMagick.svelte';
 import type { MagickSettings } from './types';
+import { isColorDirty } from './utils';
 
 describe('MagickState', () => {
 	let magick: MagickState;
@@ -110,6 +111,9 @@ describe('MagickState', () => {
 			magick.settings.contrast = [25];
 			magick.settings.normalizeImage = true;
 			magick.settings.colorSpace = 'Gray';
+			magick.settings.levelBlackpoint = { All: [10], Red: [20], Green: [30], Blue: [40] };
+			magick.settings.levelWhitepoint = { All: [90], Red: [80], Green: [70], Blue: [60] };
+			magick.settings.levelGamma = { All: [1.2], Red: [1.3], Green: [1.4], Blue: [1.5] };
 
 			magick.resetColor();
 
@@ -119,6 +123,9 @@ describe('MagickState', () => {
 			expect(magick.settings.contrast).toEqual([0]);
 			expect(magick.settings.normalizeImage).toBe(false);
 			expect(magick.settings.colorSpace).toBe('RGB');
+			expect(magick.settings.levelBlackpoint).toEqual({ All: [0], Red: [0], Green: [0], Blue: [0] });
+			expect(magick.settings.levelWhitepoint).toEqual({ All: [100], Red: [100], Green: [100], Blue: [100] });
+			expect(magick.settings.levelGamma).toEqual({ All: [1.0], Red: [1.0], Green: [1.0], Blue: [1.0] });
 		});
 	});
 	describe('resetSettings', () => {
@@ -154,10 +161,93 @@ describe('MagickState', () => {
 			expect(magick.settings.rotate).toBe('0');
 			expect(magick.settings.effect).toBe('none');
 		});
+
+		it('should have per-channel level defaults', () => {
+			expect(magick.settings.levelBlackpoint).toEqual({
+				All: [0], Red: [0], Green: [0], Blue: [0]
+			});
+			expect(magick.settings.levelWhitepoint).toEqual({
+				All: [100], Red: [100], Green: [100], Blue: [100]
+			});
+			expect(magick.settings.levelGamma).toEqual({
+				All: [1.0], Red: [1.0], Green: [1.0], Blue: [1.0]
+			});
+		});
 	});
+
+	describe('per-channel level settings', () => {
+		it('should allow independent per-channel level values', () => {
+			magick.settings.levelBlackpoint.Red = [25];
+			magick.settings.levelWhitepoint.Red = [75];
+			magick.settings.levelGamma.Red = [1.5];
+
+			expect(magick.settings.levelBlackpoint.All).toEqual([0]);
+			expect(magick.settings.levelBlackpoint.Green).toEqual([0]);
+			expect(magick.settings.levelBlackpoint.Blue).toEqual([0]);
+			expect(magick.settings.levelBlackpoint.Red).toEqual([25]);
+
+			expect(magick.settings.levelWhitepoint.Red).toEqual([75]);
+			expect(magick.settings.levelGamma.Red).toEqual([1.5]);
+		});
+
+		it('should allow all channels to be set independently', () => {
+			magick.settings.levelBlackpoint = {
+				All: [5], Red: [10], Green: [15], Blue: [20]
+			};
+			magick.settings.levelWhitepoint = {
+				All: [95], Red: [90], Green: [85], Blue: [80]
+			};
+			magick.settings.levelGamma = {
+				All: [1.1], Red: [1.2], Green: [1.3], Blue: [1.4]
+			};
+
+			expect(magick.settings.levelBlackpoint.All[0]).toBe(5);
+			expect(magick.settings.levelBlackpoint.Red[0]).toBe(10);
+			expect(magick.settings.levelBlackpoint.Green[0]).toBe(15);
+			expect(magick.settings.levelBlackpoint.Blue[0]).toBe(20);
+			expect(magick.settings.levelWhitepoint.All[0]).toBe(95);
+			expect(magick.settings.levelWhitepoint.Red[0]).toBe(90);
+			expect(magick.settings.levelGamma.All[0]).toBe(1.1);
+			expect(magick.settings.levelGamma.Blue[0]).toBe(1.4);
+		});
+	});
+
+	describe('isColorDirty with per-channel levels', () => {
+		it('should return false when all level channels are at defaults', () => {
+			expect(isColorDirty(magick.settings)).toBe(false);
+		});
+
+		it('should return true when All channel blackpoint is changed', () => {
+			magick.settings.levelBlackpoint.All = [5];
+			expect(isColorDirty(magick.settings)).toBe(true);
+		});
+
+		it('should return true when Red channel whitepoint is changed', () => {
+			magick.settings.levelWhitepoint.Red = [90];
+			expect(isColorDirty(magick.settings)).toBe(true);
+		});
+
+		it('should return true when Green channel gamma is changed', () => {
+			magick.settings.levelGamma.Green = [1.5];
+			expect(isColorDirty(magick.settings)).toBe(true);
+		});
+
+		it('should return true when Blue channel blackpoint is changed', () => {
+			magick.settings.levelBlackpoint.Blue = [50];
+			expect(isColorDirty(magick.settings)).toBe(true);
+		});
+
+		it('should become false after resetting per-channel values', () => {
+			magick.settings.levelBlackpoint.Red = [25];
+			expect(isColorDirty(magick.settings)).toBe(true);
+			magick.settings.levelBlackpoint.Red = [0];
+			expect(isColorDirty(magick.settings)).toBe(false);
+		});
+	});
+
 });
 
-describe('MagickSettings type', () => {
+	describe('MagickSettings type', () => {
 	it('should have all required properties', () => {
 		const settings: MagickSettings = {
 			imageFormat: 'WebP',
@@ -183,9 +273,9 @@ describe('MagickSettings type', () => {
 			normalizeImage: false,
 			autoLevel: false,
 			autoOrient: false,
-			levelBlackpoint: [0],
-			levelWhitepoint: [100],
-			levelGamma: [1.0],
+			levelBlackpoint: { All: [0], Red: [0], Green: [0], Blue: [0] },
+			levelWhitepoint: { All: [100], Red: [100], Green: [100], Blue: [100] },
+			levelGamma: { All: [1.0], Red: [1.0], Green: [1.0], Blue: [1.0] },
 			levelChannels: 'All',
 			thresholdPercentage: [50],
 			thresholdChannels: 'All',

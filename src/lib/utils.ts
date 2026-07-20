@@ -1,3 +1,5 @@
+import type { MagickSettings } from './types';
+
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -17,3 +19,49 @@ export type WithoutChild<T> = T extends { child?: any } ? Omit<T, 'child'> : T;
 export type WithoutChildren<T> = T extends { children?: any } ? Omit<T, 'children'> : T;
 export type WithoutChildrenOrChild<T> = WithoutChildren<WithoutChild<T>>;
 export type WithElementRef<T, U extends HTMLElement = HTMLElement> = T & { ref?: U | null };
+
+export function isGeoDirty(s: MagickSettings): boolean {
+	return (
+		s.resizeW != null ||
+		s.resizeH != null ||
+		s.rotate !== '0' ||
+		s.flip ||
+		s.flop ||
+		s.borderSize[0] > 0 ||
+		s.extentW != null ||
+		s.extentH != null ||
+		s.deskewThreshold[0] > 0 ||
+		!s.deskewAutoCrop ||
+		s.autoOrient
+	);
+}
+
+export function isColorDirty(s: MagickSettings): boolean {
+	const levelChs = ['All', 'Red', 'Green', 'Blue'] as const;
+	const levelDirty = levelChs.some(
+		ch =>
+			s.levelBlackpoint[ch][0] !== 0 ||
+			s.levelWhitepoint[ch][0] !== 100 ||
+			s.levelGamma[ch][0] !== 1.0
+	);
+	return (
+		s.normalizeImage ||
+		s.autoLevel ||
+		s.brightness[0] !== 100 ||
+		s.contrast[0] !== 0 ||
+		s.saturation[0] !== 100 ||
+		s.hue[0] !== 100 ||
+		levelDirty ||
+		s.thresholdPercentage[0] !== 50 ||
+		s.sigmoidalContrast[0] !== 0 ||
+		s.colorSpace !== 'RGB'
+	);
+}
+
+export function isFiltersDirty(s: MagickSettings): boolean {
+	return s.effect !== 'none' || s.blur[0] > 0 || s.sharpen[0] > 0;
+}
+
+export function isExportDirty(s: MagickSettings): boolean {
+	return s.imageFormat !== 'WebP' || s.quality[0] !== 85 || !s.stripMeta;
+}

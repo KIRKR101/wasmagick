@@ -10,7 +10,7 @@ export interface RailItem {
 	id: EditorSection;
 	label: string;
 	/** Lucide icon component. */
-	icon: unknown;
+	icon?: unknown;
 	/** Alt+number shortcut digit (1-7). */
 	shortcut: string;
 	/** Whether the section has non-default state (drives the dirty dot). */

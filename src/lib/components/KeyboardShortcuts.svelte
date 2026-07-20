@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { Command, X } from 'lucide-svelte';
-
 	let { open = $bindable(false) } = $props<{ open?: boolean }>();
 
 	const shortcuts = [
@@ -83,8 +81,9 @@
 </script>
 
 {#if open}
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 	<div
-		class="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+		class="fixed inset-0 z-50 flex items-center justify-center bg-black/5"
 		onclick={handleOverlayClick}
 		onkeydown={handleOverlayKeydown}
 		role="dialog"
@@ -94,29 +93,29 @@
 	>
 		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 		<div
-			class="w-full max-w-lg animate-in rounded-lg border bg-background p-6 shadow-lg fade-in-0 zoom-in-95"
+			class="relative w-full max-w-lg animate-in border border-foreground/30 bg-[#f7f7f4] p-4 fade-in-0 zoom-in-95 dark:bg-background"
 			tabindex="-1"
 		>
-			<div class="mb-2 flex items-center gap-2">
-				<Command class="h-5 w-5" />
-				<h2 id="shortcuts-title" class="text-lg font-semibold">Keyboard Shortcuts</h2>
+			<div class="mb-6 flex items-center gap-2 border-b border-foreground/30 pb-3">
+				<h2 id="shortcuts-title" class="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+					Keyboard Shortcuts
+				</h2>
 			</div>
-			<p class="mb-6 text-sm text-muted-foreground">
-				Quick reference for all available keyboard shortcuts
-			</p>
 
 			<div class="max-h-[60vh] space-y-6 overflow-y-auto">
 				{#each shortcuts as section}
 					<div class="space-y-3">
-						<h3 class="text-sm font-semibold text-foreground">{section.category}</h3>
+						<h3 class="font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+							/{section.category}
+						</h3>
 						<div class="space-y-2">
 							{#each section.items as shortcut}
-								<div class="flex items-center justify-between text-sm">
+								<div class="flex items-center justify-between font-mono text-[11px]">
 									<span class="text-muted-foreground">{shortcut.description}</span>
 									<div class="flex items-center gap-1">
 										{#each shortcut.keys as key, kindex}
 											<kbd
-												class="rounded-sm border bg-muted px-2 py-0.5 font-mono text-xs font-semibold"
+												class="border border-foreground/30 px-2 py-0.5 font-mono text-[11px] text-foreground"
 											>
 												{key}
 											</kbd>
@@ -133,11 +132,11 @@
 			</div>
 
 			<button
-				class="absolute top-4 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:outline-none"
+				class="absolute top-3 right-3 flex size-6 cursor-pointer items-center justify-center font-mono text-[11px] text-muted-foreground/40 focus:outline-none"
 				onclick={() => (open = false)}
 				aria-label="Close"
 			>
-				<X class="h-4 w-4" />
+				[X]
 			</button>
 		</div>
 	</div>

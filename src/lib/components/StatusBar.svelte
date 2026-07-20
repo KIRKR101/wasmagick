@@ -14,7 +14,6 @@
 
 	function sizeDelta() {
 		if (!magick.processedImageUrl || magick.originalImageSize <= 0) return null;
-		// Estimate processed size from statsMessage ("... New Size: X KB (Y%)")
 		const m = magick.statsMessage.match(/New Size:\s*([\d.]+)\s*KB(?:\s*\(([-+]?[\d.]+)%\))?/);
 		if (!m) return null;
 		const kb = parseFloat(m[1]);
@@ -26,40 +25,39 @@
 </script>
 
 <div
-	class="flex h-(--statusbar-h) shrink-0 items-center gap-3 border-t bg-background px-3 text-[11px] text-muted-foreground"
+	class="flex h-(--statusbar-h) shrink-0 items-center gap-3 border-t border-foreground/30 bg-[#f7f7f4] px-3 font-mono text-[11px] text-muted-foreground dark:bg-background"
 >
-	<!-- Left: dimensions + format -->
 	<div class="flex items-center gap-2 truncate">
 		{#if magick.originalImageUrl}
 			{#if magick.processedImageUrl && (magick.processedWidth || magick.processedHeight)}
-				<span class="font-mono text-foreground/80"
+				<span class="text-foreground/80"
 					>{magick.originalWidth}×{magick.originalHeight}</span
 				>
 				<span class="text-muted-foreground/60">→</span>
-				<span class="font-mono text-foreground"
+				<span class="text-foreground"
 					>{magick.processedWidth}×{magick.processedHeight}</span
 				>
 			{:else}
-				<span class="font-mono text-foreground/80"
+				<span class="text-foreground/80"
 					>{magick.originalWidth}×{magick.originalHeight}</span
 				>
 			{/if}
 			<span class="text-muted-foreground/60">·</span>
 			{#if magick.processedImageFormat}
-				<span class="font-mono text-[10px] text-foreground/80 uppercase">
+				<span class="text-[10px] text-foreground/80 uppercase">
 					{magick.processedImageFormat}
 				</span>
 			{:else if magick.originalImageFormat}
-				<span class="font-mono text-[10px] text-foreground/80 uppercase">
+				<span class="text-[10px] text-foreground/80 uppercase">
 					{magick.originalImageFormat}
 				</span>
 			{/if}
 			<span class="text-muted-foreground/60">·</span>
-			<span class="font-mono">{formatBytes(magick.originalImageSize)}</span>
+			<span>{formatBytes(magick.originalImageSize)}</span>
 			{#if delta}
 				<span class="text-muted-foreground/60">→</span>
 				<span
-					class="font-mono {delta.pct != null && delta.pct < 0
+					class="{delta.pct != null && delta.pct < 0
 						? 'text-emerald-600 dark:text-emerald-400'
 						: 'text-foreground/80'}"
 				>
@@ -67,7 +65,7 @@
 				</span>
 				{#if delta.pct != null}
 					<span
-						class="font-mono {delta.pct < 0
+						class="{delta.pct < 0
 							? 'text-emerald-600 dark:text-emerald-400'
 							: delta.pct > 0
 								? 'text-amber-600 dark:text-amber-400'
@@ -83,7 +81,6 @@
 	</div>
 
 	<div class="ml-auto flex items-center gap-3">
-		<!-- Center-right: status / processing step -->
 		{#if magick.hasError}
 			<span class="flex items-center gap-1 font-medium text-destructive">
 				<AlertCircle class="size-3" />
@@ -96,10 +93,9 @@
 			</span>
 		{/if}
 
-		<!-- Dirty indicator -->
 		{#if isDirty}
 			<span class="flex items-center gap-1 text-foreground/70" title="Unsaved edits">
-				<span class="size-1.5 rounded-full bg-amber-500"></span>
+				<span class="font-mono text-xs text-amber-500">[*]</span>
 				<span>Unsaved</span>
 			</span>
 		{/if}

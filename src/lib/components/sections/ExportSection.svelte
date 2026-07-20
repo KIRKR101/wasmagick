@@ -8,36 +8,36 @@
 	import { Slider } from '$lib/components/ui/slider/index.js';
 	import type { MagickState } from '$lib/useMagick.svelte';
 	import ToggleRow from '$lib/components/controls/ToggleRow.svelte';
-
 	let { magick } = $props<{ magick: MagickState }>();
 
+	const FORMAT_OPTIONS = ['WebP', 'JPEG', 'PNG', 'AVIF', 'JXL', 'TIFF', 'GIF'];
 	const LOSSLESS = new Set(['PNG', 'GIF']);
 	let isLossless = $derived(LOSSLESS.has(magick.settings.imageFormat));
 </script>
 
 <div class="space-y-5">
 	<div class="grid grid-cols-2 gap-3">
-		<div class="space-y-2">
+		<div class="flex flex-col gap-2">
 			<span class="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase"
 				>Format</span
 			>
 			<Select type="single" bind:value={magick.settings.imageFormat}>
-				<SelectTrigger class="h-9 text-xs">
-					{(magick.settings.imageFormat as string) || 'Select Format'}
+				<SelectTrigger class="h-9 w-full text-xs font-mono uppercase">
+					{magick.settings.imageFormat}
 				</SelectTrigger>
 				<SelectContent>
-					{#each ['WebP', 'JPEG', 'PNG', 'AVIF', 'JXL', 'TIFF', 'GIF'] as fmt}
+					{#each FORMAT_OPTIONS as fmt}
 						<SelectItem value={fmt}>{fmt}</SelectItem>
 					{/each}
 				</SelectContent>
 			</Select>
 		</div>
-		<div class="space-y-2">
-			<div class="flex items-center justify-between">
-				<span class="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase"
+		<div class="flex flex-col gap-2">
+			<div class="flex h-4 items-center justify-between">
+				<span class="text-[11px] tracking-wide text-muted-foreground uppercase"
 					>Quality</span
 				>
-				<span class="font-mono text-xs font-semibold text-foreground tabular-nums">
+				<span class="font-mono text-xs text-foreground tabular-nums">
 					{#if isLossless}
 						<span class="text-muted-foreground">Lossless</span>
 					{:else}
@@ -45,15 +45,16 @@
 					{/if}
 				</span>
 			</div>
-			<Slider
-				type="multiple"
-				bind:value={magick.settings.quality}
-				max={100}
-				min={1}
-				step={1}
-				disabled={isLossless}
-				class="py-2"
-			/>
+			<div class="flex h-9 items-center">
+				<Slider
+					type="multiple"
+					bind:value={magick.settings.quality}
+					min={1}
+					max={100}
+					step={1}
+					disabled={isLossless}
+				/>
+			</div>
 		</div>
 	</div>
 
@@ -66,7 +67,7 @@
 
 	<!-- Output preview -->
 	{#if magick.processedImageUrl}
-		<div class="rounded-xs border border-border/50 bg-muted/30 p-3">
+		<div class="border border-foreground/30 bg-transparent p-3">
 			<div class="mb-2 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
 				Output
 			</div>

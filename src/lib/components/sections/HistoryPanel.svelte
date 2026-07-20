@@ -1,51 +1,45 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { Undo2, Redo2, Trash2, ImageIcon } from 'lucide-svelte';
 	import type { MagickState } from '$lib/useMagick.svelte';
 	import type { HistoryState } from '$lib/hooks/useHistory.svelte';
 	import { formatBytes } from '$lib/utils';
 
-	let { magick, history }: { magick: MagickState; history: HistoryState } = $props();
+	let {
+		magick,
+		history,
+		onClearRequest
+	}: { magick: MagickState; history: HistoryState; onClearRequest?: () => void } = $props();
 </script>
 
 <div class="flex h-full flex-col">
 	<!-- Undo/redo controls -->
-	<div class="flex shrink-0 gap-1.5 border-b border-border/60 pb-3">
-		<Button
+	<div class="flex shrink-0 gap-1.5 border-b border-foreground/30 pb-3">
+		<button
 			onclick={() => history.undo(magick)}
 			disabled={!history.canUndo}
-			variant="outline"
-			size="sm"
-			class="flex-1"
+			class="flex-1 cursor-pointer border border-foreground/30 font-mono text-[11px] uppercase px-2 py-1.5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
 		>
-			<Undo2 class="size-3.5" />
-			Undo
-		</Button>
-		<Button
+			[&lt;] <span class="hover:underline">UNDO</span>
+		</button>
+		<button
 			onclick={() => history.redo(magick)}
 			disabled={!history.canRedo}
-			variant="outline"
-			size="sm"
-			class="flex-1"
+			class="flex-1 cursor-pointer border border-foreground/30 font-mono text-[11px] uppercase px-2 py-1.5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
 		>
-			<Redo2 class="size-3.5" />
-			Redo
-		</Button>
-		<Button
-			onclick={() => history.clear()}
+			<span class="hover:underline">REDO</span> [&gt;]
+		</button>
+		<button
+			onclick={() => onClearRequest?.()}
 			disabled={history.count === 0}
-			variant="ghost"
-			size="icon-sm"
+			class="cursor-pointer border border-foreground/30 font-mono text-[11px] uppercase px-2 py-1.5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
 			aria-label="Clear history"
 		>
-			<Trash2 class="size-3.5" />
-		</Button>
+			[X]
+		</button>
 	</div>
 
 	<div class="custom-scrollbar flex-1 overflow-y-auto pt-2">
 		{#if history.entries.length === 0}
 			<div class="flex flex-col items-center justify-center gap-2 py-10 text-center">
-				<ImageIcon class="size-8 text-muted-foreground/40" />
 				<p class="text-xs text-muted-foreground">No history yet</p>
 				<p class="text-[11px] text-muted-foreground/60">Process an image to start tracking</p>
 			</div>
@@ -56,13 +50,13 @@
 					<li>
 						<button
 							onclick={() => history.jumpTo(magick, entry.id)}
-							class="flex w-full items-center gap-2.5 rounded-xs px-2 py-1.5 text-left transition-colors {isCurrent
-								? 'bg-primary/10 ring-1 ring-primary/30'
-								: 'hover:bg-muted/60'}"
+							class="flex w-full items-center gap-2.5 px-2 py-1.5 text-left transition-colors border {isCurrent
+								? 'border-foreground bg-muted/50'
+								: 'border-foreground/30 bg-transparent hover:bg-muted/30 hover:border-foreground/60'}"
 							aria-current={isCurrent}
 						>
 							<div
-								class="size-9 shrink-0 overflow-hidden rounded-xs border border-border/50 bg-muted"
+								class="size-9 shrink-0 overflow-hidden border border-foreground/50 bg-transparent"
 							>
 								<img
 									src={entry.blobUrl}
@@ -94,9 +88,6 @@
 									{/if}
 								</div>
 							</div>
-							{#if isCurrent}
-								<span class="size-1.5 shrink-0 rounded-full bg-primary"></span>
-							{/if}
 						</button>
 					</li>
 				{/each}

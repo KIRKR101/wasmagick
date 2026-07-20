@@ -5,9 +5,10 @@ import {
 	Percentage,
 	Gravity,
 	Channels,
-	ColorSpace
+	ColorSpace,
+	PixelIntensityMethod
 } from '@imagemagick/magick-wasm';
-import type { MagickSettings } from './types';
+import type { MagickSettings, LevelChannel } from './types';
 
 const FORMAT_MAP: Record<string, keyof typeof MagickFormat> = {
 	WEBP: 'WebP',
@@ -104,21 +105,17 @@ export function processImageSync(sourceBytes: Uint8Array, settings: MagickSettin
 		if (settings.autoLevel) image.autoLevel();
 		if (settings.autoOrient) image.autoOrient();
 
-		if (
-			settings.levelBlackpoint[0] !== 0 ||
-			settings.levelWhitepoint[0] !== 100 ||
-			settings.levelGamma[0] !== 1.0
-		) {
-			const channels =
-				settings.levelChannels === 'All'
-					? Channels.All
-					: Channels[settings.levelChannels as keyof typeof Channels];
-			image.level(
-				new Percentage(settings.levelBlackpoint[0]),
-				new Percentage(settings.levelWhitepoint[0]),
-				settings.levelGamma[0],
-				channels as Channels
-			);
+		{
+			const levelChs: LevelChannel[] = ['All', 'Red', 'Green', 'Blue'];
+			for (const ch of levelChs) {
+				const bp = settings.levelBlackpoint[ch][0];
+				const wp = settings.levelWhitepoint[ch][0];
+				const gm = settings.levelGamma[ch][0];
+				if (bp !== 0 || wp !== 100 || gm !== 1.0) {
+					const channel = ch === 'All' ? Channels.All : Channels[ch as keyof typeof Channels];
+					image.level(new Percentage(bp), new Percentage(wp), gm, channel as Channels);
+				}
+			}
 		}
 
 		if (settings.thresholdPercentage[0] !== 50) {
@@ -137,9 +134,10 @@ export function processImageSync(sourceBytes: Uint8Array, settings: MagickSettin
 				settings.sigmoidalChannels === 'All'
 					? Channels.All
 					: Channels[settings.sigmoidalChannels as keyof typeof Channels];
+			const midpoint = settings.sigmoidalMidpoint[0] / 100;
 			image.sigmoidalContrast(
 				settings.sigmoidalContrast[0],
-				settings.sigmoidalMidpoint[0],
+				midpoint,
 				sigmoidalChannels as Channels
 			);
 		}
@@ -161,7 +159,7 @@ export function processImageSync(sourceBytes: Uint8Array, settings: MagickSettin
 		if (settings.effect !== 'none') {
 			switch (settings.effect) {
 				case 'grayscale':
-					image.grayscale();
+					image.grayscale(PixelIntensityMethod.Rec709Luminance);
 					break;
 				case 'sepia':
 					image.sepiaTone(new Percentage(settings.sepiaThreshold[0]));
@@ -176,7 +174,7 @@ export function processImageSync(sourceBytes: Uint8Array, settings: MagickSettin
 					break;
 				}
 				case 'negate':
-					image.negate();
+					image.negate(Channels.RGB as Channels);
 					break;
 				case 'cannyEdge': {
 					const radius = (settings.cannyEdgeStrength[0] / 100) * 4;
