@@ -2,10 +2,10 @@ import { existsSync, mkdirSync, rmSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { join } from 'node:path';
 
-const IM_VERSION = '7.1.2-17';
+const IM_VERSION = '7.1.2-25';
 const TOOL_DIR = join(import.meta.dirname, 'imagemagick');
 
-const LINUX_APPIMAGE = 'ImageMagick-3f2f629-gcc-x86_64.AppImage';
+const LINUX_APPIMAGE = 'ImageMagick-7.1.2-25-gcc-x86_64.AppImage';
 const LINUX_URL = `https://github.com/ImageMagick/ImageMagick/releases/download/${IM_VERSION}/${LINUX_APPIMAGE}`;
 const LINUX_BIN = join(TOOL_DIR, 'squashfs-root', 'usr', 'bin', 'magick');
 

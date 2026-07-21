@@ -220,7 +220,7 @@ console.log('-- combined --');
 // -- Update manifest.json --
 console.log();
 console.log('=== Updating manifest.json ===');
-const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf-8'));
+const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf-8').replace(/^\uFEFF/, ''));
 manifest.fixtures = allFixtures;
 manifest.generated = new Date().toISOString().slice(0, 10);
 fs.writeFileSync(MANIFEST_PATH, JSON.stringify(manifest, null, 4) + '\n');
