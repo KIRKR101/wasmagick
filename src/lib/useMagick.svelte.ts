@@ -13,7 +13,6 @@ import {
 	ImageMagick,
 	Magick,
 	Drawables,
-	MagickGeometry,
 	initializeImageMagick,
 	MagickFormat,
 	Percentage,
