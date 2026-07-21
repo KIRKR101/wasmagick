@@ -217,6 +217,116 @@ console.log('-- combined --');
 	);
 }
 
+// -- ANNOTATE --
+console.log('-- annotate --');
+const fontPath = path.join(REPO_ROOT, 'test', 'fixtures', 'font.ttf');
+genAllSources(
+	'annotate',
+	[
+		'-font',
+		fontPath,
+		'-pointsize',
+		'24',
+		'-fill',
+		'#ffffff',
+		'-gravity',
+		'Center',
+		'-annotate',
+		'0',
+		'Hello'
+	],
+	'{base}-default.png'
+);
+genAllSources(
+	'annotate',
+	[
+		'-font',
+		fontPath,
+		'-pointsize',
+		'36',
+		'-fill',
+		'#e74c3c',
+		'-gravity',
+		'Center',
+		'-annotate',
+		'45',
+		'Rotated'
+	],
+	'{base}-angle.png'
+);
+genAllSources(
+	'annotate',
+	[
+		'-font',
+		fontPath,
+		'-pointsize',
+		'48',
+		'-fill',
+		'#3498db',
+		'-gravity',
+		'Center',
+		'-stroke',
+		'#000000',
+		'-strokewidth',
+		'2',
+		'-annotate',
+		'0',
+		'Outline'
+	],
+	'{base}-stroke.png'
+);
+genAllSources(
+	'annotate',
+	[
+		'-font',
+		fontPath,
+		'-pointsize',
+		'20',
+		'-fill',
+		'#2ecc71',
+		'-gravity',
+		'Northwest',
+		'-annotate',
+		'0',
+		'Top Left'
+	],
+	'{base}-northwest.png'
+);
+genAllSources(
+	'annotate',
+	[
+		'-font',
+		fontPath,
+		'-pointsize',
+		'24',
+		'-fill',
+		'#f39c12',
+		'-gravity',
+		'Center',
+		'-annotate',
+		'+30+20',
+		'Offset'
+	],
+	'{base}-center-offset.png'
+);
+genAllSources(
+	'annotate',
+	[
+		'-font',
+		fontPath,
+		'-pointsize',
+		'20',
+		'-fill',
+		'#9b59b6',
+		'-gravity',
+		'Northwest',
+		'-annotate',
+		'+10+10',
+		'NW Offset'
+	],
+	'{base}-northwest-offset.png'
+);
+
 // -- Update manifest.json --
 console.log();
 console.log('=== Updating manifest.json ===');

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { initializeImageMagick } from '@imagemagick/magick-wasm';
+import { initializeImageMagick, Magick } from '@imagemagick/magick-wasm';
 import { PNG } from 'pngjs';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -13,6 +13,8 @@ const SOURCE = `${FIXTURES}/source`;
 const GOLDEN = `${FIXTURES}/golden`;
 const RESULTS = 'test-results';
 
+const DEFAULT_FONT = 'Roboto-Regular';
+
 const SOURCE_FILES = [
 	'source-100x100.png',
 	'source-101x99.png',
@@ -22,6 +24,7 @@ const SOURCE_FILES = [
 ];
 
 let wasmInitialized = false;
+let fontLoaded = false;
 
 beforeAll(async () => {
 	if (!wasmInitialized) {
@@ -30,7 +33,33 @@ beforeAll(async () => {
 		await initializeImageMagick(new Uint8Array(wasmBytes));
 		wasmInitialized = true;
 	}
+
+	if (!fontLoaded) {
+		const localFontPath = path.resolve(`${FIXTURES}/font.ttf`);
+		if (fs.existsSync(localFontPath)) {
+			const fontData = new Uint8Array(fs.readFileSync(localFontPath));
+			Magick.addFont(DEFAULT_FONT, fontData);
+			fontLoaded = true;
+		} else {
+			try {
+				const url =
+					'https://raw.githubusercontent.com/openmaptiles/fonts/master/roboto/Roboto-Regular.ttf';
+				const response = await fetch(url);
+				if (response.ok) {
+					const fontData = new Uint8Array(await response.arrayBuffer());
+					Magick.addFont(DEFAULT_FONT, fontData);
+					fontLoaded = true;
+				}
+			} catch {
+				console.warn('Could not load font for annotation parity tests. Skipping.');
+			}
+		}
+	}
 });
+
+function skipIfNoFont(): boolean {
+	return !fontLoaded;
+}
 
 function readSource(name: string): Uint8Array {
 	return new Uint8Array(fs.readFileSync(path.resolve(`${SOURCE}/${name}`)));
@@ -328,6 +357,123 @@ describe('Combined operations', () => {
 				effect: 'sepia',
 				sepiaThreshold: [80]
 			}
+		);
+	});
+});
+
+describe('Annotation operations', () => {
+	it('annotate default (Center, white 24pt)', () => {
+		if (skipIfNoFont()) return;
+		testAllSources(
+			'annotate',
+			'{base}-default.png',
+			{
+				annotateFontFamily: DEFAULT_FONT,
+				annotateText: 'Hello',
+				annotateFontSize: [24],
+				annotateFontColor: '#ffffff',
+				annotateGravity: 'Center',
+				annotateAngle: [0]
+			},
+			0.1,
+			5000
+		);
+	});
+
+	it('annotate with angle', () => {
+		if (skipIfNoFont()) return;
+		testAllSources(
+			'annotate',
+			'{base}-angle.png',
+			{
+				annotateFontFamily: DEFAULT_FONT,
+				annotateText: 'Rotated',
+				annotateFontSize: [36],
+				annotateFontColor: '#e74c3c',
+				annotateGravity: 'Center',
+				annotateAngle: [45]
+			},
+			0.1,
+			8000
+		);
+	});
+
+	it('annotate with stroke', () => {
+		if (skipIfNoFont()) return;
+		testAllSources(
+			'annotate',
+			'{base}-stroke.png',
+			{
+				annotateFontFamily: DEFAULT_FONT,
+				annotateText: 'Outline',
+				annotateFontSize: [48],
+				annotateFontColor: '#3498db',
+				annotateStroke: true,
+				annotateStrokeColor: '#000000',
+				annotateStrokeWidth: [2],
+				annotateGravity: 'Center',
+				annotateAngle: [0]
+			},
+			0.1,
+			8000
+		);
+	});
+
+	it('annotate northwest position', () => {
+		if (skipIfNoFont()) return;
+		testAllSources(
+			'annotate',
+			'{base}-northwest.png',
+			{
+				annotateFontFamily: DEFAULT_FONT,
+				annotateText: 'Top Left',
+				annotateFontSize: [20],
+				annotateFontColor: '#2ecc71',
+				annotateGravity: 'Northwest',
+				annotateAngle: [0]
+			},
+			0.1,
+			8000
+		);
+	});
+
+	it('annotate center with offset', () => {
+		if (skipIfNoFont()) return;
+		testAllSources(
+			'annotate',
+			'{base}-center-offset.png',
+			{
+				annotateFontFamily: DEFAULT_FONT,
+				annotateText: 'Offset',
+				annotateFontSize: [24],
+				annotateFontColor: '#f39c12',
+				annotateGravity: 'Center',
+				annotateOffsetX: 30,
+				annotateOffsetY: 20,
+				annotateAngle: [0]
+			},
+			0.1,
+			8000
+		);
+	});
+
+	it('annotate northwest with offset', () => {
+		if (skipIfNoFont()) return;
+		testAllSources(
+			'annotate',
+			'{base}-northwest-offset.png',
+			{
+				annotateFontFamily: DEFAULT_FONT,
+				annotateText: 'NW Offset',
+				annotateFontSize: [20],
+				annotateFontColor: '#9b59b6',
+				annotateGravity: 'Northwest',
+				annotateOffsetX: 10,
+				annotateOffsetY: 10,
+				annotateAngle: [0]
+			},
+			0.1,
+			8000
 		);
 	});
 });

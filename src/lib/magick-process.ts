@@ -2,6 +2,7 @@ import {
 	ImageMagick,
 	MagickFormat,
 	MagickColor,
+	Drawables,
 	Percentage,
 	Gravity,
 	Channels,
@@ -201,6 +202,49 @@ export function processImageSync(sourceBytes: Uint8Array, settings: MagickSettin
 						settings.bilateralSpatialSigma[0]
 					);
 					break;
+			}
+		}
+
+		if (settings.annotateText?.trim().length > 0) {
+			try {
+				const { r, g, b } = hexToRgb(settings.annotateFontColor);
+				const draws = new Drawables();
+				if (settings.annotateFontFamily?.trim().length > 0) {
+					draws.font(settings.annotateFontFamily);
+				}
+				draws.fontPointSize(settings.annotateFontSize[0]);
+				draws.fillColor(new MagickColor(r, g, b));
+				if (settings.annotateStroke && settings.annotateStrokeWidth[0] > 0) {
+					const sr = hexToRgb(settings.annotateStrokeColor);
+					draws.strokeColor(new MagickColor(sr.r, sr.g, sr.b));
+					draws.strokeWidth(settings.annotateStrokeWidth[0]);
+				}
+				const gravityKey = settings.annotateGravity as keyof typeof Gravity;
+				draws.gravity(Gravity[gravityKey]);
+
+				let ox = settings.annotateOffsetX;
+				let oy = settings.annotateOffsetY;
+				if (gravityKey === 'East' || gravityKey === 'Northeast' || gravityKey === 'Southeast') {
+					ox = -ox;
+				}
+				if (gravityKey === 'South' || gravityKey === 'Southwest' || gravityKey === 'Southeast') {
+					oy = -oy;
+				}
+
+			const angle = settings.annotateAngle[0];
+			if (angle !== 0) {
+				const rad = (angle * Math.PI) / 360;
+				// magick-wasm's affine(scaleX, scaleY, shearX, shearY, tx, ty) maps to
+				// ImageMagick's AffineMatrix { sx, rx, ry, sy, tx, ty }. ImageMagick's
+				// -annotate uses a clockwise rotation for positive angles, so shearX
+				// and shearY are swapped relative to the standard CCW matrix.
+				draws.affine(Math.cos(rad), Math.cos(rad), Math.sin(rad), -Math.sin(rad), 0, 0);
+			}
+
+				draws.text(ox, oy, settings.annotateText);
+				draws.draw(image);
+			} catch (e) {
+				console.warn('Annotate failed:', e);
 			}
 		}
 

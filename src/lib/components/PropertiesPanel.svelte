@@ -3,11 +3,12 @@
 	import type { HistoryState } from '$lib/hooks/useHistory.svelte';
 	import type { PresetsState } from '$lib/hooks/usePresets.svelte';
 	import type { EditorSection } from '$lib/editor-types';
-	import { isGeoDirty, isColorDirty, isFiltersDirty, isExportDirty } from '$lib/utils';
+	import { isGeoDirty, isColorDirty, isFiltersDirty, isExportDirty, isAnnotateDirty } from '$lib/utils';
 
 	import GeometrySection from './sections/GeometrySection.svelte';
 	import ColorSection from './sections/ColorSection.svelte';
 	import FiltersSection from './sections/FiltersSection.svelte';
+	import AnnotateSection from './sections/AnnotateSection.svelte';
 	import ExportSection from './sections/ExportSection.svelte';
 	import PresetsSection from './sections/PresetsSection.svelte';
 	import HistoryPanel from './sections/HistoryPanel.svelte';
@@ -45,6 +46,11 @@
 			subtitle: 'Effects · blur · sharpen',
 			reset: () => magick.resetFilters()
 		},
+		annotate: {
+			title: 'Annotate',
+			subtitle: 'Text · overlay · caption',
+			reset: () => magick.resetAnnotate()
+		},
 		export: {
 			title: 'Export',
 			subtitle: 'Format · quality · metadata',
@@ -58,6 +64,7 @@
 		geometry: isGeoDirty(magick.settings),
 		color: isColorDirty(magick.settings),
 		filters: isFiltersDirty(magick.settings),
+		annotate: isAnnotateDirty(magick.settings),
 		export: isExportDirty(magick.settings),
 		presets: false,
 		history: false
@@ -89,6 +96,8 @@
 			<ColorSection {magick} />
 		{:else if activeSection === 'filters'}
 			<FiltersSection {magick} />
+		{:else if activeSection === 'annotate'}
+			<AnnotateSection {magick} />
 		{:else if activeSection === 'export'}
 			<ExportSection {magick} />
 		{:else if activeSection === 'presets'}

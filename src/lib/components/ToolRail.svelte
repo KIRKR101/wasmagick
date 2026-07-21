@@ -2,7 +2,7 @@
 	import type { EditorSection, RailItem } from '$lib/editor-types';
 	import type { MagickState } from '$lib/useMagick.svelte';
 	import type { HistoryState } from '$lib/hooks/useHistory.svelte';
-	import { isGeoDirty, isColorDirty, isFiltersDirty, isExportDirty } from '$lib/utils';
+	import { isGeoDirty, isColorDirty, isFiltersDirty, isExportDirty, isAnnotateDirty } from '$lib/utils';
 	import { DEFAULT_SETTINGS } from '$lib/useMagick.svelte';
 
 	let {
@@ -124,6 +124,17 @@
 				if (!s.stripMeta) parts.push('Keep Meta');
 				return parts.join(' · ');
 			}
+			case 'annotate': {
+				if (!s.annotateText || s.annotateText.trim().length === 0) return '';
+				const preview =
+					s.annotateText.length > 20
+						? s.annotateText.slice(0, 20) + '...'
+						: s.annotateText;
+				const parts: string[] = [`"${preview}"`];
+				if (s.annotateFontSize[0] !== 24) parts.push(`${s.annotateFontSize[0]}pt`);
+				if (s.annotateAngle[0] !== 0) parts.push(`${s.annotateAngle[0]}°`);
+				return parts.join(' · ');
+			}
 			default:
 				return '';
 		}
@@ -147,9 +158,10 @@
 		{ id: 'geometry', label: 'GEOMETRY', shortcut: '1', dirty: isGeoDirty(magick.settings) },
 		{ id: 'color', label: 'COLOR', shortcut: '2', dirty: isColorDirty(magick.settings) },
 		{ id: 'filters', label: 'FILTERS', shortcut: '3', dirty: isFiltersDirty(magick.settings) },
-		{ id: 'export', label: 'EXPORT', shortcut: '4', dirty: isExportDirty(magick.settings) },
-		{ id: 'presets', label: 'PRESETS', shortcut: '5' },
-		{ id: 'history', label: 'HISTORY', shortcut: '6' }
+		{ id: 'annotate', label: 'ANNOTATE', shortcut: '4', dirty: isAnnotateDirty(magick.settings) },
+		{ id: 'export', label: 'EXPORT', shortcut: '5', dirty: isExportDirty(magick.settings) },
+		{ id: 'presets', label: 'PRESETS', shortcut: '6' },
+		{ id: 'history', label: 'HISTORY', shortcut: '7' }
 	]);
 
 	let anyDirty = $derived(items.some(item => item.dirty));

@@ -53,6 +53,7 @@
 		if (s.effect !== 'none') parts.push(s.effect);
 		if (s.blur[0] > 0) parts.push(`Blur ${s.blur[0]}`);
 		if (s.sharpen[0] > 0) parts.push(`Sharpen ${s.sharpen[0]}`);
+		if (s.annotateText?.trim()) parts.push(`Text "${s.annotateText.slice(0, 15)}"`);
 		if (s.imageFormat !== 'WebP' || s.quality[0] !== 85) parts.push(`Export ${s.imageFormat}`);
 		return parts.length ? parts.slice(0, 3).join(' · ') : 'Processed';
 	}
@@ -154,11 +155,14 @@
 			activeSection = 'filters';
 		} else if (e.altKey && e.key === '4') {
 			e.preventDefault();
-			activeSection = 'export';
+			activeSection = 'annotate';
 		} else if (e.altKey && e.key === '5') {
 			e.preventDefault();
-			activeSection = 'presets';
+			activeSection = 'export';
 		} else if (e.altKey && e.key === '6') {
+			e.preventDefault();
+			activeSection = 'presets';
+		} else if (e.altKey && e.key === '7') {
 			e.preventDefault();
 			activeSection = 'history';
 		} else if (cmdOrCtrl && e.shiftKey && (e.key === '?' || e.key === '/')) {

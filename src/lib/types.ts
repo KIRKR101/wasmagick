@@ -95,6 +95,19 @@ export interface MagickSettings {
 	bilateralHeight: [number];
 	bilateralIntensitySigma: [number];
 	bilateralSpatialSigma: [number];
+
+	// Annotate / text settings
+	annotateText: string;
+	annotateFontFamily: string;
+	annotateFontSize: [number];
+	annotateFontColor: string;
+	annotateGravity: GravityPosition;
+	annotateOffsetX: number;
+	annotateOffsetY: number;
+	annotateAngle: [number];
+	annotateStroke: boolean;
+	annotateStrokeColor: string;
+	annotateStrokeWidth: [number];
 }
 
 /** Options applied during image processing (for debug output) */
@@ -135,4 +148,14 @@ export interface AppliedOptions {
 	outputDimensions?: { width: number; height: number };
 	outputSize?: number;
 	processTime?: string;
+	annotate?: {
+		text: string;
+		font: string;
+		fontSize: number;
+		color: string;
+		gravity: string;
+		offsetX: number;
+		offsetY: number;
+		angle: number;
+	};
 }

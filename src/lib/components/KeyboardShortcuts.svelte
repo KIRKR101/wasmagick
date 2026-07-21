@@ -19,9 +19,10 @@
 				{ keys: ['Alt', '1'], description: 'Geometry' },
 				{ keys: ['Alt', '2'], description: 'Color' },
 				{ keys: ['Alt', '3'], description: 'Filters' },
-				{ keys: ['Alt', '4'], description: 'Export' },
-				{ keys: ['Alt', '5'], description: 'Presets' },
-				{ keys: ['Alt', '6'], description: 'History' }
+				{ keys: ['Alt', '4'], description: 'Annotate' },
+				{ keys: ['Alt', '5'], description: 'Export' },
+				{ keys: ['Alt', '6'], description: 'Presets' },
+				{ keys: ['Alt', '7'], description: 'History' }
 			]
 		},
 		{

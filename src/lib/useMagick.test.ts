@@ -296,7 +296,18 @@ describe('MagickState', () => {
 			bilateralWidth: [0],
 			bilateralHeight: [0],
 			bilateralIntensitySigma: [1.5],
-			bilateralSpatialSigma: [1]
+			bilateralSpatialSigma: [1],
+			annotateText: '',
+			annotateFontFamily: 'Roboto-Regular',
+			annotateFontSize: [24],
+			annotateFontColor: '#ffffff',
+			annotateGravity: 'Center',
+			annotateOffsetX: 0,
+			annotateOffsetY: 0,
+			annotateAngle: [0],
+			annotateStroke: false,
+			annotateStrokeColor: '#000000',
+			annotateStrokeWidth: [1]
 		};
 
 		expect(settings.imageFormat).toBe('WebP');

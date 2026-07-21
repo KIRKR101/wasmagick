@@ -65,3 +65,18 @@ export function isFiltersDirty(s: MagickSettings): boolean {
 export function isExportDirty(s: MagickSettings): boolean {
 	return s.imageFormat !== 'WebP' || s.quality[0] !== 85 || !s.stripMeta;
 }
+
+export function isAnnotateDirty(s: MagickSettings): boolean {
+	return (
+		s.annotateText?.trim().length > 0 ||
+		s.annotateFontFamily !== 'Roboto-Regular' ||
+		s.annotateFontSize[0] !== 24 ||
+		s.annotateFontColor !== '#ffffff' ||
+		s.annotateGravity !== 'Center' ||
+		s.annotateOffsetX !== 0 ||
+		s.annotateOffsetY !== 0 ||
+		s.annotateAngle[0] !== 0 ||
+		s.annotateStroke ||
+		s.annotateStrokeWidth[0] !== 1
+	);
+}

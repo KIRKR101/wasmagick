@@ -3,7 +3,7 @@
  */
 
 /** Right-panel sections selectable from the left tool rail. */
-export type EditorSection = 'geometry' | 'color' | 'filters' | 'export' | 'presets' | 'history';
+export type EditorSection = 'geometry' | 'color' | 'filters' | 'annotate' | 'export' | 'presets' | 'history';
 
 /** Rail item descriptor for the ToolRail. */
 export interface RailItem {

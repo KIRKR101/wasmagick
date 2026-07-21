@@ -20,6 +20,9 @@ test/*-diff*.png
 # ImageMagick binaries (downloaded by tooling/setup-imagemagick.ts)
 tooling/imagemagick/
 
+# Test font (downloaded by tooling/setup-imagemagick.ts)
+test/fixtures/font.ttf
+
 # OS
 .DS_Store
 Thumbs.db
