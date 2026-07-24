@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Loader2 } from 'lucide-svelte';
+	import { Columns2, Images, Loader2, Maximize, ZoomIn, ZoomOut } from 'lucide-svelte';
 	import FileDropzone from './FileDropzone.svelte';
 	import SplitCompare from './SplitCompare.svelte';
 	import type { SampleImage } from '$lib/editor-types';
@@ -41,7 +41,6 @@
 
 	// Zoom & Pan
 	let currentZoom = $state(100);
-	const zoomStep = 10;
 	let isPanning = $state(false);
 	let imageX = $state(0);
 	let imageY = $state(0);
@@ -49,6 +48,7 @@
 	let startPointerY = 0;
 	let initialImageX = 0;
 	let initialImageY = 0;
+	let capturedPointerId = $state<number | null>(null);
 
 	let previewImageRef = $state<HTMLImageElement | null>(null);
 	let viewportRef = $state<HTMLDivElement | null>(null);
@@ -61,7 +61,6 @@
 		transform: translate(calc(-50% + ${imageX}px), calc(-50% + ${imageY}px)) scale(${currentZoom / 100});
 		display: ${showPlaceholder ? 'none' : 'block'};
 		cursor: ${isPanning ? 'grabbing' : 'grab'};
-		opacity: ${processedImageUrl || originalImageUrl ? 1 : 0};
 	`);
 
 	let displayedImage = $derived(
@@ -83,36 +82,62 @@
 		onStateChange({ zoom: currentZoom });
 	});
 
-	function setZoom(newZoom: number) {
-		const roundedZoom = Math.floor(newZoom / 10) * 10;
-		currentZoom = Math.max(10, Math.min(5000, roundedZoom));
+	function zoomAt(clientX: number, clientY: number, targetZoom: number) {
+		const oldZoom = currentZoom;
+		const newZoom = Math.max(10, Math.min(5000, targetZoom));
+		if (newZoom === oldZoom) return;
+		if (!viewportRef) return;
+		const rect = viewportRef.getBoundingClientRect();
+		const cx = rect.left + rect.width / 2;
+		const cy = rect.top + rect.height / 2;
+		const Px = clientX - cx;
+		const Py = clientY - cy;
+		const r = newZoom / oldZoom;
+		imageX = Px * (1 - r) + imageX * r;
+		imageY = Py * (1 - r) + imageY * r;
+		currentZoom = newZoom;
 	}
 
-	export function fitImageToScreen() {
-		if (isComparing) return;
-		if (!previewImageRef || !viewportRef) return;
+	function getFitZoom(): number {
+		if (!previewImageRef || !viewportRef) return 100;
 		const img = previewImageRef;
 		const container = viewportRef;
-		imageX = 0;
-		imageY = 0;
-		if (!img.naturalWidth || !img.naturalHeight) return;
+		if (!img.naturalWidth || !img.naturalHeight) return 100;
 		const padding = 12;
 		const cw = container.clientWidth - padding;
 		const ch = container.clientHeight - padding;
 		const iw = img.naturalWidth;
 		const ih = img.naturalHeight;
 		const scale = Math.min(cw / iw, ch / ih);
-		setZoom(scale * 100);
+		return Math.max(10, Math.min(5000, scale * 100));
+	}
+
+	export function fitImageToScreen() {
+		if (isComparing) return;
+		if (!previewImageRef || !viewportRef) return;
+		imageX = 0;
+		imageY = 0;
+		if (!previewImageRef.naturalWidth || !previewImageRef.naturalHeight) return;
+		currentZoom = getFitZoom();
 	}
 
 	export function resetView() {
 		fitImageToScreen();
 	}
+
+	function getViewportCenter() {
+		if (!viewportRef) return { x: 0, y: 0 };
+		const rect = viewportRef.getBoundingClientRect();
+		return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+	}
+
 	export function zoomIn() {
-		setZoom(currentZoom + zoomStep);
+		const { x, y } = getViewportCenter();
+		zoomAt(x, y, currentZoom * 1.10);
 	}
 	export function zoomOut() {
-		setZoom(currentZoom - zoomStep);
+		const { x, y } = getViewportCenter();
+		zoomAt(x, y, currentZoom / 1.10);
 	}
 	export function startCompare() {
 		if (processedImageUrl) isComparing = true;
@@ -124,7 +149,8 @@
 		if (canSplit) splitMode = !splitMode;
 	}
 	export function zoomToOneToOne() {
-		setZoom(100);
+		const { x, y } = getViewportCenter();
+		zoomAt(x, y, 100);
 	}
 	export function getZoom() {
 		return currentZoom;
@@ -166,20 +192,7 @@
 	function onWheel(e: WheelEvent) {
 		if (showPlaceholder) return;
 		e.preventDefault();
-		const oldZoom = currentZoom;
-		let newZoom = oldZoom + (e.deltaY > 0 ? -zoomStep : zoomStep);
-		newZoom = Math.max(10, Math.floor(newZoom / 10) * 10);
-		if (newZoom === oldZoom) return;
-		if (!viewportRef) return;
-		const rect = viewportRef.getBoundingClientRect();
-		const cx = rect.left + rect.width / 2;
-		const cy = rect.top + rect.height / 2;
-		const Px = e.clientX - cx;
-		const Py = e.clientY - cy;
-		const r = newZoom / oldZoom;
-		imageX = Px * (1 - r) + imageX * r;
-		imageY = Py * (1 - r) + imageY * r;
-		currentZoom = newZoom;
+		zoomAt(e.clientX, e.clientY, currentZoom * Math.exp(-e.deltaY * 0.001));
 	}
 
 	function onPointerDown(e: PointerEvent) {
@@ -189,6 +202,10 @@
 		startPointerY = e.clientY;
 		initialImageX = imageX;
 		initialImageY = imageY;
+		if (viewportRef) {
+			viewportRef.setPointerCapture(e.pointerId);
+			capturedPointerId = e.pointerId;
+		}
 	}
 
 	function onPointerMove(e: PointerEvent) {
@@ -197,48 +214,88 @@
 		imageY = initialImageY + (e.clientY - startPointerY);
 	}
 
-	function onPointerUp() {
+	function finishPan() {
+		if (capturedPointerId !== null && viewportRef) {
+			if (viewportRef.hasPointerCapture(capturedPointerId)) {
+				viewportRef.releasePointerCapture(capturedPointerId);
+			}
+			capturedPointerId = null;
+		}
 		isPanning = false;
 	}
 
+	function onPointerUp() {
+		finishPan();
+	}
+
+	// Touch state
+	let touchMode = $state<'none' | 'pan' | 'pinch'>('none');
+	let touchPanStartX = 0;
+	let touchPanStartY = 0;
+	let touchPanInitialImageX = 0;
+	let touchPanInitialImageY = 0;
 	let lastTouchDistance = $state<number | null>(null);
 
 	function onTouchStart(e: TouchEvent) {
-		if (showPlaceholder || e.touches.length !== 2) return;
-		e.preventDefault();
-		isPanning = false;
-		const dx = e.touches[0].clientX - e.touches[1].clientX;
-		const dy = e.touches[0].clientY - e.touches[1].clientY;
-		lastTouchDistance = Math.sqrt(dx * dx + dy * dy);
+		if (showPlaceholder) return;
+		if (e.touches.length === 1) {
+			touchMode = 'pan';
+			touchPanStartX = e.touches[0].clientX;
+			touchPanStartY = e.touches[0].clientY;
+			touchPanInitialImageX = imageX;
+			touchPanInitialImageY = imageY;
+			isPanning = true;
+		} else if (e.touches.length === 2) {
+			touchMode = 'pinch';
+			isPanning = false;
+			const dx = e.touches[0].clientX - e.touches[1].clientX;
+			const dy = e.touches[0].clientY - e.touches[1].clientY;
+			lastTouchDistance = Math.sqrt(dx * dx + dy * dy);
+		}
 	}
 
 	function onTouchMove(e: TouchEvent) {
-		if (showPlaceholder || e.touches.length !== 2 || lastTouchDistance === null) return;
-		e.preventDefault();
-		const dx = e.touches[0].clientX - e.touches[1].clientX;
-		const dy = e.touches[0].clientY - e.touches[1].clientY;
-		const newDistance = Math.sqrt(dx * dx + dy * dy);
-		const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-		const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-		const oldZoom = currentZoom;
-		const scaleFactor = newDistance / lastTouchDistance;
-		let newZoom = Math.max(10, Math.min(5000, oldZoom * scaleFactor));
-		if (newZoom !== oldZoom && viewportRef) {
-			const rect = viewportRef.getBoundingClientRect();
-			const Px = centerX - (rect.left + rect.width / 2);
-			const Py = centerY - (rect.top + rect.height / 2);
-			const r = newZoom / oldZoom;
-			imageX = Px * (1 - r) + imageX * r;
-			imageY = Py * (1 - r) + imageY * r;
-			currentZoom = newZoom;
+		if (showPlaceholder) return;
+		if (touchMode === 'pan' && e.touches.length >= 1) {
+			e.preventDefault();
+			imageX = touchPanInitialImageX + (e.touches[0].clientX - touchPanStartX);
+			imageY = touchPanInitialImageY + (e.touches[0].clientY - touchPanStartY);
+		} else if (touchMode === 'pinch' && e.touches.length >= 2 && lastTouchDistance !== null) {
+			e.preventDefault();
+			const dx = e.touches[0].clientX - e.touches[1].clientX;
+			const dy = e.touches[0].clientY - e.touches[1].clientY;
+			const newDistance = Math.sqrt(dx * dx + dy * dy);
+			const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+			const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+			const scaleFactor = newDistance / lastTouchDistance;
+			zoomAt(centerX, centerY, currentZoom * scaleFactor);
+			lastTouchDistance = newDistance;
 		}
-		lastTouchDistance = newDistance;
 	}
 
 	function onTouchEnd(e: TouchEvent) {
-		if (e.touches.length < 2) {
+		if (e.touches.length === 0) {
+			touchMode = 'none';
 			lastTouchDistance = null;
 			isPanning = false;
+		} else if (e.touches.length === 1 && touchMode === 'pinch') {
+			touchMode = 'pan';
+			lastTouchDistance = null;
+			touchPanStartX = e.touches[0].clientX;
+			touchPanStartY = e.touches[0].clientY;
+			touchPanInitialImageX = imageX;
+			touchPanInitialImageY = imageY;
+			isPanning = true;
+		}
+	}
+
+	function onDblClick(e: MouseEvent) {
+		if (showPlaceholder) return;
+		e.preventDefault();
+		if (Math.abs(currentZoom - getFitZoom()) < 1) {
+			zoomAt(e.clientX, e.clientY, 100);
+		} else {
+			fitImageToScreen();
 		}
 	}
 
@@ -267,14 +324,16 @@
 		role="img"
 		aria-label="Image preview viewport. Use mouse wheel to zoom, drag to pan."
 		onwheel={onWheel}
+		ondblclick={onDblClick}
 		onpointerdown={onPointerDown}
 		onpointermove={onPointerMove}
 		onpointerup={onPointerUp}
-		onpointerleave={onPointerUp}
+		onpointerleave={finishPan}
 		ontouchstart={onTouchStart}
 		ontouchmove={onTouchMove}
 		ontouchend={onTouchEnd}
-		class="viewport relative flex h-full min-h-0 w-full flex-grow items-center justify-center overflow-hidden"
+		ontouchcancel={onTouchEnd}
+		class="viewport relative flex h-full min-h-0 w-full flex-grow items-center justify-center overflow-hidden {!showPlaceholder ? 'touch-none' : ''}"
 	>
 		{#if isInitializing}
 			<div class="text-center text-muted-foreground">
@@ -316,7 +375,7 @@
 				style={imageStyle}
 				alt={isComparing ? 'Original image before processing' : 'Processed image preview'}
 				draggable="false"
-				class="checkerboard max-h-none max-w-none origin-center object-contain"
+				class="checkerboard max-h-none max-w-none origin-center object-contain {processedImageUrl || originalImageUrl ? 'opacity-100' : 'opacity-0'} {isLoading ? 'animate-opacity-pulse' : ''}"
 			/>
 			{#if isComparing}
 				<div
@@ -335,17 +394,71 @@
 			{/if}
 		{/if}
 
-		<!-- Loading overlay -->
-		{#if isLoading}
+		<!-- Floating zoom/compare toolbar -->
+		{#if !showPlaceholder && !isInitializing}
 			<div
-				class="absolute inset-0 z-40 flex items-center justify-center bg-black/5 animate-in fade-in duration-200"
+				class="pointer-events-auto absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-0 border border-foreground/30 bg-[#f7f7f4]/85 px-1 font-mono text-[11px] dark:bg-background/85 backdrop-blur-sm animate-in fade-in slide-in-from-bottom-2 duration-200"
 			>
-				<div class="flex flex-col items-center gap-3 border border-foreground/30 bg-[#f7f7f4] p-5 dark:bg-background">
-					<Loader2 class="size-8 animate-spin text-muted-foreground" />
-					<span class="font-mono text-[11px] text-foreground">
-						{currentProcessingStep ?? 'Processing…'}
-					</span>
-				</div>
+			{#if isLoading}
+				<Loader2 class="mx-1 size-3.5 animate-spin text-muted-foreground" />
+				<span class="mx-1 text-muted-foreground">{currentProcessingStep ?? 'Processing...'}</span>
+				<div class="mx-0.5 h-4 w-px bg-border"></div>
+			{/if}
+			<button
+				onclick={zoomOut}
+				class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+				aria-label="Zoom out (Ctrl+-)"
+			>
+				<ZoomOut class="size-3.5" />
+			</button>
+			<span
+				class="w-12 text-center font-mono text-[11px] tabular-nums text-foreground"
+			>
+				{Math.round(currentZoom)}%
+			</span>
+			<button
+				onclick={zoomIn}
+				class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+				aria-label="Zoom in (Ctrl+=)"
+			>
+				<ZoomIn class="size-3.5" />
+			</button>
+			<button
+				onclick={resetView}
+				class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+				aria-label="Fit to screen (Ctrl+0)"
+			>
+				<Maximize class="size-3.5" />
+			</button>
+			<div class="mx-0.5 h-4 w-px bg-border"></div>
+			<button
+				onpointerdown={(e) => {
+					e.preventDefault();
+					isComparing = true;
+				}}
+				onpointerup={(e) => {
+					e.preventDefault();
+					isComparing = false;
+				}}
+				onpointerleave={() => (isComparing = false)}
+				disabled={!processedImageUrl}
+				class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-40 {isComparing
+					? 'bg-muted text-foreground'
+					: ''}"
+				aria-label="Hold to compare (Space)"
+			>
+				<Images class="size-3.5" />
+			</button>
+			<button
+				onclick={toggleSplitCompare}
+				disabled={!canSplit}
+				class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-40 {splitMode
+					? 'bg-muted text-foreground'
+					: ''}"
+				aria-label="Split compare (B)"
+			>
+				<Columns2 class="size-3.5" />
+			</button>
 			</div>
 		{/if}
 	</div>
