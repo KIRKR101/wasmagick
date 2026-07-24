@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { Check } from 'lucide-svelte';
-	import { toast } from 'svelte-sonner';
 	import type { MagickState } from '$lib/useMagick.svelte';
 	import {
 		PresetsState,
@@ -15,11 +14,9 @@
 
 	function applyBuiltIn(p: BuiltInPreset) {
 		presets.applyBuiltIn(magick, p);
-		toast.success('Preset applied', { description: p.name });
 	}
 	function applyUser(p: UserPreset) {
 		presets.applyUser(magick, p);
-		toast.success('Preset applied', { description: p.name });
 	}
 	function save() {
 		if (!newName.trim()) return;

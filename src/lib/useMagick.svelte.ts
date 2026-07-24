@@ -22,7 +22,7 @@ import {
 	ColorSpace,
 	PixelIntensityMethod
 } from '@imagemagick/magick-wasm';
-import { toast } from 'svelte-sonner';
+
 import type { MagickSettings, AppliedOptions, LevelChannel } from './types';
 import { ensureFont, DEFAULT_FONT, isLocalFont } from './fonts';
 
@@ -399,10 +399,7 @@ export class MagickState {
 			const message = e instanceof Error ? e.message : 'Unknown error';
 			this.errorMessage = message;
 			console.error('WASM initialization failed:', message);
-			toast.error('Failed to Load Engine', {
-				description:
-					'Please refresh the page and try again. If the problem persists, your browser may not support WebAssembly.'
-			});
+	
 			throw e;
 		}
 	}
@@ -426,7 +423,7 @@ export class MagickState {
 				if (error) {
 					this.hasError = true;
 					this.errorMessage = error;
-					toast.error('Processing Failed', { description: error });
+	
 					this.isLoading = false;
 					return;
 				}
@@ -586,7 +583,6 @@ export class MagickState {
 
 		const validation = this.validateFile(file);
 		if (!validation.isValid) {
-			toast.error('Invalid File', { description: validation.error });
 			return false;
 		}
 
@@ -629,7 +625,7 @@ export class MagickState {
 			return true;
 		} catch (error) {
 			const message = error instanceof Error ? error.message : 'Failed to read file';
-			toast.error('Failed to Load Image', { description: message });
+			this.statsMessage = message;
 			return false;
 		}
 	}
@@ -697,12 +693,12 @@ export class MagickState {
 		this.errorMessage = null;
 
 		if (!this.sourceBytes) {
-			toast.error('No Image', { description: 'Please upload an image first.' });
+			this.statsMessage = 'No Image';
 			return;
 		}
 
 		if (!this.wasmLoaded) {
-			toast.error('Not Ready', { description: 'Please wait for WASM to initialize.' });
+			this.statsMessage = 'WASM Not Ready';
 			return;
 		}
 
@@ -1114,7 +1110,6 @@ export class MagickState {
 								const message = err instanceof Error ? err.message : 'Unknown error';
 								this.hasError = true;
 								this.errorMessage = message;
-								toast.error('Processing Failed', { description: message });
 								this.isLoading = false;
 							}
 						});
@@ -1123,7 +1118,6 @@ export class MagickState {
 						const message = err instanceof Error ? err.message : 'Unknown error';
 						this.hasError = true;
 						this.errorMessage = message;
-						toast.error('Processing Failed', { description: message });
 						this.isLoading = false;
 					}
 				});
@@ -1195,9 +1189,7 @@ export class MagickState {
 		this.processedImageTime = time;
 		this.processedImageDelta = sizeChangeStr;
 
-		toast.success('Image Processed', {
-			description: `${newWidth}×${newHeight} • ${sizeChangeStr}`
-		});
+	
 	}
 
 	downloadImage(): void {

@@ -131,6 +131,15 @@
 	}
 }
 
+@keyframes opacity-pulse {
+	0%, 100% { opacity: 0.4; }
+	50% { opacity: 0.85; }
+}
+
+.animate-opacity-pulse {
+	animation: opacity-pulse 1.5s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
 	*,
 	*::before,
