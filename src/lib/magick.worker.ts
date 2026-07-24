@@ -9,7 +9,7 @@ let initPromise: Promise<void> | null = null;
 async function ensureReady() {
 	if (ready) return;
 	if (!initPromise) {
-		initPromise = fetch('/magick.wasm', { cache: 'force-cache' })
+		initPromise = fetch('/magick.wasm')
 			.then((r) => {
 				if (!r.ok) throw new Error(`Failed to fetch WASM: ${r.status}`);
 				return r.arrayBuffer();
@@ -60,7 +60,6 @@ self.onmessage = async (e: MessageEvent<WorkerRequest | FontSyncMessage>) => {
 			const loaded = await ensureFont(fontFamily);
 			if (!loaded) {
 				settings = { ...settings, annotateFontFamily: DEFAULT_FONT };
-				await ensureFont(DEFAULT_FONT);
 			}
 		}
 		const result: ProcessResult = processImageSync(sourceBytes, settings);

@@ -397,7 +397,7 @@
 		<!-- Floating zoom/compare toolbar -->
 		{#if !showPlaceholder && !isInitializing}
 			<div
-				class="pointer-events-auto absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-0 border border-foreground/30 bg-[#f7f7f4]/85 px-1 font-mono text-[11px] dark:bg-background/85 backdrop-blur-sm animate-in fade-in slide-in-from-bottom-2 duration-200"
+				class="pointer-events-auto absolute bottom-3 left-1/2 z-20 hidden -translate-x-1/2 items-center gap-0 border border-foreground/30 bg-[#f7f7f4]/85 px-1 font-mono text-[11px] dark:bg-background/85 backdrop-blur-sm animate-in fade-in slide-in-from-bottom-2 duration-200 md:flex"
 			>
 			{#if isLoading}
 				<Loader2 class="mx-1 size-3.5 animate-spin text-muted-foreground" />

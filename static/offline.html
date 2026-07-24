@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="theme-color" content="#18181b" />
+		<title>WASMagick — Offline</title>
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+			html,
+			body {
+				height: 100%;
+				font-family: system-ui, -apple-system, sans-serif;
+				background: #18181b;
+				color: #fafafa;
+			}
+			body {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				padding: 2rem;
+				text-align: center;
+				gap: 1.5rem;
+			}
+			.icon {
+				width: 72px;
+				height: 72px;
+				display: grid;
+				grid-template-columns: repeat(8, 1fr);
+				grid-template-rows: repeat(8, 1fr);
+				gap: 2px;
+			}
+			.pixel {
+				background: #a1a1aa;
+				border-radius: 1px;
+			}
+			h1 {
+				font-size: 1.25rem;
+				font-weight: 600;
+			}
+			p {
+				color: #a1a1aa;
+				max-width: 280px;
+				line-height: 1.5;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="icon">
+			<div class="pixel" style="grid-area:1/2"></div>
+			<div class="pixel" style="grid-area:2/2"></div>
+			<div class="pixel" style="grid-area:3/2"></div>
+			<div class="pixel" style="grid-area:4/2"></div>
+			<div class="pixel" style="grid-area:4/3"></div>
+			<div class="pixel" style="grid-area:4/4"></div>
+			<div class="pixel" style="grid-area:4/5"></div>
+			<div class="pixel" style="grid-area:4/6"></div>
+			<div class="pixel" style="grid-area:3/6"></div>
+			<div class="pixel" style="grid-area:2/6"></div>
+			<div class="pixel" style="grid-area:1/6"></div>
+			<div class="pixel" style="grid-area:4/7"></div>
+		</div>
+		<h1>You're offline</h1>
+		<p>WASMagick works fully offline once loaded. Please check your connection and try again.</p>
+	</body>
+</html>

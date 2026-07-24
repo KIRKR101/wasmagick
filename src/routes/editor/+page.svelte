@@ -198,6 +198,17 @@
 
 		magick.initWorker();
 		await magick.initWasm(debugMode);
+
+		if ('serviceWorker' in navigator) {
+			navigator.serviceWorker.addEventListener('message', (event) => {
+				if (event.data?.type === 'SHARED_IMAGE' && event.data?.file) {
+					const { name, type, data } = event.data.file;
+					const blob = new Blob([new Uint8Array(data)], { type });
+					const file = new File([blob], name, { type });
+					replaceImage(file);
+				}
+			});
+		}
 	});
 </script>
 

@@ -17,6 +17,13 @@
 		<meta property="og:type" content="website" />
 		<title>Wasmagick</title>
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="manifest" href="/manifest.json" />
+		<link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+		<meta name="apple-mobile-web-app-title" content="WASMagick" />
+		<meta name="msapplication-TileColor" content="#18181b" />
+		<meta name="msapplication-TileImage" content="/icons/icon-192.png" />
 		<script>
 			if (
 				localStorage.getItem('theme') === 'dark' ||
@@ -25,9 +32,11 @@
 				document.documentElement.classList.add('dark');
 			}
 		</script>
+
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">
 		<div style="display: contents">%sveltekit.body%</div>
+		<script src="/registerSW.js"></script>
 	</body>
 </html>

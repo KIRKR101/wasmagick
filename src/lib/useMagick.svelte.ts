@@ -392,6 +392,8 @@ export class MagickState {
 			if (debugMode) {
 				console.log('ImageMagick WASM loaded, Version:', Magick.imageMagickVersion);
 			}
+
+			this._setupResumeDetection();
 		} catch (e) {
 			this.statsMessage = 'Error Loading WASM';
 			this.hasError = true;
@@ -399,9 +401,46 @@ export class MagickState {
 			const message = e instanceof Error ? e.message : 'Unknown error';
 			this.errorMessage = message;
 			console.error('WASM initialization failed:', message);
-	
+
 			throw e;
 		}
+	}
+
+	private _resumeTeardown: (() => void) | null = null;
+
+	private _setupResumeDetection(): void {
+		if (this._resumeTeardown) this._resumeTeardown();
+		const cleanupFns: (() => void)[] = [];
+
+		const handlePageshow = (e: PageTransitionEvent) => {
+			if (e.persisted && !this.wasmLoaded) {
+				this.wasmLoaded = false;
+				this.initWasm(false).catch(() => {});
+			}
+		};
+		window.addEventListener('pageshow', handlePageshow);
+		cleanupFns.push(() => window.removeEventListener('pageshow', handlePageshow));
+
+		const handleVisibility = () => {
+			if (document.visibilityState === 'visible' && this.wasmLoaded) {
+				try {
+					const version = Magick.imageMagickVersion;
+					if (!version) {
+						this.wasmLoaded = false;
+						this.initWasm(false).catch(() => {});
+					}
+				} catch {
+					this.wasmLoaded = false;
+					this.initWasm(false).catch(() => {});
+				}
+			}
+		};
+		document.addEventListener('visibilitychange', handleVisibility);
+		cleanupFns.push(() => document.removeEventListener('visibilitychange', handleVisibility));
+
+		this._resumeTeardown = () => {
+			for (const fn of cleanupFns) fn();
+		};
 	}
 
 	initWorker(): void {
@@ -423,7 +462,7 @@ export class MagickState {
 				if (error) {
 					this.hasError = true;
 					this.errorMessage = error;
-	
+
 					this.isLoading = false;
 					return;
 				}
@@ -1188,8 +1227,6 @@ export class MagickState {
 		this.statsMessage = statsStr;
 		this.processedImageTime = time;
 		this.processedImageDelta = sizeChangeStr;
-
-	
 	}
 
 	downloadImage(): void {

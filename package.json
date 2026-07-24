@@ -34,6 +34,7 @@
 		"@types/node": "^24",
 		"@types/pixelmatch": "^5.2.6",
 		"@types/pngjs": "^6.0.5",
+		"@vite-pwa/sveltekit": "^1.1.0",
 		"bits-ui": "^2.16.3",
 		"clsx": "^2.1.1",
 		"eslint": "^10.0.3",
@@ -56,7 +57,8 @@
 		"typescript": "^5.9.3",
 		"typescript-eslint": "^8.57.0",
 		"vite": "^7.3.1",
-		"vitest": "^4.1.0"
+		"vitest": "^4.1.0",
+		"wrangler": "^4.114.0"
 	},
 	"dependencies": {
 		"@fontsource-variable/geist-mono": "^5.2.7",
