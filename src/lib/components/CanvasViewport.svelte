@@ -404,6 +404,10 @@
 		<!-- Floating zoom/compare toolbar -->
 		{#if !showPlaceholder && !isInitializing}
 			<div
+				ondblclick={(e) => e.stopPropagation()}
+				onpointerdown={(e) => e.stopPropagation()}
+				onpointerup={(e) => e.stopPropagation()}
+				onpointerleave={(e) => e.stopPropagation()}
 				class="pointer-events-auto absolute bottom-3 left-1/2 z-20 hidden -translate-x-1/2 items-center gap-0 border border-foreground/30 bg-[#f7f7f4]/85 px-1 font-mono text-[11px] dark:bg-background/85 backdrop-blur-sm animate-in fade-in slide-in-from-bottom-2 duration-200 md:flex"
 			>
 			{#if isLoading}
@@ -418,11 +422,13 @@
 			>
 				<ZoomOut class="size-3.5" />
 			</button>
-			<span
-				class="w-12 text-center font-mono text-[11px] tabular-nums text-foreground"
+			<button
+				onclick={zoomToOneToOne}
+				class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+				aria-label="Reset zoom to 100%"
 			>
-				{Math.round(currentZoom)}%
-			</span>
+				<span class="tabular-nums">{Math.round(currentZoom)}%</span>
+			</button>
 			<button
 				onclick={zoomIn}
 				class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -440,14 +446,17 @@
 			<div class="mx-0.5 h-4 w-px bg-border"></div>
 			<button
 				onpointerdown={(e) => {
-					e.preventDefault();
-					isComparing = true;
+					e.stopPropagation();
+					startCompare();
 				}}
 				onpointerup={(e) => {
-					e.preventDefault();
+					e.stopPropagation();
 					endCompare();
 				}}
-				onpointerleave={() => endCompare()}
+				onpointerleave={(e) => {
+					e.stopPropagation();
+					endCompare();
+				}}
 				disabled={!processedImageUrl}
 				class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-40 {isComparing
 					? 'bg-muted text-foreground'
