@@ -61,6 +61,16 @@ function skipIfNoFont(): boolean {
 	return !fontLoaded;
 }
 
+function countUniqueColors(png: PNG): number {
+	const set = new Set<number>();
+	const data = new Uint8Array(png.data);
+	for (let i = 0; i < data.length; i += 4) {
+		const r = data[i], g = data[i + 1], b = data[i + 2];
+		set.add((r << 16) | (g << 8) | b);
+	}
+	return set.size;
+}
+
 function readSource(name: string): Uint8Array {
 	return new Uint8Array(fs.readFileSync(path.resolve(`${SOURCE}/${name}`)));
 }
@@ -341,6 +351,67 @@ describe('Filter / Effect operations', () => {
 
 	it('sharpen', () => {
 		testAllSources('sharpen', '{base}.png', { sharpen: [2] });
+	});
+});
+
+describe('Quantize / Dithering operations', () => {
+	it('reduces colors to <= target with default dither', () => {
+		for (const src of SOURCE_FILES) {
+			const sourceBytes = readSource(src);
+			const merged: MagickSettings = {
+				...baseSettings(),
+				quantizeColors: [16]
+			};
+			const result = processImageSync(sourceBytes, merged);
+			const png = PNG.sync.read(Buffer.from(result.data));
+			const colors = countUniqueColors(png);
+			expect(colors, `${src}: expected <= 16 colors, got ${colors}`).toBeLessThanOrEqual(16);
+		}
+	});
+
+	it('reduces colors to <= target with no dither', () => {
+		for (const src of SOURCE_FILES) {
+			const sourceBytes = readSource(src);
+			const merged: MagickSettings = {
+				...baseSettings(),
+				quantizeColors: [16],
+				ditherMethod: 'No'
+			};
+			const result = processImageSync(sourceBytes, merged);
+			const png = PNG.sync.read(Buffer.from(result.data));
+			const colors = countUniqueColors(png);
+			expect(colors, `${src}: expected <= 16 colors, got ${colors}`).toBeLessThanOrEqual(16);
+		}
+	});
+
+	it('preserves image dimensions after quantize', () => {
+		for (const src of SOURCE_FILES) {
+			const sourceBytes = readSource(src);
+			const merged: MagickSettings = {
+				...baseSettings(),
+				quantizeColors: [16],
+				ditherMethod: 'FloydSteinberg'
+			};
+			const result = processImageSync(sourceBytes, merged);
+			const png = PNG.sync.read(Buffer.from(result.data));
+			expect(png.width, `${src}: width mismatch`).toBe(result.width);
+			expect(png.height, `${src}: height mismatch`).toBe(result.height);
+		}
+	});
+
+	it('reduces to 8 colors with Riemersma dither', () => {
+		for (const src of SOURCE_FILES) {
+			const sourceBytes = readSource(src);
+			const merged: MagickSettings = {
+				...baseSettings(),
+				quantizeColors: [8],
+				ditherMethod: 'Riemersma'
+			};
+			const result = processImageSync(sourceBytes, merged);
+			const png = PNG.sync.read(Buffer.from(result.data));
+			const colors = countUniqueColors(png);
+			expect(colors, `${src}: expected <= 8 colors, got ${colors}`).toBeLessThanOrEqual(8);
+		}
 	});
 });
 

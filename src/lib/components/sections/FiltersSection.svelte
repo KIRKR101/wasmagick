@@ -22,6 +22,22 @@
 		{ value: 'solarize', label: 'Solarize' },
 		{ value: 'bilateralBlur', label: 'Bilateral Blur' }
 	];
+
+	const DITHER_OPTIONS = [
+		{ value: 'No', label: 'None', helper: 'Sharp edges; may show banding.' },
+		{ value: 'Riemersma', label: 'Riemersma (default)', helper: 'Smooth, organic dither.' },
+		{ value: 'FloydSteinberg', label: 'Floyd–Steinberg', helper: 'Classic grainy diffusion.' }
+	];
+
+	const COLOR_SPACE_OPTIONS = [
+		{ value: 'sRGB', label: 'sRGB' },
+		{ value: 'Lab', label: 'Lab' },
+		{ value: 'Oklab', label: 'Oklab' },
+		{ value: 'RGB', label: 'RGB (linear)' },
+		{ value: 'Gray', label: 'Grayscale' },
+		{ value: 'HSL', label: 'HSL' },
+		{ value: 'HSV', label: 'HSV' }
+	];
 </script>
 
 <div class="space-y-5">
@@ -116,6 +132,60 @@
 		<div class="grid grid-cols-2 gap-3">
 			<SliderRow label="Blur" bind:value={magick.settings.blur} min={0} max={20} step={0.5} />
 			<SliderRow label="Sharpen" bind:value={magick.settings.sharpen} min={0} max={10} step={0.5} />
+		</div>
+	</SectionCard>
+
+	<!-- Quantize / Dithering -->
+	<SectionCard title="Quantize / Dithering" dirty={magick.settings.quantizeColors[0] > 0}>
+		<div class="space-y-3">
+			<SliderRow
+				label="Colors"
+				bind:value={magick.settings.quantizeColors}
+				min={0}
+				max={256}
+			/>
+
+			{#if magick.settings.quantizeColors[0] > 0}
+				<div class="space-y-1.5">
+					<span class="font-mono text-[10px] uppercase text-muted-foreground">Dither Method</span>
+					<Select type="single" bind:value={magick.settings.ditherMethod}>
+						<SelectTrigger class="w-full h-8 text-xs font-mono">
+							{DITHER_OPTIONS.find(o => o.value === magick.settings.ditherMethod)?.label ?? DITHER_OPTIONS[1].label}
+						</SelectTrigger>
+						<SelectContent>
+							{#each DITHER_OPTIONS as opt (opt.value)}
+								<SelectItem value={opt.value}>
+									<div>
+										<div>{opt.label}</div>
+										<div class="text-[10px] text-muted-foreground">{opt.helper}</div>
+									</div>
+								</SelectItem>
+							{/each}
+						</SelectContent>
+					</Select>
+				</div>
+
+				<div class="space-y-1.5">
+					<span class="font-mono text-[10px] uppercase text-muted-foreground">Color Space</span>
+					<Select type="single" bind:value={magick.settings.quantizeColorSpace}>
+						<SelectTrigger class="w-full h-8 text-xs font-mono">
+							{magick.settings.quantizeColorSpace}
+						</SelectTrigger>
+						<SelectContent>
+							{#each COLOR_SPACE_OPTIONS as opt (opt.value)}
+								<SelectItem value={opt.value}>{opt.label}</SelectItem>
+							{/each}
+						</SelectContent>
+					</Select>
+				</div>
+
+				<SliderRow
+					label="Tree Depth"
+					bind:value={magick.settings.quantizeTreeDepth}
+					min={0}
+					max={8}
+				/>
+			{/if}
 		</div>
 	</SectionCard>
 </div>

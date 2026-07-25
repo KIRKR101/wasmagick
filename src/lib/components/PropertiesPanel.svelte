@@ -43,7 +43,7 @@
 		color: { title: 'Color', subtitle: 'Tone · levels · space', reset: () => magick.resetColor() },
 		filters: {
 			title: 'Filters',
-			subtitle: 'Effects · blur · sharpen',
+			subtitle: 'Effects · blur · sharpen · quantize',
 			reset: () => magick.resetFilters()
 		},
 		annotate: {

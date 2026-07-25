@@ -59,7 +59,12 @@ export function isColorDirty(s: MagickSettings): boolean {
 }
 
 export function isFiltersDirty(s: MagickSettings): boolean {
-	return s.effect !== 'none' || s.blur[0] > 0 || s.sharpen[0] > 0;
+	return (
+		s.effect !== 'none' ||
+		s.blur[0] > 0 ||
+		s.sharpen[0] > 0 ||
+		s.quantizeColors[0] > 0
+	);
 }
 
 export function isExportDirty(s: MagickSettings): boolean {

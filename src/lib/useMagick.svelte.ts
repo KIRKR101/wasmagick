@@ -20,7 +20,9 @@ import {
 	Gravity,
 	Channels,
 	ColorSpace,
-	PixelIntensityMethod
+	PixelIntensityMethod,
+	QuantizeSettings,
+	DitherMethod
 } from '@imagemagick/magick-wasm';
 
 import type { MagickSettings, AppliedOptions, LevelChannel } from './types';
@@ -55,6 +57,8 @@ const ARRAY_KEYS = new Set([
 	'bilateralHeight',
 	'bilateralIntensitySigma',
 	'bilateralSpatialSigma',
+	'quantizeColors',
+	'quantizeTreeDepth',
 	'annotateFontSize',
 	'annotateAngle',
 	'annotateStrokeWidth'
@@ -149,6 +153,11 @@ export const DEFAULT_SETTINGS: MagickSettings = {
 	bilateralHeight: [0],
 	bilateralIntensitySigma: [1.5],
 	bilateralSpatialSigma: [1],
+	quantizeColors: [0],
+	ditherMethod: 'Riemersma',
+	quantizeColorSpace: 'sRGB',
+	quantizeTreeDepth: [0],
+	measureErrors: false,
 	annotateText: '',
 	annotateFontFamily: 'Roboto-Regular',
 	annotateFontSize: [24],
@@ -578,6 +587,15 @@ export class MagickState {
 		this.settings.bilateralHeight = [...DEFAULT_SETTINGS.bilateralHeight];
 		this.settings.bilateralIntensitySigma = [...DEFAULT_SETTINGS.bilateralIntensitySigma];
 		this.settings.bilateralSpatialSigma = [...DEFAULT_SETTINGS.bilateralSpatialSigma];
+		this.resetQuantize();
+	}
+
+	resetQuantize(): void {
+		this.settings.quantizeColors = [...DEFAULT_SETTINGS.quantizeColors];
+		this.settings.ditherMethod = DEFAULT_SETTINGS.ditherMethod;
+		this.settings.quantizeColorSpace = DEFAULT_SETTINGS.quantizeColorSpace;
+		this.settings.quantizeTreeDepth = [...DEFAULT_SETTINGS.quantizeTreeDepth];
+		this.settings.measureErrors = DEFAULT_SETTINGS.measureErrors;
 	}
 
 	resetExport(): void {
@@ -1037,6 +1055,31 @@ export class MagickState {
 											break;
 										}
 									}
+								}
+
+								if (this.settings.quantizeColors[0] > 0) {
+									this.currentProcessingStep = 'Quantizing Colors';
+									const qs = new QuantizeSettings();
+									qs.colors = this.settings.quantizeColors[0];
+									qs.colorSpace =
+										ColorSpace[
+											this.settings.quantizeColorSpace as keyof typeof ColorSpace
+										];
+									qs.treeDepth = this.settings.quantizeTreeDepth[0];
+									qs.measureErrors = this.settings.measureErrors;
+									if (this.settings.ditherMethod !== 'Undefined') {
+										qs.ditherMethod =
+											DitherMethod[
+												this.settings.ditherMethod as keyof typeof DitherMethod
+											];
+									}
+									image.quantize(qs);
+									appliedOptions.quantize = {
+										colors: this.settings.quantizeColors[0],
+										ditherMethod: this.settings.ditherMethod,
+										colorSpace: this.settings.quantizeColorSpace,
+										treeDepth: this.settings.quantizeTreeDepth[0]
+									};
 								}
 
 								if (this.settings.annotateText?.trim().length > 0) {

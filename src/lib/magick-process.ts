@@ -7,7 +7,9 @@ import {
 	Gravity,
 	Channels,
 	ColorSpace,
-	PixelIntensityMethod
+	PixelIntensityMethod,
+	QuantizeSettings,
+	DitherMethod
 } from '@imagemagick/magick-wasm';
 import type { MagickSettings, LevelChannel } from './types';
 
@@ -203,6 +205,18 @@ export function processImageSync(sourceBytes: Uint8Array, settings: MagickSettin
 					);
 					break;
 			}
+		}
+
+		if (settings.quantizeColors[0] > 0) {
+			const qs = new QuantizeSettings();
+			qs.colors = settings.quantizeColors[0];
+			qs.colorSpace = ColorSpace[settings.quantizeColorSpace as keyof typeof ColorSpace];
+			qs.treeDepth = settings.quantizeTreeDepth[0];
+			qs.measureErrors = settings.measureErrors;
+			if (settings.ditherMethod !== 'Undefined') {
+				qs.ditherMethod = DitherMethod[settings.ditherMethod as keyof typeof DitherMethod];
+			}
+			image.quantize(qs);
 		}
 
 		if (settings.annotateText?.trim().length > 0) {

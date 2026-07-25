@@ -10,7 +10,7 @@ export type ImageFormat = 'WebP' | 'JPEG' | 'PNG' | 'AVIF' | 'JXL' | 'TIFF' | 'G
 export type RotationAngle = '0' | '90' | '180' | '-90';
 
 /** Color space options */
-export type ColorSpaceOption = 'RGB' | 'Gray' | 'CMYK' | 'HSL' | 'HSV' | 'Lab';
+export type ColorSpaceOption = 'sRGB' | 'Lab' | 'Oklab' | 'RGB' | 'Gray' | 'CMYK' | 'HSL' | 'HSV';
 
 /** Level channel options */
 export type LevelChannel = 'All' | 'Red' | 'Green' | 'Blue';
@@ -38,6 +38,9 @@ export type EffectPreset =
 	| 'oilpaint'
 	| 'solarize'
 	| 'bilateralBlur';
+
+/** Dither method options for color quantization */
+export type DitherMethodOption = 'Undefined' | 'No' | 'Riemersma' | 'FloydSteinberg';
 
 /** Processing settings for the image editor */
 export interface MagickSettings {
@@ -96,6 +99,13 @@ export interface MagickSettings {
 	bilateralIntensitySigma: [number];
 	bilateralSpatialSigma: [number];
 
+	// Quantize / dithering settings
+	quantizeColors: [number];
+	ditherMethod: DitherMethodOption;
+	quantizeColorSpace: ColorSpaceOption;
+	quantizeTreeDepth: [number];
+	measureErrors: boolean;
+
 	// Annotate / text settings
 	annotateText: string;
 	annotateFontFamily: string;
@@ -133,6 +143,12 @@ export interface AppliedOptions {
 	threshold?: { percent: number; channels: string };
 	sigmoidal?: { contrast: number; midpoint: number };
 	colorSpace?: string;
+	quantize?: {
+		colors: number;
+		ditherMethod: string;
+		colorSpace: string;
+		treeDepth: number;
+	};
 	blur?: number;
 	sharpen?: number;
 	effect?: string;

@@ -108,6 +108,11 @@
 				}
 				if (s.blur[0] > 0) parts.push(`Blur ${s.blur[0]}`);
 				if (s.sharpen[0] > 0) parts.push(`Sharpen ${s.sharpen[0]}`);
+				if (s.quantizeColors[0] > 0) {
+					parts.push(`Quantize ${s.quantizeColors[0]} colors`);
+					if (s.ditherMethod !== 'Riemersma') parts.push(s.ditherMethod === 'No' ? 'No dither' : s.ditherMethod);
+					if (s.quantizeColorSpace !== 'sRGB') parts.push(`CS: ${s.quantizeColorSpace}`);
+				}
 				return parts.join(' · ');
 			}
 			case 'export': {
