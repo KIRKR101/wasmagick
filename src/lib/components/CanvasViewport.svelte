@@ -38,6 +38,7 @@
 	let isInitializing = $derived(!wasmLoaded);
 	let isComparing = $state(false);
 	let splitMode = $state(false);
+	let skipNextFit = false;
 
 	// Zoom & Pan
 	let currentZoom = $state(100);
@@ -143,6 +144,7 @@
 		if (processedImageUrl) isComparing = true;
 	}
 	export function endCompare() {
+		skipNextFit = true;
 		isComparing = false;
 	}
 	export function toggleSplitCompare() {
@@ -158,6 +160,11 @@
 
 	function handleImageLoad() {
 		if (isComparing) return;
+		if (skipNextFit) {
+			skipNextFit = false;
+			loadedOriginalUrl = processedImageUrl;
+			return;
+		}
 		loadedOriginalUrl = processedImageUrl;
 		fitImageToScreen();
 	}
@@ -311,7 +318,7 @@
 	function handleKeyUp(e: KeyboardEvent) {
 		if (e.code === 'Space') {
 			e.preventDefault();
-			isComparing = false;
+			endCompare();
 		}
 	}
 </script>
@@ -438,9 +445,9 @@
 				}}
 				onpointerup={(e) => {
 					e.preventDefault();
-					isComparing = false;
+					endCompare();
 				}}
-				onpointerleave={() => (isComparing = false)}
+				onpointerleave={() => endCompare()}
 				disabled={!processedImageUrl}
 				class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-40 {isComparing
 					? 'bg-muted text-foreground'
