@@ -45,8 +45,8 @@
 		WASMAGICK
 	</h1>
 
-	<p class="mb-8 text-center text-sm text-muted-foreground/60">
-		Browser-based image processing powered by ImageMagick/WASM
+	<p class="mb-8 text-center text-xs text-muted-foreground/60 max-w-md">
+		image processing powered by <a href="https://github.com/dlemstra/magick-wasm" class="underline decoration-dashed underline-offset-3 transition-colors hover:text-foreground">magick-wasm</a>, all processing happens locally in your browser
 	</p>
 
 	<div class="flex flex-col items-center gap-3">
@@ -82,40 +82,5 @@
 				[<span class="group-hover:underline"> GitHub </span>]
 			</a>
 		</div>
-	</div>
-
-	<!-- Quick-start shortcuts card -->
-	<div class="mt-10 border border-foreground/30 px-6 py-4">
-		<div class="mb-3 text-[11px] uppercase tracking-wider text-muted-foreground">Quick Start</div>
-		<div class="grid grid-cols-2 gap-x-6 gap-y-2 font-mono text-[11px] text-muted-foreground/70">
-			<span class="flex items-center gap-2">
-				<span class="border border-foreground/30 px-1.5 py-0.5 text-[10px] text-foreground/60">Ctrl+O</span>
-				Upload image
-			</span>
-			<span class="flex items-center gap-2">
-				<span class="border border-foreground/30 px-1.5 py-0.5 text-[10px] text-foreground/60">Ctrl+Enter</span>
-				Process
-			</span>
-			<span class="flex items-center gap-2">
-				<span class="border border-foreground/30 px-1.5 py-0.5 text-[10px] text-foreground/60">Ctrl+S</span>
-				Download
-			</span>
-			<span class="flex items-center gap-2">
-				<span class="border border-foreground/30 px-1.5 py-0.5 text-[10px] text-foreground/60">Space</span>
-				Compare before/after
-			</span>
-			<span class="flex items-center gap-2">
-				<span class="border border-foreground/30 px-1.5 py-0.5 text-[10px] text-foreground/60">Ctrl+Z</span>
-				Undo
-			</span>
-			<span class="flex items-center gap-2">
-				<span class="border border-foreground/30 px-1.5 py-0.5 text-[10px] text-foreground/60">Ctrl+0</span>
-				Fit to screen
-			</span>
-		</div>
-	</div>
-
-	<div class="mt-8 text-center text-[11px] text-muted-foreground/30">
-		powered by <a href="https://github.com/dlemstra/magick-wasm" class="underline decoration-dashed underline-offset-3 transition-colors hover:text-foreground">magick-wasm</a>, all processing happens locally in your browser
 	</div>
 </div>
