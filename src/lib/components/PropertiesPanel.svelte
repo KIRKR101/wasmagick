@@ -77,7 +77,7 @@
 
 
 	<!-- Header for current section -->
-	<div class="px-4 py-3 border-b border-foreground/30 flex justify-between items-center text-xs uppercase tracking-wider text-muted-foreground">
+	<div class="px-4 py-3 border-b border-foreground/30 flex justify-between items-center text-xs uppercase tracking-wider text-muted-foreground dark:border-border">
 		<span>{meta.title}</span>
 		{#if meta.reset && meta.dirty}
 			<button class="cursor-pointer px-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" onclick={meta.reset}>[<span class="hover:underline">RESET</span>]</button>
@@ -108,7 +108,7 @@
 	</div>
 
 	<!-- Bottom Action Bar -->
-	<div class="p-4 border-t border-foreground/30 mt-auto bg-[#f7f7f4] dark:bg-background">
+	<div class="p-4 border-t border-foreground/30 mt-auto bg-[#f7f7f4] dark:bg-background dark:border-border">
 		<div class="flex justify-between items-center text-xs mb-3 text-muted-foreground uppercase">
 			<span>Output format</span>
 			<span class="underline underline-offset-2">{magick.settings.imageFormat} {magick.settings.quality[0]}%</span>

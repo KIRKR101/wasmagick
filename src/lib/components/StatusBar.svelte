@@ -25,7 +25,7 @@
 </script>
 
 <div
-	class="flex h-(--statusbar-h) shrink-0 items-center gap-3 border-t border-foreground/30 bg-[#f7f7f4] px-3 font-mono text-[11px] text-muted-foreground dark:bg-background"
+	class="flex h-(--statusbar-h) shrink-0 items-center gap-3 border-t border-foreground/30 bg-[#f7f7f4] px-3 font-mono text-[11px] text-muted-foreground dark:bg-background dark:border-border"
 >
 	<div class="flex items-center gap-2 truncate">
 		{#if magick.originalImageUrl}
