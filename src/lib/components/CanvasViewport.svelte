@@ -404,6 +404,9 @@
 		<!-- Floating zoom/compare toolbar -->
 		{#if !showPlaceholder && !isInitializing}
 			<div
+				role="toolbar"
+				aria-label="Image controls"
+				tabindex="-1"
 				ondblclick={(e) => e.stopPropagation()}
 				onpointerdown={(e) => e.stopPropagation()}
 				onpointerup={(e) => e.stopPropagation()}

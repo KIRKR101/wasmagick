@@ -297,6 +297,8 @@ describe('MagickState', () => {
 			bilateralHeight: [0],
 			bilateralIntensitySigma: [1.5],
 			bilateralSpatialSigma: [1],
+			clutMap: 'identity',
+			clutInterpolation: 'catrom',
 			quantizeColors: [0],
 			ditherMethod: 'Riemersma',
 			quantizeColorSpace: 'sRGB',
