@@ -2,6 +2,7 @@
 	import type { EditorSection, RailItem } from '$lib/editor-types';
 	import type { MagickState } from '$lib/useMagick.svelte';
 	import type { HistoryState } from '$lib/hooks/useHistory.svelte';
+	import { getClutPresets, getInterpolationOptions } from '$lib/luts';
 	import { isGeoDirty, isColorDirty, isFiltersDirty, isExportDirty, isAnnotateDirty } from '$lib/utils';
 	import { DEFAULT_SETTINGS } from '$lib/useMagick.svelte';
 
@@ -104,6 +105,13 @@
 						case 'bilateralBlur':
 							parts.push(`${s.bilateralWidth[0]}×${s.bilateralHeight[0]}`);
 							break;
+						case 'clut': {
+							const preset = getClutPresets().find(p => p.id === s.clutMap);
+							parts.push(preset?.label ?? s.clutMap);
+							const interp = getInterpolationOptions().find(o => o.value === s.clutInterpolation);
+							if (interp && s.clutInterpolation !== 'catrom') parts.push(interp.label);
+							break;
+						}
 					}
 				}
 				if (s.blur[0] > 0) parts.push(`Blur ${s.blur[0]}`);
@@ -155,6 +163,7 @@
 			case 'oilpaint': return 'Oil Paint';
 			case 'solarize': return 'Solarize';
 			case 'bilateralBlur': return 'Bilateral Blur';
+			case 'clut': return 'Color LUT';
 			default: return effect;
 		}
 	}

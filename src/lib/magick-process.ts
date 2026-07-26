@@ -12,6 +12,7 @@ import {
 	DitherMethod
 } from '@imagemagick/magick-wasm';
 import type { MagickSettings, LevelChannel } from './types';
+import { generateClutImage } from './luts';
 
 const FORMAT_MAP: Record<string, keyof typeof MagickFormat> = {
 	WEBP: 'WebP',
@@ -177,7 +178,7 @@ export function processImageSync(sourceBytes: Uint8Array, settings: MagickSettin
 					break;
 				}
 				case 'negate':
-					image.negate(Channels.RGB as Channels);
+					image.negate(Channels.RGB);
 					break;
 				case 'cannyEdge': {
 					const radius = (settings.cannyEdgeStrength[0] / 100) * 4;
@@ -204,6 +205,12 @@ export function processImageSync(sourceBytes: Uint8Array, settings: MagickSettin
 						settings.bilateralSpatialSigma[0]
 					);
 					break;
+				case 'clut': {
+					const lut = generateClutImage(settings.clutMap, settings.clutInterpolation);
+					image.clut(lut, lut.interpolate, Channels.RGB);
+					lut.dispose();
+					break;
+				}
 			}
 		}
 

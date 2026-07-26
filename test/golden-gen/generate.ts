@@ -189,6 +189,47 @@ genAllSources('blur', ['-blur', '3x1.5'], '{base}.png');
 console.log('-- sharpen --');
 genAllSources('sharpen', ['-sharpen', '2x1'], '{base}.png');
 
+// -- CLUT --
+console.log('-- clut --');
+const clutDir = path.join(GOLDEN_DIR, 'clut');
+fs.mkdirSync(clutDir, { recursive: true });
+
+// Black-to-white gradient identity (saved as TrueColor so per-channel multiply works)
+const identityClutPath = path.join(clutDir, '_identity.png');
+runMagick(['-size', '256x1', 'gradient:', '-negate', '-depth', '8', '-define', 'png:color-type=2', identityClutPath]);
+
+// Warm CLUT: R*1.1, G*1.0, B*0.8
+const warmClutPath = path.join(clutDir, '_warm.png');
+runMagick([
+	identityClutPath,
+	'-channel', 'R', '-evaluate', 'Multiply', '1.1',
+	'-channel', 'G', '-evaluate', 'Multiply', '1.0',
+	'-channel', 'B', '-evaluate', 'Multiply', '0.8',
+	'-depth', '8', '-define', 'png:color-type=2', warmClutPath
+]);
+
+// Vintage CLUT: (t*0.85+20) * {1.05, 0.95, 0.85}
+// Use per-channel -fx from blank image (prevents grayscale collapse)
+const vintageClutPath = path.join(clutDir, '_vintage.png');
+runMagick([
+	'-size', '256x1', '-depth', '8', 'xc:',
+	'-channel', 'R', '-fx', '(i/255*0.85 + 20/255)*1.05',
+	'-channel', 'G', '-fx', '(i/255*0.85 + 20/255)*0.95',
+	'-channel', 'B', '-fx', '(i/255*0.85 + 20/255)*0.85',
+	'-define', 'png:color-type=2', vintageClutPath
+]);
+
+for (const src of SOURCES) {
+	const base = path.parse(src).name;
+	newGolden('clut', src, [warmClutPath, '-clut', '-interpolate', 'Catrom'], `${base}-warm.png`);
+	newGolden('clut', src, [vintageClutPath, '-clut', '-interpolate', 'Bilinear'], `${base}-vintage.png`);
+}
+
+// Cleanup temp CLUT files
+for (const f of [identityClutPath, warmClutPath, vintageClutPath]) {
+	try { fs.unlinkSync(f); } catch { /* ignore */ }
+}
+
 // -- STRIP --
 console.log('-- strip --');
 genAllSources('strip', ['-strip'], '{base}.png');

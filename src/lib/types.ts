@@ -37,7 +37,11 @@ export type EffectPreset =
 	| 'cannyEdge'
 	| 'oilpaint'
 	| 'solarize'
-	| 'bilateralBlur';
+	| 'bilateralBlur'
+	| 'clut';
+
+/** CLUT interpolation methods */
+export type ClutInterpolation = 'catrom' | 'bilinear' | 'nearest' | 'spline' | 'average';
 
 /** Dither method options for color quantization */
 export type DitherMethodOption = 'Undefined' | 'No' | 'Riemersma' | 'FloydSteinberg';
@@ -98,6 +102,8 @@ export interface MagickSettings {
 	bilateralHeight: [number];
 	bilateralIntensitySigma: [number];
 	bilateralSpatialSigma: [number];
+	clutMap: string;
+	clutInterpolation: ClutInterpolation;
 
 	// Quantize / dithering settings
 	quantizeColors: [number];
@@ -158,6 +164,8 @@ export interface AppliedOptions {
 	oilPaintRadius?: number;
 	solarizeFactor?: number;
 	bilateral?: { w: number; h: number; iSig: number; sSig: number };
+	clutMap?: string;
+	clutInterpolation?: string;
 	stripMeta?: boolean;
 	quality?: number;
 	format?: string;

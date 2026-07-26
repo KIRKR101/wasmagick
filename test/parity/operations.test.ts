@@ -345,6 +345,22 @@ describe('Filter / Effect operations', () => {
 		});
 	});
 
+	it('clut (warm)', () => {
+		testAllSources('clut', '{base}-warm.png', {
+			effect: 'clut',
+			clutMap: 'warm',
+			clutInterpolation: 'catrom'
+		});
+	});
+
+	it('clut (vintage)', () => {
+		testAllSources('clut', '{base}-vintage.png', {
+			effect: 'clut',
+			clutMap: 'vintage',
+			clutInterpolation: 'bilinear'
+		});
+	});
+
 	it('blur', () => {
 		testAllSources('blur', '{base}.png', { blur: [3] });
 	});

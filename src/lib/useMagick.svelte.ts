@@ -27,6 +27,7 @@ import {
 
 import type { MagickSettings, AppliedOptions, LevelChannel } from './types';
 import { ensureFont, DEFAULT_FONT, isLocalFont } from './fonts';
+import { generateClutImage } from './luts';
 
 const AUTO_PROCESS_DELAY = 300;
 
@@ -153,6 +154,8 @@ export const DEFAULT_SETTINGS: MagickSettings = {
 	bilateralHeight: [0],
 	bilateralIntensitySigma: [1.5],
 	bilateralSpatialSigma: [1],
+	clutMap: 'identity',
+	clutInterpolation: 'catrom',
 	quantizeColors: [0],
 	ditherMethod: 'Riemersma',
 	quantizeColorSpace: 'sRGB',
@@ -587,6 +590,8 @@ export class MagickState {
 		this.settings.bilateralHeight = [...DEFAULT_SETTINGS.bilateralHeight];
 		this.settings.bilateralIntensitySigma = [...DEFAULT_SETTINGS.bilateralIntensitySigma];
 		this.settings.bilateralSpatialSigma = [...DEFAULT_SETTINGS.bilateralSpatialSigma];
+		this.settings.clutMap = DEFAULT_SETTINGS.clutMap;
+		this.settings.clutInterpolation = DEFAULT_SETTINGS.clutInterpolation;
 		this.resetQuantize();
 	}
 
@@ -1009,7 +1014,7 @@ export class MagickState {
 										}
 										case 'negate':
 											this.currentProcessingStep = 'Applying Negative';
-											image.negate(Channels.RGB as Channels);
+											image.negate(Channels.RGB);
 											break;
 										case 'cannyEdge': {
 											this.currentProcessingStep = 'Detecting Edges';
@@ -1038,23 +1043,35 @@ export class MagickState {
 											image.solarize(new Percentage(this.settings.solarizeFactor[0]));
 											appliedOptions.solarizeFactor = this.settings.solarizeFactor[0];
 											break;
-										case 'bilateralBlur': {
-											this.currentProcessingStep = 'Applying Bilateral Blur';
-											image.bilateralBlur(
-												this.settings.bilateralWidth[0],
-												this.settings.bilateralHeight[0],
-												this.settings.bilateralIntensitySigma[0],
-												this.settings.bilateralSpatialSigma[0]
-											);
-											appliedOptions.bilateral = {
-												w: this.settings.bilateralWidth[0],
-												h: this.settings.bilateralHeight[0],
-												iSig: this.settings.bilateralIntensitySigma[0],
-												sSig: this.settings.bilateralSpatialSigma[0]
-											};
-											break;
-										}
+									case 'bilateralBlur': {
+										this.currentProcessingStep = 'Applying Bilateral Blur';
+										image.bilateralBlur(
+											this.settings.bilateralWidth[0],
+											this.settings.bilateralHeight[0],
+											this.settings.bilateralIntensitySigma[0],
+											this.settings.bilateralSpatialSigma[0]
+										);
+										appliedOptions.bilateral = {
+											w: this.settings.bilateralWidth[0],
+											h: this.settings.bilateralHeight[0],
+											iSig: this.settings.bilateralIntensitySigma[0],
+											sSig: this.settings.bilateralSpatialSigma[0]
+										};
+										break;
 									}
+									case 'clut': {
+										this.currentProcessingStep = 'Applying CLUT';
+										const lut = generateClutImage(
+											this.settings.clutMap,
+											this.settings.clutInterpolation
+										);
+										image.clut(lut, lut.interpolate, Channels.RGB);
+										lut.dispose();
+										appliedOptions.clutMap = this.settings.clutMap;
+										appliedOptions.clutInterpolation = this.settings.clutInterpolation;
+										break;
+									}
+								}
 								}
 
 								if (this.settings.quantizeColors[0] > 0) {
