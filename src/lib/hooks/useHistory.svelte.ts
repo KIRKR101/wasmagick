@@ -12,6 +12,111 @@
 import type { MagickState } from '$lib/useMagick.svelte';
 import type { MagickSettings } from '$lib/types';
 
+export interface SettingsDiffItem {
+	label: string;
+	prev: string | null;
+	curr: string;
+}
+
+function fmt(val: unknown): string {
+	if (val === null || val === undefined) return '—';
+	if (typeof val === 'boolean') return val ? 'on' : 'off';
+	if (typeof val === 'number') return String(val);
+	if (typeof val === 'string') return val || '—';
+	return String(val);
+}
+
+function diffSettings(a: MagickSettings, b: MagickSettings): SettingsDiffItem[] {
+	const items: SettingsDiffItem[] = [];
+	const push = (label: string, av: unknown, bv: unknown) => {
+		if (JSON.stringify(av) !== JSON.stringify(bv)) {
+			items.push({ label, prev: fmt(av), curr: fmt(bv) });
+		}
+	};
+
+	// Export
+	push('Format', a.imageFormat, b.imageFormat);
+	push('Quality', a.quality[0], b.quality[0]);
+	push('Strip meta', a.stripMeta, b.stripMeta);
+
+	// Geometry
+	push('Resize W', a.resizeW, b.resizeW);
+	push('Resize H', a.resizeH, b.resizeH);
+	push('Rotate', a.rotate, b.rotate);
+	push('Flop', a.flop, b.flop);
+	push('Flip', a.flip, b.flip);
+	push('Border', a.borderSize[0], b.borderSize[0]);
+	push('Border color', a.borderColor, b.borderColor);
+	push('Extent W', a.extentW, b.extentW);
+	push('Extent H', a.extentH, b.extentH);
+	push('Extent bg', a.extentBgColor, b.extentBgColor);
+	push('Gravity', a.extentGravity, b.extentGravity);
+	push('Deskew', a.deskewThreshold[0], b.deskewThreshold[0]);
+	push('Deskew crop', a.deskewAutoCrop, b.deskewAutoCrop);
+
+	// Color
+	push('Brightness', a.brightness[0], b.brightness[0]);
+	push('Saturation', a.saturation[0], b.saturation[0]);
+	push('Hue', a.hue[0], b.hue[0]);
+	push('Contrast', a.contrast[0], b.contrast[0]);
+	push('Normalize', a.normalizeImage, b.normalizeImage);
+	push('Auto level', a.autoLevel, b.autoLevel);
+	push('Auto orient', a.autoOrient, b.autoOrient);
+	push('Color space', a.colorSpace, b.colorSpace);
+	push('Level channel', a.levelChannels, b.levelChannels);
+	push('Threshold', a.thresholdPercentage[0], b.thresholdPercentage[0]);
+	push('Threshold ch', a.thresholdChannels, b.thresholdChannels);
+	push('Sigmoidal C', a.sigmoidalContrast[0], b.sigmoidalContrast[0]);
+	push('Sigmoidal M', a.sigmoidalMidpoint[0], b.sigmoidalMidpoint[0]);
+	push('Sigmoidal ch', a.sigmoidalChannels, b.sigmoidalChannels);
+
+	// Levels (per-channel)
+	for (const ch of ['All', 'Red', 'Green', 'Blue'] as const) {
+		push(`Lvl black ${ch}`, a.levelBlackpoint[ch][0], b.levelBlackpoint[ch][0]);
+		push(`Lvl white ${ch}`, a.levelWhitepoint[ch][0], b.levelWhitepoint[ch][0]);
+		push(`Lvl gamma ${ch}`, a.levelGamma[ch][0], b.levelGamma[ch][0]);
+	}
+
+	// Filters
+	push('Effect', a.effect, b.effect);
+	push('Blur', a.blur[0], b.blur[0]);
+	push('Sharpen', a.sharpen[0], b.sharpen[0]);
+	push('Sepia', a.sepiaThreshold[0], b.sepiaThreshold[0]);
+	push('Charcoal', a.charcoalIntensity[0], b.charcoalIntensity[0]);
+	push('Canny strength', a.cannyEdgeStrength[0], b.cannyEdgeStrength[0]);
+	push('Canny lower', a.cannyEdgeLower[0], b.cannyEdgeLower[0]);
+	push('Canny upper', a.cannyEdgeUpper[0], b.cannyEdgeUpper[0]);
+	push('Oil paint', a.oilpaintRadius[0], b.oilpaintRadius[0]);
+	push('Solarize', a.solarizeFactor[0], b.solarizeFactor[0]);
+	push('Bilateral W', a.bilateralWidth[0], b.bilateralWidth[0]);
+	push('Bilateral H', a.bilateralHeight[0], b.bilateralHeight[0]);
+	push('Bilateral iΣ', a.bilateralIntensitySigma[0], b.bilateralIntensitySigma[0]);
+	push('Bilateral sΣ', a.bilateralSpatialSigma[0], b.bilateralSpatialSigma[0]);
+	push('CLUT', a.clutMap, b.clutMap);
+	push('CLUT interp', a.clutInterpolation, b.clutInterpolation);
+
+	// Quantize
+	push('Quantize colors', a.quantizeColors[0], b.quantizeColors[0]);
+	push('Dither', a.ditherMethod, b.ditherMethod);
+	push('Quantize space', a.quantizeColorSpace, b.quantizeColorSpace);
+	push('Quantize depth', a.quantizeTreeDepth[0], b.quantizeTreeDepth[0]);
+
+	// Annotate
+	push('Text', a.annotateText, b.annotateText);
+	push('Font', a.annotateFontFamily, b.annotateFontFamily);
+	push('Font size', a.annotateFontSize[0], b.annotateFontSize[0]);
+	push('Font color', a.annotateFontColor, b.annotateFontColor);
+	push('Text gravity', a.annotateGravity, b.annotateGravity);
+	push('Offset X', a.annotateOffsetX, b.annotateOffsetX);
+	push('Offset Y', a.annotateOffsetY, b.annotateOffsetY);
+	push('Text angle', a.annotateAngle[0], b.annotateAngle[0]);
+	push('Stroke', a.annotateStroke, b.annotateStroke);
+	push('Stroke color', a.annotateStrokeColor, b.annotateStrokeColor);
+	push('Stroke width', a.annotateStrokeWidth[0], b.annotateStrokeWidth[0]);
+
+	return items;
+}
+
 export interface HistoryEntry {
 	id: number;
 	label: string;
@@ -63,6 +168,18 @@ export class HistoryState {
 	}
 	get count(): number {
 		return this.entries.length;
+	}
+
+	/** Diff of entry at `index` vs the previous entry (relative). */
+	getDiff(index: number): SettingsDiffItem[] {
+		if (index < 1 || index >= this.entries.length) return [];
+		return diffSettings(this.entries[index - 1].settings, this.entries[index].settings);
+	}
+
+	/** Diff of entry at `index` vs the Original entry (absolute). */
+	getAbsoluteDiff(index: number): SettingsDiffItem[] {
+		if (index < 0 || index >= this.entries.length) return [];
+		return diffSettings(this.entries[0].settings, this.entries[index].settings);
 	}
 
 	/** Reset history to a single Original entry. Called after a new file loads. */
