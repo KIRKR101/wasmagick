@@ -347,7 +347,6 @@ describe('Filter / Effect operations', () => {
 
 	it('clut (warm)', () => {
 		testAllSources('clut', '{base}-warm.png', {
-			effect: 'clut',
 			clutMap: 'warm',
 			clutInterpolation: 'catrom'
 		});
@@ -355,7 +354,6 @@ describe('Filter / Effect operations', () => {
 
 	it('clut (vintage)', () => {
 		testAllSources('clut', '{base}-vintage.png', {
-			effect: 'clut',
 			clutMap: 'vintage',
 			clutInterpolation: 'bilinear'
 		});

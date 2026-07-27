@@ -63,7 +63,8 @@ export function isFiltersDirty(s: MagickSettings): boolean {
 		s.effect !== 'none' ||
 		s.blur[0] > 0 ||
 		s.sharpen[0] > 0 ||
-		s.quantizeColors[0] > 0
+		s.quantizeColors[0] > 0 ||
+		s.clutMap !== 'identity'
 	);
 }
 

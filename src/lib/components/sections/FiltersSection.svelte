@@ -21,8 +21,7 @@
 		{ value: 'cannyEdge', label: 'Edge Detection' },
 		{ value: 'oilpaint', label: 'Oil Paint' },
 		{ value: 'solarize', label: 'Solarize' },
-		{ value: 'bilateralBlur', label: 'Bilateral Blur' },
-		{ value: 'clut', label: 'Color LUT' }
+		{ value: 'bilateralBlur', label: 'Bilateral Blur' }
 	];
 
 	const CLUT_PRESETS = getClutPresets();
@@ -123,40 +122,6 @@
 				{:else if magick.settings.effect === 'bilateralBlur'}
 					<SliderRow label="Width" bind:value={magick.settings.bilateralWidth} min={0} max={20} />
 					<SliderRow label="Height" bind:value={magick.settings.bilateralHeight} min={0} max={20} />
-				{:else if magick.settings.effect === 'clut'}
-					<div class="space-y-3">
-						<div class="space-y-1.5">
-							<span class="font-mono text-[10px] uppercase text-muted-foreground">Color Map</span>
-							<Select type="single" bind:value={magick.settings.clutMap}>
-								<SelectTrigger class="w-full h-8 text-xs font-mono">
-									{CLUT_PRESETS.find(p => p.id === magick.settings.clutMap)?.label ?? magick.settings.clutMap}
-								</SelectTrigger>
-								<SelectContent>
-									{#each CLUT_PRESETS as preset (preset.id)}
-										<SelectItem value={preset.id}>
-											<div>
-												<div>{preset.label}</div>
-												<div class="text-[10px] text-muted-foreground">{preset.description}</div>
-											</div>
-										</SelectItem>
-									{/each}
-								</SelectContent>
-							</Select>
-						</div>
-						<div class="space-y-1.5">
-							<span class="font-mono text-[10px] uppercase text-muted-foreground">Interpolation</span>
-							<Select type="single" bind:value={magick.settings.clutInterpolation}>
-								<SelectTrigger class="w-full h-8 text-xs font-mono">
-									{INTERPOLATION_OPTIONS.find(o => o.value === magick.settings.clutInterpolation)?.label ?? magick.settings.clutInterpolation}
-								</SelectTrigger>
-								<SelectContent>
-									{#each INTERPOLATION_OPTIONS as opt (opt.value)}
-										<SelectItem value={opt.value}>{opt.label}</SelectItem>
-									{/each}
-								</SelectContent>
-							</Select>
-						</div>
-					</div>
 				{:else if ['grayscale', 'negate'].includes(magick.settings.effect as string)}
 					<p class="py-1 text-center text-[11px] text-muted-foreground">
 						No additional parameters for this effect
@@ -171,6 +136,43 @@
 		<div class="grid grid-cols-2 gap-3">
 			<SliderRow label="Blur" bind:value={magick.settings.blur} min={0} max={20} step={0.5} />
 			<SliderRow label="Sharpen" bind:value={magick.settings.sharpen} min={0} max={10} step={0.5} />
+		</div>
+	</SectionCard>
+
+	<!-- Color LUT -->
+	<SectionCard title="Color LUT" dirty={magick.settings.clutMap !== 'identity'}>
+		<div class="space-y-3">
+			<div class="space-y-1.5">
+				<span class="font-mono text-[10px] uppercase text-muted-foreground">Color Map</span>
+				<Select type="single" bind:value={magick.settings.clutMap}>
+					<SelectTrigger class="w-full h-8 text-xs font-mono">
+						{CLUT_PRESETS.find(p => p.id === magick.settings.clutMap)?.label ?? magick.settings.clutMap}
+					</SelectTrigger>
+					<SelectContent>
+						{#each CLUT_PRESETS as preset (preset.id)}
+							<SelectItem value={preset.id}>
+								<div>
+									<div>{preset.label}</div>
+									<div class="text-[10px] text-muted-foreground">{preset.description}</div>
+								</div>
+							</SelectItem>
+						{/each}
+					</SelectContent>
+				</Select>
+			</div>
+			<div class="space-y-1.5">
+				<span class="font-mono text-[10px] uppercase text-muted-foreground">Interpolation</span>
+				<Select type="single" bind:value={magick.settings.clutInterpolation}>
+					<SelectTrigger class="w-full h-8 text-xs font-mono">
+						{INTERPOLATION_OPTIONS.find(o => o.value === magick.settings.clutInterpolation)?.label ?? magick.settings.clutInterpolation}
+					</SelectTrigger>
+					<SelectContent>
+						{#each INTERPOLATION_OPTIONS as opt (opt.value)}
+							<SelectItem value={opt.value}>{opt.label}</SelectItem>
+						{/each}
+					</SelectContent>
+				</Select>
+			</div>
 		</div>
 	</SectionCard>
 

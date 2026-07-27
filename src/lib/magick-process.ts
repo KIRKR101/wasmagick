@@ -205,14 +205,14 @@ export function processImageSync(sourceBytes: Uint8Array, settings: MagickSettin
 						settings.bilateralSpatialSigma[0]
 					);
 					break;
-				case 'clut': {
-					const lut = generateClutImage(settings.clutMap, settings.clutInterpolation);
-					image.clut(lut, lut.interpolate, Channels.RGB);
-					lut.dispose();
-					break;
-				}
-			}
 		}
+	}
+
+	if (settings.clutMap !== 'identity') {
+		const lut = generateClutImage(settings.clutMap, settings.clutInterpolation);
+		image.clut(lut, lut.interpolate, Channels.RGB);
+		lut.dispose();
+	}
 
 		if (settings.quantizeColors[0] > 0) {
 			const qs = new QuantizeSettings();

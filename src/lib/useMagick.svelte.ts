@@ -1059,20 +1059,20 @@ export class MagickState {
 										};
 										break;
 									}
-									case 'clut': {
-										this.currentProcessingStep = 'Applying CLUT';
-										const lut = generateClutImage(
-											this.settings.clutMap,
-											this.settings.clutInterpolation
-										);
-										image.clut(lut, lut.interpolate, Channels.RGB);
-										lut.dispose();
-										appliedOptions.clutMap = this.settings.clutMap;
-										appliedOptions.clutInterpolation = this.settings.clutInterpolation;
-										break;
-									}
 								}
 								}
+
+							if (this.settings.clutMap !== 'identity') {
+								this.currentProcessingStep = 'Applying CLUT';
+								const lut = generateClutImage(
+									this.settings.clutMap,
+									this.settings.clutInterpolation
+								);
+								image.clut(lut, lut.interpolate, Channels.RGB);
+								lut.dispose();
+								appliedOptions.clutMap = this.settings.clutMap;
+								appliedOptions.clutInterpolation = this.settings.clutInterpolation;
+							}
 
 								if (this.settings.quantizeColors[0] > 0) {
 									this.currentProcessingStep = 'Quantizing Colors';

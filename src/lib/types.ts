@@ -37,8 +37,7 @@ export type EffectPreset =
 	| 'cannyEdge'
 	| 'oilpaint'
 	| 'solarize'
-	| 'bilateralBlur'
-	| 'clut';
+	| 'bilateralBlur';
 
 /** CLUT interpolation methods */
 export type ClutInterpolation = 'catrom' | 'bilinear' | 'nearest' | 'spline' | 'average';
