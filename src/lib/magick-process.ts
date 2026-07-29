@@ -4,6 +4,7 @@ import {
 	MagickColor,
 	Drawables,
 	Percentage,
+	MagickGeometry,
 	Gravity,
 	Channels,
 	ColorSpace,
@@ -68,11 +69,20 @@ export function processImageSync(sourceBytes: Uint8Array, settings: MagickSettin
 		if (settings.flop) image.flop();
 		if (settings.flip) image.flip();
 
-		if ((settings.cropW ?? 0) > 0 || (settings.cropH ?? 0) > 0) {
-			const cropW = settings.cropW ?? image.width;
-			const cropH = settings.cropH ?? image.height;
-			const gravityKey = settings.cropGravity as keyof typeof Gravity;
-			image.crop(cropW, cropH, Gravity[gravityKey]);
+		if ((settings.cropW ?? 0) > 0 || (settings.cropH ?? 0) > 0 || settings.cropX != null || settings.cropY != null) {
+			const hasVisualCrop = settings.cropX != null || settings.cropY != null;
+			if (hasVisualCrop) {
+				const cx = settings.cropX ?? 0;
+				const cy = settings.cropY ?? 0;
+				const cw = settings.cropW ?? image.width;
+				const ch = settings.cropH ?? image.height;
+				image.crop(new MagickGeometry(cx, cy, cw, ch));
+			} else {
+				const cropW = settings.cropW ?? image.width;
+				const cropH = settings.cropH ?? image.height;
+				const gravityKey = settings.cropGravity as keyof typeof Gravity;
+				image.crop(cropW, cropH, Gravity[gravityKey]);
+			}
 		}
 
 		if (settings.trimEdges) image.trim();

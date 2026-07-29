@@ -2,7 +2,9 @@
 	import { Columns2, Images, Loader2, Maximize, ZoomIn, ZoomOut } from 'lucide-svelte';
 	import FileDropzone from './FileDropzone.svelte';
 	import SplitCompare from './SplitCompare.svelte';
+	import CropOverlay from './CropOverlay.svelte';
 	import type { SampleImage } from '$lib/editor-types';
+	import type { CropRect } from '$lib/crop-utils';
 
 	let {
 		originalImageUrl = null,
@@ -12,9 +14,15 @@
 		magickSettings = null,
 		currentProcessingStep = null,
 		isDragging = false,
+		cropActive = false,
+		cropAspectRatio = 'free',
+		initialCrop = null,
 		onBrowse = () => {},
 		onSelectSample = () => {},
-		onStateChange = () => {}
+		onStateChange = () => {},
+		onCropConfirm = () => {},
+		onCropCancel = () => {},
+		onCropAspectRatioChange = () => {}
 	}: {
 		originalImageUrl?: string | null;
 		processedImageUrl?: string | null;
@@ -29,9 +37,15 @@
 		magickSettings?: { rotate?: string; resizeW?: number | null; resizeH?: number | null } | null;
 		currentProcessingStep?: string | null;
 		isDragging?: boolean;
+		cropActive?: boolean;
+		cropAspectRatio?: string;
+		initialCrop?: { x: number; y: number; w: number; h: number } | null;
 		onBrowse?: () => void;
 		onSelectSample?: (s: SampleImage) => void;
 		onStateChange?: (s: { zoom: number }) => void;
+		onCropConfirm?: (crop: CropRect) => void;
+		onCropCancel?: () => void;
+		onCropAspectRatioChange?: (preset: string) => void;
 	} = $props();
 
 	let showPlaceholder = $derived(!originalImageUrl);
@@ -54,6 +68,8 @@
 	let previewImageRef = $state<HTMLImageElement | null>(null);
 	let viewportRef = $state<HTMLDivElement | null>(null);
 	let loadedOriginalUrl: string | null | undefined = null;
+	let displayedWidth = $state(0);
+	let displayedHeight = $state(0);
 
 	let imageStyle = $derived(`
 		position: absolute;
@@ -160,6 +176,10 @@
 
 	function handleImageLoad() {
 		if (isComparing) return;
+		if (previewImageRef) {
+			displayedWidth = previewImageRef.naturalWidth;
+			displayedHeight = previewImageRef.naturalHeight;
+		}
 		if (skipNextFit) {
 			skipNextFit = false;
 			loadedOriginalUrl = processedImageUrl;
@@ -203,7 +223,7 @@
 	}
 
 	function onPointerDown(e: PointerEvent) {
-		if (showPlaceholder || e.button !== 0) return;
+		if (showPlaceholder || e.button !== 0 || cropActive) return;
 		isPanning = true;
 		startPointerX = e.clientX;
 		startPointerY = e.clientY;
@@ -216,7 +236,7 @@
 	}
 
 	function onPointerMove(e: PointerEvent) {
-		if (!isPanning) return;
+		if (!isPanning || cropActive) return;
 		imageX = initialImageX + (e.clientX - startPointerX);
 		imageY = initialImageY + (e.clientY - startPointerY);
 	}
@@ -398,6 +418,21 @@
 				>
 					↻ {rotationLabel}
 				</div>
+			{/if}
+			{#if cropActive}
+				<CropOverlay
+					imageWidth={displayedWidth || 100}
+					imageHeight={displayedHeight || 100}
+					zoom={currentZoom}
+					{imageX}
+					{imageY}
+					{viewportRef}
+					aspectRatio={cropAspectRatio}
+					{initialCrop}
+					onConfirm={onCropConfirm}
+					onCancel={onCropCancel}
+					onAspectRatioChange={onCropAspectRatioChange}
+				/>
 			{/if}
 		{/if}
 

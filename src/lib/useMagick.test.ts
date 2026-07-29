@@ -317,6 +317,8 @@ describe('MagickState', () => {
 			cropW: null,
 			cropH: null,
 			cropGravity: 'Center',
+			cropX: null,
+			cropY: null,
 			trimEdges: false,
 			brightness: [100],
 			saturation: [100],

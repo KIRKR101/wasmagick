@@ -78,6 +78,81 @@
 		}
 	}
 
+	let cropInitialRect = $derived.by(() => {
+		const s = magick.settings;
+		const { offsetX, offsetY } = cropStepOffset;
+
+		if (s.cropX != null && s.cropY != null && (s.cropW ?? 0) > 0 && (s.cropH ?? 0) > 0) {
+			return {
+				x: s.cropX - offsetX,
+				y: s.cropY - offsetY,
+				w: s.cropW!,
+				h: s.cropH!
+			};
+		}
+		if (s.cropW != null && s.cropW > 0 && s.cropH != null && s.cropH > 0) {
+			const stepW = s.resizeW ?? (magick.originalWidth || 0);
+			const stepH = s.resizeH ?? (magick.originalHeight || 0);
+			const grav = s.cropGravity;
+			let x = 0;
+			let y = 0;
+			const cw = Math.min(s.cropW, stepW);
+			const ch = Math.min(s.cropH, stepH);
+			if (grav === 'Center') {
+				x = Math.round((stepW - cw) / 2);
+				y = Math.round((stepH - ch) / 2);
+			} else if (grav === 'Northwest') { x = 0; y = 0; }
+			else if (grav === 'North') { x = Math.round((stepW - cw) / 2); y = 0; }
+			else if (grav === 'Northeast') { x = stepW - cw; y = 0; }
+			else if (grav === 'West') { x = 0; y = Math.round((stepH - ch) / 2); }
+			else if (grav === 'East') { x = stepW - cw; y = Math.round((stepH - ch) / 2); }
+			else if (grav === 'Southwest') { x = 0; y = stepH - ch; }
+			else if (grav === 'South') { x = Math.round((stepW - cw) / 2); y = stepH - ch; }
+			else if (grav === 'Southeast') { x = stepW - cw; y = stepH - ch; }
+			return {
+				x: Math.max(0, x) - offsetX,
+				y: Math.max(0, y) - offsetY,
+				w: cw,
+				h: ch
+			};
+		}
+		return null;
+	});
+
+	// The offset of the displayed image's top-left in the crop-step
+	// coordinate space (after resize/rotate, before crop in the pipeline).
+	let cropStepOffset = $derived.by(() => {
+		const s = magick.settings;
+		const srcW = magick.originalWidth || 0;
+		const srcH = magick.originalHeight || 0;
+		const stepW = s.resizeW ?? srcW;
+		const stepH = s.resizeH ?? srcH;
+
+		if (s.cropX != null && s.cropY != null) {
+			return { offsetX: s.cropX, offsetY: s.cropY, stepW, stepH };
+		}
+		if (s.cropW != null && s.cropW > 0 && s.cropH != null && s.cropH > 0) {
+			const grav = s.cropGravity;
+			const cw = Math.min(s.cropW, stepW);
+			const ch = Math.min(s.cropH, stepH);
+			let ox = 0;
+			let oy = 0;
+			if (grav === 'Center') {
+				ox = Math.round((stepW - cw) / 2);
+				oy = Math.round((stepH - ch) / 2);
+			} else if (grav === 'Northwest') { ox = 0; oy = 0; }
+			else if (grav === 'North') { ox = Math.round((stepW - cw) / 2); oy = 0; }
+			else if (grav === 'Northeast') { ox = stepW - cw; oy = 0; }
+			else if (grav === 'West') { ox = 0; oy = Math.round((stepH - ch) / 2); }
+			else if (grav === 'East') { ox = stepW - cw; oy = Math.round((stepH - ch) / 2); }
+			else if (grav === 'Southwest') { ox = 0; oy = stepH - ch; }
+			else if (grav === 'South') { ox = Math.round((stepW - cw) / 2); oy = stepH - ch; }
+			else if (grav === 'Southeast') { ox = stepW - cw; oy = stepH - ch; }
+			return { offsetX: Math.max(0, ox), offsetY: Math.max(0, oy), stepW, stepH };
+		}
+		return { offsetX: 0, offsetY: 0, stepW, stepH };
+	});
+
 	function onViewportStateChange(st: { zoom: number }) {
 		viewportZoom = st.zoom;
 	}
@@ -184,9 +259,25 @@
 				magickSettings={magick.settings}
 				currentProcessingStep={magick.currentProcessingStep}
 				{isDragging}
+				cropActive={magick.cropMode}
+				cropAspectRatio={magick.cropAspectRatio}
+				initialCrop={cropInitialRect}
 				onBrowse={openFilePicker}
 				{onSelectSample}
 				onStateChange={onViewportStateChange}
+				onCropConfirm={(crop) => {
+					magick.settings.cropX = cropStepOffset.offsetX + crop.x;
+					magick.settings.cropY = cropStepOffset.offsetY + crop.y;
+					magick.settings.cropW = crop.w;
+					magick.settings.cropH = crop.h;
+					magick.cropMode = false;
+				}}
+				onCropCancel={() => {
+					magick.cropMode = false;
+				}}
+				onCropAspectRatioChange={(preset) => {
+					magick.cropAspectRatio = preset;
+				}}
 			/>
 		</div>
 	</div>
