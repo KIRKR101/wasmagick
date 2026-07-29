@@ -9,6 +9,7 @@
 	import { usePresets } from '$lib/hooks/usePresets.svelte';
 	import { useReplaceGuard, installClipboardPaste } from '$lib/hooks/useReplaceGuard.svelte';
 	import { MOBILE_BREAKPOINT } from '$lib/constants.js';
+	import { getClutPresets, getInterpolationOptions } from '$lib/luts';
 	import type { EditorSection } from '$lib/editor-types';
 
 	const magick = useMagick();
@@ -37,29 +38,64 @@
 	function describeSettings(): string {
 		const s = magick.settings;
 		const parts: string[] = [];
-		if (s.resizeW || s.resizeH) parts.push(`Resize ${s.resizeW ?? 'auto'}×${s.resizeH ?? 'auto'}`);
+		// Geometry
+		if (s.resizeW || s.resizeH) parts.push(`Resize ${s.resizeW ?? 'A'}×${s.resizeH ?? 'A'}`);
 		if (s.rotate !== '0') parts.push(`Rotate ${s.rotate}°`);
 		if (s.flip) parts.push('Flip');
 		if (s.flop) parts.push('Flop');
-		if (s.cropW || s.cropH) parts.push(`Crop ${s.cropW ?? 'auto'}×${s.cropH ?? 'auto'}`);
+		if (s.cropW || s.cropH) parts.push(`Crop ${s.cropW ?? 'A'}×${s.cropH ?? 'A'}`);
 		if (s.trimEdges) parts.push('Trim');
 		if (s.borderSize[0] > 0) parts.push(`Border ${s.borderSize[0]}px`);
 		if (s.extentW || s.extentH) parts.push('Canvas');
 		if (s.deskewThreshold[0] > 0) parts.push('Deskew');
-		if (s.brightness[0] !== 100 || s.saturation[0] !== 100 || s.hue[0] !== 100)
-			parts.push('Adjust');
-		if (s.contrast[0] !== 0) parts.push('Contrast');
+		if (s.deskewThreshold[0] > 0 && !s.deskewAutoCrop) parts.push('No AutoCrop');
+		if (s.autoOrient) parts.push('Auto-Orient');
+		// Color
+		if (s.brightness[0] !== 100) parts.push(`Brightness ${s.brightness[0]}%`);
+		if (s.saturation[0] !== 100) parts.push(`Saturation ${s.saturation[0]}%`);
+		if (s.hue[0] !== 100) parts.push(`Hue ${s.hue[0]}%`);
+		if (s.contrast[0] !== 0) parts.push(`Contrast ${s.contrast[0]}`);
 		if (s.normalizeImage) parts.push('Normalize');
 		if (s.autoLevel) parts.push('AutoLevel');
+		const levelChs = ['All', 'Red', 'Green', 'Blue'] as const;
+		const levelParts: string[] = [];
+		for (const ch of levelChs) {
+			const bp = s.levelBlackpoint[ch][0];
+			const wp = s.levelWhitepoint[ch][0];
+			const gm = s.levelGamma[ch][0];
+			if (bp !== 0 || wp !== 100 || gm !== 1.0) levelParts.push(`${ch} ${bp}/${wp}/${gm}`);
+		}
+		if (levelParts.length > 0) parts.push(`Levels ${levelParts.join(' | ')}`);
+		if (s.thresholdPercentage[0] !== 50) parts.push(`Threshold ${s.thresholdPercentage[0]}%`);
+		if (s.sigmoidalContrast[0] !== 0) parts.push(`Sigmoidal ${s.sigmoidalContrast[0]}@${s.sigmoidalMidpoint[0]}`);
 		if (s.colorSpace !== 'RGB') parts.push(s.colorSpace);
+		// Filters
 		if (s.effect !== 'none') parts.push(s.effect);
+		if (s.clutMap !== 'identity') {
+			const preset = getClutPresets().find(p => p.id === s.clutMap);
+			parts.push(`LUT: ${preset?.label ?? s.clutMap}`);
+			const interp = getInterpolationOptions().find(o => o.value === s.clutInterpolation);
+			if (interp && s.clutInterpolation !== 'catrom') parts.push(interp.label);
+		}
 		if (s.blur[0] > 0) parts.push(`Blur ${s.blur[0]}`);
 		if (s.sharpen[0] > 0) parts.push(`Sharpen ${s.sharpen[0]}`);
 		if (s.adaptiveSharpenRadius[0] > 0) parts.push(`AdptSharpen ${s.adaptiveSharpenRadius[0]}`);
 		if (s.adaptiveBlurRadius[0] > 0) parts.push(`AdptBlur ${s.adaptiveBlurRadius[0]}`);
+		if (s.quantizeColors[0] > 0) {
+			parts.push(`Quantize ${s.quantizeColors[0]} colors`);
+			if (s.quantizeTreeDepth[0] > 0) parts.push(`TreeDepth ${s.quantizeTreeDepth[0]}`);
+			if (s.ditherMethod !== 'Riemersma') parts.push(s.ditherMethod === 'No' ? 'No dither' : s.ditherMethod);
+			if (s.quantizeColorSpace !== 'sRGB') parts.push(`CS: ${s.quantizeColorSpace}`);
+		}
+		// Export
+		if (s.imageFormat !== 'WebP') parts.push(s.imageFormat);
+		if (s.quality[0] !== 85) parts.push(`Quality ${s.quality[0]}%`);
+		if (!s.stripMeta) parts.push('Keep Meta');
+		// Annotate
 		if (s.annotateText?.trim()) parts.push(`Text "${s.annotateText.slice(0, 15)}"`);
-		if (s.imageFormat !== 'WebP' || s.quality[0] !== 85) parts.push(`Export ${s.imageFormat}`);
-		return parts.length ? parts.slice(0, 3).join(' · ') : 'Processed';
+		if (s.annotateFontSize[0] !== 24) parts.push(`${s.annotateFontSize[0]}pt`);
+		if (s.annotateAngle[0] !== 0) parts.push(`${s.annotateAngle[0]}°`);
+		return parts.length ? parts.join(' · ') : 'Processed';
 	}
 
 	function toggleDarkMode() {

@@ -45,13 +45,14 @@
 				if (s.rotate !== '0') parts.push(`Rotate ${s.rotate}°`);
 				if (s.flip) parts.push('Flip');
 				if (s.flop) parts.push('Flop');
-				if (s.cropW || s.cropH) parts.push(`Crop ${s.cropW ?? 'auto'}×${s.cropH ?? 'auto'}`);
+				if (s.cropW || s.cropH) parts.push(`Crop ${s.cropW ?? 'A'}×${s.cropH ?? 'A'}`);
 				if (s.trimEdges) parts.push('Trim');
 				if (s.borderSize[0] > 0) parts.push(`Border ${s.borderSize[0]}px`);
 				if (s.extentW || s.extentH) {
 					parts.push(`Extent ${s.extentW ?? 'A'}×${s.extentH ?? 'A'}`);
 				}
 				if (s.deskewThreshold[0] > 0) parts.push(`Deskew ${s.deskewThreshold[0]}%`);
+				if (s.deskewThreshold[0] > 0 && !s.deskewAutoCrop) parts.push('No AutoCrop');
 				if (s.autoOrient) parts.push('Auto-Orient');
 				return parts.join(' · ');
 			}
@@ -108,12 +109,12 @@
 							parts.push(`${s.bilateralWidth[0]}×${s.bilateralHeight[0]}`);
 							break;
 					}
-					if (s.clutMap !== 'identity') {
-						const preset = getClutPresets().find(p => p.id === s.clutMap);
-						parts.push(`LUT: ${preset?.label ?? s.clutMap}`);
-						const interp = getInterpolationOptions().find(o => o.value === s.clutInterpolation);
-						if (interp && s.clutInterpolation !== 'catrom') parts.push(interp.label);
-					}
+				}
+				if (s.clutMap !== 'identity') {
+					const preset = getClutPresets().find(p => p.id === s.clutMap);
+					parts.push(`LUT: ${preset?.label ?? s.clutMap}`);
+					const interp = getInterpolationOptions().find(o => o.value === s.clutInterpolation);
+					if (interp && s.clutInterpolation !== 'catrom') parts.push(interp.label);
 				}
 				if (s.blur[0] > 0) parts.push(`Blur ${s.blur[0]}`);
 				if (s.sharpen[0] > 0) parts.push(`Sharpen ${s.sharpen[0]}`);
@@ -121,6 +122,7 @@
 				if (s.adaptiveBlurRadius[0] > 0) parts.push(`AdptBlur ${s.adaptiveBlurRadius[0]}`);
 				if (s.quantizeColors[0] > 0) {
 					parts.push(`Quantize ${s.quantizeColors[0]} colors`);
+					if (s.quantizeTreeDepth[0] > 0) parts.push(`TreeDepth ${s.quantizeTreeDepth[0]}`);
 					if (s.ditherMethod !== 'Riemersma') parts.push(s.ditherMethod === 'No' ? 'No dither' : s.ditherMethod);
 					if (s.quantizeColorSpace !== 'sRGB') parts.push(`CS: ${s.quantizeColorSpace}`);
 				}

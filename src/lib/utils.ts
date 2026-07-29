@@ -69,6 +69,7 @@ export function isFiltersDirty(s: MagickSettings): boolean {
 		s.adaptiveSharpenRadius[0] > 0 ||
 		s.adaptiveBlurRadius[0] > 0 ||
 		s.quantizeColors[0] > 0 ||
+		s.quantizeTreeDepth[0] > 0 ||
 		s.clutMap !== 'identity'
 	);
 }
