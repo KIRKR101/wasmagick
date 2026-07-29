@@ -128,6 +128,57 @@
 		/>
 	</SectionCard>
 
+	<!-- Crop -->
+	<SectionCard title="Crop" dirty={magick.settings.cropW != null || magick.settings.cropH != null}>
+		<div class="grid grid-cols-2 gap-2 mb-2">
+			<div class="relative">
+				<span
+					class="absolute top-1/2 left-3 -translate-y-1/2 font-mono text-[11px] font-bold text-muted-foreground"
+					>W</span
+				>
+				<Input
+					type="number"
+					bind:value={magick.settings.cropW}
+					placeholder="Auto"
+					min="0"
+					class="h-9 pl-8 font-mono text-xs"
+				/>
+			</div>
+			<div class="relative">
+				<span
+					class="absolute top-1/2 left-3 -translate-y-1/2 font-mono text-[11px] font-bold text-muted-foreground"
+					>H</span
+				>
+				<Input
+					type="number"
+					bind:value={magick.settings.cropH}
+					placeholder="Auto"
+					min="0"
+					class="h-9 pl-8 font-mono text-xs"
+				/>
+			</div>
+		</div>
+		<Select type="single" bind:value={magick.settings.cropGravity}>
+			<SelectTrigger class="w-full h-9 text-xs font-mono">
+				{GRAVITY_OPTIONS.find(o => o.value === magick.settings.cropGravity)?.label ?? magick.settings.cropGravity}
+			</SelectTrigger>
+			<SelectContent>
+				{#each GRAVITY_OPTIONS as opt (opt.value)}
+					<SelectItem value={opt.value}>{opt.label}</SelectItem>
+				{/each}
+			</SelectContent>
+		</Select>
+	</SectionCard>
+
+	<!-- Trim -->
+	<SectionCard title="Trim" dirty={magick.settings.trimEdges}>
+		<ToggleRow
+			id="geo-trim"
+			label="Trim Edges"
+			bind:checked={magick.settings.trimEdges}
+		/>
+	</SectionCard>
+
 	<!-- Canvas Extent -->
 	<SectionCard title="Canvas Extent" dirty={magick.settings.extentW != null || magick.settings.extentH != null}>
 		<div class="grid grid-cols-2 gap-2 mb-2">

@@ -245,6 +245,54 @@ describe('MagickState', () => {
 		});
 	});
 
+	describe('new feature defaults', () => {
+		it('should have correct crop defaults', () => {
+			expect(magick.settings.cropW).toBeNull();
+			expect(magick.settings.cropH).toBeNull();
+			expect(magick.settings.cropGravity).toBe('Center');
+			expect(magick.settings.trimEdges).toBe(false);
+		});
+
+		it('should have correct adaptive sharpen/blur defaults', () => {
+			expect(magick.settings.adaptiveSharpenRadius).toEqual([0]);
+			expect(magick.settings.adaptiveSharpenSigma).toEqual([1]);
+			expect(magick.settings.adaptiveBlurRadius).toEqual([0]);
+			expect(magick.settings.adaptiveBlurSigma).toEqual([1]);
+		});
+	});
+
+	describe('resetGeometry with crop/trim', () => {
+		it('should reset crop and trim settings', () => {
+			magick.settings.cropW = 100;
+			magick.settings.cropH = 100;
+			magick.settings.cropGravity = 'Northwest';
+			magick.settings.trimEdges = true;
+
+			magick.resetGeometry();
+
+			expect(magick.settings.cropW).toBeNull();
+			expect(magick.settings.cropH).toBeNull();
+			expect(magick.settings.cropGravity).toBe('Center');
+			expect(magick.settings.trimEdges).toBe(false);
+		});
+	});
+
+	describe('resetFilters with adaptive sharpen/blur', () => {
+		it('should reset adaptive sharpen and blur settings', () => {
+			magick.settings.adaptiveSharpenRadius = [3];
+			magick.settings.adaptiveSharpenSigma = [2];
+			magick.settings.adaptiveBlurRadius = [4];
+			magick.settings.adaptiveBlurSigma = [1.5];
+
+			magick.resetFilters();
+
+			expect(magick.settings.adaptiveSharpenRadius).toEqual([0]);
+			expect(magick.settings.adaptiveSharpenSigma).toEqual([1]);
+			expect(magick.settings.adaptiveBlurRadius).toEqual([0]);
+			expect(magick.settings.adaptiveBlurSigma).toEqual([1]);
+		});
+	});
+
 });
 
 	describe('MagickSettings type', () => {
@@ -266,6 +314,10 @@ describe('MagickState', () => {
 			extentBgColor: '#ffffff',
 			deskewThreshold: [0],
 			deskewAutoCrop: true,
+			cropW: null,
+			cropH: null,
+			cropGravity: 'Center',
+			trimEdges: false,
 			brightness: [100],
 			saturation: [100],
 			hue: [100],
@@ -286,6 +338,10 @@ describe('MagickState', () => {
 			effect: 'none',
 			blur: [0],
 			sharpen: [0],
+			adaptiveSharpenRadius: [0],
+			adaptiveSharpenSigma: [1],
+			adaptiveBlurRadius: [0],
+			adaptiveBlurSigma: [1],
 			sepiaThreshold: [80],
 			charcoalIntensity: [0],
 			cannyEdgeStrength: [0],

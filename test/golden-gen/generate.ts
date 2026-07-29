@@ -89,6 +89,14 @@ genAllSources('flop', ['-flop'], '{base}.png');
 console.log('-- auto-orient --');
 genAllSources('auto-orient', ['-auto-orient'], '{base}.png');
 
+// -- CROP --
+console.log('-- crop --');
+genAllSources('crop', ['-gravity', 'NorthWest', '-crop', '60x60+0+0', '+repage'], '{base}.png');
+
+// -- TRIM --
+console.log('-- trim --');
+genAllSources('trim', ['-trim', '+repage'], '{base}.png');
+
 // -- DESKEW --
 console.log('-- deskew --');
 genAllSources('deskew', ['-deskew', '20%'], '{base}.png');
@@ -188,6 +196,14 @@ genAllSources('blur', ['-blur', '3x1.5'], '{base}.png');
 // -- SHARPEN --
 console.log('-- sharpen --');
 genAllSources('sharpen', ['-sharpen', '2x1'], '{base}.png');
+
+// -- ADAPTIVE-SHARPEN --
+console.log('-- adaptive-sharpen --');
+genAllSources('adaptive-sharpen', ['-adaptive-sharpen', '2x1'], '{base}.png');
+
+// -- ADAPTIVE-BLUR --
+console.log('-- adaptive-blur --');
+genAllSources('adaptive-blur', ['-adaptive-blur', '2x1'], '{base}.png');
 
 // -- CLUT --
 console.log('-- clut --');

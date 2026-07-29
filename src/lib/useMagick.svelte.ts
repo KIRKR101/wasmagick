@@ -58,6 +58,10 @@ const ARRAY_KEYS = new Set([
 	'bilateralHeight',
 	'bilateralIntensitySigma',
 	'bilateralSpatialSigma',
+	'adaptiveSharpenRadius',
+	'adaptiveSharpenSigma',
+	'adaptiveBlurRadius',
+	'adaptiveBlurSigma',
 	'quantizeColors',
 	'quantizeTreeDepth',
 	'annotateFontSize',
@@ -123,6 +127,10 @@ export const DEFAULT_SETTINGS: MagickSettings = {
 	extentBgColor: '#ffffff',
 	deskewThreshold: [0],
 	deskewAutoCrop: true,
+	cropW: null,
+	cropH: null,
+	cropGravity: 'Center',
+	trimEdges: false,
 	brightness: [100],
 	saturation: [100],
 	hue: [100],
@@ -143,6 +151,10 @@ export const DEFAULT_SETTINGS: MagickSettings = {
 	effect: 'none',
 	blur: [0],
 	sharpen: [0],
+	adaptiveSharpenRadius: [0],
+	adaptiveSharpenSigma: [1],
+	adaptiveBlurRadius: [0],
+	adaptiveBlurSigma: [1],
 	sepiaThreshold: [80],
 	charcoalIntensity: [0],
 	cannyEdgeStrength: [0],
@@ -553,6 +565,10 @@ export class MagickState {
 		this.settings.extentBgColor = DEFAULT_SETTINGS.extentBgColor;
 		this.settings.deskewThreshold = [...DEFAULT_SETTINGS.deskewThreshold];
 		this.settings.deskewAutoCrop = DEFAULT_SETTINGS.deskewAutoCrop;
+		this.settings.cropW = DEFAULT_SETTINGS.cropW;
+		this.settings.cropH = DEFAULT_SETTINGS.cropH;
+		this.settings.cropGravity = DEFAULT_SETTINGS.cropGravity;
+		this.settings.trimEdges = DEFAULT_SETTINGS.trimEdges;
 		this.settings.autoOrient = DEFAULT_SETTINGS.autoOrient;
 	}
 
@@ -579,6 +595,10 @@ export class MagickState {
 		this.settings.effect = DEFAULT_SETTINGS.effect;
 		this.settings.blur = [...DEFAULT_SETTINGS.blur];
 		this.settings.sharpen = [...DEFAULT_SETTINGS.sharpen];
+		this.settings.adaptiveSharpenRadius = [...DEFAULT_SETTINGS.adaptiveSharpenRadius];
+		this.settings.adaptiveSharpenSigma = [...DEFAULT_SETTINGS.adaptiveSharpenSigma];
+		this.settings.adaptiveBlurRadius = [...DEFAULT_SETTINGS.adaptiveBlurRadius];
+		this.settings.adaptiveBlurSigma = [...DEFAULT_SETTINGS.adaptiveBlurSigma];
 		this.settings.sepiaThreshold = [...DEFAULT_SETTINGS.sepiaThreshold];
 		this.settings.charcoalIntensity = [...DEFAULT_SETTINGS.charcoalIntensity];
 		this.settings.cannyEdgeStrength = [...DEFAULT_SETTINGS.cannyEdgeStrength];
@@ -828,6 +848,25 @@ export class MagickState {
 									appliedOptions.flip = true;
 								}
 
+								if ((this.settings.cropW ?? 0) > 0 || (this.settings.cropH ?? 0) > 0) {
+									this.currentProcessingStep = 'Cropping';
+									const cropW = this.settings.cropW ?? image.width;
+									const cropH = this.settings.cropH ?? image.height;
+									const gravityKey = this.settings.cropGravity as keyof typeof Gravity;
+									image.crop(cropW, cropH, Gravity[gravityKey]);
+									appliedOptions.crop = {
+										width: this.settings.cropW,
+										height: this.settings.cropH,
+										gravity: this.settings.cropGravity
+									};
+								}
+
+								if (this.settings.trimEdges) {
+									this.currentProcessingStep = 'Trimming';
+									image.trim();
+									appliedOptions.trim = true;
+								}
+
 								if (this.settings.borderSize[0] > 0) {
 									this.currentProcessingStep = 'Adding Border';
 									const { r, g, b } = this.hexToRgb(this.settings.borderColor);
@@ -987,6 +1026,30 @@ export class MagickState {
 									const sigma = radius / 2;
 									image.sharpen(radius, sigma);
 									appliedOptions.sharpen = this.settings.sharpen[0];
+								}
+
+								if (this.settings.adaptiveSharpenRadius[0] > 0) {
+									this.currentProcessingStep = 'Adaptive Sharpening';
+									image.adaptiveSharpen(
+										this.settings.adaptiveSharpenRadius[0],
+										this.settings.adaptiveSharpenSigma[0]
+									);
+									appliedOptions.adaptiveSharpen = {
+										radius: this.settings.adaptiveSharpenRadius[0],
+										sigma: this.settings.adaptiveSharpenSigma[0]
+									};
+								}
+
+								if (this.settings.adaptiveBlurRadius[0] > 0) {
+									this.currentProcessingStep = 'Adaptive Blurring';
+									image.adaptiveBlur(
+										this.settings.adaptiveBlurRadius[0],
+										this.settings.adaptiveBlurSigma[0]
+									);
+									appliedOptions.adaptiveBlur = {
+										radius: this.settings.adaptiveBlurRadius[0],
+										sigma: this.settings.adaptiveBlurSigma[0]
+									};
 								}
 
 								if (this.settings.effect !== 'none') {

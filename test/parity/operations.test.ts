@@ -173,6 +173,18 @@ describe('Geometry operations', () => {
 		testAllSources('auto-orient', '{base}.png', { autoOrient: true });
 	});
 
+	it('crop', () => {
+		testAllSources('crop', '{base}.png', {
+			cropW: 60,
+			cropH: 60,
+			cropGravity: 'Northwest'
+		});
+	});
+
+	it('trim', () => {
+		testAllSources('trim', '{base}.png', { trimEdges: true });
+	});
+
 	it('deskew', () => {
 		testAllSources('deskew', '{base}.png', { deskewThreshold: [20], deskewAutoCrop: false });
 	});
@@ -365,6 +377,20 @@ describe('Filter / Effect operations', () => {
 
 	it('sharpen', () => {
 		testAllSources('sharpen', '{base}.png', { sharpen: [2] });
+	});
+
+	it('adaptive-sharpen', () => {
+		testAllSources('adaptive-sharpen', '{base}.png', {
+			adaptiveSharpenRadius: [2],
+			adaptiveSharpenSigma: [1]
+		}, 0.05, 100);
+	});
+
+	it('adaptive-blur', () => {
+		testAllSources('adaptive-blur', '{base}.png', {
+			adaptiveBlurRadius: [2],
+			adaptiveBlurSigma: [1]
+		}, 0.05, 200);
 	});
 });
 

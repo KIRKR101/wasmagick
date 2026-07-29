@@ -27,6 +27,9 @@ export function isGeoDirty(s: MagickSettings): boolean {
 		s.rotate !== '0' ||
 		s.flip ||
 		s.flop ||
+		(s.cropW != null && s.cropW > 0) ||
+		(s.cropH != null && s.cropH > 0) ||
+		s.trimEdges ||
 		s.borderSize[0] > 0 ||
 		s.extentW != null ||
 		s.extentH != null ||
@@ -63,6 +66,8 @@ export function isFiltersDirty(s: MagickSettings): boolean {
 		s.effect !== 'none' ||
 		s.blur[0] > 0 ||
 		s.sharpen[0] > 0 ||
+		s.adaptiveSharpenRadius[0] > 0 ||
+		s.adaptiveBlurRadius[0] > 0 ||
 		s.quantizeColors[0] > 0 ||
 		s.clutMap !== 'identity'
 	);

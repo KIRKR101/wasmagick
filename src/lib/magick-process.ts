@@ -68,6 +68,15 @@ export function processImageSync(sourceBytes: Uint8Array, settings: MagickSettin
 		if (settings.flop) image.flop();
 		if (settings.flip) image.flip();
 
+		if ((settings.cropW ?? 0) > 0 || (settings.cropH ?? 0) > 0) {
+			const cropW = settings.cropW ?? image.width;
+			const cropH = settings.cropH ?? image.height;
+			const gravityKey = settings.cropGravity as keyof typeof Gravity;
+			image.crop(cropW, cropH, Gravity[gravityKey]);
+		}
+
+		if (settings.trimEdges) image.trim();
+
 		if (settings.borderSize[0] > 0) {
 			const { r, g, b } = hexToRgb(settings.borderColor);
 			image.borderColor = new MagickColor(r, g, b);
@@ -158,6 +167,14 @@ export function processImageSync(sourceBytes: Uint8Array, settings: MagickSettin
 		if (settings.sharpen[0] > 0) {
 			const radius = settings.sharpen[0];
 			image.sharpen(radius, radius / 2);
+		}
+
+		if (settings.adaptiveSharpenRadius[0] > 0) {
+			image.adaptiveSharpen(settings.adaptiveSharpenRadius[0], settings.adaptiveSharpenSigma[0]);
+		}
+
+		if (settings.adaptiveBlurRadius[0] > 0) {
+			image.adaptiveBlur(settings.adaptiveBlurRadius[0], settings.adaptiveBlurSigma[0]);
 		}
 
 		if (settings.effect !== 'none') {

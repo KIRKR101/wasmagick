@@ -66,6 +66,10 @@ export interface MagickSettings {
 	extentBgColor: string;
 	deskewThreshold: [number];
 	deskewAutoCrop: boolean;
+	cropW: number | null;
+	cropH: number | null;
+	cropGravity: GravityPosition;
+	trimEdges: boolean;
 
 	// Color adjustment settings
 	brightness: [number];
@@ -90,6 +94,10 @@ export interface MagickSettings {
 	effect: EffectPreset;
 	blur: [number];
 	sharpen: [number];
+	adaptiveSharpenRadius: [number];
+	adaptiveSharpenSigma: [number];
+	adaptiveBlurRadius: [number];
+	adaptiveBlurSigma: [number];
 	sepiaThreshold: [number];
 	charcoalIntensity: [number];
 	cannyEdgeStrength: [number];
@@ -131,6 +139,8 @@ export interface AppliedOptions {
 	rotate?: number;
 	flop?: boolean;
 	flip?: boolean;
+	crop?: { width: number | null; height: number | null; gravity: string };
+	trim?: boolean;
 	border?: { size: number; color: string };
 	extent?: {
 		width: number | null;
@@ -156,6 +166,8 @@ export interface AppliedOptions {
 	};
 	blur?: number;
 	sharpen?: number;
+	adaptiveSharpen?: { radius: number; sigma: number };
+	adaptiveBlur?: { radius: number; sigma: number };
 	effect?: string;
 	sepiaThreshold?: number;
 	charcoalIntensity?: number;

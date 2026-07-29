@@ -139,6 +139,16 @@
 		</div>
 	</SectionCard>
 
+	<!-- Adaptive Sharpen / Blur -->
+	<SectionCard title="Adaptive Sharpen / Blur" dirty={magick.settings.adaptiveSharpenRadius[0] > 0 || magick.settings.adaptiveBlurRadius[0] > 0}>
+		<div class="space-y-3">
+			<SliderRow label="Sharpen Radius" bind:value={magick.settings.adaptiveSharpenRadius} min={0} max={10} step={0.5} />
+			<SliderRow label="Sharpen Sigma" bind:value={magick.settings.adaptiveSharpenSigma} min={0.1} max={5} step={0.1} disabled={magick.settings.adaptiveSharpenRadius[0] === 0} />
+			<SliderRow label="Blur Radius" bind:value={magick.settings.adaptiveBlurRadius} min={0} max={10} step={0.5} />
+			<SliderRow label="Blur Sigma" bind:value={magick.settings.adaptiveBlurSigma} min={0.1} max={5} step={0.1} disabled={magick.settings.adaptiveBlurRadius[0] === 0} />
+		</div>
+	</SectionCard>
+
 	<!-- Color LUT -->
 	<SectionCard title="Color LUT" dirty={magick.settings.clutMap !== 'identity'}>
 		<div class="space-y-3">
