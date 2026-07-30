@@ -181,6 +181,78 @@ describe('Geometry operations', () => {
 		});
 	});
 
+	it('crop center', () => {
+		testAllSources('crop-center', '{base}.png', {
+			cropW: 60,
+			cropH: 60,
+			cropGravity: 'Center'
+		});
+	});
+
+	it('crop northwest', () => {
+		testAllSources('crop-northwest', '{base}.png', {
+			cropW: 60,
+			cropH: 60,
+			cropGravity: 'Northwest'
+		});
+	});
+
+	it('crop north', () => {
+		testAllSources('crop-north', '{base}.png', {
+			cropW: 60,
+			cropH: 60,
+			cropGravity: 'North'
+		});
+	});
+
+	it('crop northeast', () => {
+		testAllSources('crop-northeast', '{base}.png', {
+			cropW: 60,
+			cropH: 60,
+			cropGravity: 'Northeast'
+		});
+	});
+
+	it('crop west', () => {
+		testAllSources('crop-west', '{base}.png', {
+			cropW: 60,
+			cropH: 60,
+			cropGravity: 'West'
+		});
+	});
+
+	it('crop east', () => {
+		testAllSources('crop-east', '{base}.png', {
+			cropW: 60,
+			cropH: 60,
+			cropGravity: 'East'
+		});
+	});
+
+	it('crop southwest', () => {
+		testAllSources('crop-southwest', '{base}.png', {
+			cropW: 60,
+			cropH: 60,
+			cropGravity: 'Southwest'
+		});
+	});
+
+	it('crop south', () => {
+		testAllSources('crop-south', '{base}.png', {
+			cropW: 60,
+			cropH: 60,
+			cropGravity: 'South'
+		});
+	});
+
+	it('crop southeast', () => {
+		testAllSources('crop-southeast', '{base}.png', {
+			cropW: 60,
+			cropH: 60,
+			cropGravity: 'Southeast'
+		});
+	});
+
 	it('trim', () => {
 		testAllSources('trim', '{base}.png', { trimEdges: true });
 	});

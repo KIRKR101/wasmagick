@@ -217,7 +217,7 @@
 	}
 
 	function onWheel(e: WheelEvent) {
-		if (showPlaceholder) return;
+		if (showPlaceholder || cropActive) return;
 		e.preventDefault();
 		zoomAt(e.clientX, e.clientY, currentZoom * Math.exp(-e.deltaY * 0.001));
 	}

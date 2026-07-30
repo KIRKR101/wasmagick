@@ -17,7 +17,6 @@ import {
 	MagickFormat,
 	Percentage,
 	MagickColor,
-	MagickGeometry,
 	Gravity,
 	Channels,
 	ColorSpace,
@@ -29,6 +28,7 @@ import {
 import type { MagickSettings, AppliedOptions, LevelChannel } from './types';
 import { ensureFont, DEFAULT_FONT, isLocalFont } from './fonts';
 import { generateClutImage } from './luts';
+import { applyCrop } from './magick-process';
 
 const AUTO_PROCESS_DELAY = 300;
 
@@ -856,21 +856,8 @@ export class MagickState {
 									appliedOptions.flip = true;
 								}
 
-								if ((this.settings.cropW ?? 0) > 0 || (this.settings.cropH ?? 0) > 0 || this.settings.cropX != null || this.settings.cropY != null) {
+							if (applyCrop(image, this.settings)) {
 									this.currentProcessingStep = 'Cropping';
-									const hasVisualCrop = this.settings.cropX != null || this.settings.cropY != null;
-									if (hasVisualCrop) {
-										const cx = this.settings.cropX ?? 0;
-										const cy = this.settings.cropY ?? 0;
-										const cw = this.settings.cropW ?? image.width;
-										const ch = this.settings.cropH ?? image.height;
-										image.crop(new MagickGeometry(cx, cy, cw, ch));
-									} else {
-										const cropW = this.settings.cropW ?? image.width;
-										const cropH = this.settings.cropH ?? image.height;
-										const gravityKey = this.settings.cropGravity as keyof typeof Gravity;
-										image.crop(cropW, cropH, Gravity[gravityKey]);
-									}
 									appliedOptions.crop = {
 										x: this.settings.cropX,
 										y: this.settings.cropY,

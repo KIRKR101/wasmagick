@@ -12,6 +12,8 @@
 		type CropRect
 	} from '$lib/crop-utils';
 
+	let _maskCounter = 0;
+
 	let {
 		imageWidth,
 		imageHeight,
@@ -40,6 +42,7 @@
 
 	const MIN_CROP_PX = 10;
 
+	let _maskId = `crop-mask-${++_maskCounter}`;
 	let cropRect = $state<CropRect | null>(null);
 
 	// Pre-populate crop rect from initialCrop prop on mount
@@ -366,7 +369,7 @@
 >
 	<svg width={svgWidth} height={svgHeight} class="absolute inset-0" style="pointer-events: none">
 		<defs>
-			<mask id="crop-mask">
+			<mask id={_maskId}>
 				<rect width="100%" height="100%" fill="white" />
 				{#if cropScreen}
 					<rect
@@ -381,7 +384,7 @@
 		</defs>
 
 		<!-- Dark overlay with crop cutout -->
-		<rect width="100%" height="100%" fill="rgba(0,0,0,0.55)" mask="url(#crop-mask)" />
+		<rect width="100%" height="100%" fill="rgba(0,0,0,0.55)" mask="url(#{_maskId})" />
 
 		{#if cropScreen}
 			<!-- Dashed crop border -->

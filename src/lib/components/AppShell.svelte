@@ -91,27 +91,12 @@
 			};
 		}
 		if (s.cropW != null && s.cropW > 0 && s.cropH != null && s.cropH > 0) {
-			const stepW = s.resizeW ?? (magick.originalWidth || 0);
-			const stepH = s.resizeH ?? (magick.originalHeight || 0);
-			const grav = s.cropGravity;
-			let x = 0;
-			let y = 0;
-			const cw = Math.min(s.cropW, stepW);
-			const ch = Math.min(s.cropH, stepH);
-			if (grav === 'Center') {
-				x = Math.round((stepW - cw) / 2);
-				y = Math.round((stepH - ch) / 2);
-			} else if (grav === 'Northwest') { x = 0; y = 0; }
-			else if (grav === 'North') { x = Math.round((stepW - cw) / 2); y = 0; }
-			else if (grav === 'Northeast') { x = stepW - cw; y = 0; }
-			else if (grav === 'West') { x = 0; y = Math.round((stepH - ch) / 2); }
-			else if (grav === 'East') { x = stepW - cw; y = Math.round((stepH - ch) / 2); }
-			else if (grav === 'Southwest') { x = 0; y = stepH - ch; }
-			else if (grav === 'South') { x = Math.round((stepW - cw) / 2); y = stepH - ch; }
-			else if (grav === 'Southeast') { x = stepW - cw; y = stepH - ch; }
+			const { gx, gy } = cropGravityOffset;
+			const cw = Math.min(s.cropW, cropStepOffset.stepW);
+			const ch = Math.min(s.cropH, cropStepOffset.stepH);
 			return {
-				x: Math.max(0, x) - offsetX,
-				y: Math.max(0, y) - offsetY,
+				x: gx - offsetX,
+				y: gy - offsetY,
 				w: cw,
 				h: ch
 			};
@@ -125,32 +110,37 @@
 		const s = magick.settings;
 		const srcW = magick.originalWidth || 0;
 		const srcH = magick.originalHeight || 0;
-		const stepW = s.resizeW ?? srcW;
-		const stepH = s.resizeH ?? srcH;
+		const rotated = s.rotate === '90' || s.rotate === '-90';
+		const stepW = rotated ? (s.resizeH ?? srcH) : (s.resizeW ?? srcW);
+		const stepH = rotated ? (s.resizeW ?? srcW) : (s.resizeH ?? srcH);
 
 		if (s.cropX != null && s.cropY != null) {
 			return { offsetX: s.cropX, offsetY: s.cropY, stepW, stepH };
 		}
-		if (s.cropW != null && s.cropW > 0 && s.cropH != null && s.cropH > 0) {
-			const grav = s.cropGravity;
-			const cw = Math.min(s.cropW, stepW);
-			const ch = Math.min(s.cropH, stepH);
-			let ox = 0;
-			let oy = 0;
-			if (grav === 'Center') {
-				ox = Math.round((stepW - cw) / 2);
-				oy = Math.round((stepH - ch) / 2);
-			} else if (grav === 'Northwest') { ox = 0; oy = 0; }
-			else if (grav === 'North') { ox = Math.round((stepW - cw) / 2); oy = 0; }
-			else if (grav === 'Northeast') { ox = stepW - cw; oy = 0; }
-			else if (grav === 'West') { ox = 0; oy = Math.round((stepH - ch) / 2); }
-			else if (grav === 'East') { ox = stepW - cw; oy = Math.round((stepH - ch) / 2); }
-			else if (grav === 'Southwest') { ox = 0; oy = stepH - ch; }
-			else if (grav === 'South') { ox = Math.round((stepW - cw) / 2); oy = stepH - ch; }
-			else if (grav === 'Southeast') { ox = stepW - cw; oy = stepH - ch; }
-			return { offsetX: Math.max(0, ox), offsetY: Math.max(0, oy), stepW, stepH };
-		}
 		return { offsetX: 0, offsetY: 0, stepW, stepH };
+	});
+
+	// Gravity position in step coordinates, used only for the preview overlay.
+	let cropGravityOffset = $derived.by(() => {
+		const s = magick.settings;
+		if (s.cropX != null || s.cropY != null) return { gx: 0, gy: 0 };
+		if (s.cropW == null || s.cropW <= 0 || s.cropH == null || s.cropH <= 0) return { gx: 0, gy: 0 };
+		const { stepW, stepH } = cropStepOffset;
+		const cw = Math.min(s.cropW, stepW);
+		const ch = Math.min(s.cropH, stepH);
+		const grav = s.cropGravity;
+		let gx = 0;
+		let gy = 0;
+		if (grav === 'Center') { gx = Math.round((stepW - cw) / 2); gy = Math.round((stepH - ch) / 2); }
+		else if (grav === 'Northwest') { gx = 0; gy = 0; }
+		else if (grav === 'North') { gx = Math.round((stepW - cw) / 2); gy = 0; }
+		else if (grav === 'Northeast') { gx = stepW - cw; gy = 0; }
+		else if (grav === 'West') { gx = 0; gy = Math.round((stepH - ch) / 2); }
+		else if (grav === 'East') { gx = stepW - cw; gy = Math.round((stepH - ch) / 2); }
+		else if (grav === 'Southwest') { gx = 0; gy = stepH - ch; }
+		else if (grav === 'South') { gx = Math.round((stepW - cw) / 2); gy = stepH - ch; }
+		else if (grav === 'Southeast') { gx = stepW - cw; gy = stepH - ch; }
+		return { gx: Math.max(0, gx), gy: Math.max(0, gy) };
 	});
 
 	function onViewportStateChange(st: { zoom: number }) {

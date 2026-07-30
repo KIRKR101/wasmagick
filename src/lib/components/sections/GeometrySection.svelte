@@ -10,8 +10,12 @@
 	import SliderRow from '$lib/components/controls/SliderRow.svelte';
 	import ToggleRow from '$lib/components/controls/ToggleRow.svelte';
 	import SectionCard from '$lib/components/controls/SectionCard.svelte';
+	import { Crop } from 'lucide-svelte';
 
 	let { magick } = $props<{ magick: MagickState }>();
+
+	let cropInputMode = $state<'visual' | 'manual'>('visual');
+	let isPositionCrop = $derived(magick.settings.cropX != null || magick.settings.cropY != null);
 
 	const t2 = (v: number | null) => (v == null ? '' : String(Math.round(v * 100) / 100));
 
@@ -164,113 +168,146 @@
 			</span>
 		</div>
 
-		<button
-			type="button"
-			class="mb-3 flex w-full cursor-pointer items-center justify-center gap-2 border border-foreground/30 bg-transparent py-1.5 font-mono text-[11px] uppercase transition-colors hover:bg-muted focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {magick.cropMode
-				? 'bg-muted font-bold text-foreground'
-				: 'text-muted-foreground'}"
-			onclick={() => (magick.cropMode = !magick.cropMode)}
+		<!-- Mode tabs -->
+		<div class="mb-3 flex border border-foreground/20">
+			<button
+				type="button"
+				class="flex-1 cursor-pointer py-1 font-mono text-[11px] uppercase transition-colors {cropInputMode ===
+				'visual'
+					? 'bg-muted font-bold text-foreground'
+					: 'text-muted-foreground hover:bg-muted/50'}"
+				onclick={() => {
+					if (cropInputMode !== 'visual') {
+						cropInputMode = 'visual';
+						magick.cropMode = false;
+					}
+				}}
+			>
+				Select Region
+			</button>
+			<div class="w-px bg-foreground/20"></div>
+			<button
+				type="button"
+				class="flex-1 cursor-pointer py-1 font-mono text-[11px] uppercase transition-colors {cropInputMode ===
+				'manual'
+					? 'bg-muted font-bold text-foreground'
+					: 'text-muted-foreground hover:bg-muted/50'}"
+				onclick={() => {
+					if (cropInputMode !== 'manual') {
+						cropInputMode = 'manual';
+						magick.cropMode = false;
+						magick.settings.cropX = null;
+						magick.settings.cropY = null;
+					}
+				}}
 		>
-			{magick.cropMode ? 'Cancel Selection' : 'Select Region'}
+			Gravity
 		</button>
+		</div>
 
-		<div class="space-y-2">
-			<div>
-				<div class="mb-1.5 font-mono text-[10px] text-muted-foreground/50 uppercase">Position</div>
-				<div class="grid grid-cols-2 gap-2">
-					<div class="relative">
-						<span
-							class="absolute top-1/2 left-3 -translate-y-1/2 font-mono text-[11px] font-bold text-muted-foreground"
-							>X</span
-						>
-						<Input
-							type="number"
-							value={t2(magick.settings.cropX)}
-							placeholder="0"
-							class="h-8 pl-8 font-mono text-xs"
-							onchange={(e) => {
-								const v = parseFloat(e.currentTarget.value);
-								magick.settings.cropX = isNaN(v) ? null : v;
-							}}
-						/>
-					</div>
-					<div class="relative">
-						<span
-							class="absolute top-1/2 left-3 -translate-y-1/2 font-mono text-[11px] font-bold text-muted-foreground"
-							>Y</span
-						>
-						<Input
-							type="number"
-							value={t2(magick.settings.cropY)}
-							placeholder="0"
-							class="h-8 pl-8 font-mono text-xs"
-							onchange={(e) => {
-								const v = parseFloat(e.currentTarget.value);
-								magick.settings.cropY = isNaN(v) ? null : v;
-							}}
-						/>
-					</div>
-				</div>
+		{#if cropInputMode === 'visual'}
+			<!-- Visual mode: Select Region + Ratio + Position bar -->
+			<button
+				type="button"
+				class="mb-3 flex w-full cursor-pointer items-center justify-center gap-2 border py-2 font-mono text-[11px] uppercase transition-all focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {magick.cropMode
+					? 'border-foreground bg-foreground text-background shadow-sm'
+					: 'border-foreground/30 bg-transparent text-muted-foreground hover:border-foreground/60 hover:bg-muted hover:text-foreground'}"
+				onclick={() => (magick.cropMode = !magick.cropMode)}
+			>
+				<Crop class="size-3.5" />
+				{magick.cropMode ? 'Cancel Selection' : 'Select Region'}
+			</button>
+
+			<div class="mb-2">
+				<div class="mb-1.5 font-mono text-[10px] text-muted-foreground/50 uppercase">Ratio</div>
+				<Select type="single" bind:value={magick.cropAspectRatio}>
+					<SelectTrigger class="h-8 w-full font-mono text-[11px]">
+						{CROP_RATIO_OPTIONS.find((o) => o.value === magick.cropAspectRatio)?.label ?? 'Free'}
+					</SelectTrigger>
+					<SelectContent>
+						{#each CROP_RATIO_OPTIONS as opt (opt.value)}
+							<SelectItem value={opt.value}>{opt.label}</SelectItem>
+						{/each}
+					</SelectContent>
+				</Select>
 			</div>
 
-			<div>
-				<div class="mb-1.5 font-mono text-[10px] text-muted-foreground/50 uppercase">
-					Dimensions
-				</div>
-				<div class="grid grid-cols-2 gap-2">
-					<div class="relative">
-						<span
-							class="absolute top-1/2 left-3 -translate-y-1/2 font-mono text-[11px] font-bold text-muted-foreground"
-							>W</span
+			{#if isPositionCrop}
+				<div class="flex items-center justify-between border-t border-foreground/10 pt-3">
+					<div class="font-mono text-[10px] text-muted-foreground/70">
+						<span class="text-muted-foreground/50">Selection</span>
+						<span class="ml-1.5"
+							>{Math.round(magick.settings.cropW ?? 0)}×{Math.round(
+								magick.settings.cropH ?? 0
+							)}</span
 						>
-						<Input
-							type="number"
-							value={t2(magick.settings.cropW)}
-							placeholder="Auto"
-							min="0"
-							class="h-8 pl-8 font-mono text-xs"
-							onchange={(e) => {
-								const v = parseFloat(e.currentTarget.value);
-								magick.settings.cropW = isNaN(v) ? null : v;
-							}}
-						/>
+						<span class="ml-1 text-muted-foreground/40">
+							@ {Math.round(magick.settings.cropX ?? 0)},{Math.round(
+								magick.settings.cropY ?? 0
+							)}
+						</span>
 					</div>
-					<div class="relative">
-						<span
-							class="absolute top-1/2 left-3 -translate-y-1/2 font-mono text-[11px] font-bold text-muted-foreground"
-							>H</span
-						>
-						<Input
-							type="number"
-							value={t2(magick.settings.cropH)}
-							placeholder="Auto"
-							min="0"
-							class="h-8 pl-8 font-mono text-xs"
-							onchange={(e) => {
-								const v = parseFloat(e.currentTarget.value);
-								magick.settings.cropH = isNaN(v) ? null : v;
-							}}
-						/>
+					<button
+						type="button"
+						class="flex h-6 cursor-pointer items-center gap-1 border border-foreground/30 px-2 font-mono text-[10px] text-muted-foreground transition-colors hover:border-foreground/50 hover:bg-muted focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+						onclick={() => {
+							magick.settings.cropX = null;
+							magick.settings.cropY = null;
+							magick.settings.cropW = null;
+							magick.settings.cropH = null;
+						}}
+					>
+						× Clear
+					</button>
+				</div>
+			{/if}
+		{:else}
+			<!-- Gravity mode: W/H + Gravity -->
+			<div class="space-y-2">
+				<div>
+					<div class="mb-1.5 font-mono text-[10px] text-muted-foreground/50 uppercase">
+						Dimensions
+					</div>
+					<div class="grid grid-cols-2 gap-2">
+						<div class="relative">
+							<span
+								class="absolute top-1/2 left-3 -translate-y-1/2 font-mono text-[11px] font-bold text-muted-foreground"
+								>W</span
+							>
+							<Input
+								type="number"
+								value={t2(magick.settings.cropW)}
+								placeholder="Auto"
+								min="0"
+								class="h-8 pl-8 font-mono text-xs"
+								oninput={(e) => {
+									const v = parseFloat(e.currentTarget.value);
+									magick.settings.cropW = isNaN(v) ? null : v;
+								}}
+							/>
+						</div>
+						<div class="relative">
+							<span
+								class="absolute top-1/2 left-3 -translate-y-1/2 font-mono text-[11px] font-bold text-muted-foreground"
+								>H</span
+							>
+							<Input
+								type="number"
+								value={t2(magick.settings.cropH)}
+								placeholder="Auto"
+								min="0"
+								class="h-8 pl-8 font-mono text-xs"
+								oninput={(e) => {
+									const v = parseFloat(e.currentTarget.value);
+									magick.settings.cropH = isNaN(v) ? null : v;
+								}}
+							/>
+						</div>
 					</div>
 				</div>
-			</div>
 
-			<div>
-				<div class="mb-1.5 grid grid-cols-2 gap-2">
-					<span class="font-mono text-[10px] text-muted-foreground/50 uppercase">Ratio</span>
-					<span class="font-mono text-[10px] text-muted-foreground/50 uppercase">Gravity</span>
-				</div>
-				<div class="grid grid-cols-2 gap-2">
-					<Select type="single" bind:value={magick.cropAspectRatio}>
-						<SelectTrigger class="h-8 w-full font-mono text-[11px]">
-							{CROP_RATIO_OPTIONS.find((o) => o.value === magick.cropAspectRatio)?.label ?? 'Free'}
-						</SelectTrigger>
-						<SelectContent>
-							{#each CROP_RATIO_OPTIONS as opt (opt.value)}
-								<SelectItem value={opt.value}>{opt.label}</SelectItem>
-							{/each}
-						</SelectContent>
-					</Select>
+				<div>
+					<div class="mb-1.5 font-mono text-[10px] text-muted-foreground/50 uppercase">Gravity</div>
 					<Select type="single" bind:value={magick.settings.cropGravity}>
 						<SelectTrigger class="h-8 w-full font-mono text-[11px]">
 							{GRAVITY_OPTIONS.find((o) => o.value === magick.settings.cropGravity)?.label ??
@@ -283,32 +320,6 @@
 						</SelectContent>
 					</Select>
 				</div>
-			</div>
-		</div>
-
-		{#if magick.settings.cropX != null || magick.settings.cropY != null}
-			<div class="mt-3 flex items-center justify-between border-t border-foreground/10 pt-3">
-				<div class="font-mono text-[10px] text-muted-foreground/70">
-					<span class="text-muted-foreground/50">Selection</span>
-					<span class="ml-1.5"
-						>{Math.round(magick.settings.cropW ?? 0)}×{Math.round(magick.settings.cropH ?? 0)}</span
-					>
-					<span class="ml-1 text-muted-foreground/40">
-						@ {Math.round(magick.settings.cropX ?? 0)},{Math.round(magick.settings.cropY ?? 0)}
-					</span>
-				</div>
-				<button
-					type="button"
-					class="flex h-6 cursor-pointer items-center gap-1 border border-foreground/30 px-2 font-mono text-[10px] text-muted-foreground transition-colors hover:border-foreground/50 hover:bg-muted focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-					onclick={() => {
-						magick.settings.cropX = null;
-						magick.settings.cropY = null;
-						magick.settings.cropW = null;
-						magick.settings.cropH = null;
-					}}
-				>
-					× Clear
-				</button>
 			</div>
 		{/if}
 	</SectionCard>
