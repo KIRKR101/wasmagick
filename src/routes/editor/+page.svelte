@@ -43,7 +43,13 @@
 		if (s.rotate !== '0') parts.push(`Rotate ${s.rotate}°`);
 		if (s.flip) parts.push('Flip');
 		if (s.flop) parts.push('Flop');
-		if (s.cropW || s.cropH) parts.push(`Crop ${s.cropW ?? 'A'}×${s.cropH ?? 'A'}`);
+		if (s.cropX != null || s.cropY != null || s.cropW || s.cropH) {
+			if (s.cropX != null) {
+				parts.push(`Crop ${s.cropW ?? '?'}×${s.cropH ?? '?'} @${s.cropX},${s.cropY}`);
+			} else {
+				parts.push(`Crop ${s.cropW ?? 'A'}×${s.cropH ?? 'A'}`);
+			}
+		}
 		if (s.trimEdges) parts.push('Trim');
 		if (s.borderSize[0] > 0) parts.push(`Border ${s.borderSize[0]}px`);
 		if (s.extentW || s.extentH) parts.push('Canvas');
@@ -184,6 +190,9 @@
 			// 'V' alone triggers the file picker as an upload shortcut.
 			e.preventDefault();
 			document.querySelector<HTMLInputElement>('input[type=file]')?.click();
+		} else if (e.altKey && (e.key === 'c' || e.key === 'C')) {
+			e.preventDefault();
+			magick.toggleCropMode();
 		} else if (e.altKey && e.key === '1') {
 			e.preventDefault();
 			activeSection = 'geometry';

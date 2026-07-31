@@ -29,6 +29,8 @@ export function isGeoDirty(s: MagickSettings): boolean {
 		s.flop ||
 		(s.cropW != null && s.cropW > 0) ||
 		(s.cropH != null && s.cropH > 0) ||
+		s.cropX != null ||
+		s.cropY != null ||
 		s.trimEdges ||
 		s.borderSize[0] > 0 ||
 		s.extentW != null ||

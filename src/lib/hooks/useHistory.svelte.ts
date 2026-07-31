@@ -53,6 +53,11 @@ function diffSettings(a: MagickSettings, b: MagickSettings): SettingsDiffItem[] 
 	push('Gravity', a.extentGravity, b.extentGravity);
 	push('Deskew', a.deskewThreshold[0], b.deskewThreshold[0]);
 	push('Deskew crop', a.deskewAutoCrop, b.deskewAutoCrop);
+	push('Crop W', a.cropW, b.cropW);
+	push('Crop H', a.cropH, b.cropH);
+	push('Crop gravity', a.cropGravity, b.cropGravity);
+	push('Crop X', a.cropX, b.cropX);
+	push('Crop Y', a.cropY, b.cropY);
 
 	// Color
 	push('Brightness', a.brightness[0], b.brightness[0]);
@@ -302,6 +307,9 @@ export class HistoryState {
 		magick.statsMessage = entry.statsMessage;
 		magick.hasError = false;
 		magick.errorMessage = null;
+		magick.cropMode = false;
+		magick.cropAspectRatio = 'free';
+		magick.cropSelection = null;
 	}
 
 	clear(): void {

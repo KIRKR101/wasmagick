@@ -8,6 +8,7 @@
 	import type { PresetsState } from '$lib/hooks/usePresets.svelte';
 	import type { ReplaceGuardState } from '$lib/hooks/useReplaceGuard.svelte';
 	import type { EditorSection, SampleImage } from '$lib/editor-types';
+	import { computeCropPreview } from '$lib/crop-utils';
 
 	let {
 		magick,
@@ -80,6 +81,15 @@
 	function onViewportStateChange(st: { zoom: number }) {
 		viewportZoom = st.zoom;
 	}
+
+	let cropInitialRect = $derived.by(() =>
+		computeCropPreview(magick.settings, magick.originalWidth, magick.originalHeight)
+	);
+
+	// Close the bottom sheet so the crop overlay is visible on the canvas.
+	$effect(() => {
+		if (magick.cropMode) panelOpen = false;
+	});
 
 	// Confirm dialog state
 	let confirmOpen = $derived(guard.pending != null);
@@ -163,42 +173,47 @@
 			processedImageUrl={magick.processedImageUrl}
 			isLoading={magick.isLoading}
 			wasmLoaded={magick.wasmLoaded}
-			originalWidth={magick.originalWidth}
-			originalHeight={magick.originalHeight}
-			originalFormat={magick.originalImageFormat}
-			processedWidth={magick.processedWidth}
-			processedHeight={magick.processedHeight}
-			processedFormat={magick.processedImageFormat}
 			magickSettings={magick.settings}
 			currentProcessingStep={magick.currentProcessingStep}
 			{isDragging}
+			cropActive={magick.cropMode}
+			cropAspectRatio={magick.cropAspectRatio}
+			initialCrop={magick.cropSelection ?? cropInitialRect}
 			onBrowse={openFilePicker}
 			{onSelectSample}
 			onStateChange={onViewportStateChange}
+			onCropConfirm={(crop) => magick.confirmCrop(crop)}
+			onCropCancel={() => magick.cancelCrop()}
+			onCropChange={(crop) => (magick.cropSelection = crop)}
+			onCropAspectRatioChange={(preset) => {
+				magick.cropAspectRatio = preset;
+			}}
 		/>
 	</div>
 
 	<!-- Floating toolbar -->
-	<div class="mobile-toolbar-wrap">
-		<MobileToolbar
-			{magick}
-			{history}
-			{isComparing}
-			isLoading={magick.isLoading}
-			zoomPct={viewportZoom}
-			{onUndo}
-			{onRedo}
-			{onDownload}
-			onToggleTools={togglePanel}
-			onFitToScreen={handleFitToScreen}
-			onCompareStart={handleCompareStart}
-			onCompareEnd={handleCompareEnd}
-			onToggleSplitCompare={handleToggleSplit}
-			{splitMode}
-			onReset={onResetRequest}
-			onClose={onCloseRequest}
-		/>
-	</div>
+	{#if !magick.cropMode}
+		<div class="mobile-toolbar-wrap">
+			<MobileToolbar
+				{magick}
+				{history}
+				{isComparing}
+				isLoading={magick.isLoading}
+				zoomPct={viewportZoom}
+				{onUndo}
+				{onRedo}
+				{onDownload}
+				onToggleTools={togglePanel}
+				onFitToScreen={handleFitToScreen}
+				onCompareStart={handleCompareStart}
+				onCompareEnd={handleCompareEnd}
+				onToggleSplitCompare={handleToggleSplit}
+				{splitMode}
+				onReset={onResetRequest}
+				onClose={onCloseRequest}
+			/>
+		</div>
+	{/if}
 
 	<!-- Bottom sheet panel -->
 	<MobilePanel

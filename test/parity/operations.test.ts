@@ -7,6 +7,10 @@ import { processImageSync } from '../../src/lib/magick-process';
 import type { MagickSettings } from '../../src/lib/types';
 import { DEFAULT_SETTINGS } from '../../src/lib/useMagick.svelte';
 import { compareImages } from './compare';
+import { execSync } from 'node:child_process';
+import { magickCommand } from '../../tooling/magick-path';
+
+const MAGICK = magickCommand();
 
 const FIXTURES = 'test/fixtures';
 const SOURCE = `${FIXTURES}/source`;
@@ -81,6 +85,15 @@ function baseSettings(): MagickSettings {
 
 function goldenPath(operation: string, file: string): string {
 	return path.resolve(`${GOLDEN}/${operation}/${file}`);
+}
+
+function sourceDimensions(src: string): { w: number; h: number } {
+	const info = execSync(
+		`"${MAGICK}" identify -format "%wx%h" "${path.resolve(`${SOURCE}/${src}`)}"`,
+		{ encoding: 'utf-8', timeout: 10000 }
+	).trim();
+	const [w, h] = info.split('x').map(Number);
+	return { w, h };
 }
 
 function testOperation(
@@ -179,6 +192,91 @@ describe('Geometry operations', () => {
 			cropH: 60,
 			cropGravity: 'Northwest'
 		});
+	});
+
+	it('crop center', () => {
+		testAllSources('crop-center', '{base}.png', {
+			cropW: 60,
+			cropH: 60,
+			cropGravity: 'Center'
+		});
+	});
+
+	it('crop northwest', () => {
+		testAllSources('crop-northwest', '{base}.png', {
+			cropW: 60,
+			cropH: 60,
+			cropGravity: 'Northwest'
+		});
+	});
+
+	it('crop north', () => {
+		testAllSources('crop-north', '{base}.png', {
+			cropW: 60,
+			cropH: 60,
+			cropGravity: 'North'
+		});
+	});
+
+	it('crop northeast', () => {
+		testAllSources('crop-northeast', '{base}.png', {
+			cropW: 60,
+			cropH: 60,
+			cropGravity: 'Northeast'
+		});
+	});
+
+	it('crop west', () => {
+		testAllSources('crop-west', '{base}.png', {
+			cropW: 60,
+			cropH: 60,
+			cropGravity: 'West'
+		});
+	});
+
+	it('crop east', () => {
+		testAllSources('crop-east', '{base}.png', {
+			cropW: 60,
+			cropH: 60,
+			cropGravity: 'East'
+		});
+	});
+
+	it('crop southwest', () => {
+		testAllSources('crop-southwest', '{base}.png', {
+			cropW: 60,
+			cropH: 60,
+			cropGravity: 'Southwest'
+		});
+	});
+
+	it('crop south', () => {
+		testAllSources('crop-south', '{base}.png', {
+			cropW: 60,
+			cropH: 60,
+			cropGravity: 'South'
+		});
+	});
+
+	it('crop southeast', () => {
+		testAllSources('crop-southeast', '{base}.png', {
+			cropW: 60,
+			cropH: 60,
+			cropGravity: 'Southeast'
+		});
+	});
+
+	it('crop by position (x/y) matches gravity crop', () => {
+		for (const src of SOURCE_FILES) {
+			const { w, h } = sourceDimensions(src);
+			const base = path.parse(src).name;
+			testOperation('crop-center', src, `${base}.png`, {
+				cropX: Math.floor((w - 60) / 2),
+				cropY: Math.floor((h - 60) / 2),
+				cropW: 60,
+				cropH: 60
+			});
+		}
 	});
 
 	it('trim', () => {

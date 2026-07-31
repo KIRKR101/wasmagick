@@ -28,6 +28,8 @@ import {
 import type { MagickSettings, AppliedOptions, LevelChannel } from './types';
 import { ensureFont, DEFAULT_FONT, isLocalFont } from './fonts';
 import { generateClutImage } from './luts';
+import { applyCrop } from './magick-process';
+import { computeCropStepOffset, type CropRect } from './crop-utils';
 
 const AUTO_PROCESS_DELAY = 300;
 
@@ -130,6 +132,8 @@ export const DEFAULT_SETTINGS: MagickSettings = {
 	cropW: null,
 	cropH: null,
 	cropGravity: 'Center',
+	cropX: null,
+	cropY: null,
 	trimEdges: false,
 	brightness: [100],
 	saturation: [100],
@@ -370,6 +374,32 @@ export class MagickState {
 
 	private _worker: Worker | null = null;
 	private _requestId = 0;
+	cropMode = $state(false);
+	cropAspectRatio = $state<string>('free');
+	// The in-progress visual crop selection, kept outside the overlay so it
+	// survives viewport remounts (e.g. crossing the mobile breakpoint).
+	cropSelection = $state<CropRect | null>(null);
+
+	toggleCropMode(): void {
+		this.cropMode = !this.cropMode;
+		if (!this.cropMode) this.cropSelection = null;
+	}
+
+	cancelCrop(): void {
+		this.cropMode = false;
+		this.cropSelection = null;
+	}
+
+	confirmCrop(rect: CropRect): void {
+		const { offsetX, offsetY } = computeCropStepOffset(this.settings);
+		this.settings.cropX = offsetX + rect.x;
+		this.settings.cropY = offsetY + rect.y;
+		this.settings.cropW = rect.w;
+		this.settings.cropH = rect.h;
+		this.cropSelection = null;
+		this.cropMode = false;
+	}
+
 	// Non-reactive internal request map (intentionally plain Map).
 	// eslint-disable-next-line svelte/prefer-svelte-reactivity
 	private _pendingRequests = new Map<
@@ -568,6 +598,8 @@ export class MagickState {
 		this.settings.cropW = DEFAULT_SETTINGS.cropW;
 		this.settings.cropH = DEFAULT_SETTINGS.cropH;
 		this.settings.cropGravity = DEFAULT_SETTINGS.cropGravity;
+		this.settings.cropX = DEFAULT_SETTINGS.cropX;
+		this.settings.cropY = DEFAULT_SETTINGS.cropY;
 		this.settings.trimEdges = DEFAULT_SETTINGS.trimEdges;
 		this.settings.autoOrient = DEFAULT_SETTINGS.autoOrient;
 	}
@@ -848,13 +880,11 @@ export class MagickState {
 									appliedOptions.flip = true;
 								}
 
-								if ((this.settings.cropW ?? 0) > 0 || (this.settings.cropH ?? 0) > 0) {
+								if (applyCrop(image, this.settings)) {
 									this.currentProcessingStep = 'Cropping';
-									const cropW = this.settings.cropW ?? image.width;
-									const cropH = this.settings.cropH ?? image.height;
-									const gravityKey = this.settings.cropGravity as keyof typeof Gravity;
-									image.crop(cropW, cropH, Gravity[gravityKey]);
 									appliedOptions.crop = {
+										x: this.settings.cropX,
+										y: this.settings.cropY,
 										width: this.settings.cropW,
 										height: this.settings.cropH,
 										gravity: this.settings.cropGravity

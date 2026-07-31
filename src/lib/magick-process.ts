@@ -4,6 +4,7 @@ import {
 	MagickColor,
 	Drawables,
 	Percentage,
+	MagickGeometry,
 	Gravity,
 	Channels,
 	ColorSpace,
@@ -12,6 +13,7 @@ import {
 	DitherMethod
 } from '@imagemagick/magick-wasm';
 import type { MagickSettings, LevelChannel } from './types';
+import type { IMagickImage } from '@imagemagick/magick-wasm';
 import { generateClutImage } from './luts';
 
 const FORMAT_MAP: Record<string, keyof typeof MagickFormat> = {
@@ -43,6 +45,37 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
 	return { r, g, b };
 }
 
+export function applyCrop(image: IMagickImage, settings: MagickSettings): boolean {
+	const hasVisualCrop = settings.cropX != null || settings.cropY != null;
+
+	if (hasVisualCrop) {
+		const cx = Math.max(0, settings.cropX ?? 0);
+		const cy = Math.max(0, settings.cropY ?? 0);
+		// The crop region must lie at least partially inside the image.
+		if (cx >= image.width || cy >= image.height) return false;
+		const cw = Math.max(1, Math.min(settings.cropW ?? image.width - cx, image.width - cx));
+		const ch = Math.max(1, Math.min(settings.cropH ?? image.height - cy, image.height - cy));
+		image.crop(new MagickGeometry(cx, cy, cw, ch));
+		// Match the CLI golden fixtures, which all use `-crop ... +repage`:
+		// drop the virtual-canvas offset the geometry crop records.
+		image.resetPage();
+		return true;
+	}
+
+	const rawW = settings.cropW;
+	const rawH = settings.cropH;
+
+	if ((rawW == null || rawW <= 0) && (rawH == null || rawH <= 0)) {
+		return false;
+	}
+
+	const cropW = Math.max(1, Math.min(rawW ?? image.width, image.width));
+	const cropH = Math.max(1, Math.min(rawH ?? image.height, image.height));
+	const gravityKey = settings.cropGravity as keyof typeof Gravity;
+	image.crop(cropW, cropH, Gravity[gravityKey]);
+	return true;
+}
+
 export interface ProcessResult {
 	data: Uint8Array;
 	width: number;
@@ -68,12 +101,7 @@ export function processImageSync(sourceBytes: Uint8Array, settings: MagickSettin
 		if (settings.flop) image.flop();
 		if (settings.flip) image.flip();
 
-		if ((settings.cropW ?? 0) > 0 || (settings.cropH ?? 0) > 0) {
-			const cropW = settings.cropW ?? image.width;
-			const cropH = settings.cropH ?? image.height;
-			const gravityKey = settings.cropGravity as keyof typeof Gravity;
-			image.crop(cropW, cropH, Gravity[gravityKey]);
-		}
+		applyCrop(image, settings);
 
 		if (settings.trimEdges) image.trim();
 

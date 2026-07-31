@@ -9,6 +9,7 @@
 	import type { PresetsState } from '$lib/hooks/usePresets.svelte';
 	import type { ReplaceGuardState } from '$lib/hooks/useReplaceGuard.svelte';
 	import type { EditorSection, SampleImage } from '$lib/editor-types';
+	import { computeCropPreview } from '$lib/crop-utils';
 
 	let {
 		magick,
@@ -51,7 +52,6 @@
 	} = $props();
 
 	let fileInputEl = $state<HTMLInputElement | null>(null);
-	let viewportZoom = $state(100);
 
 	function openFilePicker() {
 		fileInputEl?.click();
@@ -78,9 +78,9 @@
 		}
 	}
 
-	function onViewportStateChange(st: { zoom: number }) {
-		viewportZoom = st.zoom;
-	}
+	let cropInitialRect = $derived.by(() =>
+		computeCropPreview(magick.settings, magick.originalWidth, magick.originalHeight)
+	);
 
 	let confirmOpen = $derived(guard.pending != null);
 	let pendingName = $derived(guard.pendingFile?.name ?? '');
@@ -175,23 +175,25 @@
 				processedImageUrl={magick.processedImageUrl}
 				isLoading={magick.isLoading}
 				wasmLoaded={magick.wasmLoaded}
-				originalWidth={magick.originalWidth}
-				originalHeight={magick.originalHeight}
-				originalFormat={magick.originalImageFormat}
-				processedWidth={magick.processedWidth}
-				processedHeight={magick.processedHeight}
-				processedFormat={magick.processedImageFormat}
 				magickSettings={magick.settings}
 				currentProcessingStep={magick.currentProcessingStep}
 				{isDragging}
+				cropActive={magick.cropMode}
+				cropAspectRatio={magick.cropAspectRatio}
+				initialCrop={magick.cropSelection ?? cropInitialRect}
 				onBrowse={openFilePicker}
 				{onSelectSample}
-				onStateChange={onViewportStateChange}
+				onCropConfirm={(crop) => magick.confirmCrop(crop)}
+				onCropCancel={() => magick.cancelCrop()}
+				onCropChange={(crop) => (magick.cropSelection = crop)}
+				onCropAspectRatioChange={(preset) => {
+					magick.cropAspectRatio = preset;
+				}}
 			/>
 		</div>
 	</div>
 
-	<StatusBar {magick} zoomPct={viewportZoom} isDirty={guard.isDirty} />
+	<StatusBar {magick} isDirty={guard.isDirty} />
 </div>
 
 <ConfirmDialog

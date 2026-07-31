@@ -8,7 +8,6 @@
 		isDirty
 	}: {
 		magick: MagickState;
-		zoomPct: number;
 		isDirty: boolean;
 	} = $props();
 

@@ -93,6 +93,27 @@ genAllSources('auto-orient', ['-auto-orient'], '{base}.png');
 console.log('-- crop --');
 genAllSources('crop', ['-gravity', 'NorthWest', '-crop', '60x60+0+0', '+repage'], '{base}.png');
 
+// -- CROP gravity positions --
+const GRAVITY_FLAGS: [string, string][] = [
+	['center', 'Center'],
+	['northwest', 'NorthWest'],
+	['north', 'North'],
+	['northeast', 'NorthEast'],
+	['west', 'West'],
+	['east', 'East'],
+	['southwest', 'SouthWest'],
+	['south', 'South'],
+	['southeast', 'SouthEast']
+];
+for (const [label, flag] of GRAVITY_FLAGS) {
+	console.log(`-- crop ${label} --`);
+	genAllSources(
+		`crop-${label}`,
+		['-gravity', flag, '-crop', '60x60+0+0', '+repage'],
+		'{base}.png'
+	);
+}
+
 // -- TRIM --
 console.log('-- trim --');
 genAllSources('trim', ['-trim', '+repage'], '{base}.png');
