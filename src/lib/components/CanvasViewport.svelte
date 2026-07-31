@@ -22,18 +22,13 @@
 		onStateChange = () => {},
 		onCropConfirm = () => {},
 		onCropCancel = () => {},
+		onCropChange = () => {},
 		onCropAspectRatioChange = () => {}
 	}: {
 		originalImageUrl?: string | null;
 		processedImageUrl?: string | null;
 		isLoading?: boolean;
 		wasmLoaded?: boolean;
-		originalWidth?: number;
-		originalHeight?: number;
-		originalFormat?: string | null;
-		processedWidth?: number;
-		processedHeight?: number;
-		processedFormat?: string | null;
 		magickSettings?: { rotate?: string; resizeW?: number | null; resizeH?: number | null } | null;
 		currentProcessingStep?: string | null;
 		isDragging?: boolean;
@@ -45,6 +40,7 @@
 		onStateChange?: (s: { zoom: number }) => void;
 		onCropConfirm?: (crop: CropRect) => void;
 		onCropCancel?: () => void;
+		onCropChange?: (crop: CropRect | null) => void;
 		onCropAspectRatioChange?: (preset: string) => void;
 	} = $props();
 
@@ -429,8 +425,10 @@
 					{viewportRef}
 					aspectRatio={cropAspectRatio}
 					{initialCrop}
+					resetKey={displayedImage}
 					onConfirm={onCropConfirm}
 					onCancel={onCropCancel}
+					onChange={onCropChange}
 					onAspectRatioChange={onCropAspectRatioChange}
 				/>
 			{/if}

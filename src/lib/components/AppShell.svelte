@@ -9,6 +9,7 @@
 	import type { PresetsState } from '$lib/hooks/usePresets.svelte';
 	import type { ReplaceGuardState } from '$lib/hooks/useReplaceGuard.svelte';
 	import type { EditorSection, SampleImage } from '$lib/editor-types';
+	import { computeCropPreview } from '$lib/crop-utils';
 
 	let {
 		magick,
@@ -51,7 +52,6 @@
 	} = $props();
 
 	let fileInputEl = $state<HTMLInputElement | null>(null);
-	let viewportZoom = $state(100);
 
 	function openFilePicker() {
 		fileInputEl?.click();
@@ -78,74 +78,9 @@
 		}
 	}
 
-	let cropInitialRect = $derived.by(() => {
-		const s = magick.settings;
-		const { offsetX, offsetY } = cropStepOffset;
-
-		if (s.cropX != null && s.cropY != null && (s.cropW ?? 0) > 0 && (s.cropH ?? 0) > 0) {
-			return {
-				x: s.cropX - offsetX,
-				y: s.cropY - offsetY,
-				w: s.cropW!,
-				h: s.cropH!
-			};
-		}
-		if (s.cropW != null && s.cropW > 0 && s.cropH != null && s.cropH > 0) {
-			const { gx, gy } = cropGravityOffset;
-			const cw = Math.min(s.cropW, cropStepOffset.stepW);
-			const ch = Math.min(s.cropH, cropStepOffset.stepH);
-			return {
-				x: gx - offsetX,
-				y: gy - offsetY,
-				w: cw,
-				h: ch
-			};
-		}
-		return null;
-	});
-
-	// The offset of the displayed image's top-left in the crop-step
-	// coordinate space (after resize/rotate, before crop in the pipeline).
-	let cropStepOffset = $derived.by(() => {
-		const s = magick.settings;
-		const srcW = magick.originalWidth || 0;
-		const srcH = magick.originalHeight || 0;
-		const rotated = s.rotate === '90' || s.rotate === '-90';
-		const stepW = rotated ? (s.resizeH ?? srcH) : (s.resizeW ?? srcW);
-		const stepH = rotated ? (s.resizeW ?? srcW) : (s.resizeH ?? srcH);
-
-		if (s.cropX != null && s.cropY != null) {
-			return { offsetX: s.cropX, offsetY: s.cropY, stepW, stepH };
-		}
-		return { offsetX: 0, offsetY: 0, stepW, stepH };
-	});
-
-	// Gravity position in step coordinates, used only for the preview overlay.
-	let cropGravityOffset = $derived.by(() => {
-		const s = magick.settings;
-		if (s.cropX != null || s.cropY != null) return { gx: 0, gy: 0 };
-		if (s.cropW == null || s.cropW <= 0 || s.cropH == null || s.cropH <= 0) return { gx: 0, gy: 0 };
-		const { stepW, stepH } = cropStepOffset;
-		const cw = Math.min(s.cropW, stepW);
-		const ch = Math.min(s.cropH, stepH);
-		const grav = s.cropGravity;
-		let gx = 0;
-		let gy = 0;
-		if (grav === 'Center') { gx = Math.round((stepW - cw) / 2); gy = Math.round((stepH - ch) / 2); }
-		else if (grav === 'Northwest') { gx = 0; gy = 0; }
-		else if (grav === 'North') { gx = Math.round((stepW - cw) / 2); gy = 0; }
-		else if (grav === 'Northeast') { gx = stepW - cw; gy = 0; }
-		else if (grav === 'West') { gx = 0; gy = Math.round((stepH - ch) / 2); }
-		else if (grav === 'East') { gx = stepW - cw; gy = Math.round((stepH - ch) / 2); }
-		else if (grav === 'Southwest') { gx = 0; gy = stepH - ch; }
-		else if (grav === 'South') { gx = Math.round((stepW - cw) / 2); gy = stepH - ch; }
-		else if (grav === 'Southeast') { gx = stepW - cw; gy = stepH - ch; }
-		return { gx: Math.max(0, gx), gy: Math.max(0, gy) };
-	});
-
-	function onViewportStateChange(st: { zoom: number }) {
-		viewportZoom = st.zoom;
-	}
+	let cropInitialRect = $derived.by(() =>
+		computeCropPreview(magick.settings, magick.originalWidth, magick.originalHeight)
+	);
 
 	let confirmOpen = $derived(guard.pending != null);
 	let pendingName = $derived(guard.pendingFile?.name ?? '');
@@ -240,31 +175,17 @@
 				processedImageUrl={magick.processedImageUrl}
 				isLoading={magick.isLoading}
 				wasmLoaded={magick.wasmLoaded}
-				originalWidth={magick.originalWidth}
-				originalHeight={magick.originalHeight}
-				originalFormat={magick.originalImageFormat}
-				processedWidth={magick.processedWidth}
-				processedHeight={magick.processedHeight}
-				processedFormat={magick.processedImageFormat}
 				magickSettings={magick.settings}
 				currentProcessingStep={magick.currentProcessingStep}
 				{isDragging}
 				cropActive={magick.cropMode}
 				cropAspectRatio={magick.cropAspectRatio}
-				initialCrop={cropInitialRect}
+				initialCrop={magick.cropSelection ?? cropInitialRect}
 				onBrowse={openFilePicker}
 				{onSelectSample}
-				onStateChange={onViewportStateChange}
-				onCropConfirm={(crop) => {
-					magick.settings.cropX = cropStepOffset.offsetX + crop.x;
-					magick.settings.cropY = cropStepOffset.offsetY + crop.y;
-					magick.settings.cropW = crop.w;
-					magick.settings.cropH = crop.h;
-					magick.cropMode = false;
-				}}
-				onCropCancel={() => {
-					magick.cropMode = false;
-				}}
+				onCropConfirm={(crop) => magick.confirmCrop(crop)}
+				onCropCancel={() => magick.cancelCrop()}
+				onCropChange={(crop) => (magick.cropSelection = crop)}
 				onCropAspectRatioChange={(preset) => {
 					magick.cropAspectRatio = preset;
 				}}
@@ -272,7 +193,7 @@
 		</div>
 	</div>
 
-	<StatusBar {magick} zoomPct={viewportZoom} isDirty={guard.isDirty} />
+	<StatusBar {magick} isDirty={guard.isDirty} />
 </div>
 
 <ConfirmDialog

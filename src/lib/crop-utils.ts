@@ -8,6 +8,8 @@
  * (imageX, imageY), and all pixel positions are scaled by zoom/100.
  */
 
+import type { MagickSettings } from './types';
+
 export interface Point {
 	x: number;
 	y: number;
@@ -47,28 +49,6 @@ export function screenToImage(
 }
 
 /**
- * Convert top-left-absolute image pixel coordinates to screen (client) coordinates.
- */
-export function imageToScreen(
-	imgX: number,
-	imgY: number,
-	viewportRect: DOMRect,
-	zoom: number,
-	imageX: number,
-	imageY: number,
-	imageW: number,
-	imageH: number
-): Point {
-	const centerX = viewportRect.left + viewportRect.width / 2;
-	const centerY = viewportRect.top + viewportRect.height / 2;
-	const scale = zoom / 100;
-	return {
-		x: (imgX - imageW / 2) * scale + imageX + centerX,
-		y: (imgY - imageH / 2) * scale + imageY + centerY
-	};
-}
-
-/**
  * Normalize a rectangle defined by two arbitrary corner points.
  * Ensures width and height are positive.
  */
@@ -82,18 +62,42 @@ export function normalizeRect(x1: number, y1: number, x2: number, y2: number): C
 }
 
 /**
- * Clamp a crop rectangle to lie within image bounds.
+ * Clamp a crop rectangle to the intersection with the image bounds.
+ *
+ * Both the position and the far edges are clamped independently, so the
+ * rectangle can never extend past the image: the left edge never moves right
+ * of the original left edge while the right edge stays put. This is the
+ * correct behaviour for drawing and edge/resize drags (the dragged corner is
+ * clamped to the image edge). For moving the whole rect, use
+ * {@link clampMoveToImage}, which preserves the size.
  */
 export function clampCropToImage(crop: CropRect, imageW: number, imageH: number): CropRect {
 	const x = Math.max(0, Math.min(crop.x, imageW));
 	const y = Math.max(0, Math.min(crop.y, imageH));
-	const maxW = imageW - x;
-	const maxH = imageH - y;
+	const right = Math.max(0, Math.min(crop.x + crop.w, imageW));
+	const bottom = Math.max(0, Math.min(crop.y + crop.h, imageH));
 	return {
 		x,
 		y,
-		w: Math.min(crop.w, maxW),
-		h: Math.min(crop.h, maxH)
+		w: Math.max(0, right - x),
+		h: Math.max(0, bottom - y)
+	};
+}
+
+/**
+ * Clamp a crop rectangle to lie within image bounds while preserving its size.
+ * The rect is shifted back into view instead of being shrunk, so moving a crop
+ * (or nudging it with the arrow keys) past an image edge snaps it fully back
+ * into view rather than collapsing its dimensions.
+ */
+export function clampMoveToImage(crop: CropRect, imageW: number, imageH: number): CropRect {
+	const w = Math.min(crop.w, imageW);
+	const h = Math.min(crop.h, imageH);
+	return {
+		x: Math.max(0, Math.min(crop.x, imageW - w)),
+		y: Math.max(0, Math.min(crop.y, imageH - h)),
+		w,
+		h
 	};
 }
 
@@ -334,4 +338,92 @@ export function fitCropToImage(
 	rect = constrainAspect(rect, ratio, anchor);
 	rect = clampCropToImage(rect, imageW, imageH);
 	return rect;
+}
+
+/**
+ * Positional offset for a gravity anchor along a single axis.
+ * `gap` is the unused space on that axis (image size minus crop size).
+ * Matches ImageMagick's gravity placement (truncating division for centering).
+ */
+function gravityAxisOffset(gap: number, gravity: string, isHorizontal: boolean): number {
+	const g = gravity;
+	if (isHorizontal) {
+		if (g === 'West' || g === 'Northwest' || g === 'Southwest') return 0;
+		if (g === 'East' || g === 'Northeast' || g === 'Southeast') return gap;
+		return Math.floor(gap / 2); // Center, North, South
+	}
+	if (g === 'North' || g === 'Northwest' || g === 'Northeast') return 0;
+	if (g === 'South' || g === 'Southwest' || g === 'Southeast') return gap;
+	return Math.floor(gap / 2); // Center, West, East
+}
+
+/**
+ * The offset of the displayed image's top-left in the crop-step coordinate
+ * space (after resize/rotate, before crop in the pipeline). When a position
+ * crop is already applied the displayed image *is* that crop, so its top-left
+ * maps back to (cropX, cropY); otherwise it sits at the origin.
+ */
+export function computeCropStepOffset(settings: MagickSettings): { offsetX: number; offsetY: number } {
+	if (settings.cropX != null && settings.cropY != null) {
+		return { offsetX: settings.cropX, offsetY: settings.cropY };
+	}
+	return { offsetX: 0, offsetY: 0 };
+}
+
+/**
+ * Compute the initial crop rect shown by the visual crop overlay for the
+ * currently applied crop settings.
+ *
+ * The overlay operates on the image currently displayed in the viewport (the
+ * output of the processing pipeline). If a position crop (cropX/cropY) is
+ * already applied, the displayed image is that crop, so the rect is positioned
+ * at its top-left. If only a gravity crop (cropW/cropH + gravity) is applied,
+ * the gravity position is approximated in step space.
+ *
+ * Returns null when no crop is active.
+ */
+export function computeCropPreview(
+	settings: MagickSettings,
+	originalWidth: number,
+	originalHeight: number
+): CropRect | null {
+	const srcW = originalWidth || 0;
+	const srcH = originalHeight || 0;
+	const rotated = settings.rotate === '90' || settings.rotate === '-90';
+	const stepW = rotated ? (settings.resizeH ?? srcH) : (settings.resizeW ?? srcW);
+	const stepH = rotated ? (settings.resizeW ?? srcW) : (settings.resizeH ?? srcH);
+
+	let offsetX = 0;
+	let offsetY = 0;
+	if (settings.cropX != null && settings.cropY != null) {
+		offsetX = settings.cropX;
+		offsetY = settings.cropY;
+	}
+
+	if (
+		settings.cropX != null &&
+		settings.cropY != null &&
+		(settings.cropW ?? 0) > 0 &&
+		(settings.cropH ?? 0) > 0
+	) {
+		return {
+			x: settings.cropX - offsetX,
+			y: settings.cropY - offsetY,
+			w: settings.cropW!,
+			h: settings.cropH!
+		};
+	}
+
+	if (settings.cropW != null && settings.cropW > 0 && settings.cropH != null && settings.cropH > 0) {
+		const cw = Math.min(settings.cropW, stepW);
+		const ch = Math.min(settings.cropH, stepH);
+		return {
+			x: gravityAxisOffset(stepW - cw, settings.cropGravity, true) - offsetX,
+			y: gravityAxisOffset(stepH - ch, settings.cropGravity, false) - offsetY,
+			w: cw,
+			h: ch
+		};
+	}
+
+	return null;
 }

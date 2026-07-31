@@ -309,6 +309,7 @@ export class HistoryState {
 		magick.errorMessage = null;
 		magick.cropMode = false;
 		magick.cropAspectRatio = 'free';
+		magick.cropSelection = null;
 	}
 
 	clear(): void {

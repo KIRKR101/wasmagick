@@ -1,3 +1,13 @@
+<script module lang="ts">
+	// Module-scope counter so each mounted overlay gets a unique SVG mask id,
+	// even across mount/unmount cycles.
+	let maskCounter = 0;
+	function nextMaskId(): string {
+		maskCounter += 1;
+		return `crop-mask-${maskCounter}`;
+	}
+</script>
+
 <script lang="ts">
 	import {
 		normalizeRect,
@@ -9,10 +19,9 @@
 		screenToImage,
 		ensurePositiveDimensions,
 		fitCropToImage,
+		clampMoveToImage,
 		type CropRect
 	} from '$lib/crop-utils';
-
-	let _maskCounter = 0;
 
 	let {
 		imageWidth,
@@ -23,8 +32,10 @@
 		viewportRef,
 		aspectRatio: aspectPreset = 'free',
 		initialCrop = null,
+		resetKey = null,
 		onConfirm,
 		onCancel,
+		onChange = () => {},
 		onAspectRatioChange = () => {}
 	}: {
 		imageWidth: number;
@@ -35,21 +46,34 @@
 		viewportRef: HTMLDivElement;
 		aspectRatio?: string;
 		initialCrop?: { x: number; y: number; w: number; h: number } | null;
+		resetKey?: string | null;
 		onConfirm: (crop: CropRect) => void;
 		onCancel: () => void;
+		onChange?: (crop: CropRect | null) => void;
 		onAspectRatioChange?: (preset: string) => void;
 	} = $props();
 
 	const MIN_CROP_PX = 10;
 
-	let _maskId = `crop-mask-${++_maskCounter}`;
+	let _maskId = nextMaskId();
 	let cropRect = $state<CropRect | null>(null);
 
-	// Pre-populate crop rect from initialCrop prop on mount
+	// Pre-populate crop rect from initialCrop on mount. Only seeds once: the
+	// pending selection is persisted upward via onChange, so re-running this on
+	// every prop change would clobber the user's live edits in a feedback loop.
+	let seededInitial = false;
 	$effect(() => {
+		if (seededInitial) return;
+		seededInitial = true;
 		if (initialCrop && initialCrop.w > MIN_CROP_PX && initialCrop.h > MIN_CROP_PX) {
 			cropRect = { ...initialCrop };
 		}
+	});
+
+	// Persist the live selection so it survives viewport remounts (e.g.
+	// resizing across the mobile breakpoint before confirming).
+	$effect(() => {
+		onChange(cropRect);
 	});
 	let interaction = $state<'idle' | 'drawing' | 'moving' | 'resizing'>('idle');
 	let activeHandle = $state<string | null>(null);
@@ -72,9 +96,6 @@
 		const preset = RATIO_PRESETS.find((p) => p.id === aspectPreset);
 		return preset?.value ?? null;
 	});
-
-	let svgWidth = $derived(viewportRef?.clientWidth ?? 0);
-	let svgHeight = $derived(viewportRef?.clientHeight ?? 0);
 
 	// Convert crop rect from image coords to screen coords for rendering
 	let cropScreen = $derived.by(() => {
@@ -234,7 +255,7 @@
 				w: startCrop.w,
 				h: startCrop.h
 			};
-			newRect = clampCropToImage(newRect, imageWidth, imageHeight);
+			newRect = clampMoveToImage(newRect, imageWidth, imageHeight);
 			cropRect = newRect;
 		} else if (interaction === 'resizing' && activeHandle) {
 			const dx = pt.x - startPt.x;
@@ -326,7 +347,7 @@
 		if (moved) {
 			e.preventDefault();
 			e.stopPropagation();
-			cropRect = clampCropToImage(newRect, imageWidth, imageHeight);
+			cropRect = clampMoveToImage(newRect, imageWidth, imageHeight);
 		}
 	}
 
@@ -337,14 +358,14 @@
 	});
 
 	// svelte-ignore state_referenced_locally
-	let _prevImageW = $state(imageWidth);
-	// svelte-ignore state_referenced_locally
-	let _prevImageH = $state(imageHeight);
+	let _resetKey = $state(resetKey);
 
+	// Reset the selection when the displayed image itself is replaced. Keyed on
+	// the image URL rather than dimensions so the initial dimension discovery
+	// after a remount (0 → natural size) doesn't wipe a restored selection.
 	$effect(() => {
-		if (imageWidth !== _prevImageW || imageHeight !== _prevImageH) {
-			_prevImageW = imageWidth;
-			_prevImageH = imageHeight;
+		if (resetKey !== _resetKey) {
+			_resetKey = resetKey;
 			cropRect = null;
 			interaction = 'idle';
 			activeHandle = null;
@@ -367,7 +388,7 @@
 	onpointerup={onPointerUp}
 	onpointerleave={onPointerLeave}
 >
-	<svg width={svgWidth} height={svgHeight} class="absolute inset-0" style="pointer-events: none">
+	<svg class="absolute inset-0 h-full w-full" style="pointer-events: none">
 		<defs>
 			<mask id={_maskId}>
 				<rect width="100%" height="100%" fill="white" />

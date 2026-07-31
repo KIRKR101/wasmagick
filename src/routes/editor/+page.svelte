@@ -192,7 +192,7 @@
 			document.querySelector<HTMLInputElement>('input[type=file]')?.click();
 		} else if (e.altKey && (e.key === 'c' || e.key === 'C')) {
 			e.preventDefault();
-			magick.cropMode = !magick.cropMode;
+			magick.toggleCropMode();
 		} else if (e.altKey && e.key === '1') {
 			e.preventDefault();
 			activeSection = 'geometry';

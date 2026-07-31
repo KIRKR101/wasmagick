@@ -176,12 +176,16 @@
 				'visual'
 					? 'bg-muted font-bold text-foreground'
 					: 'text-muted-foreground hover:bg-muted/50'}"
-				onclick={() => {
-					if (cropInputMode !== 'visual') {
-						cropInputMode = 'visual';
-						magick.cropMode = false;
-					}
-				}}
+			onclick={() => {
+				if (cropInputMode !== 'visual') {
+					cropInputMode = 'visual';
+					magick.cancelCrop();
+					// Drop any gravity crop so the viewport shows the full
+					// pre-crop image and the visual selection starts fresh.
+					magick.settings.cropW = null;
+					magick.settings.cropH = null;
+				}
+			}}
 			>
 				Select Region
 			</button>
@@ -195,7 +199,7 @@
 				onclick={() => {
 					if (cropInputMode !== 'manual') {
 						cropInputMode = 'manual';
-						magick.cropMode = false;
+						magick.cancelCrop();
 						magick.settings.cropX = null;
 						magick.settings.cropY = null;
 					}
@@ -212,7 +216,7 @@
 				class="mb-3 flex w-full cursor-pointer items-center justify-center gap-2 border py-2 font-mono text-[11px] uppercase transition-all focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {magick.cropMode
 					? 'border-foreground bg-foreground text-background shadow-sm'
 					: 'border-foreground/30 bg-transparent text-muted-foreground hover:border-foreground/60 hover:bg-muted hover:text-foreground'}"
-				onclick={() => (magick.cropMode = !magick.cropMode)}
+				onclick={() => magick.toggleCropMode()}
 			>
 				<Crop class="size-3.5" />
 				{magick.cropMode ? 'Cancel Selection' : 'Select Region'}

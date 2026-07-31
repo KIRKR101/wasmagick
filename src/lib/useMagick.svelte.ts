@@ -29,6 +29,7 @@ import type { MagickSettings, AppliedOptions, LevelChannel } from './types';
 import { ensureFont, DEFAULT_FONT, isLocalFont } from './fonts';
 import { generateClutImage } from './luts';
 import { applyCrop } from './magick-process';
+import { computeCropStepOffset, type CropRect } from './crop-utils';
 
 const AUTO_PROCESS_DELAY = 300;
 
@@ -375,6 +376,29 @@ export class MagickState {
 	private _requestId = 0;
 	cropMode = $state(false);
 	cropAspectRatio = $state<string>('free');
+	// The in-progress visual crop selection, kept outside the overlay so it
+	// survives viewport remounts (e.g. crossing the mobile breakpoint).
+	cropSelection = $state<CropRect | null>(null);
+
+	toggleCropMode(): void {
+		this.cropMode = !this.cropMode;
+		if (!this.cropMode) this.cropSelection = null;
+	}
+
+	cancelCrop(): void {
+		this.cropMode = false;
+		this.cropSelection = null;
+	}
+
+	confirmCrop(rect: CropRect): void {
+		const { offsetX, offsetY } = computeCropStepOffset(this.settings);
+		this.settings.cropX = offsetX + rect.x;
+		this.settings.cropY = offsetY + rect.y;
+		this.settings.cropW = rect.w;
+		this.settings.cropH = rect.h;
+		this.cropSelection = null;
+		this.cropMode = false;
+	}
 
 	// Non-reactive internal request map (intentionally plain Map).
 	// eslint-disable-next-line svelte/prefer-svelte-reactivity
@@ -856,7 +880,7 @@ export class MagickState {
 									appliedOptions.flip = true;
 								}
 
-							if (applyCrop(image, this.settings)) {
+								if (applyCrop(image, this.settings)) {
 									this.currentProcessingStep = 'Cropping';
 									appliedOptions.crop = {
 										x: this.settings.cropX,

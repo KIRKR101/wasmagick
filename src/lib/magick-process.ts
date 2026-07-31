@@ -51,9 +51,14 @@ export function applyCrop(image: IMagickImage, settings: MagickSettings): boolea
 	if (hasVisualCrop) {
 		const cx = Math.max(0, settings.cropX ?? 0);
 		const cy = Math.max(0, settings.cropY ?? 0);
-		const cw = Math.max(1, Math.min(settings.cropW ?? image.width, image.width - cx));
-		const ch = Math.max(1, Math.min(settings.cropH ?? image.height, image.height - cy));
+		// The crop region must lie at least partially inside the image.
+		if (cx >= image.width || cy >= image.height) return false;
+		const cw = Math.max(1, Math.min(settings.cropW ?? image.width - cx, image.width - cx));
+		const ch = Math.max(1, Math.min(settings.cropH ?? image.height - cy, image.height - cy));
 		image.crop(new MagickGeometry(cx, cy, cw, ch));
+		// Match the CLI golden fixtures, which all use `-crop ... +repage`:
+		// drop the virtual-canvas offset the geometry crop records.
+		image.resetPage();
 		return true;
 	}
 
