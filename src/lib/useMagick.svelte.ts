@@ -128,7 +128,7 @@ export const DEFAULT_SETTINGS: MagickSettings = {
 	extentGravity: 'Center',
 	extentBgColor: '#ffffff',
 	deskewThreshold: [0],
-	deskewAutoCrop: true,
+	deskewAutoCrop: false,
 	cropW: null,
 	cropH: null,
 	cropGravity: 'Center',

@@ -36,7 +36,7 @@ export function isGeoDirty(s: MagickSettings): boolean {
 		s.extentW != null ||
 		s.extentH != null ||
 		s.deskewThreshold[0] > 0 ||
-		!s.deskewAutoCrop ||
+		s.deskewAutoCrop ||
 		s.autoOrient
 	);
 }
@@ -44,7 +44,7 @@ export function isGeoDirty(s: MagickSettings): boolean {
 export function isColorDirty(s: MagickSettings): boolean {
 	const levelChs = ['All', 'Red', 'Green', 'Blue'] as const;
 	const levelDirty = levelChs.some(
-		ch =>
+		(ch) =>
 			s.levelBlackpoint[ch][0] !== 0 ||
 			s.levelWhitepoint[ch][0] !== 100 ||
 			s.levelGamma[ch][0] !== 1.0

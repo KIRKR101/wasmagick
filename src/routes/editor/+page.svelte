@@ -53,8 +53,10 @@
 		if (s.trimEdges) parts.push('Trim');
 		if (s.borderSize[0] > 0) parts.push(`Border ${s.borderSize[0]}px`);
 		if (s.extentW || s.extentH) parts.push('Canvas');
-		if (s.deskewThreshold[0] > 0) parts.push('Deskew');
-		if (s.deskewThreshold[0] > 0 && !s.deskewAutoCrop) parts.push('No AutoCrop');
+		if (s.deskewThreshold[0] > 0) {
+			parts.push('Deskew');
+			parts.push(s.deskewAutoCrop ? 'Auto Crop' : 'No AutoCrop');
+		}
 		if (s.autoOrient) parts.push('Auto-Orient');
 		// Color
 		if (s.brightness[0] !== 100) parts.push(`Brightness ${s.brightness[0]}%`);

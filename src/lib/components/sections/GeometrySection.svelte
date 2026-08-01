@@ -136,21 +136,41 @@
 		/>
 	</SectionCard>
 
-	<!-- Deskew -->
-	<SectionCard title="Deskew" dirty={magick.settings.deskewThreshold[0] > 0}>
-		<ToggleRow
-			id="geo-deskew-crop"
-			label="Auto Crop"
-			class="mb-2"
-			bind:checked={magick.settings.deskewAutoCrop}
-		/>
-		<SliderRow
-			label="Threshold"
-			bind:value={magick.settings.deskewThreshold}
-			suffix="%"
-			min={0}
-			max={100}
-		/>
+	<!-- Deskew / Trim -->
+	<SectionCard
+		title="Deskew / Trim"
+		dirty={magick.settings.deskewThreshold[0] > 0 ||
+			magick.settings.deskewAutoCrop ||
+			magick.settings.trimEdges}
+	>
+		<div class="space-y-3">
+			<!-- Deskew -->
+			<div class="space-y-1.5">
+				<SliderRow
+					label="Threshold"
+					bind:value={magick.settings.deskewThreshold}
+					suffix="%"
+					min={0}
+					max={100}
+					class="pt-1 pb-3"
+				/>
+				<ToggleRow
+					id="geo-deskew-crop"
+					label="Auto Crop"
+					description="Trim after straightening"
+					bind:checked={magick.settings.deskewAutoCrop}
+				/>
+			</div>
+			<!-- Trim -->
+			<div class="space-y-1.5 border-t border-foreground/10 pt-3">
+				<ToggleRow
+					id="geo-trim"
+					label="Trim Edges"
+					description="Remove boring borders"
+					bind:checked={magick.settings.trimEdges}
+				/>
+			</div>
+		</div>
 	</SectionCard>
 
 	<!-- Crop -->
@@ -176,16 +196,16 @@
 				'visual'
 					? 'bg-muted font-bold text-foreground'
 					: 'text-muted-foreground hover:bg-muted/50'}"
-			onclick={() => {
-				if (cropInputMode !== 'visual') {
-					cropInputMode = 'visual';
-					magick.cancelCrop();
-					// Drop any gravity crop so the viewport shows the full
-					// pre-crop image and the visual selection starts fresh.
-					magick.settings.cropW = null;
-					magick.settings.cropH = null;
-				}
-			}}
+				onclick={() => {
+					if (cropInputMode !== 'visual') {
+						cropInputMode = 'visual';
+						magick.cancelCrop();
+						// Drop any gravity crop so the viewport shows the full
+						// pre-crop image and the visual selection starts fresh.
+						magick.settings.cropW = null;
+						magick.settings.cropH = null;
+					}
+				}}
 			>
 				Select Region
 			</button>
@@ -204,9 +224,9 @@
 						magick.settings.cropY = null;
 					}
 				}}
-		>
-			Gravity
-		</button>
+			>
+				Gravity
+			</button>
 		</div>
 
 		{#if cropInputMode === 'visual'}
@@ -246,9 +266,7 @@
 							)}</span
 						>
 						<span class="ml-1 text-muted-foreground/40">
-							@ {Math.round(magick.settings.cropX ?? 0)},{Math.round(
-								magick.settings.cropY ?? 0
-							)}
+							@ {Math.round(magick.settings.cropX ?? 0)},{Math.round(magick.settings.cropY ?? 0)}
 						</span>
 					</div>
 					<button
@@ -326,11 +344,6 @@
 				</div>
 			</div>
 		{/if}
-	</SectionCard>
-
-	<!-- Trim -->
-	<SectionCard title="Trim" dirty={magick.settings.trimEdges}>
-		<ToggleRow id="geo-trim" label="Trim Edges" bind:checked={magick.settings.trimEdges} />
 	</SectionCard>
 
 	<!-- Canvas Extent -->

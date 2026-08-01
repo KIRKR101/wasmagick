@@ -65,8 +65,10 @@
 				if (s.extentW || s.extentH) {
 					parts.push(`Extent ${s.extentW ?? 'A'}×${s.extentH ?? 'A'}`);
 				}
-				if (s.deskewThreshold[0] > 0) parts.push(`Deskew ${s.deskewThreshold[0]}%`);
-				if (s.deskewThreshold[0] > 0 && !s.deskewAutoCrop) parts.push('No AutoCrop');
+				if (s.deskewThreshold[0] > 0) {
+					parts.push(`Deskew ${s.deskewThreshold[0]}%`);
+					parts.push(s.deskewAutoCrop ? 'Auto Crop' : 'No AutoCrop');
+				}
 				if (s.autoOrient) parts.push('Auto-Orient');
 				return parts.join(' · ');
 			}
