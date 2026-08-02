@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { UploadCloud } from 'lucide-svelte';
 	import AppShell from '$lib/components/AppShell.svelte';
 	import MobileAppShell from '$lib/components/MobileAppShell.svelte';
 	import KeyboardShortcuts from '$lib/components/KeyboardShortcuts.svelte';
@@ -279,9 +278,16 @@
 
 <svelte:window onkeydown={handleKeydown} />
 <svelte:document
+	ondragstart={(e) => {
+		if (!e.dataTransfer?.types.includes('Files')) {
+			e.preventDefault();
+		}
+	}}
 	ondragover={(e) => {
 		e.preventDefault();
-		globalDragging = true;
+		if (e.dataTransfer?.types.includes('Files')) {
+			globalDragging = true;
+		}
 	}}
 	ondragleave={(e) => {
 		if (
@@ -296,16 +302,9 @@
 
 {#if globalDragging}
 	<div
-		class="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-primary/10 backdrop-blur-sm"
+		class="pointer-events-none fixed inset-0 z-50 flex animate-in items-center justify-center bg-background/40 backdrop-blur-[2px] fade-in-0"
 	>
-		<div
-			class="flex flex-col items-center gap-3 rounded-2xl border-2 border-primary bg-background/90 px-10 py-8 shadow-xl"
-		>
-			<div class="flex size-14 items-center justify-center rounded-full bg-primary/10">
-				<UploadCloud class="size-7 text-primary" />
-			</div>
-			<p class="text-sm font-semibold text-foreground">Drop your image anywhere</p>
-		</div>
+		<p class="font-mono text-xs tracking-wider text-foreground uppercase">Drop your image here</p>
 	</div>
 {/if}
 

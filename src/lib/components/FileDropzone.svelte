@@ -24,11 +24,7 @@
 	}
 </script>
 
-<div
-	class="flex w-full max-w-md flex-col items-center gap-6 p-8 text-center transition-all {isDragging
-		? 'border-2 border-foreground bg-muted/30'
-		: ''}"
->
+<div class="flex w-full max-w-md flex-col items-center gap-6 p-8 text-center">
 	<div class="font-mono text-[48px] text-muted-foreground/30">[ ]</div>
 
 	<div class="space-y-1">
