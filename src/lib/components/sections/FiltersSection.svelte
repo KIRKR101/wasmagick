@@ -208,8 +208,7 @@
 	<!-- Advanced Blur -->
 	<SectionCard
 		title="Advanced Blur"
-		dirty={magick.settings.gaussianBlurRadius[0] > 0 ||
-			magick.settings.motionBlurRadius[0] > 0}
+		dirty={magick.settings.gaussianBlurRadius[0] > 0 || magick.settings.motionBlurRadius[0] > 0}
 	>
 		<div class="space-y-3">
 			<SliderRow
@@ -378,4 +377,3 @@
 		</div>
 	</SectionCard>
 </div>
-

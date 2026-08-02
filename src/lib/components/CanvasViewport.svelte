@@ -146,11 +146,11 @@
 
 	export function zoomIn() {
 		const { x, y } = getViewportCenter();
-		zoomAt(x, y, currentZoom * 1.10);
+		zoomAt(x, y, currentZoom * 1.1);
 	}
 	export function zoomOut() {
 		const { x, y } = getViewportCenter();
-		zoomAt(x, y, currentZoom / 1.10);
+		zoomAt(x, y, currentZoom / 1.1);
 	}
 	export function startCompare() {
 		if (processedImageUrl) isComparing = true;
@@ -356,19 +356,21 @@
 		ontouchmove={onTouchMove}
 		ontouchend={onTouchEnd}
 		ontouchcancel={onTouchEnd}
-		class="viewport relative flex h-full min-h-0 w-full flex-grow items-center justify-center overflow-hidden {!showPlaceholder ? 'touch-none' : ''}"
+		class="viewport relative flex h-full min-h-0 w-full flex-grow items-center justify-center overflow-hidden {!showPlaceholder
+			? 'touch-none'
+			: ''}"
 	>
 		{#if isInitializing}
 			<div class="text-center text-muted-foreground">
 				<div class="mx-auto mb-4 flex size-16 items-center justify-center">
 					<div class="relative size-12">
 						<div class="absolute inset-0 rounded-full border-2 border-muted/30"></div>
-						<div
-							class="absolute inset-0 rounded-full border-2 border-t-primary animate-spin"
-						></div>
+						<div class="absolute inset-0 animate-spin rounded-full border-2 border-t-primary"></div>
 					</div>
 				</div>
-				<h3 class="mb-1 font-mono text-xs font-semibold uppercase tracking-wider text-foreground">Initializing WASM Engine</h3>
+				<h3 class="mb-1 font-mono text-xs font-semibold tracking-wider text-foreground uppercase">
+					Initializing WASM Engine
+				</h3>
 				<p class="font-mono text-[11px]">Loading ImageMagick…</p>
 			</div>
 		{:else if showPlaceholder}
@@ -398,7 +400,10 @@
 				style={imageStyle}
 				alt={isComparing ? 'Original image before processing' : 'Processed image preview'}
 				draggable="false"
-				class="checkerboard max-h-none max-w-none origin-center object-contain {processedImageUrl || originalImageUrl ? 'opacity-100' : 'opacity-0'} {isLoading ? 'animate-opacity-pulse' : ''}"
+				class="checkerboard max-h-none max-w-none origin-center object-contain {processedImageUrl ||
+				originalImageUrl
+					? 'opacity-100'
+					: 'opacity-0'} {isLoading ? 'animate-opacity-pulse' : ''}"
 			/>
 			{#if isComparing}
 				<div
@@ -444,75 +449,74 @@
 				onpointerdown={(e) => e.stopPropagation()}
 				onpointerup={(e) => e.stopPropagation()}
 				onpointerleave={(e) => e.stopPropagation()}
-				class="pointer-events-auto absolute bottom-3 left-1/2 z-20 hidden -translate-x-1/2 items-center gap-0 border border-foreground/30 bg-[#f7f7f4]/85 px-1 font-mono text-[11px] dark:bg-background/85 backdrop-blur-sm animate-in fade-in slide-in-from-bottom-2 duration-200 md:flex"
+				class="pointer-events-auto absolute bottom-3 left-1/2 z-20 hidden -translate-x-1/2 animate-in items-center gap-0 border border-foreground/30 bg-[#f7f7f4]/85 px-1 font-mono text-[11px] backdrop-blur-sm duration-200 fade-in slide-in-from-bottom-2 md:flex dark:bg-background/85"
 			>
-			{#if isLoading}
-				<Loader2 class="mx-1 size-3.5 animate-spin text-muted-foreground" />
-				<span class="mx-1 text-muted-foreground">{currentProcessingStep ?? 'Processing...'}</span>
+				{#if isLoading}
+					<Loader2 class="mx-1 size-3.5 animate-spin text-muted-foreground" />
+					<span class="mx-1 text-muted-foreground">{currentProcessingStep ?? 'Processing...'}</span>
+					<div class="mx-0.5 h-4 w-px bg-border"></div>
+				{/if}
+				<button
+					onclick={zoomOut}
+					class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+					aria-label="Zoom out (Ctrl+-)"
+				>
+					<ZoomOut class="size-3.5" />
+				</button>
+				<button
+					onclick={zoomToOneToOne}
+					class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+					aria-label="Reset zoom to 100%"
+				>
+					<span class="tabular-nums">{Math.round(currentZoom)}%</span>
+				</button>
+				<button
+					onclick={zoomIn}
+					class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+					aria-label="Zoom in (Ctrl+=)"
+				>
+					<ZoomIn class="size-3.5" />
+				</button>
+				<button
+					onclick={resetView}
+					class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+					aria-label="Fit to screen (Ctrl+0)"
+				>
+					<Maximize class="size-3.5" />
+				</button>
 				<div class="mx-0.5 h-4 w-px bg-border"></div>
-			{/if}
-			<button
-				onclick={zoomOut}
-				class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-				aria-label="Zoom out (Ctrl+-)"
-			>
-				<ZoomOut class="size-3.5" />
-			</button>
-			<button
-				onclick={zoomToOneToOne}
-				class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-				aria-label="Reset zoom to 100%"
-			>
-				<span class="tabular-nums">{Math.round(currentZoom)}%</span>
-			</button>
-			<button
-				onclick={zoomIn}
-				class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-				aria-label="Zoom in (Ctrl+=)"
-			>
-				<ZoomIn class="size-3.5" />
-			</button>
-			<button
-				onclick={resetView}
-				class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-				aria-label="Fit to screen (Ctrl+0)"
-			>
-				<Maximize class="size-3.5" />
-			</button>
-			<div class="mx-0.5 h-4 w-px bg-border"></div>
-			<button
-				onpointerdown={(e) => {
-					e.stopPropagation();
-					startCompare();
-				}}
-				onpointerup={(e) => {
-					e.stopPropagation();
-					endCompare();
-				}}
-				onpointerleave={(e) => {
-					e.stopPropagation();
-					endCompare();
-				}}
-				disabled={!processedImageUrl}
-				class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-40 {isComparing
-					? 'bg-muted text-foreground'
-					: ''}"
-				aria-label="Hold to compare (Space)"
-			>
-				<Images class="size-3.5" />
-			</button>
-			<button
-				onclick={toggleSplitCompare}
-				disabled={!canSplit}
-				class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-40 {splitMode
-					? 'bg-muted text-foreground'
-					: ''}"
-				aria-label="Split compare (B)"
-			>
-				<Columns2 class="size-3.5" />
-			</button>
+				<button
+					onpointerdown={(e) => {
+						e.stopPropagation();
+						startCompare();
+					}}
+					onpointerup={(e) => {
+						e.stopPropagation();
+						endCompare();
+					}}
+					onpointerleave={(e) => {
+						e.stopPropagation();
+						endCompare();
+					}}
+					disabled={!processedImageUrl}
+					class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-40 {isComparing
+						? 'bg-muted text-foreground'
+						: ''}"
+					aria-label="Hold to compare (Space)"
+				>
+					<Images class="size-3.5" />
+				</button>
+				<button
+					onclick={toggleSplitCompare}
+					disabled={!canSplit}
+					class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-40 {splitMode
+						? 'bg-muted text-foreground'
+						: ''}"
+					aria-label="Split compare (B)"
+				>
+					<Columns2 class="size-3.5" />
+				</button>
 			</div>
 		{/if}
 	</div>
-
 </main>

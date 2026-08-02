@@ -23,21 +23,21 @@
 		<button
 			onclick={() => history.undo(magick)}
 			disabled={!history.canUndo}
-			class="flex-1 cursor-pointer border border-foreground/30 font-mono text-[11px] uppercase px-2 py-1.5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
+			class="flex-1 cursor-pointer border border-foreground/30 px-2 py-1.5 font-mono text-[11px] uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 		>
 			[&lt;] <span class="hover:underline">UNDO</span>
 		</button>
 		<button
 			onclick={() => history.redo(magick)}
 			disabled={!history.canRedo}
-			class="flex-1 cursor-pointer border border-foreground/30 font-mono text-[11px] uppercase px-2 py-1.5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
+			class="flex-1 cursor-pointer border border-foreground/30 px-2 py-1.5 font-mono text-[11px] uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 		>
 			<span class="hover:underline">REDO</span> [&gt;]
 		</button>
 		<button
 			onclick={() => onClearRequest?.()}
 			disabled={history.count === 0}
-			class="cursor-pointer border border-foreground/30 font-mono text-[11px] uppercase px-2 py-1.5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
+			class="cursor-pointer border border-foreground/30 px-2 py-1.5 font-mono text-[11px] uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 			aria-label="Clear history"
 		>
 			[X]
@@ -48,7 +48,7 @@
 		<div class="flex shrink-0 gap-1 pt-2">
 			<button
 				onclick={() => (diffMode = 'relative')}
-				class="flex-1 cursor-pointer border font-mono text-[10px] uppercase px-1.5 py-1 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring {diffMode ===
+				class="flex-1 cursor-pointer border px-1.5 py-1 font-mono text-[10px] uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {diffMode ===
 				'relative'
 					? 'border-foreground/50 bg-muted/50 text-foreground'
 					: 'border-foreground/20 text-muted-foreground/60 hover:text-muted-foreground'}"
@@ -57,7 +57,7 @@
 			</button>
 			<button
 				onclick={() => (diffMode = 'absolute')}
-				class="flex-1 cursor-pointer border font-mono text-[10px] uppercase px-1.5 py-1 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring {diffMode ===
+				class="flex-1 cursor-pointer border px-1.5 py-1 font-mono text-[10px] uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {diffMode ===
 				'absolute'
 					? 'border-foreground/50 bg-muted/50 text-foreground'
 					: 'border-foreground/20 text-muted-foreground/60 hover:text-muted-foreground'}"
@@ -81,9 +81,9 @@
 					<li>
 						<button
 							onclick={() => history.jumpTo(magick, entry.id)}
-							class="flex w-full flex-col text-left transition-colors border {isCurrent
+							class="flex w-full flex-col border text-left transition-colors {isCurrent
 								? 'border-foreground bg-muted/50'
-								: 'border-foreground/30 bg-transparent hover:bg-muted/30 hover:border-foreground/60'}"
+								: 'border-foreground/30 bg-transparent hover:border-foreground/60 hover:bg-muted/30'}"
 							aria-current={isCurrent}
 						>
 							<div class="flex items-center gap-2.5 px-2 py-1.5">
@@ -107,8 +107,7 @@
 											{entry.label}
 										</span>
 										{#if entry.isOriginal}{:else if entry.time > 0}
-											<span class="font-mono text-[10px] text-muted-foreground"
-												>{entry.time}ms</span
+											<span class="font-mono text-[10px] text-muted-foreground">{entry.time}ms</span
 											>
 										{/if}
 									</div>
@@ -126,7 +125,9 @@
 								</div>
 							</div>
 							{#if diffs.length > 0}
-								<div class="flex flex-wrap gap-x-2 gap-y-0.5 border-t border-foreground/10 px-2 py-1">
+								<div
+									class="flex flex-wrap gap-x-2 gap-y-0.5 border-t border-foreground/10 px-2 py-1"
+								>
 									{#each diffs as d}
 										<span class="font-mono text-[10px] text-muted-foreground/70">
 											{d.label}: <span class="text-muted-foreground/40">{d.prev}</span> → {d.curr}

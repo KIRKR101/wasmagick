@@ -1123,9 +1123,7 @@ export class MagickState {
 
 								if (this.settings.autoThreshold !== 'Off') {
 									this.currentProcessingStep = 'Auto-Thresholding';
-									image.autoThreshold(
-										AutoThresholdMethod[this.settings.autoThreshold]
-									);
+									image.autoThreshold(AutoThresholdMethod[this.settings.autoThreshold]);
 									appliedOptions.autoThreshold = this.settings.autoThreshold;
 								}
 
@@ -1542,4 +1540,3 @@ export class MagickState {
 export function useMagick(): MagickState {
 	return new MagickState();
 }
-

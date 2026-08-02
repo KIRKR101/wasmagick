@@ -53,8 +53,10 @@
 
 	let canDownload = $derived(!!magick.processedImageUrl);
 	let anyDirty = $derived(
-		isGeoDirty(magick.settings) || isColorDirty(magick.settings) ||
-		isFiltersDirty(magick.settings) || isExportDirty(magick.settings)
+		isGeoDirty(magick.settings) ||
+			isColorDirty(magick.settings) ||
+			isFiltersDirty(magick.settings) ||
+			isExportDirty(magick.settings)
 	);
 </script>
 
@@ -71,7 +73,10 @@
 			>
 				<Maximize class="size-4" />
 			</button>
-			<span class="w-12 text-center font-mono text-[11px] tabular-nums text-muted-foreground" class:opacity-35={!magick.originalImageUrl}>
+			<span
+				class="w-12 text-center font-mono text-[11px] text-muted-foreground tabular-nums"
+				class:opacity-35={!magick.originalImageUrl}
+			>
 				{Math.round(zoomPct)}%
 			</span>
 		</div>
@@ -79,8 +84,14 @@
 		<!-- View -->
 		<div class="flex items-center gap-0">
 			<button
-				onpointerdown={(e) => { e.preventDefault(); onCompareStart(); }}
-				onpointerup={(e) => { e.preventDefault(); onCompareEnd(); }}
+				onpointerdown={(e) => {
+					e.preventDefault();
+					onCompareStart();
+				}}
+				onpointerup={(e) => {
+					e.preventDefault();
+					onCompareEnd();
+				}}
 				onpointerleave={() => onCompareEnd()}
 				disabled={!magick.processedImageUrl}
 				class="mobile-btn-sm {isComparing ? 'bg-muted text-foreground' : ''}"
@@ -102,12 +113,7 @@
 	<!-- Actions -->
 	<div class="flex items-center justify-around px-2 py-1.5">
 		<!-- File operations -->
-		<button
-			onclick={onDownload}
-			disabled={!canDownload}
-			class="mobile-btn"
-			aria-label="Download"
-		>
+		<button onclick={onDownload} disabled={!canDownload} class="mobile-btn" aria-label="Download">
 			<Download class="size-4.5" />
 			<span class="text-[9px]">SAVE</span>
 		</button>
@@ -124,21 +130,11 @@
 		<div class="h-5 w-px bg-foreground/30"></div>
 
 		<!-- History -->
-		<button
-			onclick={onUndo}
-			disabled={!history.canUndo}
-			class="mobile-btn"
-			aria-label="Undo"
-		>
+		<button onclick={onUndo} disabled={!history.canUndo} class="mobile-btn" aria-label="Undo">
 			<Undo2 class="size-4.5" />
 			<span class="text-[9px]">UNDO</span>
 		</button>
-		<button
-			onclick={onRedo}
-			disabled={!history.canRedo}
-			class="mobile-btn"
-			aria-label="Redo"
-		>
+		<button onclick={onRedo} disabled={!history.canRedo} class="mobile-btn" aria-label="Redo">
 			<Redo2 class="size-4.5" />
 			<span class="text-[9px]">REDO</span>
 		</button>
@@ -146,12 +142,7 @@
 		<div class="h-5 w-px bg-foreground/30"></div>
 
 		<!-- Settings -->
-		<button
-			onclick={onReset}
-			disabled={!anyDirty}
-			class="mobile-btn"
-			aria-label="Reset all"
-		>
+		<button onclick={onReset} disabled={!anyDirty} class="mobile-btn" aria-label="Reset all">
 			<RotateCcw class="size-4.5" />
 			<span class="text-[9px]">RESET</span>
 		</button>

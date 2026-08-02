@@ -612,7 +612,10 @@ describe('Stochastic operations', () => {
 		};
 	}
 
-	function noiseStats(png: PNG, source: PNG): {
+	function noiseStats(
+		png: PNG,
+		source: PNG
+	): {
 		avgDelta: number;
 		meanSource: number;
 		meanOut: number;
@@ -677,9 +680,10 @@ describe('Stochastic operations', () => {
 		for (const type of NOISE_TYPES) {
 			const low = noiseStats(runNoise(type, 0.1).png, source).avgDelta;
 			const high = noiseStats(runNoise(type, 2).png, source).avgDelta;
-			expect(high, `${type}: high ${high.toFixed(2)} should exceed low ${low.toFixed(2)}`).toBeGreaterThan(
-				low * 1.5
-			);
+			expect(
+				high,
+				`${type}: high ${high.toFixed(2)} should exceed low ${low.toFixed(2)}`
+			).toBeGreaterThan(low * 1.5);
 		}
 	});
 
@@ -687,7 +691,10 @@ describe('Stochastic operations', () => {
 		for (const type of NOISE_TYPES) {
 			const { png, source } = runNoise(type, 0.1);
 			const { avgDelta, meanSource, meanOut } = noiseStats(png, source);
-			expect(avgDelta, `${type}: avg ${avgDelta.toFixed(2)} exceeds subtle-grain bound`).toBeLessThan(60);
+			expect(
+				avgDelta,
+				`${type}: avg ${avgDelta.toFixed(2)} exceeds subtle-grain bound`
+			).toBeLessThan(60);
 			expect(Math.abs(meanOut - meanSource), `${type}: mean intensity shifted`).toBeLessThan(
 				meanSource * 0.25
 			);
@@ -954,4 +961,3 @@ describe('Export operations', () => {
 		);
 	});
 });
-

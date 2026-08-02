@@ -13,7 +13,8 @@ const WIN_ARCHIVE = `ImageMagick-${IM_VERSION}-portable-Q16-x64.7z`;
 const WIN_URL = `https://github.com/ImageMagick/ImageMagick/releases/download/${IM_VERSION}/${WIN_ARCHIVE}`;
 const WIN_BIN = join(TOOL_DIR, 'magick.exe');
 
-const FONT_URL = 'https://raw.githubusercontent.com/openmaptiles/fonts/master/roboto/Roboto-Regular.ttf';
+const FONT_URL =
+	'https://raw.githubusercontent.com/openmaptiles/fonts/master/roboto/Roboto-Regular.ttf';
 
 const isWindows = process.platform === 'win32';
 const magickBin = isWindows ? WIN_BIN : LINUX_BIN;

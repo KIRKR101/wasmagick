@@ -3,7 +3,13 @@
 	import type { HistoryState } from '$lib/hooks/useHistory.svelte';
 	import type { PresetsState } from '$lib/hooks/usePresets.svelte';
 	import type { EditorSection } from '$lib/editor-types';
-	import { isGeoDirty, isColorDirty, isFiltersDirty, isExportDirty, isAnnotateDirty } from '$lib/utils';
+	import {
+		isGeoDirty,
+		isColorDirty,
+		isFiltersDirty,
+		isExportDirty,
+		isAnnotateDirty
+	} from '$lib/utils';
 
 	import GeometrySection from './sections/GeometrySection.svelte';
 	import ColorSection from './sections/ColorSection.svelte';
@@ -148,14 +154,10 @@
 	></button>
 
 	<!-- Sheet -->
-	<div
-		bind:this={sheetRef}
-		class="mobile-sheet"
-		style="height: {currentTranslate}px"
-	>
+	<div bind:this={sheetRef} class="mobile-sheet" style="height: {currentTranslate}px">
 		<!-- Drag handle -->
 		<div
-			class="flex items-center justify-center pt-2.5 pb-1.5 cursor-grab active:cursor-grabbing touch-none"
+			class="flex cursor-grab touch-none items-center justify-center pt-2.5 pb-1.5 active:cursor-grabbing"
 			onpointerdown={onDragStart}
 			onpointermove={onDragMove}
 			onpointerup={onDragEnd}
@@ -167,10 +169,7 @@
 		</div>
 
 		<!-- Tab bar -->
-		<div
-			bind:this={tabsRef}
-			class="mobile-tabs"
-		>
+		<div bind:this={tabsRef} class="mobile-tabs">
 			{#each TABS as tab (tab.id)}
 				{@const dirty = tab.dirty()}
 				<button
@@ -215,11 +214,7 @@
 			>
 				PROCESS<span class="ml-1 inline-block w-3 text-left">{magick.isLoading ? ' ~' : ''}</span>
 			</button>
-			<button
-				onclick={onDownload}
-				disabled={!canDownload}
-				class="mobile-action-btn"
-			>
+			<button onclick={onDownload} disabled={!canDownload} class="mobile-action-btn">
 				EXPORT
 			</button>
 		</div>

@@ -98,7 +98,10 @@
 			tabindex="-1"
 		>
 			<div class="mb-6 flex items-center gap-2 border-b border-foreground/30 pb-3">
-				<h2 id="shortcuts-title" class="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+				<h2
+					id="shortcuts-title"
+					class="font-mono text-xs tracking-wider text-muted-foreground uppercase"
+				>
 					Keyboard Shortcuts
 				</h2>
 			</div>
@@ -106,7 +109,9 @@
 			<div class="max-h-[60vh] space-y-6 overflow-y-auto">
 				{#each shortcuts as section}
 					<div class="space-y-3">
-						<h3 class="font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+						<h3
+							class="font-mono text-[11px] font-semibold tracking-wider text-muted-foreground uppercase"
+						>
 							/{section.category}
 						</h3>
 						<div class="space-y-2">

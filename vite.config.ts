@@ -68,7 +68,8 @@ export default defineConfig({
 							plugins: [
 								{
 									handlerDidError: async () => {
-										const cached = await caches.match('/offline.html') ?? await caches.match('/offline');
+										const cached =
+											(await caches.match('/offline.html')) ?? (await caches.match('/offline'));
 										return cached ?? Response.error();
 									}
 								}

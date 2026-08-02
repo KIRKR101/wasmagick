@@ -97,7 +97,8 @@
 		if (s.blur[0] > 0) parts.push(`Blur ${s.blur[0]}`);
 		if (s.sharpen[0] > 0) parts.push(`Sharpen ${s.sharpen[0]}`);
 		if (s.gaussianBlurRadius[0] > 0) parts.push(`GaussBlur ${s.gaussianBlurRadius[0]}`);
-		if (s.motionBlurRadius[0] > 0) parts.push(`MotionBlur ${s.motionBlurRadius[0]}°${s.motionBlurAngle[0]}`);
+		if (s.motionBlurRadius[0] > 0)
+			parts.push(`MotionBlur ${s.motionBlurRadius[0]}°${s.motionBlurAngle[0]}`);
 		if (s.addNoiseType !== 'Off') parts.push(`Noise ${s.addNoiseType}`);
 		if (s.adaptiveSharpenRadius[0] > 0) parts.push(`AdptSharpen ${s.adaptiveSharpenRadius[0]}`);
 		if (s.adaptiveBlurRadius[0] > 0) parts.push(`AdptBlur ${s.adaptiveBlurRadius[0]}`);

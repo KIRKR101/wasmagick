@@ -53,7 +53,7 @@
 			<button
 				onclick={onUndo}
 				disabled={!history.canUndo}
-				class="cursor-pointer px-1.5 py-1 text-muted-foreground transition-colors focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+				class="cursor-pointer px-1.5 py-1 text-muted-foreground transition-colors focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 			>
 				[&lt;]
 			</button>
@@ -62,7 +62,7 @@
 			<button
 				onclick={onRedo}
 				disabled={!history.canRedo}
-				class="cursor-pointer px-1.5 py-1 text-muted-foreground transition-colors focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+				class="cursor-pointer px-1.5 py-1 text-muted-foreground transition-colors focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 			>
 				[&gt;]
 			</button>
@@ -73,7 +73,9 @@
 		<HoverTooltip label="Debug Mode">
 			<button
 				onclick={onToggleDebug}
-				class="cursor-pointer px-1.5 py-1 transition-colors focus:outline-none {debugMode ? 'text-foreground' : 'text-muted-foreground'}"
+				class="cursor-pointer px-1.5 py-1 transition-colors focus:outline-none {debugMode
+					? 'text-foreground'
+					: 'text-muted-foreground'}"
 			>
 				[BUG]
 			</button>

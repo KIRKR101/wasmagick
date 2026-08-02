@@ -30,7 +30,7 @@
 		<span class="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase"
 			>Built-in</span
 		>
-		<div class="grid grid-cols-1 gap-1.5 mt-2">
+		<div class="mt-2 grid grid-cols-1 gap-1.5">
 			{#each BUILTIN_PRESETS as p (p.id)}
 				{@const active = presets.isBuiltInActive(magick, p)}
 				<button
@@ -69,12 +69,15 @@
 				bind:value={newName}
 				type="text"
 				placeholder="Preset name"
-				class="h-8 text-xs font-mono w-full px-2 placeholder:text-muted-foreground/50"
+				class="h-8 w-full px-2 font-mono text-xs placeholder:text-muted-foreground/50"
 				onkeydown={(e) => {
 					if (e.key === 'Enter') save();
 				}}
 			/>
-			<button onclick={save} class="group shrink-0 cursor-pointer font-mono text-xs border border-foreground/30 px-3 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+			<button
+				onclick={save}
+				class="group shrink-0 cursor-pointer border border-foreground/30 px-3 font-mono text-xs focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+			>
 				[+] <span class="group-hover:underline">SAVE</span>
 			</button>
 		</div>
@@ -91,7 +94,7 @@
 					<div
 						class="group flex items-center gap-2 border px-3 py-2 transition-colors {active
 							? 'border-foreground bg-muted/50'
-							: 'border-foreground/30 bg-transparent hover:bg-muted/30 hover:border-foreground/60'}"
+							: 'border-foreground/30 bg-transparent hover:border-foreground/60 hover:bg-muted/30'}"
 					>
 						<button
 							onclick={() => applyUser(p)}
@@ -110,7 +113,7 @@
 						</button>
 						<button
 							onclick={() => presets.deleteUser(p.id)}
-							class="shrink-0 cursor-pointer text-muted-foreground font-mono text-xs focus:outline-none"
+							class="shrink-0 cursor-pointer font-mono text-xs text-muted-foreground focus:outline-none"
 							aria-label="Delete preset"
 						>
 							[x]

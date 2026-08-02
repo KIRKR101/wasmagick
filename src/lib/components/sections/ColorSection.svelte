@@ -186,14 +186,11 @@
 				class="pb-1"
 			/>
 			<div class="space-y-1.5">
-				<span class="font-mono text-[10px] text-muted-foreground uppercase"
-					>Auto Threshold</span
-				>
+				<span class="font-mono text-[10px] text-muted-foreground uppercase">Auto Threshold</span>
 				<Select type="single" bind:value={magick.settings.autoThreshold}>
 					<SelectTrigger class="h-9 w-full font-mono text-xs">
-						{AUTO_THRESHOLD_OPTIONS.find(
-							(o) => o.value === magick.settings.autoThreshold
-						)?.label ?? magick.settings.autoThreshold}
+						{AUTO_THRESHOLD_OPTIONS.find((o) => o.value === magick.settings.autoThreshold)?.label ??
+							magick.settings.autoThreshold}
 					</SelectTrigger>
 					<SelectContent>
 						{#each AUTO_THRESHOLD_OPTIONS as opt (opt.value)}
@@ -206,17 +203,9 @@
 	</SectionCard>
 
 	<!-- CLAHE -->
-	<SectionCard
-		title="CLAHE"
-		dirty={magick.settings.claheXTiles[0] > 0}
-	>
+	<SectionCard title="CLAHE" dirty={magick.settings.claheXTiles[0] > 0}>
 		<div class="space-y-3">
-			<SliderRow
-				label="X Tiles"
-				bind:value={magick.settings.claheXTiles}
-				min={0}
-				max={16}
-			/>
+			<SliderRow label="X Tiles" bind:value={magick.settings.claheXTiles} min={0} max={16} />
 			<SliderRow
 				label="Y Tiles"
 				bind:value={magick.settings.claheYTiles}

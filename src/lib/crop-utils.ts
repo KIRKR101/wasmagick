@@ -106,7 +106,11 @@ export function clampMoveToImage(crop: CropRect, imageW: number, imageH: number)
  * `ratio` is width/height (e.g. 16/9).
  * `anchor` determines which corner stays fixed: 'nw' | 'ne' | 'se' | 'sw'.
  */
-export function constrainAspect(crop: CropRect, ratio: number, anchor: 'nw' | 'ne' | 'se' | 'sw'): CropRect {
+export function constrainAspect(
+	crop: CropRect,
+	ratio: number,
+	anchor: 'nw' | 'ne' | 'se' | 'sw'
+): CropRect {
 	let { x, y, w, h } = crop;
 	if (w <= 0 || h <= 0) return crop;
 
@@ -363,7 +367,10 @@ function gravityAxisOffset(gap: number, gravity: string, isHorizontal: boolean):
  * crop is already applied the displayed image *is* that crop, so its top-left
  * maps back to (cropX, cropY); otherwise it sits at the origin.
  */
-export function computeCropStepOffset(settings: MagickSettings): { offsetX: number; offsetY: number } {
+export function computeCropStepOffset(settings: MagickSettings): {
+	offsetX: number;
+	offsetY: number;
+} {
 	if (settings.cropX != null && settings.cropY != null) {
 		return { offsetX: settings.cropX, offsetY: settings.cropY };
 	}
@@ -414,7 +421,12 @@ export function computeCropPreview(
 		};
 	}
 
-	if (settings.cropW != null && settings.cropW > 0 && settings.cropH != null && settings.cropH > 0) {
+	if (
+		settings.cropW != null &&
+		settings.cropW > 0 &&
+		settings.cropH != null &&
+		settings.cropH > 0
+	) {
 		const cw = Math.min(settings.cropW, stepW);
 		const ch = Math.min(settings.cropH, stepH);
 		return {

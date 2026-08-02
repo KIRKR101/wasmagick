@@ -14,12 +14,12 @@ function clamp(v: number): number {
 }
 
 const CLUT_PRESETS: ClutPreset[] = [
-  {
-      id: 'identity',
-      label: 'Identity',
-      description: 'No color change (passthrough)',
-      map: (t) => [t, t, t]
-  },
+	{
+		id: 'identity',
+		label: 'Identity',
+		description: 'No color change (passthrough)',
+		map: (t) => [t, t, t]
+	},
 	{
 		id: 'warm',
 		label: 'Warm Tone',
@@ -52,22 +52,22 @@ const CLUT_PRESETS: ClutPreset[] = [
 			return [v, v, v];
 		}
 	},
-  {
-    id: 'tealOrange',
-    label: 'Teal & Orange',
-    description: 'Teal shadows, orange highlights (cinematic)',
-    map: (t) => {
-      const n = t / 255;
-      const shadow = 1 - n;
-      const highlight = n;
+	{
+		id: 'tealOrange',
+		label: 'Teal & Orange',
+		description: 'Teal shadows, orange highlights (cinematic)',
+		map: (t) => {
+			const n = t / 255;
+			const shadow = 1 - n;
+			const highlight = n;
 
-      const r = clamp(t - shadow * 30 + highlight * 35);
-      const g = clamp(t + shadow * 10 - highlight * 15);
-      const b = clamp(t + shadow * 45 - highlight * 48);
+			const r = clamp(t - shadow * 30 + highlight * 35);
+			const g = clamp(t + shadow * 10 - highlight * 15);
+			const b = clamp(t + shadow * 45 - highlight * 48);
 
-      return [r, g, b];
-    }
-  },
+			return [r, g, b];
+		}
+	},
 	{
 		id: 'warmMute',
 		label: 'Warm Mute',
@@ -102,7 +102,10 @@ export function getInterpolationOptions(): { value: ClutInterpolation; label: st
 	];
 }
 
-export function generateClutImage(presetId: string, interpolation: ClutInterpolation): IMagickImage {
+export function generateClutImage(
+	presetId: string,
+	interpolation: ClutInterpolation
+): IMagickImage {
 	const preset = getClutPreset(presetId) ?? CLUT_PRESETS[0];
 	const width = 256;
 	const height = 1;
@@ -118,12 +121,19 @@ export function generateClutImage(presetId: string, interpolation: ClutInterpola
 	return lut;
 }
 
-export function getPixelInterpolateMethod(interpolation: ClutInterpolation): PixelInterpolateMethod {
+export function getPixelInterpolateMethod(
+	interpolation: ClutInterpolation
+): PixelInterpolateMethod {
 	switch (interpolation) {
-		case 'catrom': return PixelInterpolateMethod.Catrom;
-		case 'bilinear': return PixelInterpolateMethod.Bilinear;
-		case 'nearest': return PixelInterpolateMethod.Nearest;
-		case 'spline': return PixelInterpolateMethod.Spline;
-		case 'average': return PixelInterpolateMethod.Average;
+		case 'catrom':
+			return PixelInterpolateMethod.Catrom;
+		case 'bilinear':
+			return PixelInterpolateMethod.Bilinear;
+		case 'nearest':
+			return PixelInterpolateMethod.Nearest;
+		case 'spline':
+			return PixelInterpolateMethod.Spline;
+		case 'average':
+			return PixelInterpolateMethod.Average;
 	}
 }

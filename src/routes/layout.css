@@ -132,8 +132,13 @@
 }
 
 @keyframes opacity-pulse {
-	0%, 100% { opacity: 0.4; }
-	50% { opacity: 0.85; }
+	0%,
+	100% {
+		opacity: 0.4;
+	}
+	50% {
+		opacity: 0.85;
+	}
 }
 
 .animate-opacity-pulse {
@@ -343,7 +348,9 @@ input[type='number'] {
 	background: transparent;
 	border: none;
 	cursor: pointer;
-	transition: color 0.15s, background 0.15s;
+	transition:
+		color 0.15s,
+		background 0.15s;
 	-webkit-tap-highlight-color: transparent;
 	touch-action: manipulation;
 	font-family: var(--font-mono);
@@ -397,8 +404,12 @@ input[type='number'] {
 }
 
 @keyframes fadeIn {
-	from { opacity: 0; }
-	to { opacity: 1; }
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
 }
 
 /* Bottom sheet */
@@ -498,7 +509,9 @@ input[type='number'] {
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
 	cursor: pointer;
-	transition: background 0.15s, opacity 0.15s;
+	transition:
+		background 0.15s,
+		opacity 0.15s;
 	-webkit-tap-highlight-color: transparent;
 	touch-action: manipulation;
 	border: 1px solid color-mix(in oklch, var(--foreground) 30%, transparent);

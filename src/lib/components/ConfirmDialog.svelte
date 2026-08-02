@@ -1,5 +1,10 @@
 <script lang="ts">
-	import { Dialog, DialogPortal, DialogOverlay, DialogContent } from '$lib/components/ui/dialog/index.js';
+	import {
+		Dialog,
+		DialogPortal,
+		DialogOverlay,
+		DialogContent
+	} from '$lib/components/ui/dialog/index.js';
 
 	let {
 		open = $bindable(false),
@@ -31,11 +36,11 @@
 			class="fixed inset-0 isolate z-50 bg-black/5 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0"
 		/>
 		<DialogContent
-			class="fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-0 rounded-none border border-foreground/30 bg-[#f7f7f4] p-0 font-mono text-sm text-foreground duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 dark:bg-background"
+			class="fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-0 rounded-none border border-foreground/30 bg-[#f7f7f4] p-0 font-mono text-sm text-foreground duration-100 outline-none sm:max-w-sm dark:bg-background data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
 			showCloseButton={false}
 		>
 			<div
-				class="border-b border-foreground/30 px-4 py-3 text-xs uppercase tracking-wider text-muted-foreground"
+				class="border-b border-foreground/30 px-4 py-3 text-xs tracking-wider text-muted-foreground uppercase"
 			>
 				{#if kind === 'close'}
 					Close current image?
@@ -56,7 +61,8 @@
 				{:else if kind === 'clear-history'}
 					This will discard all history entries. This action cannot be undone.
 				{:else if kind === 'reset-all'}
-					This will reset all settings to their defaults. Processed result and history will be preserved.
+					This will reset all settings to their defaults. Processed result and history will be
+					preserved.
 				{:else}
 					You have unsaved edits to the current image
 					{#if fileName}<span class="font-medium text-foreground">({fileName})</span>{/if}.
@@ -64,21 +70,27 @@
 				{/if}
 			</div>
 
-			<div
-				class="flex items-center justify-end gap-2 border-t border-foreground/30 px-4 py-3"
-			>
-			<button
-				onclick={cancel}
-				class="cursor-pointer border border-foreground/30 px-3 py-1 font-mono text-[11px] uppercase text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-			>
-				[<span class="hover:underline"> Cancel </span>]
-			</button>
-			<button
-				onclick={confirm}
-				class="cursor-pointer border border-foreground/30 px-3 py-1 font-mono text-[11px] uppercase text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-			>
-				[<span class="hover:underline">{kind === 'close' ? 'Close' : kind === 'clear-history' ? 'Clear' : kind === 'reset-all' ? 'Reset' : 'Replace'}</span>]
-			</button>
+			<div class="flex items-center justify-end gap-2 border-t border-foreground/30 px-4 py-3">
+				<button
+					onclick={cancel}
+					class="cursor-pointer border border-foreground/30 px-3 py-1 font-mono text-[11px] text-muted-foreground uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+				>
+					[<span class="hover:underline"> Cancel </span>]
+				</button>
+				<button
+					onclick={confirm}
+					class="cursor-pointer border border-foreground/30 px-3 py-1 font-mono text-[11px] text-muted-foreground uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+				>
+					[<span class="hover:underline"
+						>{kind === 'close'
+							? 'Close'
+							: kind === 'clear-history'
+								? 'Clear'
+								: kind === 'reset-all'
+									? 'Reset'
+									: 'Replace'}</span
+					>]
+				</button>
 			</div>
 
 			<button

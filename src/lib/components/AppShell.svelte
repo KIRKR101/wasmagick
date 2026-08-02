@@ -145,7 +145,7 @@
 			{history}
 			{debugMode}
 			{isDarkMode}
-			activeSection={activeSection}
+			{activeSection}
 			onSectionChange={setSection}
 			onUploadClick={openFilePicker}
 			onReset={onResetRequest}
@@ -157,15 +157,15 @@
 		/>
 
 		<div class="hidden shrink-0 md:block" style="width: var(--panel-default);">
-		<PropertiesPanel 
-			{magick} 
-			{history} 
-			{presets} 
-			activeSection={activeSection}
-			{onProcess}
-			{onDownload}
-			onClearRequest={onClearHistoryRequest}
-		/>
+			<PropertiesPanel
+				{magick}
+				{history}
+				{presets}
+				{activeSection}
+				{onProcess}
+				{onDownload}
+				onClearRequest={onClearHistoryRequest}
+			/>
 		</div>
 
 		<div class="min-w-0 flex-1">

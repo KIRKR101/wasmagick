@@ -22,7 +22,7 @@
 				>Format</span
 			>
 			<Select type="single" bind:value={magick.settings.imageFormat}>
-				<SelectTrigger class="h-9 w-full text-xs font-mono uppercase">
+				<SelectTrigger class="h-9 w-full font-mono text-xs uppercase">
 					{magick.settings.imageFormat}
 				</SelectTrigger>
 				<SelectContent>
@@ -34,9 +34,7 @@
 		</div>
 		<div class="flex flex-col gap-2">
 			<div class="flex h-4 items-center justify-between">
-				<span class="text-[11px] tracking-wide text-muted-foreground uppercase"
-					>Quality</span
-				>
+				<span class="text-[11px] tracking-wide text-muted-foreground uppercase">Quality</span>
 				<span class="font-mono text-xs text-foreground tabular-nums">
 					{#if isLossless}
 						<span class="text-muted-foreground">Lossless</span>

@@ -32,7 +32,7 @@
 	<div class="font-mono text-[48px] text-muted-foreground/30">[ ]</div>
 
 	<div class="space-y-1">
-		<h2 class="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+		<h2 class="font-mono text-xs tracking-wider text-muted-foreground uppercase">
 			Drop an image to begin
 		</h2>
 		<p class="font-mono text-[11px] text-muted-foreground/60">
@@ -43,7 +43,7 @@
 	<div class="flex flex-wrap items-center justify-center gap-2">
 		<button
 			onclick={onBrowse}
-			class="cursor-pointer border border-foreground/30 px-3 py-1.5 font-mono text-[11px] uppercase text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+			class="cursor-pointer border border-foreground/30 px-3 py-1.5 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 		>
 			[<span class="hover:underline"> Browse files </span>]
 		</button>
@@ -57,7 +57,7 @@
 	<div class="w-full border-t border-foreground/30 pt-5">
 		<button
 			onclick={pickRandom}
-			class="w-full cursor-pointer border border-foreground/30 px-3 py-2 font-mono text-[11px] uppercase text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+			class="w-full cursor-pointer border border-foreground/30 px-3 py-2 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 		>
 			[<span class="hover:underline"> Random sample </span>]
 		</button>

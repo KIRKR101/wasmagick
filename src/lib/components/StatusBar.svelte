@@ -24,22 +24,16 @@
 </script>
 
 <div
-	class="flex h-(--statusbar-h) shrink-0 items-center gap-3 border-t border-foreground/30 bg-[#f7f7f4] px-3 font-mono text-[11px] text-muted-foreground dark:bg-background dark:border-border"
+	class="flex h-(--statusbar-h) shrink-0 items-center gap-3 border-t border-foreground/30 bg-[#f7f7f4] px-3 font-mono text-[11px] text-muted-foreground dark:border-border dark:bg-background"
 >
 	<div class="flex items-center gap-2 truncate">
 		{#if magick.originalImageUrl}
 			{#if magick.processedImageUrl && (magick.processedWidth || magick.processedHeight)}
-				<span class="text-foreground/80"
-					>{magick.originalWidth}×{magick.originalHeight}</span
-				>
+				<span class="text-foreground/80">{magick.originalWidth}×{magick.originalHeight}</span>
 				<span class="text-muted-foreground/60">→</span>
-				<span class="text-foreground"
-					>{magick.processedWidth}×{magick.processedHeight}</span
-				>
+				<span class="text-foreground">{magick.processedWidth}×{magick.processedHeight}</span>
 			{:else}
-				<span class="text-foreground/80"
-					>{magick.originalWidth}×{magick.originalHeight}</span
-				>
+				<span class="text-foreground/80">{magick.originalWidth}×{magick.originalHeight}</span>
 			{/if}
 			<span class="text-muted-foreground/60">·</span>
 			{#if magick.processedImageFormat}
@@ -56,19 +50,19 @@
 			{#if delta}
 				<span class="text-muted-foreground/60">→</span>
 				<span
-					class="{delta.pct != null && delta.pct < 0
+					class={delta.pct != null && delta.pct < 0
 						? 'text-emerald-600 dark:text-emerald-400'
-						: 'text-foreground/80'}"
+						: 'text-foreground/80'}
 				>
 					{delta.kb} KB
 				</span>
 				{#if delta.pct != null}
 					<span
-						class="{delta.pct < 0
+						class={delta.pct < 0
 							? 'text-emerald-600 dark:text-emerald-400'
 							: delta.pct > 0
 								? 'text-amber-600 dark:text-amber-400'
-								: 'text-muted-foreground'}"
+								: 'text-muted-foreground'}
 					>
 						({delta.pct > 0 ? '+' : ''}{delta.pct}%)
 					</span>

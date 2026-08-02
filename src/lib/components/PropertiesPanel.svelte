@@ -3,7 +3,13 @@
 	import type { HistoryState } from '$lib/hooks/useHistory.svelte';
 	import type { PresetsState } from '$lib/hooks/usePresets.svelte';
 	import type { EditorSection } from '$lib/editor-types';
-	import { isGeoDirty, isColorDirty, isFiltersDirty, isExportDirty, isAnnotateDirty } from '$lib/utils';
+	import {
+		isGeoDirty,
+		isColorDirty,
+		isFiltersDirty,
+		isExportDirty,
+		isAnnotateDirty
+	} from '$lib/utils';
 
 	import GeometrySection from './sections/GeometrySection.svelte';
 	import ColorSection from './sections/ColorSection.svelte';
@@ -73,20 +79,26 @@
 	let canDownload = $derived(!!magick.processedImageUrl);
 </script>
 
-<aside class="flex h-full w-full flex-col border-r border-foreground/30 bg-[#f7f7f4] font-mono text-sm dark:bg-background dark:border-border">
-
-
+<aside
+	class="flex h-full w-full flex-col border-r border-foreground/30 bg-[#f7f7f4] font-mono text-sm dark:border-border dark:bg-background"
+>
 	<!-- Header for current section -->
-	<div class="px-4 py-3 border-b border-foreground/30 flex justify-between items-center text-xs uppercase tracking-wider text-muted-foreground dark:border-border">
+	<div
+		class="flex items-center justify-between border-b border-foreground/30 px-4 py-3 text-xs tracking-wider text-muted-foreground uppercase dark:border-border"
+	>
 		<span>{meta.title}</span>
 		{#if meta.reset && meta.dirty}
-			<button class="cursor-pointer px-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" onclick={meta.reset}>[<span class="hover:underline">RESET</span>]</button>
+			<button
+				class="cursor-pointer px-2 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+				onclick={meta.reset}>[<span class="hover:underline">RESET</span>]</button
+			>
 		{/if}
 	</div>
 
 	<!-- Body -->
 	<div
-		class="properties-panel-inner custom-scrollbar min-h-0 flex-1 overflow-y-auto p-4 {meta.scroll === false
+		class="properties-panel-inner custom-scrollbar min-h-0 flex-1 overflow-y-auto p-4 {meta.scroll ===
+		false
 			? 'overflow-hidden'
 			: ''}"
 	>
@@ -108,24 +120,32 @@
 	</div>
 
 	<!-- Bottom Action Bar -->
-	<div class="p-4 border-t border-foreground/30 mt-auto bg-[#f7f7f4] dark:bg-background dark:border-border">
-		<div class="flex justify-between items-center text-xs mb-3 text-muted-foreground uppercase">
+	<div
+		class="mt-auto border-t border-foreground/30 bg-[#f7f7f4] p-4 dark:border-border dark:bg-background"
+	>
+		<div class="mb-3 flex items-center justify-between text-xs text-muted-foreground uppercase">
 			<span>Output format</span>
-			<span class="underline underline-offset-2">{magick.settings.imageFormat} {magick.settings.quality[0]}%</span>
+			<span class="underline underline-offset-2"
+				>{magick.settings.imageFormat} {magick.settings.quality[0]}%</span
+			>
 		</div>
 		<div class="flex flex-col gap-1.5">
 			<button
 				onclick={onProcess}
 				disabled={!magick.wasmLoaded || !magick.sourceBytes}
-				class="group flex h-8 w-full shrink-0 cursor-pointer items-center justify-between border border-foreground/30 bg-transparent px-2 font-mono text-[11px] uppercase text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+				class="group flex h-8 w-full shrink-0 cursor-pointer items-center justify-between border border-foreground/30 bg-transparent px-2 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 			>
-				<span><span class="group-hover:underline">PROCESS</span><span class="ml-1 inline-block w-3 text-left">{magick.isLoading ? ' ~' : ''}</span></span>
+				<span
+					><span class="group-hover:underline">PROCESS</span><span
+						class="ml-1 inline-block w-3 text-left">{magick.isLoading ? ' ~' : ''}</span
+					></span
+				>
 				<span class="text-[11px] opacity-70">CTRL+<span class="text-sm">↵</span></span>
 			</button>
 			<button
 				onclick={onDownload}
 				disabled={!canDownload}
-				class="group flex h-8 w-full shrink-0 cursor-pointer items-center justify-between border border-foreground/30 bg-transparent px-2 font-mono text-[11px] uppercase text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+				class="group flex h-8 w-full shrink-0 cursor-pointer items-center justify-between border border-foreground/30 bg-transparent px-2 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 			>
 				<span class="group-hover:underline">EXPORT CANVAS</span>
 				<span class="text-[11px] opacity-70">CTRL+S</span>
