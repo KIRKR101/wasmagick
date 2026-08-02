@@ -72,6 +72,8 @@ export interface MagickSettings {
 	cropX: number | null;
 	cropY: number | null;
 	trimEdges: boolean;
+	shaveX: number | null;
+	shaveY: number | null;
 
 	// Color adjustment settings
 	brightness: [number];
@@ -141,8 +143,15 @@ export interface AppliedOptions {
 	rotate?: number;
 	flop?: boolean;
 	flip?: boolean;
-	crop?: { x: number | null; y: number | null; width: number | null; height: number | null; gravity: string };
+	crop?: {
+		x: number | null;
+		y: number | null;
+		width: number | null;
+		height: number | null;
+		gravity: string;
+	};
 	trim?: boolean;
+	shave?: { x: number | null; y: number | null };
 	border?: { size: number; color: string };
 	extent?: {
 		width: number | null;

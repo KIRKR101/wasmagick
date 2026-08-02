@@ -37,7 +37,9 @@ export function isGeoDirty(s: MagickSettings): boolean {
 		s.extentH != null ||
 		s.deskewThreshold[0] > 0 ||
 		s.deskewAutoCrop ||
-		s.autoOrient
+		s.autoOrient ||
+		s.shaveX != null ||
+		s.shaveY != null
 	);
 }
 

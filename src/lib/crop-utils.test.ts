@@ -28,6 +28,8 @@ function settings(patch: Partial<MagickSettings>): MagickSettings {
 		cropW: null,
 		cropH: null,
 		cropGravity: 'Center',
+		shaveX: null,
+		shaveY: null,
 		...patch
 	} as MagickSettings;
 }
@@ -162,24 +164,44 @@ describe('computeCropPreview', () => {
 	});
 
 	it('positions an existing position crop at the origin of the displayed image', () => {
-		const result = computeCropPreview(settings({ cropX: 20, cropY: 30, cropW: 40, cropH: 50 }), 100, 100);
+		const result = computeCropPreview(
+			settings({ cropX: 20, cropY: 30, cropW: 40, cropH: 50 }),
+			100,
+			100
+		);
 		expect(result).toEqual({ x: 0, y: 0, w: 40, h: 50 });
 	});
 
 	it('computes a center-gravity crop position', () => {
-		const result = computeCropPreview(settings({ cropW: 40, cropH: 40, cropGravity: 'Center' }), 100, 100);
+		const result = computeCropPreview(
+			settings({ cropW: 40, cropH: 40, cropGravity: 'Center' }),
+			100,
+			100
+		);
 		expect(result).toEqual({ x: 30, y: 30, w: 40, h: 40 });
 	});
 
 	it('uses truncating division for odd image dimensions (matches ImageMagick)', () => {
-		const result = computeCropPreview(settings({ cropW: 40, cropH: 40, cropGravity: 'Center' }), 101, 99);
+		const result = computeCropPreview(
+			settings({ cropW: 40, cropH: 40, cropGravity: 'Center' }),
+			101,
+			99
+		);
 		expect(result).toEqual({ x: 30, y: 29, w: 40, h: 40 });
 	});
 
 	it('places gravity crops at the correct corners', () => {
-		const nw = computeCropPreview(settings({ cropW: 40, cropH: 40, cropGravity: 'Northwest' }), 100, 100);
+		const nw = computeCropPreview(
+			settings({ cropW: 40, cropH: 40, cropGravity: 'Northwest' }),
+			100,
+			100
+		);
 		expect(nw).toEqual({ x: 0, y: 0, w: 40, h: 40 });
-		const se = computeCropPreview(settings({ cropW: 40, cropH: 40, cropGravity: 'Southeast' }), 100, 100);
+		const se = computeCropPreview(
+			settings({ cropW: 40, cropH: 40, cropGravity: 'Southeast' }),
+			100,
+			100
+		);
 		expect(se).toEqual({ x: 60, y: 60, w: 40, h: 40 });
 	});
 });

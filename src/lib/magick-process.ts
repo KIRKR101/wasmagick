@@ -105,6 +105,12 @@ export function processImageSync(sourceBytes: Uint8Array, settings: MagickSettin
 
 		if (settings.trimEdges) image.trim();
 
+		const shaveX = Math.min(settings.shaveX ?? 0, Math.floor((image.width - 1) / 2));
+		const shaveY = Math.min(settings.shaveY ?? 0, Math.floor((image.height - 1) / 2));
+		if (shaveX > 0 || shaveY > 0) {
+			image.shave(shaveX, shaveY);
+		}
+
 		if (settings.borderSize[0] > 0) {
 			const { r, g, b } = hexToRgb(settings.borderColor);
 			image.borderColor = new MagickColor(r, g, b);
@@ -250,14 +256,14 @@ export function processImageSync(sourceBytes: Uint8Array, settings: MagickSettin
 						settings.bilateralSpatialSigma[0]
 					);
 					break;
+			}
 		}
-	}
 
-	if (settings.clutMap !== 'identity') {
-		const lut = generateClutImage(settings.clutMap, settings.clutInterpolation);
-		image.clut(lut, lut.interpolate, Channels.RGB);
-		lut.dispose();
-	}
+		if (settings.clutMap !== 'identity') {
+			const lut = generateClutImage(settings.clutMap, settings.clutInterpolation);
+			image.clut(lut, lut.interpolate, Channels.RGB);
+			lut.dispose();
+		}
 
 		if (settings.quantizeColors[0] > 0) {
 			const qs = new QuantizeSettings();
@@ -297,15 +303,15 @@ export function processImageSync(sourceBytes: Uint8Array, settings: MagickSettin
 					oy = -oy;
 				}
 
-			const angle = settings.annotateAngle[0];
-			if (angle !== 0) {
-				const rad = (angle * Math.PI) / 360;
-				// magick-wasm's affine(scaleX, scaleY, shearX, shearY, tx, ty) maps to
-				// ImageMagick's AffineMatrix { sx, rx, ry, sy, tx, ty }. ImageMagick's
-				// -annotate uses a clockwise rotation for positive angles, so shearX
-				// and shearY are swapped relative to the standard CCW matrix.
-				draws.affine(Math.cos(rad), Math.cos(rad), Math.sin(rad), -Math.sin(rad), 0, 0);
-			}
+				const angle = settings.annotateAngle[0];
+				if (angle !== 0) {
+					const rad = (angle * Math.PI) / 360;
+					// magick-wasm's affine(scaleX, scaleY, shearX, shearY, tx, ty) maps to
+					// ImageMagick's AffineMatrix { sx, rx, ry, sy, tx, ty }. ImageMagick's
+					// -annotate uses a clockwise rotation for positive angles, so shearX
+					// and shearY are swapped relative to the standard CCW matrix.
+					draws.affine(Math.cos(rad), Math.cos(rad), Math.sin(rad), -Math.sin(rad), 0, 0);
+				}
 
 				draws.text(ox, oy, settings.annotateText);
 				draws.draw(image);

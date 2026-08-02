@@ -122,6 +122,10 @@ genAllSources('trim', ['-trim', '+repage'], '{base}.png');
 console.log('-- deskew --');
 genAllSources('deskew', ['-deskew', '20%'], '{base}.png');
 
+// -- SHAVE --
+console.log('-- shave --');
+genAllSources('shave', ['-shave', '10x5'], '{base}.png');
+
 // -- EXTENT --
 console.log('-- extent --');
 genAllSources(

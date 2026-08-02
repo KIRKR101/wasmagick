@@ -34,8 +34,14 @@
 
 <div class="space-y-5">
 	<!-- Modulate -->
-	<SectionCard title="Adjust" dirty={magick.settings.brightness[0] !== 100 || magick.settings.contrast[0] !== 0 || magick.settings.saturation[0] !== 100 || magick.settings.hue[0] !== 100}>
-		<div class="space-y-4">
+	<SectionCard
+		title="Adjust"
+		dirty={magick.settings.brightness[0] !== 100 ||
+			magick.settings.contrast[0] !== 0 ||
+			magick.settings.saturation[0] !== 100 ||
+			magick.settings.hue[0] !== 100}
+	>
+		<div class="space-y-3">
 			<SliderRow
 				label="Brightness"
 				bind:value={magick.settings.brightness}
@@ -51,15 +57,23 @@
 				min={0}
 				max={300}
 			/>
-			<SliderRow label="Hue" bind:value={magick.settings.hue} suffix="%" min={0} max={200} />
+			<SliderRow
+				label="Hue"
+				bind:value={magick.settings.hue}
+				suffix="%"
+				min={0}
+				max={200}
+				class="pb-1"
+			/>
 		</div>
 	</SectionCard>
 
 	<!-- Color space + auto operations -->
 	<div class="space-y-3">
 		<Select type="single" bind:value={magick.settings.colorSpace}>
-			<SelectTrigger class="w-full h-9 text-xs font-mono">
-				{COLORSPACE_OPTIONS.find(o => o.value === magick.settings.colorSpace)?.label ?? magick.settings.colorSpace}
+			<SelectTrigger class="h-9 w-full font-mono text-xs">
+				{COLORSPACE_OPTIONS.find((o) => o.value === magick.settings.colorSpace)?.label ??
+					magick.settings.colorSpace}
 			</SelectTrigger>
 			<SelectContent>
 				{#each COLORSPACE_OPTIONS as opt (opt.value)}
@@ -68,27 +82,40 @@
 			</SelectContent>
 		</Select>
 
-	<div class="grid grid-cols-2 gap-2">
-		<ToggleRow id="clr-normalize" label="Normalize" bind:checked={magick.settings.normalizeImage} />
-		<ToggleRow id="clr-autolevel" label="Auto Level" bind:checked={magick.settings.autoLevel} />
-	</div>
+		<div class="grid grid-cols-2 gap-2">
+			<ToggleRow
+				id="clr-normalize"
+				label="Normalize"
+				bind:checked={magick.settings.normalizeImage}
+			/>
+			<ToggleRow id="clr-autolevel" label="Auto Level" bind:checked={magick.settings.autoLevel} />
+		</div>
 	</div>
 
 	<!-- Levels -->
-	<SectionCard title="Levels" dirty={LEVEL_CHS.some(ch => magick.settings.levelBlackpoint[ch][0] !== 0 || magick.settings.levelWhitepoint[ch][0] !== 100 || magick.settings.levelGamma[ch][0] !== 1.0)}>
-		<div class="mb-3 flex items-center justify-start">
-			<Select type="single" bind:value={magick.settings.levelChannels}>
-				<SelectTrigger class="w-24 h-9 text-xs font-mono">
-					{CHANNEL_OPTIONS.find(o => o.value === magick.settings.levelChannels)?.label ?? magick.settings.levelChannels}
-				</SelectTrigger>
-				<SelectContent>
-					{#each CHANNEL_OPTIONS as opt (opt.value)}
-						<SelectItem value={opt.value}>{opt.label}</SelectItem>
-					{/each}
-				</SelectContent>
-			</Select>
-		</div>
+	<SectionCard
+		title="Levels"
+		dirty={LEVEL_CHS.some(
+			(ch) =>
+				magick.settings.levelBlackpoint[ch][0] !== 0 ||
+				magick.settings.levelWhitepoint[ch][0] !== 100 ||
+				magick.settings.levelGamma[ch][0] !== 1.0
+		)}
+	>
 		<div class="space-y-3">
+			<div class="flex items-center justify-start">
+				<Select type="single" bind:value={magick.settings.levelChannels}>
+					<SelectTrigger class="h-9 w-24 font-mono text-xs">
+						{CHANNEL_OPTIONS.find((o) => o.value === magick.settings.levelChannels)?.label ??
+							magick.settings.levelChannels}
+					</SelectTrigger>
+					<SelectContent>
+						{#each CHANNEL_OPTIONS as opt (opt.value)}
+							<SelectItem value={opt.value}>{opt.label}</SelectItem>
+						{/each}
+					</SelectContent>
+				</Select>
+			</div>
 			<SliderRow
 				label="Black Point"
 				bind:value={magick.settings.levelBlackpoint[magick.settings.levelChannels as LevelChannel]}
@@ -107,12 +134,17 @@
 				min={0.1}
 				max={3}
 				step={0.1}
+				class="pb-1"
 			/>
 		</div>
 	</SectionCard>
 
 	<!-- Advanced -->
-	<SectionCard title="Advanced Color" dirty={magick.settings.thresholdPercentage[0] !== 50 || magick.settings.sigmoidalContrast[0] !== 0}>
+	<SectionCard
+		title="Advanced Color"
+		dirty={magick.settings.thresholdPercentage[0] !== 50 ||
+			magick.settings.sigmoidalContrast[0] !== 0}
+	>
 		<div class="space-y-3">
 			<SliderRow
 				label="Threshold"
@@ -126,6 +158,7 @@
 				bind:value={magick.settings.sigmoidalContrast}
 				min={-20}
 				max={20}
+				class="pb-1"
 			/>
 		</div>
 	</SectionCard>

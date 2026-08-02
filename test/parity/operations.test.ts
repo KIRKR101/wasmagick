@@ -69,7 +69,9 @@ function countUniqueColors(png: PNG): number {
 	const set = new Set<number>();
 	const data = new Uint8Array(png.data);
 	for (let i = 0; i < data.length; i += 4) {
-		const r = data[i], g = data[i + 1], b = data[i + 2];
+		const r = data[i],
+			g = data[i + 1],
+			b = data[i + 2];
 		set.add((r << 16) | (g << 8) | b);
 	}
 	return set.size;
@@ -283,6 +285,10 @@ describe('Geometry operations', () => {
 		testAllSources('trim', '{base}.png', { trimEdges: true });
 	});
 
+	it('shave', () => {
+		testAllSources('shave', '{base}.png', { shaveX: 10, shaveY: 5 });
+	});
+
 	it('deskew', () => {
 		testAllSources('deskew', '{base}.png', { deskewThreshold: [20], deskewAutoCrop: false });
 	});
@@ -478,17 +484,29 @@ describe('Filter / Effect operations', () => {
 	});
 
 	it('adaptive-sharpen', () => {
-		testAllSources('adaptive-sharpen', '{base}.png', {
-			adaptiveSharpenRadius: [2],
-			adaptiveSharpenSigma: [1]
-		}, 0.05, 100);
+		testAllSources(
+			'adaptive-sharpen',
+			'{base}.png',
+			{
+				adaptiveSharpenRadius: [2],
+				adaptiveSharpenSigma: [1]
+			},
+			0.05,
+			100
+		);
 	});
 
 	it('adaptive-blur', () => {
-		testAllSources('adaptive-blur', '{base}.png', {
-			adaptiveBlurRadius: [2],
-			adaptiveBlurSigma: [1]
-		}, 0.05, 200);
+		testAllSources(
+			'adaptive-blur',
+			'{base}.png',
+			{
+				adaptiveBlurRadius: [2],
+				adaptiveBlurSigma: [1]
+			},
+			0.05,
+			200
+		);
 	});
 });
 

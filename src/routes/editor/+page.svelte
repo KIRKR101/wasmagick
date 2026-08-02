@@ -50,6 +50,9 @@
 				parts.push(`Crop ${s.cropW ?? 'A'}×${s.cropH ?? 'A'}`);
 			}
 		}
+		if (s.shaveX != null || s.shaveY != null) {
+			parts.push(`Shave ${s.shaveX ?? '0'}×${s.shaveY ?? '0'}`);
+		}
 		if (s.trimEdges) parts.push('Trim');
 		if (s.borderSize[0] > 0) parts.push(`Border ${s.borderSize[0]}px`);
 		if (s.extentW || s.extentH) parts.push('Canvas');
@@ -75,14 +78,15 @@
 		}
 		if (levelParts.length > 0) parts.push(`Levels ${levelParts.join(' | ')}`);
 		if (s.thresholdPercentage[0] !== 50) parts.push(`Threshold ${s.thresholdPercentage[0]}%`);
-		if (s.sigmoidalContrast[0] !== 0) parts.push(`Sigmoidal ${s.sigmoidalContrast[0]}@${s.sigmoidalMidpoint[0]}`);
+		if (s.sigmoidalContrast[0] !== 0)
+			parts.push(`Sigmoidal ${s.sigmoidalContrast[0]}@${s.sigmoidalMidpoint[0]}`);
 		if (s.colorSpace !== 'RGB') parts.push(s.colorSpace);
 		// Filters
 		if (s.effect !== 'none') parts.push(s.effect);
 		if (s.clutMap !== 'identity') {
-			const preset = getClutPresets().find(p => p.id === s.clutMap);
+			const preset = getClutPresets().find((p) => p.id === s.clutMap);
 			parts.push(`LUT: ${preset?.label ?? s.clutMap}`);
-			const interp = getInterpolationOptions().find(o => o.value === s.clutInterpolation);
+			const interp = getInterpolationOptions().find((o) => o.value === s.clutInterpolation);
 			if (interp && s.clutInterpolation !== 'catrom') parts.push(interp.label);
 		}
 		if (s.blur[0] > 0) parts.push(`Blur ${s.blur[0]}`);
@@ -92,7 +96,8 @@
 		if (s.quantizeColors[0] > 0) {
 			parts.push(`Quantize ${s.quantizeColors[0]} colors`);
 			if (s.quantizeTreeDepth[0] > 0) parts.push(`TreeDepth ${s.quantizeTreeDepth[0]}`);
-			if (s.ditherMethod !== 'Riemersma') parts.push(s.ditherMethod === 'No' ? 'No dither' : s.ditherMethod);
+			if (s.ditherMethod !== 'Riemersma')
+				parts.push(s.ditherMethod === 'No' ? 'No dither' : s.ditherMethod);
 			if (s.quantizeColorSpace !== 'sRGB') parts.push(`CS: ${s.quantizeColorSpace}`);
 		}
 		// Export

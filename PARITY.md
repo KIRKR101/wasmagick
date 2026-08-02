@@ -8,10 +8,10 @@
 | Category | Used | Not Used | Total |
 |----------|------|----------|-------|
 | Properties | 7 | 46 | 53 |
-| Methods | 34 | 82 | 116 |
-| **Total** | **41** | **128** | **169** |
+| Methods | 35 | 81 | 116 |
+| **Total** | **42** | **127** | **169** |
 
-**Coverage: 24% (41/169)**
+**Coverage: 25% (42/169)**
 
 ---
 
@@ -43,7 +43,8 @@
 | `extent()` | `(width: number, height: number, gravity: Gravity): void` | Extend the image as defined by the width and height. | Expands or crops the canvas to user-specified dimensions with gravity anchor. (`magick-process.ts:81-85`, `useMagick.svelte.ts:847-851`) |
 | `deskew()` | `(threshold: Percentage, autoCrop: boolean): number` | Removes skew from the image. Skew is an artifact that occurs in scanned images because of the camera being misaligned, imperfections in the scanning or surface, or simply because the paper was not placed completely flat when scanned. | Corrects skewed scanned documents using Hough transform. (`magick-process.ts:89`, `useMagick.svelte.ts:862-865`) |
 | `crop()` | `(width: number, height: number, gravity: Gravity): void` | Crop image (subregion of original image). | Crops the image to user-specified dimensions with gravity anchor. Falls back to full image width/height when only one dimension is set. (`magick-process.ts:75`, `useMagick.svelte.ts:856`) |
-| `trim()` | `(): void` | Trim edges that are the background color from the image. | Trims uniform-color edges from the image. (`magick-process.ts:78`, `useMagick.svelte.ts:866`) |
+| `trim()` | `(): void` | Trim edges that are the background color from the image. | Trims uniform-color edges from the image. (`magick-process.ts:106`, `useMagick.svelte.ts:898`) |
+| `shave()` | `(leftRight: number, topBottom: number): void` | Shave pixels from image edges. | Removes pixels symmetrically from the edges, clamped to half the image size. (`magick-process.ts:108-112`, `useMagick.svelte.ts:903-916`) |
 
 ---
 
@@ -173,7 +174,6 @@
 | `liquidRescale()` | `(width: number, height: number): void` | Rescales image with seam carving. |
 | `resetPage()` | `(): void` | Resets the page property of this image. |
 | `roll()` | `(x: number, y: number): void` | Roll image (rolls image vertically and horizontally). |
-| `shave()` | `(leftRight: number, topBottom: number): void` | Shave pixels from image edges. |
 | `splice()` | `(geometry: IMagickGeometry, gravity: Gravity): void` | Splice the background color into the image. |
 | `thumbnail()` | `(width: number, height: number): void` | Resize image to thumbnail size and remove all the image profiles except the icc/icm profile. |
 
@@ -293,28 +293,29 @@ The processing order in both pipelines is:
 3. flop / flip
 4. crop
 5. trim
-6. border (sets borderColor)
-7. extent (sets backgroundColor)
-8. deskew
-9. modulate (brightness/saturation/hue)
-10. brightnessContrast
-11. normalize
-12. autoLevel
-13. autoOrient
-14. level (per channel: All, Red, Green, Blue)
-15. threshold
-16. sigmoidalContrast
-17. colorSpace (property set)
-18. blur
-19. sharpen
-20. adaptiveSharpen
-21. adaptiveBlur
-22. effects (grayscale / sepiaTone / charcoal / negate / cannyEdge / oilPaint / solarize / bilateralBlur)
-23. clut
-24. quantize
-25. drawables (annotation via Drawables API, not image.annotate())
-26. strip
-27. write (encode to format)
+6. shave
+7. border (sets borderColor)
+8. extent (sets backgroundColor)
+9. deskew
+10. modulate (brightness/saturation/hue)
+11. brightnessContrast
+12. normalize
+13. autoLevel
+14. autoOrient
+15. level (per channel: All, Red, Green, Blue)
+16. threshold
+17. sigmoidalContrast
+18. colorSpace (property set)
+19. blur
+20. sharpen
+21. adaptiveSharpen
+22. adaptiveBlur
+23. effects (grayscale / sepiaTone / charcoal / negate / cannyEdge / oilPaint / solarize / bilateralBlur)
+24. clut
+25. quantize
+26. drawables (annotation via Drawables API, not image.annotate())
+27. strip
+28. write (encode to format)
 ```
 
 ---

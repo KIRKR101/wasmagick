@@ -60,6 +60,9 @@
 						parts.push(`Crop ${Math.round(s.cropW ?? 0)}×${Math.round(s.cropH ?? 0)}`);
 					}
 				}
+				if (s.shaveX != null || s.shaveY != null) {
+					parts.push(`Shave ${s.shaveX ?? '0'}×${s.shaveY ?? '0'}`);
+				}
 				if (s.trimEdges) parts.push('Trim');
 				if (s.borderSize[0] > 0) parts.push(`Border ${s.borderSize[0]}px`);
 				if (s.extentW || s.extentH) {

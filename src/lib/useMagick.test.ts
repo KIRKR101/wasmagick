@@ -123,9 +123,24 @@ describe('MagickState', () => {
 			expect(magick.settings.contrast).toEqual([0]);
 			expect(magick.settings.normalizeImage).toBe(false);
 			expect(magick.settings.colorSpace).toBe('RGB');
-			expect(magick.settings.levelBlackpoint).toEqual({ All: [0], Red: [0], Green: [0], Blue: [0] });
-			expect(magick.settings.levelWhitepoint).toEqual({ All: [100], Red: [100], Green: [100], Blue: [100] });
-			expect(magick.settings.levelGamma).toEqual({ All: [1.0], Red: [1.0], Green: [1.0], Blue: [1.0] });
+			expect(magick.settings.levelBlackpoint).toEqual({
+				All: [0],
+				Red: [0],
+				Green: [0],
+				Blue: [0]
+			});
+			expect(magick.settings.levelWhitepoint).toEqual({
+				All: [100],
+				Red: [100],
+				Green: [100],
+				Blue: [100]
+			});
+			expect(magick.settings.levelGamma).toEqual({
+				All: [1.0],
+				Red: [1.0],
+				Green: [1.0],
+				Blue: [1.0]
+			});
 		});
 	});
 	describe('resetSettings', () => {
@@ -164,13 +179,22 @@ describe('MagickState', () => {
 
 		it('should have per-channel level defaults', () => {
 			expect(magick.settings.levelBlackpoint).toEqual({
-				All: [0], Red: [0], Green: [0], Blue: [0]
+				All: [0],
+				Red: [0],
+				Green: [0],
+				Blue: [0]
 			});
 			expect(magick.settings.levelWhitepoint).toEqual({
-				All: [100], Red: [100], Green: [100], Blue: [100]
+				All: [100],
+				Red: [100],
+				Green: [100],
+				Blue: [100]
 			});
 			expect(magick.settings.levelGamma).toEqual({
-				All: [1.0], Red: [1.0], Green: [1.0], Blue: [1.0]
+				All: [1.0],
+				Red: [1.0],
+				Green: [1.0],
+				Blue: [1.0]
 			});
 		});
 	});
@@ -192,13 +216,22 @@ describe('MagickState', () => {
 
 		it('should allow all channels to be set independently', () => {
 			magick.settings.levelBlackpoint = {
-				All: [5], Red: [10], Green: [15], Blue: [20]
+				All: [5],
+				Red: [10],
+				Green: [15],
+				Blue: [20]
 			};
 			magick.settings.levelWhitepoint = {
-				All: [95], Red: [90], Green: [85], Blue: [80]
+				All: [95],
+				Red: [90],
+				Green: [85],
+				Blue: [80]
 			};
 			magick.settings.levelGamma = {
-				All: [1.1], Red: [1.2], Green: [1.3], Blue: [1.4]
+				All: [1.1],
+				Red: [1.2],
+				Green: [1.3],
+				Blue: [1.4]
 			};
 
 			expect(magick.settings.levelBlackpoint.All[0]).toBe(5);
@@ -253,6 +286,11 @@ describe('MagickState', () => {
 			expect(magick.settings.trimEdges).toBe(false);
 		});
 
+		it('should have correct shave defaults', () => {
+			expect(magick.settings.shaveX).toBeNull();
+			expect(magick.settings.shaveY).toBeNull();
+		});
+
 		it('should have correct adaptive sharpen/blur defaults', () => {
 			expect(magick.settings.adaptiveSharpenRadius).toEqual([0]);
 			expect(magick.settings.adaptiveSharpenSigma).toEqual([1]);
@@ -267,6 +305,8 @@ describe('MagickState', () => {
 			magick.settings.cropH = 100;
 			magick.settings.cropGravity = 'Northwest';
 			magick.settings.trimEdges = true;
+			magick.settings.shaveX = 10;
+			magick.settings.shaveY = 5;
 
 			magick.resetGeometry();
 
@@ -274,6 +314,8 @@ describe('MagickState', () => {
 			expect(magick.settings.cropH).toBeNull();
 			expect(magick.settings.cropGravity).toBe('Center');
 			expect(magick.settings.trimEdges).toBe(false);
+			expect(magick.settings.shaveX).toBeNull();
+			expect(magick.settings.shaveY).toBeNull();
 		});
 	});
 
@@ -292,10 +334,9 @@ describe('MagickState', () => {
 			expect(magick.settings.adaptiveBlurSigma).toEqual([1]);
 		});
 	});
-
 });
 
-	describe('MagickSettings type', () => {
+describe('MagickSettings type', () => {
 	it('should have all required properties', () => {
 		const settings: MagickSettings = {
 			imageFormat: 'WebP',
@@ -320,6 +361,8 @@ describe('MagickState', () => {
 			cropX: null,
 			cropY: null,
 			trimEdges: false,
+			shaveX: null,
+			shaveY: null,
 			brightness: [100],
 			saturation: [100],
 			hue: [100],

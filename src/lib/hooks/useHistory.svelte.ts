@@ -58,6 +58,8 @@ function diffSettings(a: MagickSettings, b: MagickSettings): SettingsDiffItem[] 
 	push('Crop gravity', a.cropGravity, b.cropGravity);
 	push('Crop X', a.cropX, b.cropX);
 	push('Crop Y', a.cropY, b.cropY);
+	push('Shave X', a.shaveX, b.shaveX);
+	push('Shave Y', a.shaveY, b.shaveY);
 
 	// Color
 	push('Brightness', a.brightness[0], b.brightness[0]);

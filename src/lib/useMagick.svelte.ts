@@ -135,6 +135,8 @@ export const DEFAULT_SETTINGS: MagickSettings = {
 	cropX: null,
 	cropY: null,
 	trimEdges: false,
+	shaveX: null,
+	shaveY: null,
 	brightness: [100],
 	saturation: [100],
 	hue: [100],
@@ -602,6 +604,8 @@ export class MagickState {
 		this.settings.cropY = DEFAULT_SETTINGS.cropY;
 		this.settings.trimEdges = DEFAULT_SETTINGS.trimEdges;
 		this.settings.autoOrient = DEFAULT_SETTINGS.autoOrient;
+		this.settings.shaveX = DEFAULT_SETTINGS.shaveX;
+		this.settings.shaveY = DEFAULT_SETTINGS.shaveY;
 	}
 
 	resetColor(): void {
@@ -897,6 +901,23 @@ export class MagickState {
 									appliedOptions.trim = true;
 								}
 
+								const shaveX = Math.min(
+									this.settings.shaveX ?? 0,
+									Math.floor((image.width - 1) / 2)
+								);
+								const shaveY = Math.min(
+									this.settings.shaveY ?? 0,
+									Math.floor((image.height - 1) / 2)
+								);
+								if (shaveX > 0 || shaveY > 0) {
+									this.currentProcessingStep = 'Shaving';
+									image.shave(shaveX, shaveY);
+									appliedOptions.shave = {
+										x: this.settings.shaveX,
+										y: this.settings.shaveY
+									};
+								}
+
 								if (this.settings.borderSize[0] > 0) {
 									this.currentProcessingStep = 'Adding Border';
 									const { r, g, b } = this.hexToRgb(this.settings.borderColor);
@@ -1136,52 +1157,48 @@ export class MagickState {
 											image.solarize(new Percentage(this.settings.solarizeFactor[0]));
 											appliedOptions.solarizeFactor = this.settings.solarizeFactor[0];
 											break;
-									case 'bilateralBlur': {
-										this.currentProcessingStep = 'Applying Bilateral Blur';
-										image.bilateralBlur(
-											this.settings.bilateralWidth[0],
-											this.settings.bilateralHeight[0],
-											this.settings.bilateralIntensitySigma[0],
-											this.settings.bilateralSpatialSigma[0]
-										);
-										appliedOptions.bilateral = {
-											w: this.settings.bilateralWidth[0],
-											h: this.settings.bilateralHeight[0],
-											iSig: this.settings.bilateralIntensitySigma[0],
-											sSig: this.settings.bilateralSpatialSigma[0]
-										};
-										break;
+										case 'bilateralBlur': {
+											this.currentProcessingStep = 'Applying Bilateral Blur';
+											image.bilateralBlur(
+												this.settings.bilateralWidth[0],
+												this.settings.bilateralHeight[0],
+												this.settings.bilateralIntensitySigma[0],
+												this.settings.bilateralSpatialSigma[0]
+											);
+											appliedOptions.bilateral = {
+												w: this.settings.bilateralWidth[0],
+												h: this.settings.bilateralHeight[0],
+												iSig: this.settings.bilateralIntensitySigma[0],
+												sSig: this.settings.bilateralSpatialSigma[0]
+											};
+											break;
+										}
 									}
 								}
-								}
 
-							if (this.settings.clutMap !== 'identity') {
-								this.currentProcessingStep = 'Applying CLUT';
-								const lut = generateClutImage(
-									this.settings.clutMap,
-									this.settings.clutInterpolation
-								);
-								image.clut(lut, lut.interpolate, Channels.RGB);
-								lut.dispose();
-								appliedOptions.clutMap = this.settings.clutMap;
-								appliedOptions.clutInterpolation = this.settings.clutInterpolation;
-							}
+								if (this.settings.clutMap !== 'identity') {
+									this.currentProcessingStep = 'Applying CLUT';
+									const lut = generateClutImage(
+										this.settings.clutMap,
+										this.settings.clutInterpolation
+									);
+									image.clut(lut, lut.interpolate, Channels.RGB);
+									lut.dispose();
+									appliedOptions.clutMap = this.settings.clutMap;
+									appliedOptions.clutInterpolation = this.settings.clutInterpolation;
+								}
 
 								if (this.settings.quantizeColors[0] > 0) {
 									this.currentProcessingStep = 'Quantizing Colors';
 									const qs = new QuantizeSettings();
 									qs.colors = this.settings.quantizeColors[0];
 									qs.colorSpace =
-										ColorSpace[
-											this.settings.quantizeColorSpace as keyof typeof ColorSpace
-										];
+										ColorSpace[this.settings.quantizeColorSpace as keyof typeof ColorSpace];
 									qs.treeDepth = this.settings.quantizeTreeDepth[0];
 									qs.measureErrors = this.settings.measureErrors;
 									if (this.settings.ditherMethod !== 'Undefined') {
 										qs.ditherMethod =
-											DitherMethod[
-												this.settings.ditherMethod as keyof typeof DitherMethod
-											];
+											DitherMethod[this.settings.ditherMethod as keyof typeof DitherMethod];
 									}
 									image.quantize(qs);
 									appliedOptions.quantize = {
