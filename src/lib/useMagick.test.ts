@@ -297,6 +297,30 @@ describe('MagickState', () => {
 			expect(magick.settings.adaptiveBlurRadius).toEqual([0]);
 			expect(magick.settings.adaptiveBlurSigma).toEqual([1]);
 		});
+
+		it('should have correct auto gamma/threshold defaults', () => {
+			expect(magick.settings.autoGamma).toBe(false);
+			expect(magick.settings.autoThreshold).toBe('Off');
+			expect(magick.settings.blackThreshold).toEqual([0]);
+			expect(magick.settings.whiteThreshold).toEqual([100]);
+		});
+
+		it('should have correct CLAHE defaults', () => {
+			expect(magick.settings.claheXTiles).toEqual([0]);
+			expect(magick.settings.claheYTiles).toEqual([0]);
+			expect(magick.settings.claheBins).toEqual([128]);
+			expect(magick.settings.claheClipLimit).toEqual([2]);
+		});
+
+		it('should have correct advanced blur/noise defaults', () => {
+			expect(magick.settings.gaussianBlurRadius).toEqual([0]);
+			expect(magick.settings.gaussianBlurSigma).toEqual([1]);
+			expect(magick.settings.motionBlurRadius).toEqual([0]);
+			expect(magick.settings.motionBlurSigma).toEqual([1]);
+			expect(magick.settings.motionBlurAngle).toEqual([0]);
+			expect(magick.settings.addNoiseType).toBe('Off');
+			expect(magick.settings.addNoiseAttenuate).toEqual([1]);
+		});
 	});
 
 	describe('resetGeometry with crop/trim', () => {
@@ -332,6 +356,58 @@ describe('MagickState', () => {
 			expect(magick.settings.adaptiveSharpenSigma).toEqual([1]);
 			expect(magick.settings.adaptiveBlurRadius).toEqual([0]);
 			expect(magick.settings.adaptiveBlurSigma).toEqual([1]);
+		});
+	});
+
+	describe('resetColor with auto/threshold/CLAHE settings', () => {
+		it('should reset auto gamma/threshold settings', () => {
+			magick.settings.autoGamma = true;
+			magick.settings.autoThreshold = 'OTSU';
+			magick.settings.blackThreshold = [20];
+			magick.settings.whiteThreshold = [80];
+
+			magick.resetColor();
+
+			expect(magick.settings.autoGamma).toBe(false);
+			expect(magick.settings.autoThreshold).toBe('Off');
+			expect(magick.settings.blackThreshold).toEqual([0]);
+			expect(magick.settings.whiteThreshold).toEqual([100]);
+		});
+
+		it('should reset CLAHE settings', () => {
+			magick.settings.claheXTiles = [8];
+			magick.settings.claheYTiles = [8];
+			magick.settings.claheBins = [256];
+			magick.settings.claheClipLimit = [4];
+
+			magick.resetColor();
+
+			expect(magick.settings.claheXTiles).toEqual([0]);
+			expect(magick.settings.claheYTiles).toEqual([0]);
+			expect(magick.settings.claheBins).toEqual([128]);
+			expect(magick.settings.claheClipLimit).toEqual([2]);
+		});
+	});
+
+	describe('resetFilters with advanced blur/noise settings', () => {
+		it('should reset gaussian/motion blur and noise settings', () => {
+			magick.settings.gaussianBlurRadius = [3];
+			magick.settings.gaussianBlurSigma = [2];
+			magick.settings.motionBlurRadius = [4];
+			magick.settings.motionBlurSigma = [1.5];
+			magick.settings.motionBlurAngle = [45];
+			magick.settings.addNoiseType = 'Gaussian';
+			magick.settings.addNoiseAttenuate = [0.5];
+
+			magick.resetFilters();
+
+			expect(magick.settings.gaussianBlurRadius).toEqual([0]);
+			expect(magick.settings.gaussianBlurSigma).toEqual([1]);
+			expect(magick.settings.motionBlurRadius).toEqual([0]);
+			expect(magick.settings.motionBlurSigma).toEqual([1]);
+			expect(magick.settings.motionBlurAngle).toEqual([0]);
+			expect(magick.settings.addNoiseType).toBe('Off');
+			expect(magick.settings.addNoiseAttenuate).toEqual([1]);
 		});
 	});
 });
@@ -380,9 +456,24 @@ describe('MagickSettings type', () => {
 			sigmoidalMidpoint: [50],
 			sigmoidalChannels: 'All',
 			colorSpace: 'RGB',
+			autoGamma: false,
+			autoThreshold: 'Off',
+			blackThreshold: [0],
+			whiteThreshold: [100],
+			claheXTiles: [0],
+			claheYTiles: [0],
+			claheBins: [128],
+			claheClipLimit: [2],
 			effect: 'none',
 			blur: [0],
 			sharpen: [0],
+			gaussianBlurRadius: [0],
+			gaussianBlurSigma: [1],
+			motionBlurRadius: [0],
+			motionBlurSigma: [1],
+			motionBlurAngle: [0],
+			addNoiseType: 'Off',
+			addNoiseAttenuate: [1],
 			adaptiveSharpenRadius: [0],
 			adaptiveSharpenSigma: [1],
 			adaptiveBlurRadius: [0],

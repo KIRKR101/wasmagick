@@ -22,13 +22,15 @@ import {
 	ColorSpace,
 	PixelIntensityMethod,
 	QuantizeSettings,
-	DitherMethod
+	DitherMethod,
+	NoiseType,
+	AutoThresholdMethod
 } from '@imagemagick/magick-wasm';
 
 import type { MagickSettings, AppliedOptions, LevelChannel } from './types';
 import { ensureFont, DEFAULT_FONT, isLocalFont } from './fonts';
 import { generateClutImage } from './luts';
-import { applyCrop } from './magick-process';
+import { applyCrop, resolveNoiseAttenuate } from './magick-process';
 import { computeCropStepOffset, type CropRect } from './crop-utils';
 
 const AUTO_PROCESS_DELAY = 300;
@@ -49,6 +51,12 @@ const ARRAY_KEYS = new Set([
 	'sigmoidalMidpoint',
 	'blur',
 	'sharpen',
+	'gaussianBlurRadius',
+	'gaussianBlurSigma',
+	'motionBlurRadius',
+	'motionBlurSigma',
+	'motionBlurAngle',
+	'addNoiseAttenuate',
 	'sepiaThreshold',
 	'charcoalIntensity',
 	'cannyEdgeStrength',
@@ -64,6 +72,12 @@ const ARRAY_KEYS = new Set([
 	'adaptiveSharpenSigma',
 	'adaptiveBlurRadius',
 	'adaptiveBlurSigma',
+	'blackThreshold',
+	'whiteThreshold',
+	'claheXTiles',
+	'claheYTiles',
+	'claheBins',
+	'claheClipLimit',
 	'quantizeColors',
 	'quantizeTreeDepth',
 	'annotateFontSize',
@@ -154,9 +168,24 @@ export const DEFAULT_SETTINGS: MagickSettings = {
 	sigmoidalMidpoint: [50],
 	sigmoidalChannels: 'All',
 	colorSpace: 'RGB',
+	autoGamma: false,
+	autoThreshold: 'Off',
+	blackThreshold: [0],
+	whiteThreshold: [100],
+	claheXTiles: [0],
+	claheYTiles: [0],
+	claheBins: [128],
+	claheClipLimit: [2],
 	effect: 'none',
 	blur: [0],
 	sharpen: [0],
+	gaussianBlurRadius: [0],
+	gaussianBlurSigma: [1],
+	motionBlurRadius: [0],
+	motionBlurSigma: [1],
+	motionBlurAngle: [0],
+	addNoiseType: 'Off',
+	addNoiseAttenuate: [1],
 	adaptiveSharpenRadius: [0],
 	adaptiveSharpenSigma: [1],
 	adaptiveBlurRadius: [0],
@@ -625,12 +654,27 @@ export class MagickState {
 		this.settings.sigmoidalContrast = [...DEFAULT_SETTINGS.sigmoidalContrast];
 		this.settings.sigmoidalMidpoint = [...DEFAULT_SETTINGS.sigmoidalMidpoint];
 		this.settings.sigmoidalChannels = DEFAULT_SETTINGS.sigmoidalChannels;
+		this.settings.autoGamma = DEFAULT_SETTINGS.autoGamma;
+		this.settings.autoThreshold = DEFAULT_SETTINGS.autoThreshold;
+		this.settings.blackThreshold = [...DEFAULT_SETTINGS.blackThreshold];
+		this.settings.whiteThreshold = [...DEFAULT_SETTINGS.whiteThreshold];
+		this.settings.claheXTiles = [...DEFAULT_SETTINGS.claheXTiles];
+		this.settings.claheYTiles = [...DEFAULT_SETTINGS.claheYTiles];
+		this.settings.claheBins = [...DEFAULT_SETTINGS.claheBins];
+		this.settings.claheClipLimit = [...DEFAULT_SETTINGS.claheClipLimit];
 	}
 
 	resetFilters(): void {
 		this.settings.effect = DEFAULT_SETTINGS.effect;
 		this.settings.blur = [...DEFAULT_SETTINGS.blur];
 		this.settings.sharpen = [...DEFAULT_SETTINGS.sharpen];
+		this.settings.gaussianBlurRadius = [...DEFAULT_SETTINGS.gaussianBlurRadius];
+		this.settings.gaussianBlurSigma = [...DEFAULT_SETTINGS.gaussianBlurSigma];
+		this.settings.motionBlurRadius = [...DEFAULT_SETTINGS.motionBlurRadius];
+		this.settings.motionBlurSigma = [...DEFAULT_SETTINGS.motionBlurSigma];
+		this.settings.motionBlurAngle = [...DEFAULT_SETTINGS.motionBlurAngle];
+		this.settings.addNoiseType = DEFAULT_SETTINGS.addNoiseType;
+		this.settings.addNoiseAttenuate = [...DEFAULT_SETTINGS.addNoiseAttenuate];
 		this.settings.adaptiveSharpenRadius = [...DEFAULT_SETTINGS.adaptiveSharpenRadius];
 		this.settings.adaptiveSharpenSigma = [...DEFAULT_SETTINGS.adaptiveSharpenSigma];
 		this.settings.adaptiveBlurRadius = [...DEFAULT_SETTINGS.adaptiveBlurRadius];
@@ -1004,6 +1048,12 @@ export class MagickState {
 									appliedOptions.autoOrient = true;
 								}
 
+								if (this.settings.autoGamma) {
+									this.currentProcessingStep = 'Auto-Gamma';
+									image.autoGamma();
+									appliedOptions.autoGamma = true;
+								}
+
 								{
 									const levelChs: LevelChannel[] = ['All', 'Red', 'Green', 'Blue'];
 									const levelApplied: {
@@ -1043,6 +1093,18 @@ export class MagickState {
 									};
 								}
 
+								if (this.settings.blackThreshold[0] > 0) {
+									this.currentProcessingStep = 'Black Thresholding';
+									image.blackThreshold(new Percentage(this.settings.blackThreshold[0]));
+									appliedOptions.blackThreshold = this.settings.blackThreshold[0];
+								}
+
+								if (this.settings.whiteThreshold[0] < 100) {
+									this.currentProcessingStep = 'White Thresholding';
+									image.whiteThreshold(new Percentage(this.settings.whiteThreshold[0]));
+									appliedOptions.whiteThreshold = this.settings.whiteThreshold[0];
+								}
+
 								if (this.settings.sigmoidalContrast[0] !== 0) {
 									const sigmoidalChannels =
 										this.settings.sigmoidalChannels === 'All'
@@ -1059,16 +1121,52 @@ export class MagickState {
 									};
 								}
 
+								if (this.settings.autoThreshold !== 'Off') {
+									this.currentProcessingStep = 'Auto-Thresholding';
+									image.autoThreshold(
+										AutoThresholdMethod[this.settings.autoThreshold]
+									);
+									appliedOptions.autoThreshold = this.settings.autoThreshold;
+								}
+
 								if (this.settings.colorSpace !== 'RGB') {
 									const colorSpaceKey = this.settings.colorSpace as keyof typeof ColorSpace;
 									image.colorSpace = ColorSpace[colorSpaceKey];
 									appliedOptions.colorSpace = this.settings.colorSpace;
 								}
 
+								if (this.settings.claheXTiles[0] > 0) {
+									this.currentProcessingStep = 'Applying CLAHE';
+									image.clahe(
+										this.settings.claheXTiles[0],
+										this.settings.claheYTiles[0],
+										this.settings.claheBins[0],
+										this.settings.claheClipLimit[0]
+									);
+									appliedOptions.clahe = {
+										xTiles: this.settings.claheXTiles[0],
+										yTiles: this.settings.claheYTiles[0],
+										bins: this.settings.claheBins[0],
+										clipLimit: this.settings.claheClipLimit[0]
+									};
+								}
+
 								if (this.settings.blur[0] > 0) {
 									this.currentProcessingStep = 'Blurring';
 									image.blur(this.settings.blur[0], this.settings.blur[0] / 2);
 									appliedOptions.blur = this.settings.blur[0];
+								}
+
+								if (this.settings.gaussianBlurRadius[0] > 0) {
+									this.currentProcessingStep = 'Gaussian Blurring';
+									image.gaussianBlur(
+										this.settings.gaussianBlurRadius[0],
+										this.settings.gaussianBlurSigma[0]
+									);
+									appliedOptions.gaussianBlur = {
+										radius: this.settings.gaussianBlurRadius[0],
+										sigma: this.settings.gaussianBlurSigma[0]
+									};
 								}
 
 								if (this.settings.sharpen[0] > 0) {
@@ -1100,6 +1198,36 @@ export class MagickState {
 									appliedOptions.adaptiveBlur = {
 										radius: this.settings.adaptiveBlurRadius[0],
 										sigma: this.settings.adaptiveBlurSigma[0]
+									};
+								}
+
+								if (this.settings.motionBlurRadius[0] > 0) {
+									this.currentProcessingStep = 'Motion Blurring';
+									image.motionBlur(
+										this.settings.motionBlurRadius[0],
+										this.settings.motionBlurSigma[0],
+										this.settings.motionBlurAngle[0]
+									);
+									appliedOptions.motionBlur = {
+										radius: this.settings.motionBlurRadius[0],
+										sigma: this.settings.motionBlurSigma[0],
+										angle: this.settings.motionBlurAngle[0]
+									};
+								}
+
+								if (this.settings.addNoiseType !== 'Off') {
+									this.currentProcessingStep = 'Adding Noise';
+									image.addNoise(
+										NoiseType[this.settings.addNoiseType],
+										resolveNoiseAttenuate(
+											this.settings.addNoiseType,
+											this.settings.addNoiseAttenuate[0]
+										),
+										Channels.All
+									);
+									appliedOptions.addNoise = {
+										type: this.settings.addNoiseType,
+										attenuate: this.settings.addNoiseAttenuate[0]
 									};
 								}
 
@@ -1414,3 +1542,4 @@ export class MagickState {
 export function useMagick(): MagickState {
 	return new MagickState();
 }
+

@@ -331,6 +331,46 @@ describe('Color operations', () => {
 		testAllSources('auto-level', '{base}.png', { autoLevel: true });
 	});
 
+	it('auto-gamma', () => {
+		testAllSources('auto-gamma', '{base}.png', { autoGamma: true });
+	});
+
+	it('auto-threshold (Kapur)', () => {
+		// auto-threshold picks the threshold from the image histogram, so pixels
+		// sitting exactly on the chosen value can flip black/white between the
+		// wasm build and the CLI (up to ~331 px on these fixtures). The alpha
+		// source diverges further (wasm includes the alpha plane in the histogram
+		// differently), so it gets a looser bound.
+		for (const src of SOURCE_FILES) {
+			const base = path.parse(src).name;
+			testOperation(
+				'auto-threshold',
+				src,
+				`${base}.png`,
+				{ autoThreshold: 'Kapur' },
+				0.05,
+				src === 'source-alpha-100x100.png' ? 2500 : 500
+			);
+		}
+	});
+
+	it('black-threshold', () => {
+		testAllSources('black-threshold', '{base}.png', { blackThreshold: [20] }, 0.05, 100);
+	});
+
+	it('white-threshold', () => {
+		testAllSources('white-threshold', '{base}.png', { whiteThreshold: [80] }, 0.05, 100);
+	});
+
+	it('clahe', () => {
+		testAllSources('clahe', '{base}.png', {
+			claheXTiles: [8],
+			claheYTiles: [8],
+			claheBins: [128],
+			claheClipLimit: [2]
+		});
+	});
+
 	it('levels (All)', () => {
 		testAllSources(
 			'levels',
@@ -507,6 +547,171 @@ describe('Filter / Effect operations', () => {
 			0.05,
 			200
 		);
+	});
+
+	it('gaussian-blur', () => {
+		testAllSources('gaussian-blur', '{base}.png', {
+			gaussianBlurRadius: [3],
+			gaussianBlurSigma: [1.5]
+		});
+	});
+
+	it('motion-blur', () => {
+		testAllSources('motion-blur', '{base}.png', {
+			motionBlurRadius: [3],
+			motionBlurSigma: [1.5],
+			motionBlurAngle: [45]
+		});
+	});
+});
+
+describe('Stochastic operations', () => {
+	// addNoise uses an unseeded RNG by default, so it cannot have a pixel-exact
+	// golden fixture. Magick.setRandomSeed() makes the wasm RNG deterministic, so
+	// the suite seeds before every run and asserts statistical properties that
+	// are compared against native ImageMagick.
+	const NOISE_TYPES = [
+		'Uniform',
+		'Gaussian',
+		'MultiplicativeGaussian',
+		'Impulse',
+		'Laplacian',
+		'Poisson'
+	] as const;
+
+	// Reference average per-channel deltas measured from native ImageMagick
+	// (`magick source-100x100.png -seed 42 -attenuate <eff> +noise <type>`),
+	// where <eff> is the effective attenuate after Poisson's slider inversion.
+	// The wasm agrees with the CLI to <0.05 at these settings. The UI slider
+	// range is 0.1-2; slider 0.5/1/2 map to effective 2/1/0.5 for Poisson.
+	const NOISE_CLI_REF: Record<(typeof NOISE_TYPES)[number], Record<number, number>> = {
+		Uniform: { 0.5: 0.5, 1: 1.0, 2: 2.01 },
+		Gaussian: { 0.5: 7.89, 1: 15.37, 2: 29.2 },
+		MultiplicativeGaussian: { 0.5: 12.84, 1: 24.17, 2: 43.63 },
+		Impulse: { 0.5: 6.59, 1: 13.08, 2: 26.17 },
+		Laplacian: { 0.5: 4.99, 1: 9.79, 2: 18.79 },
+		Poisson: { 0.5: 47.73, 1: 35.73, 2: 26.2 }
+	};
+
+	function runNoise(
+		type: (typeof NOISE_TYPES)[number],
+		attenuate: number,
+		seed = 42
+	): { png: PNG; source: PNG } {
+		Magick.setRandomSeed(seed);
+		const sourceBytes = readSource('source-100x100.png');
+		const merged: MagickSettings = {
+			...baseSettings(),
+			addNoiseType: type,
+			addNoiseAttenuate: [attenuate]
+		};
+		const result = processImageSync(sourceBytes, merged);
+		return {
+			png: PNG.sync.read(Buffer.from(result.data)),
+			source: PNG.sync.read(Buffer.from(sourceBytes))
+		};
+	}
+
+	function noiseStats(png: PNG, source: PNG): {
+		avgDelta: number;
+		meanSource: number;
+		meanOut: number;
+	} {
+		let sum = 0,
+			meanS = 0,
+			meanO = 0;
+		const n = png.width * png.height;
+		for (let i = 0; i < png.data.length; i += 4) {
+			sum +=
+				(Math.abs(png.data[i] - source.data[i]) +
+					Math.abs(png.data[i + 1] - source.data[i + 1]) +
+					Math.abs(png.data[i + 2] - source.data[i + 2])) /
+				3;
+			meanS += (source.data[i] + source.data[i + 1] + source.data[i + 2]) / 3;
+			meanO += (png.data[i] + png.data[i + 1] + png.data[i + 2]) / 3;
+		}
+		return { avgDelta: sum / n, meanSource: meanS / n, meanOut: meanO / n };
+	}
+
+	it('is deterministic under a fixed RNG seed', () => {
+		const a = runNoise('Gaussian', 1, 4242);
+		const b = runNoise('Gaussian', 1, 4242);
+		expect(Buffer.from(a.png.data).equals(Buffer.from(b.png.data))).toBe(true);
+	});
+
+	it('produces different noise for different seeds', () => {
+		const a = runNoise('Gaussian', 1, 1);
+		const b = runNoise('Gaussian', 1, 2);
+		expect(Buffer.from(a.png.data).equals(Buffer.from(b.png.data))).toBe(false);
+	});
+
+	it('runs for every noise type, changes pixels, and preserves dimensions', () => {
+		for (const type of NOISE_TYPES) {
+			const { png, source } = runNoise(type, 1);
+			expect(png.width, `${type}: width mismatch`).toBe(source.width);
+			expect(png.height, `${type}: height mismatch`).toBe(source.height);
+			expect(
+				noiseStats(png, source).avgDelta,
+				`${type}: expected noise to alter pixels`
+			).toBeGreaterThan(0);
+		}
+	});
+
+	it('applies Gaussian noise across every source without error', () => {
+		for (const src of SOURCE_FILES) {
+			const sourceBytes = readSource(src);
+			const merged: MagickSettings = {
+				...baseSettings(),
+				addNoiseType: 'Gaussian',
+				addNoiseAttenuate: [1]
+			};
+			const result = processImageSync(sourceBytes, merged);
+			const png = PNG.sync.read(Buffer.from(result.data));
+			expect(png.width, `${src}: width mismatch`).toBe(result.width);
+			expect(png.height, `${src}: height mismatch`).toBe(result.height);
+		}
+	});
+
+	it('attenuate increases noise intensity for every noise type (higher slider = more noise)', () => {
+		const source = PNG.sync.read(Buffer.from(readSource('source-100x100.png')));
+		for (const type of NOISE_TYPES) {
+			const low = noiseStats(runNoise(type, 0.1).png, source).avgDelta;
+			const high = noiseStats(runNoise(type, 2).png, source).avgDelta;
+			expect(high, `${type}: high ${high.toFixed(2)} should exceed low ${low.toFixed(2)}`).toBeGreaterThan(
+				low * 1.5
+			);
+		}
+	});
+
+	it('adds subtle grain at minimum attenuate rather than replacing the image', () => {
+		for (const type of NOISE_TYPES) {
+			const { png, source } = runNoise(type, 0.1);
+			const { avgDelta, meanSource, meanOut } = noiseStats(png, source);
+			expect(avgDelta, `${type}: avg ${avgDelta.toFixed(2)} exceeds subtle-grain bound`).toBeLessThan(60);
+			expect(Math.abs(meanOut - meanSource), `${type}: mean intensity shifted`).toBeLessThan(
+				meanSource * 0.25
+			);
+		}
+	});
+
+	it('matches native ImageMagick noise statistics at matched effective attenuate', () => {
+		for (const type of NOISE_TYPES) {
+			for (const slider of [0.5, 1, 2]) {
+				const eff = type === 'Poisson' ? 1 / slider : slider;
+				const ref = NOISE_CLI_REF[type][eff];
+				expect(ref, `${type}@eff ${eff}: missing CLI reference`).toBeDefined();
+				const { png, source } = runNoise(type, slider);
+				const { avgDelta } = noiseStats(png, source);
+				expect(
+					avgDelta,
+					`${type} slider ${slider} (eff ${eff}): ${avgDelta.toFixed(2)} vs CLI ${ref}`
+				).toBeGreaterThan(ref * 0.88);
+				expect(
+					avgDelta,
+					`${type} slider ${slider} (eff ${eff}): ${avgDelta.toFixed(2)} vs CLI ${ref}`
+				).toBeLessThan(ref * 1.12);
+			}
+		}
 	});
 });
 
@@ -749,3 +954,4 @@ describe('Export operations', () => {
 		);
 	});
 });
+

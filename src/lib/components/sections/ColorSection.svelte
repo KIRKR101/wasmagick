@@ -30,6 +30,13 @@
 		{ value: 'Green', label: 'Green' },
 		{ value: 'Blue', label: 'Blue' }
 	];
+
+	const AUTO_THRESHOLD_OPTIONS = [
+		{ value: 'Off', label: 'Off' },
+		{ value: 'Kapur', label: 'Kapur' },
+		{ value: 'OTSU', label: 'OTSU' },
+		{ value: 'Triangle', label: 'Triangle' }
+	];
 </script>
 
 <div class="space-y-5">
@@ -89,6 +96,7 @@
 				bind:checked={magick.settings.normalizeImage}
 			/>
 			<ToggleRow id="clr-autolevel" label="Auto Level" bind:checked={magick.settings.autoLevel} />
+			<ToggleRow id="clr-autogamma" label="Auto Gamma" bind:checked={magick.settings.autoGamma} />
 		</div>
 	</div>
 
@@ -143,7 +151,10 @@
 	<SectionCard
 		title="Advanced Color"
 		dirty={magick.settings.thresholdPercentage[0] !== 50 ||
-			magick.settings.sigmoidalContrast[0] !== 0}
+			magick.settings.sigmoidalContrast[0] !== 0 ||
+			magick.settings.autoThreshold !== 'Off' ||
+			magick.settings.blackThreshold[0] > 0 ||
+			magick.settings.whiteThreshold[0] < 100}
 	>
 		<div class="space-y-3">
 			<SliderRow
@@ -158,6 +169,76 @@
 				bind:value={magick.settings.sigmoidalContrast}
 				min={-20}
 				max={20}
+			/>
+			<SliderRow
+				label="Black Threshold"
+				bind:value={magick.settings.blackThreshold}
+				suffix="%"
+				min={0}
+				max={100}
+			/>
+			<SliderRow
+				label="White Threshold"
+				bind:value={magick.settings.whiteThreshold}
+				suffix="%"
+				min={0}
+				max={100}
+				class="pb-1"
+			/>
+			<div class="space-y-1.5">
+				<span class="font-mono text-[10px] text-muted-foreground uppercase"
+					>Auto Threshold</span
+				>
+				<Select type="single" bind:value={magick.settings.autoThreshold}>
+					<SelectTrigger class="h-9 w-full font-mono text-xs">
+						{AUTO_THRESHOLD_OPTIONS.find(
+							(o) => o.value === magick.settings.autoThreshold
+						)?.label ?? magick.settings.autoThreshold}
+					</SelectTrigger>
+					<SelectContent>
+						{#each AUTO_THRESHOLD_OPTIONS as opt (opt.value)}
+							<SelectItem value={opt.value}>{opt.label}</SelectItem>
+						{/each}
+					</SelectContent>
+				</Select>
+			</div>
+		</div>
+	</SectionCard>
+
+	<!-- CLAHE -->
+	<SectionCard
+		title="CLAHE"
+		dirty={magick.settings.claheXTiles[0] > 0}
+	>
+		<div class="space-y-3">
+			<SliderRow
+				label="X Tiles"
+				bind:value={magick.settings.claheXTiles}
+				min={0}
+				max={16}
+			/>
+			<SliderRow
+				label="Y Tiles"
+				bind:value={magick.settings.claheYTiles}
+				min={0}
+				max={16}
+				disabled={magick.settings.claheXTiles[0] === 0}
+			/>
+			<SliderRow
+				label="Histogram Bins"
+				bind:value={magick.settings.claheBins}
+				min={32}
+				max={512}
+				step={32}
+				disabled={magick.settings.claheXTiles[0] === 0}
+			/>
+			<SliderRow
+				label="Clip Limit"
+				bind:value={magick.settings.claheClipLimit}
+				min={0}
+				max={10}
+				step={0.5}
+				disabled={magick.settings.claheXTiles[0] === 0}
 				class="pb-1"
 			/>
 		</div>

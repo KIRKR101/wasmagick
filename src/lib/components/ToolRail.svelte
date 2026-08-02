@@ -83,6 +83,7 @@
 				if (s.contrast[0] !== 0) parts.push(`Contrast ${s.contrast[0]}`);
 				if (s.normalizeImage) parts.push('Normalize');
 				if (s.autoLevel) parts.push('Auto-Level');
+				if (s.autoGamma) parts.push('Auto-Gamma');
 				const levelParts: string[] = [];
 				for (const ch of ['All', 'Red', 'Green', 'Blue'] as const) {
 					const bp = s.levelBlackpoint[ch][0];
@@ -97,6 +98,18 @@
 				}
 				if (s.thresholdPercentage[0] !== 50) {
 					parts.push(`Threshold ${s.thresholdPercentage[0]}%`);
+				}
+				if (s.autoThreshold !== 'Off') {
+					parts.push(`Auto-Threshold ${s.autoThreshold}`);
+				}
+				if (s.blackThreshold[0] > 0) {
+					parts.push(`BlackThresh ${s.blackThreshold[0]}%`);
+				}
+				if (s.whiteThreshold[0] < 100) {
+					parts.push(`WhiteThresh ${s.whiteThreshold[0]}%`);
+				}
+				if (s.claheXTiles[0] > 0) {
+					parts.push(`CLAHE ${s.claheXTiles[0]}×${s.claheYTiles[0]}`);
 				}
 				if (s.sigmoidalContrast[0] !== 0) {
 					parts.push(`Sigmoidal ${s.sigmoidalContrast[0]}@${s.sigmoidalMidpoint[0]}`);
@@ -139,6 +152,11 @@
 				}
 				if (s.blur[0] > 0) parts.push(`Blur ${s.blur[0]}`);
 				if (s.sharpen[0] > 0) parts.push(`Sharpen ${s.sharpen[0]}`);
+				if (s.gaussianBlurRadius[0] > 0) parts.push(`GaussBlur ${s.gaussianBlurRadius[0]}`);
+				if (s.motionBlurRadius[0] > 0) {
+					parts.push(`MotionBlur ${s.motionBlurRadius[0]}@${s.motionBlurAngle[0]}°`);
+				}
+				if (s.addNoiseType !== 'Off') parts.push(`Noise ${s.addNoiseType}`);
 				if (s.adaptiveSharpenRadius[0] > 0) parts.push(`AdptSharpen ${s.adaptiveSharpenRadius[0]}`);
 				if (s.adaptiveBlurRadius[0] > 0) parts.push(`AdptBlur ${s.adaptiveBlurRadius[0]}`);
 				if (s.quantizeColors[0] > 0) {

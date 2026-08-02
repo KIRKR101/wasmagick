@@ -8,10 +8,10 @@
 | Category | Used | Not Used | Total |
 |----------|------|----------|-------|
 | Properties | 7 | 46 | 53 |
-| Methods | 35 | 81 | 116 |
-| **Total** | **42** | **127** | **169** |
+| Methods | 43 | 73 | 116 |
+| **Total** | **50** | **119** | **169** |
 
-**Coverage: 25% (42/169)**
+**Coverage: 30% (50/169)**
 
 ---
 
@@ -62,6 +62,11 @@
 | `sigmoidalContrast()` | `(contrast: number, midpoint: number, channels: Channels): void` | Adjust the image contrast with a non-linear sigmoidal contrast algorithm. | Applies S-curve contrast adjustment with configurable midpoint. (`magick-process.ts:142-146`, `useMagick.svelte.ts:961-965`) |
 | `negate()` | `(channels: Channels): void` | Negate colors in image for the specified channel. | Inverts image colors on RGB channels (negative effect). (`magick-process.ts:181`, `useMagick.svelte.ts:1017`) |
 | `grayscale()` | `(method: PixelIntensityMethod): void` | Converts the colors in the image to gray. | Converts to grayscale using Rec709Luminance method. (`magick-process.ts:166`, `useMagick.svelte.ts:997`) |
+| `autoGamma()` | `(channels: Channels): void` | Extracts the 'mean' from the image and adjust the image to try make set its gamma appropriately. | Auto-adjusts gamma to center the intensity distribution. (`magick-process.ts:156`, `useMagick.svelte.ts:1053`) |
+| `autoThreshold()` | `(method: AutoThresholdMethod): void` | Automatically selects a threshold and replaces each pixel in the image with a black pixel if the image intensity is less than the selected threshold otherwise white. | Applies auto-selected (Kapur/OTSU/Triangle) binary threshold. (`magick-process.ts:209`, `useMagick.svelte.ts:1126`) |
+| `blackThreshold()` | `(threshold: Percentage, channels: Channels): void` | Forces all pixels below the threshold into black while leaving all pixels at or above the threshold unchanged. | Crushes shadows below the black-point percentage to black. (`magick-process.ts:183`, `useMagick.svelte.ts:1098`) |
+| `whiteThreshold()` | `(threshold: Percentage, channels: Channels): void` | Forces all pixels below the threshold into white while leaving all pixels at or above the threshold unchanged. | Crushes highlights above the white-point percentage to white. (`magick-process.ts:187`, `useMagick.svelte.ts:1104`) |
+| `clahe()` | `(xTiles: number, yTiles: number, numberBins: number, clipLimit: number): void` | A variant of adaptive histogram equalization in which the contrast amplification is limited. | Applies contrast-limited adaptive histogram equalization. (`magick-process.ts:213`, `useMagick.svelte.ts:1140`) |
 
 ---
 
@@ -79,6 +84,9 @@
 | `oilPaint()` | `(radius: number): void` | Oilpaint image (image looks like oil painting). | Applies oil painting effect with user-specified brush radius. (`magick-process.ts:195`, `useMagick.svelte.ts:1038`) |
 | `solarize()` | `(factor: Percentage): void` | Solarize image (similar to effect seen when exposing a photographic film to light during the development process). | Partial tone reversal effect. (`magick-process.ts:198`, `useMagick.svelte.ts:1043`) |
 | `bilateralBlur()` | `(width: number, height: number, intensitySigma: number, spatialSigma: number): void` | Applies a non-linear, edge-preserving, and noise-reducing smoothing filter. | Edge-preserving blur with spatial and intensity sigma parameters. (`magick-process.ts:201-206`, `useMagick.svelte.ts:1048-1053`) |
+| `gaussianBlur()` | `(radius: number, sigma: number, channels: Channels): void` | Gaussian blur image. | Applies a true Gaussian blur with independent radius and sigma. (`magick-process.ts:226`, `useMagick.svelte.ts:1162`) |
+| `motionBlur()` | `(radius: number, sigma: number, angle: number): void` | Motion blur image with specified blur factor. | Blurs along a directional angle to simulate camera/subject motion. (`magick-process.ts:243`, `useMagick.svelte.ts:1206`) |
+| `addNoise()` | `(noiseType: NoiseType, attenuate: number, channels: Channels): void` | Add noise to image with the specified noise type. | Adds film-grain noise of a selectable type (Gaussian, Uniform, Poisson, etc.). The attenuate slider maps to the noise sigma; for Poisson it is inverted (`1/attenuate`) because ImageMagick's Poisson sigma is inversely proportional to attenuate, keeping "higher = more noise" consistent. ImageMagick's `Random` type is excluded: it replaces the whole image with static regardless of attenuate. (`magick-process.ts:260-266`, `useMagick.svelte.ts:1218-1232`) |
 
 ---
 
@@ -183,25 +191,17 @@
 
 | Method | Signature | Description |
 |--------|-----------|-------------|
-| `addNoise()` | `(noiseType: NoiseType, channels: Channels): void` | Add noise to image with the specified noise type. |
-| `autoGamma()` | `(channels: Channels): void` | Extracts the 'mean' from the image and adjust the image to try make set its gamma appropriately. |
-| `autoThreshold()` | `(method: AutoThresholdMethod): void` | Automatically selects a threshold and replaces each pixel in the image with a black pixel if the image intensity is less than the selected threshold otherwise white. |
-| `blackThreshold()` | `(threshold: Percentage, channels: Channels): void` | Forces all pixels below the threshold into black while leaving all pixels at or above the threshold unchanged. |
-| `clahe()` | `(xTiles: number, yTiles: number, numberBins: number, clipLimit: number): void` | A variant of adaptive histogram equalization in which the contrast amplification is limited. |
 | `contrast()` | `(): void` | Contrast image (enhance intensity differences in image). |
 | `contrastStretch()` | `(blackPoint: Percentage, whitePoint: Percentage, channels: Channels): void` | A simple image enhancement technique that attempts to improve the contrast in an image by 'stretching' the range of intensity values it contains. |
 | `cycleColormap()` | `(amount: number): void` | Displaces an image's colormap by a given number of positions. |
 | `evaluate()` | `(channels: Channels, operator: EvaluateOperator, value: number): void` | Apply an arithmetic or bitwise operator to the image pixel quantums. |
 | `gammaCorrect()` | `(gamma: number, channels: Channels): void` | Gamma correct image. |
-| `gaussianBlur()` | `(radius: number, sigma: number, channels: Channels): void` | Gaussian blur image. |
 | `inverseContrast()` | `(): void` | Inverse contrast image (diminish intensity differences in image). |
 | `inverseLevel()` | `(blackPoint: Percentage, whitePoint: Percentage, gamma: number, channels: Channels): void` | Applies the reversed level operation to just the specific channels specified. |
 | `inverseSigmoidalContrast()` | `(contrast: number, midpoint: number, channels: Channels): void` | Adjust the image contrast with an inverse non-linear sigmoidal contrast algorithm. |
 | `linearStretch()` | `(blackPoint: Percentage, whitePoint: Percentage): void` | Discards any pixels below the black point and above the white point and levels the remaining pixels. |
 | `modulate()` | *(brightness-only overload)* `(brightness: Percentage): void` | Modulate percent brightness of an image. |
-| `motionBlur()` | `(radius: number, sigma: number, angle: number): void` | Motion blur image with specified blur factor. |
 | `negateGrayScale()` | `(channels: Channels): void` | Negate the grayscale colors in image. |
-| `whiteThreshold()` | `(threshold: Percentage, channels: Channels): void` | Forces all pixels below the threshold into white while leaving all pixels at or above the threshold unchanged. |
 
 ---
 
@@ -302,21 +302,34 @@ The processing order in both pipelines is:
 12. normalize
 13. autoLevel
 14. autoOrient
-15. level (per channel: All, Red, Green, Blue)
-16. threshold
-17. sigmoidalContrast
-18. colorSpace (property set)
-19. blur
-20. sharpen
-21. adaptiveSharpen
-22. adaptiveBlur
-23. effects (grayscale / sepiaTone / charcoal / negate / cannyEdge / oilPaint / solarize / bilateralBlur)
-24. clut
-25. quantize
-26. drawables (annotation via Drawables API, not image.annotate())
-27. strip
-28. write (encode to format)
+15. autoGamma
+16. level (per channel: All, Red, Green, Blue)
+17. threshold
+18. blackThreshold
+19. whiteThreshold
+20. sigmoidalContrast
+21. autoThreshold
+22. colorSpace (property set)
+23. clahe
+24. blur
+25. gaussianBlur
+26. sharpen
+27. adaptiveSharpen
+28. adaptiveBlur
+29. motionBlur
+30. addNoise
+31. effects (grayscale / sepiaTone / charcoal / negate / cannyEdge / oilPaint / solarize / bilateralBlur)
+32. clut
+33. quantize
+34. drawables (annotation via Drawables API, not image.annotate())
+35. strip
+36. write (encode to format)
 ```
+
+> Note: `autoThreshold` runs before the `colorSpace` change on the main-thread path
+> (`useMagick.svelte.ts`) but after it on the worker path (`magick-process.ts`). The
+> ordering only matters when both an auto-threshold and a non-RGB color space are
+> requested at once.
 
 ---
 
@@ -326,3 +339,5 @@ The processing order in both pipelines is:
 - The `draw()` method on `MagickImage` exists but is not called directly; the `Drawables` class manages the drawing pipeline.
 - The `read()` method on `MagickImage` is not called directly; `ImageMagick.read()` static method is used instead.
 - The `getPixels()` method is only used in `luts.ts` for CLUT generation, not in the main processing pipeline.
+- `autoGamma()`, `blackThreshold()` and `whiteThreshold()` are called without an explicit channel argument, so they use the wasm default (Composite = RGB+alpha). The native CLI's `-auto-gamma`/`-black-threshold`/`-white-threshold` default channel behaves differently, so the parity golden fixtures for those operations are generated with an explicit `-channel RGB` (`test/golden-gen/generate.ts`).
+

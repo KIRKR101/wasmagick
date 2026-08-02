@@ -54,12 +54,17 @@ export function isColorDirty(s: MagickSettings): boolean {
 	return (
 		s.normalizeImage ||
 		s.autoLevel ||
+		s.autoGamma ||
 		s.brightness[0] !== 100 ||
 		s.contrast[0] !== 0 ||
 		s.saturation[0] !== 100 ||
 		s.hue[0] !== 100 ||
 		levelDirty ||
 		s.thresholdPercentage[0] !== 50 ||
+		s.autoThreshold !== 'Off' ||
+		s.blackThreshold[0] > 0 ||
+		s.whiteThreshold[0] < 100 ||
+		s.claheXTiles[0] > 0 ||
 		s.sigmoidalContrast[0] !== 0 ||
 		s.colorSpace !== 'RGB'
 	);
@@ -70,6 +75,9 @@ export function isFiltersDirty(s: MagickSettings): boolean {
 		s.effect !== 'none' ||
 		s.blur[0] > 0 ||
 		s.sharpen[0] > 0 ||
+		s.gaussianBlurRadius[0] > 0 ||
+		s.motionBlurRadius[0] > 0 ||
+		s.addNoiseType !== 'Off' ||
 		s.adaptiveSharpenRadius[0] > 0 ||
 		s.adaptiveBlurRadius[0] > 0 ||
 		s.quantizeColors[0] > 0 ||

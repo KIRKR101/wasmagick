@@ -39,6 +39,23 @@ export type EffectPreset =
 	| 'solarize'
 	| 'bilateralBlur';
 
+/** Auto threshold method options */
+export type AutoThresholdOption = 'Off' | 'Kapur' | 'OTSU' | 'Triangle';
+
+/**
+ * Noise type options for addNoise(). ImageMagick's `Random` noise type is
+ * intentionally excluded: it replaces the whole image with static regardless of
+ * attenuation, so it cannot produce a controllable film-grain effect.
+ */
+export type NoiseTypeOption =
+	| 'Off'
+	| 'Uniform'
+	| 'Gaussian'
+	| 'MultiplicativeGaussian'
+	| 'Impulse'
+	| 'Laplacian'
+	| 'Poisson';
+
 /** CLUT interpolation methods */
 export type ClutInterpolation = 'catrom' | 'bilinear' | 'nearest' | 'spline' | 'average';
 
@@ -93,11 +110,26 @@ export interface MagickSettings {
 	sigmoidalMidpoint: [number];
 	sigmoidalChannels: LevelChannel;
 	colorSpace: ColorSpaceOption;
+	autoGamma: boolean;
+	autoThreshold: AutoThresholdOption;
+	blackThreshold: [number];
+	whiteThreshold: [number];
+	claheXTiles: [number];
+	claheYTiles: [number];
+	claheBins: [number];
+	claheClipLimit: [number];
 
 	// Filter & effect settings
 	effect: EffectPreset;
 	blur: [number];
 	sharpen: [number];
+	gaussianBlurRadius: [number];
+	gaussianBlurSigma: [number];
+	motionBlurRadius: [number];
+	motionBlurSigma: [number];
+	motionBlurAngle: [number];
+	addNoiseType: NoiseTypeOption;
+	addNoiseAttenuate: [number];
 	adaptiveSharpenRadius: [number];
 	adaptiveSharpenSigma: [number];
 	adaptiveBlurRadius: [number];
@@ -167,6 +199,11 @@ export interface AppliedOptions {
 	autoOrient?: boolean;
 	level?: { black: number; white: number; gamma: number; channels: string }[];
 	threshold?: { percent: number; channels: string };
+	autoGamma?: boolean;
+	autoThreshold?: string;
+	blackThreshold?: number;
+	whiteThreshold?: number;
+	clahe?: { xTiles: number; yTiles: number; bins: number; clipLimit: number };
 	sigmoidal?: { contrast: number; midpoint: number };
 	colorSpace?: string;
 	quantize?: {
@@ -177,6 +214,9 @@ export interface AppliedOptions {
 	};
 	blur?: number;
 	sharpen?: number;
+	gaussianBlur?: { radius: number; sigma: number };
+	motionBlur?: { radius: number; sigma: number; angle: number };
+	addNoise?: { type: string; attenuate: number };
 	adaptiveSharpen?: { radius: number; sigma: number };
 	adaptiveBlur?: { radius: number; sigma: number };
 	effect?: string;

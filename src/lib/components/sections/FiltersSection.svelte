@@ -42,6 +42,16 @@
 		{ value: 'HSL', label: 'HSL' },
 		{ value: 'HSV', label: 'HSV' }
 	];
+
+	const NOISE_OPTIONS = [
+		{ value: 'Off', label: 'Off' },
+		{ value: 'Uniform', label: 'Uniform' },
+		{ value: 'Gaussian', label: 'Gaussian' },
+		{ value: 'MultiplicativeGaussian', label: 'Multiplicative Gaussian' },
+		{ value: 'Impulse', label: 'Impulse' },
+		{ value: 'Laplacian', label: 'Laplacian' },
+		{ value: 'Poisson', label: 'Poisson' }
+	];
 </script>
 
 <div class="space-y-5">
@@ -195,6 +205,83 @@
 		</div>
 	</SectionCard>
 
+	<!-- Advanced Blur -->
+	<SectionCard
+		title="Advanced Blur"
+		dirty={magick.settings.gaussianBlurRadius[0] > 0 ||
+			magick.settings.motionBlurRadius[0] > 0}
+	>
+		<div class="space-y-3">
+			<SliderRow
+				label="Gaussian Radius"
+				bind:value={magick.settings.gaussianBlurRadius}
+				min={0}
+				max={20}
+				step={0.5}
+			/>
+			<SliderRow
+				label="Gaussian Sigma"
+				bind:value={magick.settings.gaussianBlurSigma}
+				min={0.1}
+				max={10}
+				step={0.1}
+				disabled={magick.settings.gaussianBlurRadius[0] === 0}
+			/>
+			<SliderRow
+				label="Motion Radius"
+				bind:value={magick.settings.motionBlurRadius}
+				min={0}
+				max={20}
+				step={0.5}
+			/>
+			<SliderRow
+				label="Motion Sigma"
+				bind:value={magick.settings.motionBlurSigma}
+				min={0.1}
+				max={10}
+				step={0.1}
+				disabled={magick.settings.motionBlurRadius[0] === 0}
+			/>
+			<SliderRow
+				label="Motion Angle"
+				bind:value={magick.settings.motionBlurAngle}
+				suffix="°"
+				min={0}
+				max={360}
+				disabled={magick.settings.motionBlurRadius[0] === 0}
+				class="pb-1"
+			/>
+		</div>
+	</SectionCard>
+
+	<!-- Add Noise -->
+	<SectionCard title="Add Noise" dirty={magick.settings.addNoiseType !== 'Off'}>
+		<div class="space-y-3">
+			<div class="space-y-1.5">
+				<span class="font-mono text-[10px] text-muted-foreground uppercase">Noise Type</span>
+				<Select type="single" bind:value={magick.settings.addNoiseType}>
+					<SelectTrigger class="h-8 w-full font-mono text-xs">
+						{magick.settings.addNoiseType}
+					</SelectTrigger>
+					<SelectContent>
+						{#each NOISE_OPTIONS as opt (opt.value)}
+							<SelectItem value={opt.value}>{opt.label}</SelectItem>
+						{/each}
+					</SelectContent>
+				</Select>
+			</div>
+			<SliderRow
+				label="Attenuate"
+				bind:value={magick.settings.addNoiseAttenuate}
+				min={0.1}
+				max={2}
+				step={0.1}
+				disabled={magick.settings.addNoiseType === 'Off'}
+				class="pb-1"
+			/>
+		</div>
+	</SectionCard>
+
 	<!-- Color LUT -->
 	<SectionCard title="Color LUT" dirty={magick.settings.clutMap !== 'identity'}>
 		<div class="space-y-3">
@@ -291,3 +378,4 @@
 		</div>
 	</SectionCard>
 </div>
+

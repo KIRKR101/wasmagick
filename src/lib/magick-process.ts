@@ -10,7 +10,9 @@ import {
 	ColorSpace,
 	PixelIntensityMethod,
 	QuantizeSettings,
-	DitherMethod
+	DitherMethod,
+	NoiseType,
+	AutoThresholdMethod
 } from '@imagemagick/magick-wasm';
 import type { MagickSettings, LevelChannel } from './types';
 import type { IMagickImage } from '@imagemagick/magick-wasm';
@@ -43,6 +45,16 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
 		b = parseInt(hex.substring(4, 6), 16);
 	}
 	return { r, g, b };
+}
+
+/**
+ * Map the UI attenuate slider (higher = more noise) to the value ImageMagick's
+ * addNoise expects. ImageMagick's Poisson noise sigma is inversely proportional
+ * to attenuate, so invert it to keep the slider direction consistent across all
+ * noise types.
+ */
+export function resolveNoiseAttenuate(type: string, attenuate: number): number {
+	return type === 'Poisson' ? 1 / Math.max(attenuate, 0.01) : attenuate;
 }
 
 export function applyCrop(image: IMagickImage, settings: MagickSettings): boolean {
@@ -151,6 +163,7 @@ export function processImageSync(sourceBytes: Uint8Array, settings: MagickSettin
 		if (settings.normalizeImage) image.normalize();
 		if (settings.autoLevel) image.autoLevel();
 		if (settings.autoOrient) image.autoOrient();
+		if (settings.autoGamma) image.autoGamma();
 
 		{
 			const levelChs: LevelChannel[] = ['All', 'Red', 'Green', 'Blue'];
@@ -176,6 +189,14 @@ export function processImageSync(sourceBytes: Uint8Array, settings: MagickSettin
 			);
 		}
 
+		if (settings.blackThreshold[0] > 0) {
+			image.blackThreshold(new Percentage(settings.blackThreshold[0]));
+		}
+
+		if (settings.whiteThreshold[0] < 100) {
+			image.whiteThreshold(new Percentage(settings.whiteThreshold[0]));
+		}
+
 		if (settings.sigmoidalContrast[0] !== 0) {
 			const sigmoidalChannels =
 				settings.sigmoidalChannels === 'All'
@@ -194,8 +215,25 @@ export function processImageSync(sourceBytes: Uint8Array, settings: MagickSettin
 			image.colorSpace = ColorSpace[colorSpaceKey];
 		}
 
+		if (settings.autoThreshold !== 'Off') {
+			image.autoThreshold(AutoThresholdMethod[settings.autoThreshold]);
+		}
+
+		if (settings.claheXTiles[0] > 0) {
+			image.clahe(
+				settings.claheXTiles[0],
+				settings.claheYTiles[0],
+				settings.claheBins[0],
+				settings.claheClipLimit[0]
+			);
+		}
+
 		if (settings.blur[0] > 0) {
 			image.blur(settings.blur[0], settings.blur[0] / 2);
+		}
+
+		if (settings.gaussianBlurRadius[0] > 0) {
+			image.gaussianBlur(settings.gaussianBlurRadius[0], settings.gaussianBlurSigma[0]);
 		}
 
 		if (settings.sharpen[0] > 0) {
@@ -209,6 +247,22 @@ export function processImageSync(sourceBytes: Uint8Array, settings: MagickSettin
 
 		if (settings.adaptiveBlurRadius[0] > 0) {
 			image.adaptiveBlur(settings.adaptiveBlurRadius[0], settings.adaptiveBlurSigma[0]);
+		}
+
+		if (settings.motionBlurRadius[0] > 0) {
+			image.motionBlur(
+				settings.motionBlurRadius[0],
+				settings.motionBlurSigma[0],
+				settings.motionBlurAngle[0]
+			);
+		}
+
+		if (settings.addNoiseType !== 'Off') {
+			image.addNoise(
+				NoiseType[settings.addNoiseType],
+				resolveNoiseAttenuate(settings.addNoiseType, settings.addNoiseAttenuate[0]),
+				Channels.All
+			);
 		}
 
 		if (settings.effect !== 'none') {

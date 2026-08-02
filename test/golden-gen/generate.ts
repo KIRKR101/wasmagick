@@ -230,6 +230,38 @@ genAllSources('adaptive-sharpen', ['-adaptive-sharpen', '2x1'], '{base}.png');
 console.log('-- adaptive-blur --');
 genAllSources('adaptive-blur', ['-adaptive-blur', '2x1'], '{base}.png');
 
+// -- AUTO-GAMMA --
+// magick-wasm autoGamma() defaults to Composite channels (RGB+alpha), which
+// behaves like the CLI's `-channel RGB`. The CLI's default `-auto-gamma`
+// operates on a different (no-op) channel set, so force RGB for parity.
+console.log('-- auto-gamma --');
+genAllSources('auto-gamma', ['-channel', 'RGB', '-auto-gamma', '+channel'], '{base}.png');
+
+// -- AUTO-THRESHOLD --
+console.log('-- auto-threshold --');
+genAllSources('auto-threshold', ['-auto-threshold', 'Kapur'], '{base}.png');
+
+// -- BLACK-THRESHOLD --
+// Same channel note as auto-gamma: wasm defaults to Composite (RGB) channels.
+console.log('-- black-threshold --');
+genAllSources('black-threshold', ['-channel', 'RGB', '-black-threshold', '20%', '+channel'], '{base}.png');
+
+// -- WHITE-THRESHOLD --
+console.log('-- white-threshold --');
+genAllSources('white-threshold', ['-channel', 'RGB', '-white-threshold', '80%', '+channel'], '{base}.png');
+
+// -- CLAHE --
+console.log('-- clahe --');
+genAllSources('clahe', ['-clahe', '8x8+128+2'], '{base}.png');
+
+// -- GAUSSIAN-BLUR --
+console.log('-- gaussian-blur --');
+genAllSources('gaussian-blur', ['-gaussian-blur', '3x1.5'], '{base}.png');
+
+// -- MOTION-BLUR --
+console.log('-- motion-blur --');
+genAllSources('motion-blur', ['-motion-blur', '3x1.5+45'], '{base}.png');
+
 // -- CLUT --
 console.log('-- clut --');
 const clutDir = path.join(GOLDEN_DIR, 'clut');
