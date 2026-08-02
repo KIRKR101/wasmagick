@@ -20,7 +20,6 @@
 		isDarkMode,
 		activeSection = $bindable('geometry'),
 		viewport = $bindable(null),
-		isDragging = false,
 		onToggleDebug,
 		onToggleTheme,
 		onToggleShortcuts,
@@ -39,7 +38,6 @@
 		isDarkMode: boolean;
 		activeSection?: EditorSection;
 		viewport?: ReturnType<typeof CanvasViewport> | null;
-		isDragging?: boolean;
 		onToggleDebug: () => void;
 		onToggleTheme: () => void;
 		onToggleShortcuts: () => void;
@@ -177,7 +175,6 @@
 				wasmLoaded={magick.wasmLoaded}
 				magickSettings={magick.settings}
 				currentProcessingStep={magick.currentProcessingStep}
-				{isDragging}
 				cropActive={magick.cropMode}
 				cropAspectRatio={magick.cropAspectRatio}
 				initialCrop={magick.cropSelection ?? cropInitialRect}

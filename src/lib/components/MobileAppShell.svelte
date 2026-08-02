@@ -16,7 +16,6 @@
 		presets,
 		guard,
 		activeSection = $bindable('geometry'),
-		isDragging = false,
 		onProcess,
 		onReset,
 		onDownload,
@@ -30,7 +29,6 @@
 		presets: PresetsState;
 		guard: ReplaceGuardState;
 		activeSection?: EditorSection;
-		isDragging?: boolean;
 		onProcess: () => void;
 		onReset: () => void;
 		onDownload: () => void;
@@ -175,7 +173,6 @@
 			wasmLoaded={magick.wasmLoaded}
 			magickSettings={magick.settings}
 			currentProcessingStep={magick.currentProcessingStep}
-			{isDragging}
 			cropActive={magick.cropMode}
 			cropAspectRatio={magick.cropAspectRatio}
 			initialCrop={magick.cropSelection ?? cropInitialRect}

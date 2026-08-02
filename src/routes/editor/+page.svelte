@@ -23,6 +23,11 @@
 	let activeSection = $state<EditorSection>('geometry');
 	let isMobile = $state(false);
 
+	$effect(() => {
+		const base = document.title.replace(/~$/, '');
+		document.title = magick.isLoading ? `${base}~` : base;
+	});
+
 	onMount(() => {
 		const mql = window.matchMedia(MOBILE_BREAKPOINT);
 		isMobile = mql.matches;
@@ -315,7 +320,6 @@
 		{presets}
 		{guard}
 		bind:activeSection
-		isDragging={globalDragging}
 		onProcess={processCurrent}
 		onReset={() => magick.resetSettings()}
 		onDownload={() => magick.downloadImage()}
@@ -333,7 +337,6 @@
 		{debugMode}
 		{isDarkMode}
 		bind:activeSection
-		isDragging={globalDragging}
 		onToggleDebug={() => (debugMode = !debugMode)}
 		onToggleTheme={toggleDarkMode}
 		onToggleShortcuts={() => (showShortcuts = !showShortcuts)}

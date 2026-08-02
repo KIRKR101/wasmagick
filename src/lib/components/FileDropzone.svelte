@@ -3,12 +3,10 @@
 
 	let {
 		onBrowse,
-		onSelectSample,
-		isDragging = false
+		onSelectSample
 	}: {
 		onBrowse: () => void;
 		onSelectSample: (s: SampleImage) => void;
-		isDragging?: boolean;
 	} = $props();
 
 	const samples: SampleImage[] = [

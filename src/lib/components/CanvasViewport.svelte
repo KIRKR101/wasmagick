@@ -13,7 +13,6 @@
 		wasmLoaded = true,
 		magickSettings = null,
 		currentProcessingStep = null,
-		isDragging = false,
 		cropActive = false,
 		cropAspectRatio = 'free',
 		initialCrop = null,
@@ -31,7 +30,6 @@
 		wasmLoaded?: boolean;
 		magickSettings?: { rotate?: string; resizeW?: number | null; resizeH?: number | null } | null;
 		currentProcessingStep?: string | null;
-		isDragging?: boolean;
 		cropActive?: boolean;
 		cropAspectRatio?: string;
 		initialCrop?: { x: number; y: number; w: number; h: number } | null;
@@ -374,7 +372,7 @@
 				<p class="font-mono text-[11px]">Loading ImageMagick…</p>
 			</div>
 		{:else if showPlaceholder}
-			<FileDropzone {isDragging} {onBrowse} {onSelectSample} />
+			<FileDropzone {onBrowse} {onSelectSample} />
 		{:else if splitMode && canSplit}
 			<SplitCompare
 				originalUrl={originalImageUrl!}
