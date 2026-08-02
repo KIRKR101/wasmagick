@@ -106,7 +106,7 @@
 				</h2>
 			</div>
 
-			<div class="max-h-[60vh] space-y-6 overflow-y-auto">
+			<div class="custom-scrollbar max-h-[60vh] space-y-6 overflow-y-auto">
 				{#each shortcuts as section}
 					<div class="space-y-3">
 						<h3

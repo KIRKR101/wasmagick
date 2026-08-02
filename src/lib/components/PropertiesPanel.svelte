@@ -77,6 +77,17 @@
 	});
 	let meta = $derived({ ...META[activeSection], dirty: dirty[activeSection] });
 	let canDownload = $derived(!!magick.processedImageUrl);
+
+	let bodyEl = $state<HTMLElement | null>(null);
+	let lastSection: EditorSection | null = null;
+
+	// Always start each section scrolled to the top.
+	$effect(() => {
+		if (activeSection !== lastSection) {
+			lastSection = activeSection;
+			bodyEl?.scrollTo(0, 0);
+		}
+	});
 </script>
 
 <aside
@@ -97,6 +108,7 @@
 
 	<!-- Body -->
 	<div
+		bind:this={bodyEl}
 		class="properties-panel-inner custom-scrollbar min-h-0 flex-1 overflow-y-auto p-4 {meta.scroll ===
 		false
 			? 'overflow-hidden'

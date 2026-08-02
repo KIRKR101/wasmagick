@@ -54,6 +54,16 @@
 	let canDownload = $derived(!!magick.processedImageUrl);
 
 	let tabsRef = $state<HTMLDivElement | null>(null);
+	let contentRef = $state<HTMLDivElement | null>(null);
+	let lastSection: EditorSection | null = null;
+
+	// Always start each section scrolled to the top.
+	$effect(() => {
+		if (activeSection !== lastSection) {
+			lastSection = activeSection;
+			contentRef?.scrollTo(0, 0);
+		}
+	});
 
 	// Drag state
 	let sheetRef = $state<HTMLDivElement | null>(null);
@@ -187,7 +197,7 @@
 		</div>
 
 		<!-- Section content -->
-		<div class="mobile-sheet-content custom-scrollbar">
+		<div bind:this={contentRef} class="mobile-sheet-content custom-scrollbar">
 			{#if activeSection === 'geometry'}
 				<GeometrySection {magick} />
 			{:else if activeSection === 'color'}
