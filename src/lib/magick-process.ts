@@ -23,6 +23,11 @@ const FORMAT_MAP: Record<string, keyof typeof MagickFormat> = {
 	JPEG: 'Jpeg',
 	PNG: 'Png',
 	AVIF: 'Avif',
+	// JXL lossy quality is broken in the bundled ImageMagick 7.1.2-29
+	// (magick-wasm 0.0.42): WriteJXLImage double-applies the quality-to-distance
+	// conversion, so any quality 1-99 encodes at a catastrophic distance and only
+	// lossless (quality 100) works. Kept as-is; tracked upstream at
+	// https://github.com/ImageMagick/ImageMagick/issues/8901
 	JXL: 'Jxl',
 	TIFF: 'Tiff',
 	GIF: 'Gif'
