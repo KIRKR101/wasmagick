@@ -188,7 +188,7 @@
 				const parts: string[] = [];
 				if (s.imageFormat !== DEFAULT_SETTINGS.imageFormat) parts.push(s.imageFormat);
 				if (s.quality[0] !== DEFAULT_SETTINGS.quality[0]) parts.push(`Quality ${s.quality[0]}%`);
-				if (!s.stripMeta) parts.push('Keep Meta');
+				if (s.stripMeta) parts.push('Strip Meta');
 				return parts.join(' · ');
 			}
 			case 'annotate': {

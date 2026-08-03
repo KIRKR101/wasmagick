@@ -51,13 +51,13 @@ describe('MagickState', () => {
 		it('should reset export settings', () => {
 			magick.settings.imageFormat = 'PNG';
 			magick.settings.quality = [50];
-			magick.settings.stripMeta = false;
+			magick.settings.stripMeta = true;
 
 			magick.resetExport();
 
 			expect(magick.settings.imageFormat).toBe('WebP');
 			expect(magick.settings.quality).toEqual([85]);
-			expect(magick.settings.stripMeta).toBe(true);
+			expect(magick.settings.stripMeta).toBe(false);
 		});
 	});
 
@@ -172,7 +172,7 @@ describe('MagickState', () => {
 		it('should have correct default settings', () => {
 			expect(magick.settings.imageFormat).toBe('WebP');
 			expect(magick.settings.quality).toEqual([85]);
-			expect(magick.settings.stripMeta).toBe(true);
+			expect(magick.settings.stripMeta).toBe(false);
 			expect(magick.settings.rotate).toBe('0');
 			expect(magick.settings.effect).toBe('none');
 		});
@@ -458,7 +458,7 @@ describe('MagickSettings type', () => {
 		const settings: MagickSettings = {
 			imageFormat: 'WebP',
 			quality: [85],
-			stripMeta: true,
+			stripMeta: false,
 			resizeW: null,
 			resizeH: null,
 			rotate: '0',

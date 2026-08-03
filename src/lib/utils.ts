@@ -90,7 +90,7 @@ export function isFiltersDirty(s: MagickSettings): boolean {
 }
 
 export function isExportDirty(s: MagickSettings): boolean {
-	return s.imageFormat !== 'WebP' || s.quality[0] !== 85 || !s.stripMeta;
+	return s.imageFormat !== 'WebP' || s.quality[0] !== 85 || s.stripMeta;
 }
 
 export function isAnnotateDirty(s: MagickSettings): boolean {

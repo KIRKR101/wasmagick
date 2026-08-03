@@ -125,7 +125,7 @@
 		// Export
 		if (s.imageFormat !== 'WebP') parts.push(s.imageFormat);
 		if (s.quality[0] !== 85) parts.push(`Quality ${s.quality[0]}%`);
-		if (!s.stripMeta) parts.push('Keep Meta');
+		if (s.stripMeta) parts.push('Strip Meta');
 		// Annotate
 		if (s.annotateText?.trim()) parts.push(`Text "${s.annotateText.slice(0, 15)}"`);
 		if (s.annotateFontSize[0] !== 24) parts.push(`${s.annotateFontSize[0]}pt`);

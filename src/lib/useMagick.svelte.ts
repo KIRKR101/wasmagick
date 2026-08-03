@@ -129,7 +129,7 @@ function persistSettings(s: MagickSettings): void {
 export const DEFAULT_SETTINGS: MagickSettings = {
 	imageFormat: 'WebP',
 	quality: [85],
-	stripMeta: true,
+	stripMeta: false,
 	resizeW: null,
 	resizeH: null,
 	rotate: '0',
