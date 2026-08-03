@@ -60,6 +60,9 @@ export function isColorDirty(s: MagickSettings): boolean {
 		s.saturation[0] !== 100 ||
 		s.hue[0] !== 100 ||
 		levelDirty ||
+		s.levelColorsBlack !== '#000000' ||
+		s.levelColorsWhite !== '#ffffff' ||
+		s.levelColorsInverse ||
 		s.thresholdPercentage[0] !== 50 ||
 		s.autoThreshold !== 'Off' ||
 		s.blackThreshold[0] > 0 ||

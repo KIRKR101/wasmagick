@@ -8,10 +8,10 @@
 | Category   | Used   | Not Used | Total   |
 | ---------- | ------ | -------- | ------- |
 | Properties | 7      | 46       | 53      |
-| Methods    | 43     | 73       | 116     |
-| **Total**  | **50** | **119**  | **169** |
+| Methods    | 45     | 71       | 118     |
+| **Total**  | **52** | **117**  | **171** |
 
-**Coverage: 30% (50/169)**
+**Coverage: 30.4% (52/171)**
 
 ---
 
@@ -50,23 +50,25 @@
 
 ### Color / Adjustment
 
-| Method                 | Signature                                                                                   | Description                                                                                                                                                                             | Usage                                                                                                                         |
-| ---------------------- | ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `modulate()`           | `(brightness: Percentage, saturation: Percentage, hue: Percentage): void`                   | Modulate percent brightness, saturation and hue of an image.                                                                                                                            | Adjusts brightness, saturation, and hue via the color panel. (`magick-process.ts:97-101`, `useMagick.svelte.ts:878-882`)      |
-| `brightnessContrast()` | `(brightness: Percentage, contrast: Percentage): void`                                      | Changes the brightness and/or contrast of an image. It converts the brightness and contrast parameters into slope and intercept and calls a polynomical function to apply to the image. | Adjusts contrast (brightness always 0). (`magick-process.ts:105`, `useMagick.svelte.ts:892-895`)                              |
-| `normalize()`          | `(): void`                                                                                  | Normalize image (increase contrast by normalizing the pixel values to span the full range of color values).                                                                             | Normalizes the image contrast across the full intensity range. (`magick-process.ts:108`, `useMagick.svelte.ts:901`)           |
-| `autoLevel()`          | `(): void`                                                                                  | Adjusts the levels of a particular image channel by scaling the minimum and maximum values to the full quantum range.                                                                   | Automatically adjusts levels to span the full dynamic range. (`magick-process.ts:109`, `useMagick.svelte.ts:907`)             |
-| `autoOrient()`         | `(): void`                                                                                  | Adjusts an image so that its orientation is suitable for viewing.                                                                                                                       | Automatically rotates based on EXIF orientation data. (`magick-process.ts:110`, `useMagick.svelte.ts:913`)                    |
-| `level()`              | `(blackPoint: Percentage, whitePoint: Percentage, gamma: number, channels: Channels): void` | Adjust the levels of the image by scaling the colors falling between specified white and black points to the full available quantum range.                                              | Adjusts black/white point and gamma per channel (All, Red, Green, Blue). (`magick-process.ts:120`, `useMagick.svelte.ts:932`) |
-| `threshold()`          | `(percentage: Percentage, channels: Channels): void`                                        | Threshold image.                                                                                                                                                                        | Applies binary threshold at user-specified percentage. (`magick-process.ts:130-133`, `useMagick.svelte.ts:946-949`)           |
-| `sigmoidalContrast()`  | `(contrast: number, midpoint: number, channels: Channels): void`                            | Adjust the image contrast with a non-linear sigmoidal contrast algorithm.                                                                                                               | Applies S-curve contrast adjustment with configurable midpoint. (`magick-process.ts:142-146`, `useMagick.svelte.ts:961-965`)  |
-| `negate()`             | `(channels: Channels): void`                                                                | Negate colors in image for the specified channel.                                                                                                                                       | Inverts image colors on RGB channels (negative effect). (`magick-process.ts:181`, `useMagick.svelte.ts:1017`)                 |
-| `grayscale()`          | `(method: PixelIntensityMethod): void`                                                      | Converts the colors in the image to gray.                                                                                                                                               | Converts to grayscale using Rec709Luminance method. (`magick-process.ts:166`, `useMagick.svelte.ts:997`)                      |
-| `autoGamma()`          | `(channels: Channels): void`                                                                | Extracts the 'mean' from the image and adjust the image to try make set its gamma appropriately.                                                                                        | Auto-adjusts gamma to center the intensity distribution. (`magick-process.ts:156`, `useMagick.svelte.ts:1053`)                |
-| `autoThreshold()`      | `(method: AutoThresholdMethod): void`                                                       | Automatically selects a threshold and replaces each pixel in the image with a black pixel if the image intensity is less than the selected threshold otherwise white.                   | Applies auto-selected (Kapur/OTSU/Triangle) binary threshold. (`magick-process.ts:209`, `useMagick.svelte.ts:1126`)           |
-| `blackThreshold()`     | `(threshold: Percentage, channels: Channels): void`                                         | Forces all pixels below the threshold into black while leaving all pixels at or above the threshold unchanged.                                                                          | Crushes shadows below the black-point percentage to black. (`magick-process.ts:183`, `useMagick.svelte.ts:1098`)              |
-| `whiteThreshold()`     | `(threshold: Percentage, channels: Channels): void`                                         | Forces all pixels below the threshold into white while leaving all pixels at or above the threshold unchanged.                                                                          | Crushes highlights above the white-point percentage to white. (`magick-process.ts:187`, `useMagick.svelte.ts:1104`)           |
-| `clahe()`              | `(xTiles: number, yTiles: number, numberBins: number, clipLimit: number): void`             | A variant of adaptive histogram equalization in which the contrast amplification is limited.                                                                                            | Applies contrast-limited adaptive histogram equalization. (`magick-process.ts:213`, `useMagick.svelte.ts:1140`)               |
+| Method                 | Signature                                                                                   | Description                                                                                                                                                                             | Usage                                                                                                                                                                                                                                               |
+| ---------------------- | ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `modulate()`           | `(brightness: Percentage, saturation: Percentage, hue: Percentage): void`                   | Modulate percent brightness, saturation and hue of an image.                                                                                                                            | Adjusts brightness, saturation, and hue via the color panel. (`magick-process.ts:97-101`, `useMagick.svelte.ts:878-882`)                                                                                                                            |
+| `brightnessContrast()` | `(brightness: Percentage, contrast: Percentage): void`                                      | Changes the brightness and/or contrast of an image. It converts the brightness and contrast parameters into slope and intercept and calls a polynomical function to apply to the image. | Adjusts contrast (brightness always 0). (`magick-process.ts:105`, `useMagick.svelte.ts:892-895`)                                                                                                                                                    |
+| `normalize()`          | `(): void`                                                                                  | Normalize image (increase contrast by normalizing the pixel values to span the full range of color values).                                                                             | Normalizes the image contrast across the full intensity range. (`magick-process.ts:108`, `useMagick.svelte.ts:901`)                                                                                                                                 |
+| `autoLevel()`          | `(): void`                                                                                  | Adjusts the levels of a particular image channel by scaling the minimum and maximum values to the full quantum range.                                                                   | Automatically adjusts levels to span the full dynamic range. (`magick-process.ts:109`, `useMagick.svelte.ts:907`)                                                                                                                                   |
+| `autoOrient()`         | `(): void`                                                                                  | Adjusts an image so that its orientation is suitable for viewing.                                                                                                                       | Automatically rotates based on EXIF orientation data. (`magick-process.ts:110`, `useMagick.svelte.ts:913`)                                                                                                                                          |
+| `level()`              | `(blackPoint: Percentage, whitePoint: Percentage, gamma: number, channels: Channels): void` | Adjust the levels of the image by scaling the colors falling between specified white and black points to the full available quantum range.                                              | Adjusts black/white point and gamma per channel (All, Red, Green, Blue). (`magick-process.ts:168-180`, `useMagick.svelte.ts:1062-1082`)                                                                                                             |
+| `levelColors()`        | `(blackColor: IMagickColor, whiteColor: IMagickColor, channels: Channels): void`            | Level the colors of the image with the given colors. The black and white points are specified as colors instead of percentages.                                                         | Maps the color range between the chosen black/white endpoint colors to the full dynamic range. The 'All' channel option maps to the RGB composite so the alpha channel is untouched. (`magick-process.ts:182-200`, `useMagick.svelte.ts:1090-1111`) |
+| `inverseLevelColors()` | `(blackColor: IMagickColor, whiteColor: IMagickColor, channels: Channels): void`            | Applies the reversed level operation with color endpoints: black maps to the black color and white to the white color.                                                                  | Applies the inverse mapping (black → black color, white → white color) when the Level Colors card's Inverse toggle is enabled. (`magick-process.ts:182-200`, `useMagick.svelte.ts:1090-1111`)                                                       |
+| `threshold()`          | `(percentage: Percentage, channels: Channels): void`                                        | Threshold image.                                                                                                                                                                        | Applies binary threshold at user-specified percentage. (`magick-process.ts:130-133`, `useMagick.svelte.ts:946-949`)                                                                                                                                 |
+| `sigmoidalContrast()`  | `(contrast: number, midpoint: number, channels: Channels): void`                            | Adjust the image contrast with a non-linear sigmoidal contrast algorithm.                                                                                                               | Applies S-curve contrast adjustment with configurable midpoint. (`magick-process.ts:142-146`, `useMagick.svelte.ts:961-965`)                                                                                                                        |
+| `negate()`             | `(channels: Channels): void`                                                                | Negate colors in image for the specified channel.                                                                                                                                       | Inverts image colors on RGB channels (negative effect). (`magick-process.ts:181`, `useMagick.svelte.ts:1017`)                                                                                                                                       |
+| `grayscale()`          | `(method: PixelIntensityMethod): void`                                                      | Converts the colors in the image to gray.                                                                                                                                               | Converts to grayscale using Rec709Luminance method. (`magick-process.ts:166`, `useMagick.svelte.ts:997`)                                                                                                                                            |
+| `autoGamma()`          | `(channels: Channels): void`                                                                | Extracts the 'mean' from the image and adjust the image to try make set its gamma appropriately.                                                                                        | Auto-adjusts gamma to center the intensity distribution. (`magick-process.ts:156`, `useMagick.svelte.ts:1053`)                                                                                                                                      |
+| `autoThreshold()`      | `(method: AutoThresholdMethod): void`                                                       | Automatically selects a threshold and replaces each pixel in the image with a black pixel if the image intensity is less than the selected threshold otherwise white.                   | Applies auto-selected (Kapur/OTSU/Triangle) binary threshold. (`magick-process.ts:209`, `useMagick.svelte.ts:1126`)                                                                                                                                 |
+| `blackThreshold()`     | `(threshold: Percentage, channels: Channels): void`                                         | Forces all pixels below the threshold into black while leaving all pixels at or above the threshold unchanged.                                                                          | Crushes shadows below the black-point percentage to black. (`magick-process.ts:183`, `useMagick.svelte.ts:1098`)                                                                                                                                    |
+| `whiteThreshold()`     | `(threshold: Percentage, channels: Channels): void`                                         | Forces all pixels below the threshold into white while leaving all pixels at or above the threshold unchanged.                                                                          | Crushes highlights above the white-point percentage to white. (`magick-process.ts:187`, `useMagick.svelte.ts:1104`)                                                                                                                                 |
+| `clahe()`              | `(xTiles: number, yTiles: number, numberBins: number, clipLimit: number): void`             | A variant of adaptive histogram equalization in which the contrast amplification is limited.                                                                                            | Applies contrast-limited adaptive histogram equalization. (`magick-process.ts:213`, `useMagick.svelte.ts:1140`)                                                                                                                                     |
 
 ---
 
@@ -304,26 +306,27 @@ The processing order in both pipelines is:
 14. autoOrient
 15. autoGamma
 16. level (per channel: All, Red, Green, Blue)
-17. threshold
-18. blackThreshold
-19. whiteThreshold
-20. sigmoidalContrast
-21. autoThreshold
-22. colorSpace (property set)
-23. clahe
-24. blur
-25. gaussianBlur
-26. sharpen
-27. adaptiveSharpen
-28. adaptiveBlur
-29. motionBlur
-30. addNoise
-31. effects (grayscale / sepiaTone / charcoal / negate / cannyEdge / oilPaint / solarize / bilateralBlur)
-32. clut
-33. quantize
-34. drawables (annotation via Drawables API, not image.annotate())
-35. strip
-36. write (encode to format)
+17. levelColors / inverseLevelColors (color endpoints, RGB composite for All)
+18. threshold
+19. blackThreshold
+20. whiteThreshold
+21. sigmoidalContrast
+22. autoThreshold
+23. colorSpace (property set)
+24. clahe
+25. blur
+26. gaussianBlur
+27. sharpen
+28. adaptiveSharpen
+29. adaptiveBlur
+30. motionBlur
+31. addNoise
+32. effects (grayscale / sepiaTone / charcoal / negate / cannyEdge / oilPaint / solarize / bilateralBlur)
+33. clut
+34. quantize
+35. drawables (annotation via Drawables API, not image.annotate())
+36. strip
+37. write (encode to format)
 ```
 
 > Note: `autoThreshold` runs before the `colorSpace` change on the main-thread path
@@ -340,3 +343,4 @@ The processing order in both pipelines is:
 - The `read()` method on `MagickImage` is not called directly; `ImageMagick.read()` static method is used instead.
 - The `getPixels()` method is only used in `luts.ts` for CLUT generation, not in the main processing pipeline.
 - `autoGamma()`, `blackThreshold()` and `whiteThreshold()` are called without an explicit channel argument, so they use the wasm default (Composite = RGB+alpha). The native CLI's `-auto-gamma`/`-black-threshold`/`-white-threshold` default channel behaves differently, so the parity golden fixtures for those operations are generated with an explicit `-channel RGB` (`test/golden-gen/generate.ts`).
+- `levelColors()`/`inverseLevelColors()` map the 'All' channel option to the RGB composite rather than `Channels.All`: leveling the alpha channel with opaque endpoint colors hits a divide-by-zero edge in the wasm. The parity golden fixtures use an explicit `-channel RGB`; the CLI expresses the inverse operation with the `+` prefix (`+level-colors`), mirroring `+level`/`-level`.

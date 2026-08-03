@@ -178,6 +178,29 @@ export function processImageSync(sourceBytes: Uint8Array, settings: MagickSettin
 			}
 		}
 
+		if (
+			settings.levelColorsBlack !== '#000000' ||
+			settings.levelColorsWhite !== '#ffffff' ||
+			settings.levelColorsInverse
+		) {
+			// Map the 'All' option to the RGB composite (matching the golden
+			// fixtures, which use `-channel RGB`): leveling the alpha channel with
+			// opaque endpoint colors hits a divide-by-zero edge in the wasm.
+			const channel =
+				settings.levelColorsChannels === 'All'
+					? Channels.RGB
+					: Channels[settings.levelColorsChannels as keyof typeof Channels];
+			const black = hexToRgb(settings.levelColorsBlack);
+			const white = hexToRgb(settings.levelColorsWhite);
+			const blackColor = new MagickColor(black.r, black.g, black.b);
+			const whiteColor = new MagickColor(white.r, white.g, white.b);
+			if (settings.levelColorsInverse) {
+				image.inverseLevelColors(blackColor, whiteColor, channel as Channels);
+			} else {
+				image.levelColors(blackColor, whiteColor, channel as Channels);
+			}
+		}
+
 		if (settings.thresholdPercentage[0] !== 50) {
 			const thresholdChannels =
 				settings.thresholdChannels === 'All'

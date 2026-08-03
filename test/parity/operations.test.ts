@@ -386,6 +386,36 @@ describe('Color operations', () => {
 		);
 	});
 
+	it('level-colors', () => {
+		testAllSources(
+			'level-colors',
+			'{base}.png',
+			{
+				levelColorsBlack: '#e74c3c',
+				levelColorsWhite: '#3498db',
+				levelColorsChannels: 'All',
+				levelColorsInverse: false
+			},
+			0.05,
+			200
+		);
+	});
+
+	it('inverse-level-colors', () => {
+		testAllSources(
+			'inverse-level-colors',
+			'{base}.png',
+			{
+				levelColorsBlack: '#e74c3c',
+				levelColorsWhite: '#3498db',
+				levelColorsChannels: 'All',
+				levelColorsInverse: true
+			},
+			0.05,
+			200
+		);
+	});
+
 	it('threshold', () => {
 		testAllSources('threshold', '{base}.png', { thresholdPercentage: [60] }, 0.05, 100);
 	});

@@ -147,6 +147,68 @@
 		</div>
 	</SectionCard>
 
+	<!-- Level Colors -->
+	<SectionCard
+		title="Level Colors"
+		dirty={magick.settings.levelColorsBlack !== '#000000' ||
+			magick.settings.levelColorsWhite !== '#ffffff' ||
+			magick.settings.levelColorsInverse}
+	>
+		<div class="space-y-3">
+			<div class="flex items-center justify-start">
+				<Select type="single" bind:value={magick.settings.levelColorsChannels}>
+					<SelectTrigger class="h-9 w-24 font-mono text-xs">
+						{CHANNEL_OPTIONS.find((o) => o.value === magick.settings.levelColorsChannels)?.label ??
+							magick.settings.levelColorsChannels}
+					</SelectTrigger>
+					<SelectContent>
+						{#each CHANNEL_OPTIONS as opt (opt.value)}
+							<SelectItem value={opt.value}>{opt.label}</SelectItem>
+						{/each}
+					</SelectContent>
+				</Select>
+			</div>
+			<div class="flex items-center gap-3">
+				<div class="flex items-center gap-1.5">
+					<div
+						class="relative h-7 w-7 shrink-0 overflow-hidden border border-foreground/30 transition-all hover:border-foreground"
+					>
+						<input
+							type="color"
+							bind:value={magick.settings.levelColorsBlack}
+							aria-label="Level black color"
+							class="absolute inset-0 -top-1/2 -left-1/2 h-[200%] w-[200%] cursor-pointer border-0 p-0"
+						/>
+					</div>
+					<span class="font-mono text-[10px] text-muted-foreground/50 uppercase"
+						>{magick.settings.levelColorsBlack}</span
+					>
+				</div>
+				<span class="font-mono text-[10px] text-muted-foreground/50">→</span>
+				<div class="flex items-center gap-1.5">
+					<div
+						class="relative h-7 w-7 shrink-0 overflow-hidden border border-foreground/30 transition-all hover:border-foreground"
+					>
+						<input
+							type="color"
+							bind:value={magick.settings.levelColorsWhite}
+							aria-label="Level white color"
+							class="absolute inset-0 -top-1/2 -left-1/2 h-[200%] w-[200%] cursor-pointer border-0 p-0"
+						/>
+					</div>
+					<span class="font-mono text-[10px] text-muted-foreground/50 uppercase"
+						>{magick.settings.levelColorsWhite}</span
+					>
+				</div>
+			</div>
+			<ToggleRow
+				id="clr-levelcolors-inverse"
+				label="Inverse"
+				bind:checked={magick.settings.levelColorsInverse}
+			/>
+		</div>
+	</SectionCard>
+
 	<!-- Advanced -->
 	<SectionCard
 		title="Advanced Color"

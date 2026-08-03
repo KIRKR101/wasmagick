@@ -154,6 +154,27 @@ genAllSources('auto-level', ['-auto-level'], '{base}.png');
 console.log('-- levels --');
 genAllSources('levels', ['-level', '10%,90%,1.2'], '{base}-all.png');
 
+// -- LEVEL-COLORS --
+// Same channel note as auto-gamma: wasm defaults to Composite (RGB) channels
+// when no channel is passed; the CLI's `-level-colors` default channel set
+// behaves differently, so force RGB for parity.
+console.log('-- level-colors --');
+genAllSources(
+	'level-colors',
+	['-channel', 'RGB', '-level-colors', '#e74c3c,#3498db', '+channel'],
+	'{base}.png'
+);
+
+// -- INVERSE-LEVEL-COLORS --
+// The CLI expresses the inverse level-colors operation with the `+` prefix
+// (`+level-colors`), mirroring `+level`/`-level`.
+console.log('-- inverse-level-colors --');
+genAllSources(
+	'inverse-level-colors',
+	['-channel', 'RGB', '+level-colors', '#e74c3c,#3498db', '+channel'],
+	'{base}.png'
+);
+
 // -- THRESHOLD --
 console.log('-- threshold --');
 genAllSources('threshold', ['-threshold', '60%'], '{base}.png');

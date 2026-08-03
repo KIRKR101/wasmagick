@@ -278,6 +278,47 @@ describe('MagickState', () => {
 		});
 	});
 
+	describe('level colors settings', () => {
+		it('should have correct defaults', () => {
+			expect(magick.settings.levelColorsBlack).toBe('#000000');
+			expect(magick.settings.levelColorsWhite).toBe('#ffffff');
+			expect(magick.settings.levelColorsChannels).toBe('All');
+			expect(magick.settings.levelColorsInverse).toBe(false);
+		});
+
+		it('should be clean at defaults', () => {
+			expect(isColorDirty(magick.settings)).toBe(false);
+		});
+
+		it('should be dirty when black color is changed', () => {
+			magick.settings.levelColorsBlack = '#e74c3c';
+			expect(isColorDirty(magick.settings)).toBe(true);
+		});
+
+		it('should be dirty when white color is changed', () => {
+			magick.settings.levelColorsWhite = '#3498db';
+			expect(isColorDirty(magick.settings)).toBe(true);
+		});
+
+		it('should be dirty when inverse is enabled', () => {
+			magick.settings.levelColorsInverse = true;
+			expect(isColorDirty(magick.settings)).toBe(true);
+		});
+
+		it('should become clean after resetColor', () => {
+			magick.settings.levelColorsBlack = '#e74c3c';
+			magick.settings.levelColorsWhite = '#3498db';
+			magick.settings.levelColorsChannels = 'Red';
+			magick.settings.levelColorsInverse = true;
+			magick.resetColor();
+			expect(magick.settings.levelColorsBlack).toBe('#000000');
+			expect(magick.settings.levelColorsWhite).toBe('#ffffff');
+			expect(magick.settings.levelColorsChannels).toBe('All');
+			expect(magick.settings.levelColorsInverse).toBe(false);
+			expect(isColorDirty(magick.settings)).toBe(false);
+		});
+	});
+
 	describe('new feature defaults', () => {
 		it('should have correct crop defaults', () => {
 			expect(magick.settings.cropW).toBeNull();
@@ -450,6 +491,10 @@ describe('MagickSettings type', () => {
 			levelWhitepoint: { All: [100], Red: [100], Green: [100], Blue: [100] },
 			levelGamma: { All: [1.0], Red: [1.0], Green: [1.0], Blue: [1.0] },
 			levelChannels: 'All',
+			levelColorsBlack: '#000000',
+			levelColorsWhite: '#ffffff',
+			levelColorsChannels: 'All',
+			levelColorsInverse: false,
 			thresholdPercentage: [50],
 			thresholdChannels: 'All',
 			sigmoidalContrast: [0],

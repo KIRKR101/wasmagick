@@ -82,6 +82,15 @@
 			if (bp !== 0 || wp !== 100 || gm !== 1.0) levelParts.push(`${ch} ${bp}/${wp}/${gm}`);
 		}
 		if (levelParts.length > 0) parts.push(`Levels ${levelParts.join(' | ')}`);
+		if (
+			s.levelColorsBlack !== '#000000' ||
+			s.levelColorsWhite !== '#ffffff' ||
+			s.levelColorsInverse
+		) {
+			parts.push(
+				`LvlColors ${s.levelColorsBlack}→${s.levelColorsWhite}${s.levelColorsInverse ? ' inv' : ''}`
+			);
+		}
 		if (s.thresholdPercentage[0] !== 50) parts.push(`Threshold ${s.thresholdPercentage[0]}%`);
 		if (s.autoThreshold !== 'Off') parts.push(`AutoThreshold ${s.autoThreshold}`);
 		if (s.blackThreshold[0] > 0) parts.push(`BlackThresh ${s.blackThreshold[0]}%`);

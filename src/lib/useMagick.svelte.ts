@@ -162,6 +162,10 @@ export const DEFAULT_SETTINGS: MagickSettings = {
 	levelWhitepoint: { All: [100], Red: [100], Green: [100], Blue: [100] },
 	levelGamma: { All: [1.0], Red: [1.0], Green: [1.0], Blue: [1.0] },
 	levelChannels: 'All',
+	levelColorsBlack: '#000000',
+	levelColorsWhite: '#ffffff',
+	levelColorsChannels: 'All',
+	levelColorsInverse: false,
 	thresholdPercentage: [50],
 	thresholdChannels: 'All',
 	sigmoidalContrast: [0],
@@ -649,6 +653,10 @@ export class MagickState {
 		this.settings.levelWhitepoint = { All: [100], Red: [100], Green: [100], Blue: [100] };
 		this.settings.levelGamma = { All: [1.0], Red: [1.0], Green: [1.0], Blue: [1.0] };
 		this.settings.levelChannels = DEFAULT_SETTINGS.levelChannels;
+		this.settings.levelColorsBlack = DEFAULT_SETTINGS.levelColorsBlack;
+		this.settings.levelColorsWhite = DEFAULT_SETTINGS.levelColorsWhite;
+		this.settings.levelColorsChannels = DEFAULT_SETTINGS.levelColorsChannels;
+		this.settings.levelColorsInverse = DEFAULT_SETTINGS.levelColorsInverse;
 		this.settings.thresholdPercentage = [...DEFAULT_SETTINGS.thresholdPercentage];
 		this.settings.thresholdChannels = DEFAULT_SETTINGS.thresholdChannels;
 		this.settings.sigmoidalContrast = [...DEFAULT_SETTINGS.sigmoidalContrast];
@@ -1075,6 +1083,37 @@ export class MagickState {
 									}
 									if (levelApplied.length > 0) {
 										appliedOptions.level = levelApplied;
+									}
+								}
+
+								{
+									const black = this.settings.levelColorsBlack;
+									const white = this.settings.levelColorsWhite;
+									const inverse = this.settings.levelColorsInverse;
+									if (black !== '#000000' || white !== '#ffffff' || inverse) {
+										// Map the 'All' option to the RGB composite (matching the
+										// golden fixtures, which use `-channel RGB`): leveling the
+										// alpha channel with opaque endpoint colors hits a
+										// divide-by-zero edge in the wasm.
+										const channel =
+											this.settings.levelColorsChannels === 'All'
+												? Channels.RGB
+												: Channels[this.settings.levelColorsChannels as keyof typeof Channels];
+										const blackRgb = this.hexToRgb(black);
+										const whiteRgb = this.hexToRgb(white);
+										const blackColor = new MagickColor(blackRgb.r, blackRgb.g, blackRgb.b);
+										const whiteColor = new MagickColor(whiteRgb.r, whiteRgb.g, whiteRgb.b);
+										if (inverse) {
+											image.inverseLevelColors(blackColor, whiteColor, channel as Channels);
+										} else {
+											image.levelColors(blackColor, whiteColor, channel as Channels);
+										}
+										appliedOptions.levelColors = {
+											black,
+											white,
+											channels: this.settings.levelColorsChannels,
+											inverse
+										};
 									}
 								}
 

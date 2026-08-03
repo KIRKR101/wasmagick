@@ -104,6 +104,10 @@ export interface MagickSettings {
 	levelWhitepoint: Record<LevelChannel, [number]>;
 	levelGamma: Record<LevelChannel, [number]>;
 	levelChannels: LevelChannel;
+	levelColorsBlack: string;
+	levelColorsWhite: string;
+	levelColorsChannels: LevelChannel;
+	levelColorsInverse: boolean;
 	thresholdPercentage: [number];
 	thresholdChannels: LevelChannel;
 	sigmoidalContrast: [number];
@@ -198,6 +202,7 @@ export interface AppliedOptions {
 	autoLevel?: boolean;
 	autoOrient?: boolean;
 	level?: { black: number; white: number; gamma: number; channels: string }[];
+	levelColors?: { black: string; white: string; channels: string; inverse: boolean };
 	threshold?: { percent: number; channels: string };
 	autoGamma?: boolean;
 	autoThreshold?: string;

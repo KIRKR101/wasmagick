@@ -92,6 +92,12 @@ function diffSettings(a: MagickSettings, b: MagickSettings): SettingsDiffItem[] 
 		push(`Lvl gamma ${ch}`, a.levelGamma[ch][0], b.levelGamma[ch][0]);
 	}
 
+	// Level colors
+	push('Lvl colors black', a.levelColorsBlack, b.levelColorsBlack);
+	push('Lvl colors white', a.levelColorsWhite, b.levelColorsWhite);
+	push('Lvl colors inverse', a.levelColorsInverse, b.levelColorsInverse);
+	push('Lvl colors ch', a.levelColorsChannels, b.levelColorsChannels);
+
 	// Filters
 	push('Effect', a.effect, b.effect);
 	push('Blur', a.blur[0], b.blur[0]);
