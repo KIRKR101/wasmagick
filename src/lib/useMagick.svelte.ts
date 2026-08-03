@@ -31,6 +31,7 @@ import type { MagickSettings, AppliedOptions, LevelChannel } from './types';
 import { ensureFont, DEFAULT_FONT, isLocalFont } from './fonts';
 import { generateClutImage } from './luts';
 import { applyCrop, resolveNoiseAttenuate } from './magick-process';
+import { extractExif, type ExifData } from './exif';
 import { computeCropStepOffset, type CropRect } from './crop-utils';
 
 const AUTO_PROCESS_DELAY = 300;
@@ -401,6 +402,10 @@ export class MagickState {
 	processedWidth = $state(0);
 	processedHeight = $state(0);
 	currentProcessingStep = $state<string | null>(null);
+	exif = $state<ExifData | null>(null);
+	exifLoading = $state(false);
+	exifError = $state<string | null>(null);
+	exifChecked = $state(false);
 	/**
 	 * True when the browser's own image pipeline cannot render the source file
 	 * (e.g. raw camera formats like DNG). The image still processes fine in
@@ -466,6 +471,10 @@ export class MagickState {
 		{ debugMode: boolean; onComplete?: () => void; startTime: number }
 	>();
 	private _processTimer: ReturnType<typeof setTimeout> | null = null;
+	// In-flight EXIF extraction. Extractions are chained behind this so two
+	// runs never interleave on the shared ExifTool wasm engine (its output
+	// buffers are module-scoped; concurrent runs corrupt each other).
+	private _exifPromise: Promise<void> | null = null;
 
 	hexToRgb(hex: string): { r: number; g: number; b: number } {
 		let r = 0,
@@ -812,6 +821,11 @@ export class MagickState {
 			this.processedWidth = 0;
 			this.processedHeight = 0;
 
+			this.exif = null;
+			this.exifLoading = false;
+			this.exifError = null;
+			this.exifChecked = false;
+
 			this.statsMessage = 'Ready';
 			return true;
 		} catch (error) {
@@ -856,7 +870,48 @@ export class MagickState {
 		this.processedHeight = 0;
 		this.statsMessage = 'Ready';
 		this.currentProcessingStep = null;
+		this.exif = null;
+		this.exifLoading = false;
+		this.exifError = null;
+		this.exifChecked = false;
 		this.originalPreviewFailed = false;
+	}
+
+	/**
+	 * Lazily extract the source file's EXIF for the Export section. The heavy
+	 * ExifTool wasm engine is only fetched/started on the first open, and the
+	 * result is cached until a new file is loaded.
+	 */
+	async ensureExif(): Promise<void> {
+		if (this.exifLoading || this.exifChecked || !this.sourceBytes) return;
+		const bytes = this.sourceBytes;
+		const previous = this._exifPromise;
+		this.exifLoading = true;
+		this.exifError = null;
+		this._exifPromise = (async () => {
+			// Wait for any earlier run (it belongs to an older file; its
+			// result is discarded by the identity guard below) before
+			// starting this one, so parseMetadata never runs concurrently.
+			if (previous) {
+				await previous.catch(() => {});
+			}
+			try {
+				const summary = await extractExif(bytes, this.originalName);
+				if (this.sourceBytes === bytes) {
+					this.exif = summary;
+				}
+			} catch (e) {
+				if (this.sourceBytes === bytes) {
+					this.exifError = e instanceof Error ? e.message : String(e);
+				}
+			} finally {
+				if (this.sourceBytes === bytes) {
+					this.exifChecked = true;
+					this.exifLoading = false;
+				}
+			}
+		})();
+		await this._exifPromise;
 	}
 
 	private revokeImageUrls(): void {

@@ -55,7 +55,7 @@ export default defineConfig({
 				categories: ['photo', 'utilities']
 			},
 			workbox: {
-				maximumFileSizeToCacheInBytes: 20 * 1024 * 1024,
+				maximumFileSizeToCacheInBytes: 30 * 1024 * 1024,
 				globPatterns: ['**/*.{html,js,css,wasm,ttf,woff2,png,svg,ico,json}'],
 				navigateFallback: null,
 				importScripts: ['/share-handler.js', '/sw-warmup.js'],

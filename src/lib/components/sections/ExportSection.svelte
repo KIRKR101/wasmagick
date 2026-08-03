@@ -8,11 +8,23 @@
 	import { Slider } from '$lib/components/ui/slider/index.js';
 	import type { MagickState } from '$lib/useMagick.svelte';
 	import ToggleRow from '$lib/components/controls/ToggleRow.svelte';
+	import TruncatedText from '$lib/components/controls/TruncatedText.svelte';
 	let { magick } = $props<{ magick: MagickState }>();
 
 	const FORMAT_OPTIONS = ['WebP', 'JPEG', 'PNG', 'AVIF', 'JXL', 'TIFF', 'GIF'];
 	const LOSSLESS = new Set(['PNG', 'GIF']);
 	let isLossless = $derived(LOSSLESS.has(magick.settings.imageFormat));
+
+	let showExif = $state(false);
+	$effect(() => {
+		if (showExif) magick.ensureExif();
+	});
+	let showAllExif = $state(false);
+	let exifRows = $derived(
+		showAllExif || (magick.exif?.priority.length ?? 0) === 0
+			? (magick.exif?.all ?? [])
+			: (magick.exif?.priority ?? [])
+	);
 </script>
 
 <div class="space-y-5">
@@ -62,6 +74,47 @@
 		description="Remove EXIF / profiles"
 		bind:checked={magick.settings.stripMeta}
 	/>
+
+	<ToggleRow id="exp-show-exif" label="Show EXIF" chevron bind:checked={showExif} />
+	{#if showExif}
+		<div class="border border-foreground/30 bg-transparent p-3">
+			<div class="mb-2 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+				EXIF
+			</div>
+			{#if magick.exifLoading}
+				<div class="space-y-1 font-mono text-xs">
+					<span class="text-muted-foreground">Reading EXIF…</span>
+				</div>
+			{:else if magick.exifError}
+				<div class="space-y-1 font-mono text-xs">
+					<span class="text-red-500">{magick.exifError}</span>
+				</div>
+			{:else if magick.exif}
+				<div class="space-y-1 font-mono text-xs">
+					{#each exifRows as { label, value } (label)}
+						<div class="flex justify-between gap-3">
+							<span class="shrink-0 text-muted-foreground">{label}</span>
+							<TruncatedText text={value} class="text-foreground" />
+						</div>
+					{/each}
+				</div>
+				{#if magick.exif.all.length > magick.exif.priority.length}
+					<button
+						type="button"
+						onclick={() => (showAllExif = !showAllExif)}
+						class="group mt-2 w-full cursor-pointer border border-foreground/30 px-3 py-1.5 font-mono text-xs transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+					>
+						[{showAllExif ? '-' : '+'}]
+						<span class="group-hover:underline">{showAllExif ? 'SHOW FEWER' : 'SHOW MORE'}</span>
+					</button>
+				{/if}
+			{:else}
+				<div class="space-y-1 font-mono text-xs">
+					<span class="text-muted-foreground">No EXIF data</span>
+				</div>
+			{/if}
+		</div>
+	{/if}
 
 	<!-- Output preview -->
 	{#if magick.processedImageUrl}

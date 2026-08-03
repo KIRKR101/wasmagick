@@ -20,6 +20,10 @@ test/*-diff*.png
 # ImageMagick binaries (downloaded by tooling/setup-imagemagick.ts)
 tooling/imagemagick/
 
+# WASM engines (copied into static/ by tooling/copy-wasm.ts)
+static/magick.wasm
+static/zeroperl.wasm
+
 # Test font (downloaded by tooling/setup-imagemagick.ts)
 test/fixtures/font.ttf
 

@@ -7,6 +7,14 @@
 	 * Wraps a trigger element in a `group relative` container and renders a
 	 * popover-style tooltip next to it. Reveals on hover and keyboard focus.
 	 *
+	 * The tooltip is `position: fixed` (viewport coordinates, very high
+	 * z-index) so it can escape overflow containers — e.g. the properties
+	 * panel's scroll area — without being clipped, and stays above canvas
+	 * overlays. It is edge-clamped: when the chosen side would push the
+	 * tooltip off the viewport, it is nudged back so it always stays on
+	 * screen. On viewports < 768px wide the tooltip is hidden entirely
+	 * (matching the original ToolRail `max-md:hidden` behavior).
+	 *
 	 * `side` controls visual placement:
 	 *   - `auto` (default) — pick the side with the most viewport space
 	 *   - `right` — to the right of the trigger, vertically centered
@@ -17,11 +25,6 @@
 	 * Pass `label` for a plain string, or `labelChildren` for rich content
 	 * (e.g. mixed text styles for shortcut hints). If both are provided,
 	 * `labelChildren` wins.
-	 *
-	 * The tooltip is edge-clamped: when the chosen side would push the
-	 * tooltip off the viewport, it is nudged back so it always stays on
-	 * screen. On viewports < 768px wide the tooltip is hidden entirely
-	 * (matching the original ToolRail `max-md:hidden` behavior).
 	 */
 	let {
 		label,
@@ -41,21 +44,13 @@
 
 	type Side = 'top' | 'bottom' | 'left' | 'right';
 
-	const SIDE_CLASS: Record<Side, string> = {
-		top: 'bottom-full left-1/2 -translate-x-1/2',
-		bottom: 'top-full left-1/2 -translate-x-1/2',
-		left: 'right-full top-1/2 -translate-y-1/2',
-		right: 'left-full top-1/2 -translate-y-1/2'
-	};
-
 	/** Gap between trigger and tooltip, in px */
 	const GAP = 4;
 
 	let wrapperRef = $state<HTMLSpanElement | null>(null);
 	let tooltipRef = $state<HTMLSpanElement | null>(null);
 
-	let resolvedSide = $state<Side>('bottom');
-	let clampStyle = $state('');
+	let positionStyle = $state('');
 
 	function measure() {
 		if (!wrapperRef || !tooltipRef) return;
@@ -101,15 +96,14 @@
 		} else {
 			chosen = side;
 		}
-		resolvedSide = chosen;
 
-		// Position the tooltip close to the trigger with a small GAP, then
-		// shift within the viewport so it never overflows. The tooltip is
-		// centered on the trigger when there's room; if centering would
-		// push the tooltip off-screen, anchor its near edge to the
+		// Position the tooltip in viewport coordinates, a small GAP from the
+		// trigger, then shift within the viewport so it never overflows. The
+		// tooltip is centered on the trigger when there's room; if centering
+		// would push the tooltip off-screen, anchor its near edge to the
 		// trigger's near edge so it stays visually attached.
-		let xNudge: string;
-		let yNudge: string;
+		let left: number;
+		let top: number;
 		if (chosen === 'top' || chosen === 'bottom') {
 			const triggerCenterX = trigger.left + trigger.width / 2;
 			const centeredLeft = triggerCenterX - tip.width / 2;
@@ -119,19 +113,17 @@
 			// edge so it extends rightward from the button (clamped to the
 			// right edge of the screen).
 			const centeredFits = centeredLeft >= 0 && centeredLeft + tip.width <= vw;
-			const targetLeft = centeredFits ? centeredLeft : Math.max(0, Math.min(maxLeft, trigger.left));
-			xNudge = `${(targetLeft - triggerCenterX).toFixed(1)}px`;
-			yNudge = chosen === 'top' ? `${-GAP}px` : `${GAP}px`;
+			left = centeredFits ? centeredLeft : Math.max(0, Math.min(maxLeft, trigger.left));
+			top = chosen === 'top' ? trigger.top - tip.height - GAP : trigger.bottom + GAP;
 		} else {
 			const triggerCenterY = trigger.top + trigger.height / 2;
 			const centeredTop = triggerCenterY - tip.height / 2;
 			const maxTop = vh - tip.height;
 			const centeredFits = centeredTop >= 0 && centeredTop + tip.height <= vh;
-			const targetTop = centeredFits ? centeredTop : Math.max(0, Math.min(maxTop, trigger.top));
-			yNudge = `${(targetTop - triggerCenterY).toFixed(1)}px`;
-			xNudge = chosen === 'left' ? `${-GAP}px` : `${GAP}px`;
+			top = centeredFits ? centeredTop : Math.max(0, Math.min(maxTop, trigger.top));
+			left = chosen === 'left' ? trigger.left - tip.width - GAP : trigger.right + GAP;
 		}
-		clampStyle = `--tw-translate-x: ${xNudge}; --tw-translate-y: ${yNudge};`;
+		positionStyle = `left: ${left.toFixed(1)}px; top: ${top.toFixed(1)}px;`;
 	}
 
 	$effect(() => {
@@ -144,18 +136,21 @@
 	});
 </script>
 
-<svelte:window onresize={measure} />
+<svelte:window onresize={measure} onscrollcapture={measure} />
 
-<span bind:this={wrapperRef} class="group relative inline-flex {triggerClass}">
+<span
+	bind:this={wrapperRef}
+	role="group"
+	class="group relative inline-flex {triggerClass}"
+	onmouseenter={measure}
+>
 	{@render children()}
 	<span
 		bind:this={tooltipRef}
 		role="tooltip"
 		aria-hidden="true"
-		style={clampStyle}
-		class="pointer-events-none absolute z-50 max-w-48 rounded-xs border bg-popover px-2 py-1 text-[11px] font-medium whitespace-nowrap text-popover-foreground opacity-0 shadow-md transition-opacity duration-100 group-focus-within:opacity-100 group-hover:opacity-100 max-md:hidden {SIDE_CLASS[
-			resolvedSide
-		]} {className}"
+		style={positionStyle}
+		class="pointer-events-none fixed z-[9999] max-w-48 rounded-xs border bg-popover px-2 py-1 text-[11px] font-medium whitespace-normal text-popover-foreground opacity-0 shadow-md transition-opacity duration-100 group-focus-within:opacity-100 group-hover:opacity-100 max-md:hidden {className}"
 	>
 		{#if labelChildren}
 			{@render labelChildren()}

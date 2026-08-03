@@ -6,12 +6,14 @@
 		label,
 		description = '',
 		checked = $bindable(),
+		chevron = false,
 		class: className
 	}: {
 		id: string;
 		label: string;
 		description?: string;
 		checked: boolean;
+		chevron?: boolean;
 		class?: string;
 	} = $props();
 </script>
@@ -32,4 +34,12 @@
 			<span class="ml-2 block text-[10px] text-muted-foreground uppercase">({description})</span>
 		{/if}
 	</span>
+	{#if chevron}
+		<span
+			class="font-mono text-[10px] text-muted-foreground transition-transform {checked
+				? 'rotate-90'
+				: ''}"
+			aria-hidden="true">[>]</span
+		>
+	{/if}
 </button>
