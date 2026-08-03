@@ -171,6 +171,13 @@
 		magick.clearSource();
 	}
 
+	/** Download the processed result and mark it saved in history. */
+	function downloadCurrent(): void {
+		if (!magick.processedImageUrl) return;
+		magick.downloadImage();
+		history.markCurrentSaved();
+	}
+
 	function handleKeydown(e: KeyboardEvent) {
 		const cmdOrCtrl = e.ctrlKey || e.metaKey;
 
@@ -201,7 +208,7 @@
 
 		if (cmdOrCtrl && (e.key === 's' || e.key === 'S')) {
 			e.preventDefault();
-			magick.downloadImage();
+			downloadCurrent();
 		} else if (cmdOrCtrl && e.key === '0') {
 			e.preventDefault();
 			viewport?.resetView();
@@ -332,7 +339,7 @@
 		bind:viewport
 		onProcess={processCurrent}
 		onReset={() => magick.resetSettings()}
-		onDownload={() => magick.downloadImage()}
+		onDownload={downloadCurrent}
 		onUndo={() => history.undo(magick)}
 		onRedo={() => history.redo(magick)}
 		onReplace={replaceImage}
@@ -353,10 +360,11 @@
 		onToggleShortcuts={() => (showShortcuts = !showShortcuts)}
 		onProcess={processCurrent}
 		onReset={() => magick.resetSettings()}
-		onDownload={() => magick.downloadImage()}
+		onDownload={downloadCurrent}
 		onUndo={() => history.undo(magick)}
 		onRedo={() => history.redo(magick)}
 		onReplace={replaceImage}
+		onClose={closeCurrent}
 	/>
 {/if}
 

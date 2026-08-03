@@ -92,7 +92,7 @@
 
 	// Confirm dialog state
 	let confirmOpen = $derived(guard.pending != null);
-	let pendingName = $derived(guard.pendingFile?.name ?? '');
+	let currentImageName = $derived(magick.originalName);
 	let confirmKind: 'close' | 'replace' = $derived(
 		guard.pending?.kind === 'close' ? 'close' : 'replace'
 	);
@@ -118,7 +118,7 @@
 	}
 
 	function onResetRequest() {
-		if (guard.isDirty) {
+		if (magick.hasUnsavedEdits) {
 			resetConfirmOpen = true;
 		} else {
 			onReset();
@@ -230,8 +230,9 @@
 
 <ConfirmDialog
 	bind:open={confirmOpen}
-	fileName={pendingName}
+	fileName={currentImageName}
 	kind={confirmKind}
+	hasUnsavedEdits={magick.hasUnsavedEdits}
 	onConfirm={onConfirmReplace}
 	onCancel={onCancelReplace}
 />

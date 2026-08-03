@@ -8,7 +8,8 @@
 		isColorDirty,
 		isFiltersDirty,
 		isExportDirty,
-		isAnnotateDirty
+		isAnnotateDirty,
+		formatBytes
 	} from '$lib/utils';
 	import { DEFAULT_SETTINGS } from '$lib/useMagick.svelte';
 
@@ -21,6 +22,7 @@
 		isDarkMode = false,
 		onUploadClick,
 		onReset,
+		onClose,
 		onToggleDebug,
 		onToggleTheme,
 		onToggleShortcuts,
@@ -35,6 +37,7 @@
 		isDarkMode?: boolean;
 		onUploadClick: () => void;
 		onReset: () => void;
+		onClose: () => void;
 		onToggleDebug?: () => void;
 		onToggleTheme?: () => void;
 		onToggleShortcuts?: () => void;
@@ -239,6 +242,17 @@
 	]);
 
 	let anyDirty = $derived(items.some((item) => item.dirty));
+
+	function sizeDelta() {
+		if (!magick.processedImageUrl || magick.originalImageSize <= 0) return null;
+		const m = magick.statsMessage.match(/New Size:\s*([\d.]+)\s*KB(?:\s*\(([-+]?[\d.]+)%\))?/);
+		if (!m) return null;
+		const kb = parseFloat(m[1]);
+		const pct = m[2] != null ? parseFloat(m[2]) : null;
+		return { kb, pct };
+	}
+
+	let delta = $derived(sizeDelta());
 </script>
 
 <aside
@@ -308,9 +322,85 @@
 		>
 			<span class="truncate"><span>[ ]</span> <span class="hover:underline">RESET ALL</span></span>
 		</button>
+
+		<button
+			onclick={onClose}
+			disabled={!magick.originalImageUrl}
+			class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+		>
+			<span class="truncate"><span>[ ]</span> <span class="hover:underline">CLOSE</span></span>
+		</button>
 	</div>
 
-	<div class="mt-auto mb-3 text-muted-foreground">/NAV</div>
+	<div class="mt-auto">
+		{#if magick.originalImageUrl}
+			<div class="mb-6">
+				<div class="mb-3 text-muted-foreground">/FILE</div>
+				<div
+					class="flex flex-col gap-1.5 border border-foreground/30 px-2 py-2 font-mono text-[11px] text-muted-foreground uppercase"
+				>
+					<div
+						class="truncate border-b border-foreground/30 pb-1.5 text-foreground/90"
+						title={magick.originalName}
+					>
+						{magick.originalName}
+					</div>
+				<div class="flex justify-between gap-2">
+					<span class="shrink-0 text-[10px] text-muted-foreground/60">DIMS</span>
+					<span class="truncate text-foreground/80">
+						{#if magick.processedImageUrl && (magick.processedWidth || magick.processedHeight)}
+							{magick.originalWidth}×{magick.originalHeight}
+							<span class="text-muted-foreground/60">→</span>
+							{magick.processedWidth}×{magick.processedHeight}
+						{:else}
+							{magick.originalWidth}×{magick.originalHeight}
+						{/if}
+					</span>
+				</div>
+				<div class="flex justify-between gap-2">
+					<span class="shrink-0 text-[10px] text-muted-foreground/60">FORMAT</span>
+					<span class="truncate text-foreground/80">
+						{#if magick.processedImageFormat}
+							{magick.originalImageFormat}
+							<span class="text-muted-foreground/60">→</span>
+							{magick.processedImageFormat}
+						{:else}
+							{magick.originalImageFormat}
+						{/if}
+					</span>
+				</div>
+				<div class="flex justify-between gap-2">
+					<span class="shrink-0 text-[10px] text-muted-foreground/60">SIZE</span>
+					<span class="truncate text-foreground/80">
+						{#if delta}
+							<span
+								class={delta.pct != null && delta.pct < 0
+									? 'text-emerald-600 dark:text-emerald-400'
+									: 'text-foreground/80'}
+							>
+								{delta.kb} KB
+							</span>
+							{#if delta.pct != null}
+								<span
+									class={delta.pct < 0
+										? 'text-emerald-600 dark:text-emerald-400'
+										: delta.pct > 0
+											? 'text-amber-600 dark:text-amber-400'
+											: 'text-muted-foreground'}
+								>
+									({delta.pct > 0 ? '+' : ''}{delta.pct}%)
+								</span>
+							{/if}
+						{:else}
+							{formatBytes(magick.originalImageSize)}
+						{/if}
+					</span>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+	<div class="mb-3 text-muted-foreground">/NAV</div>
 	<div class="flex flex-col gap-1.5">
 		<div class="mb-2 flex border border-foreground/30">
 			<button
@@ -356,5 +446,6 @@
 		>
 			<span class="truncate"><span>[?]</span> <span class="hover:underline">SHORTCUTS</span></span>
 		</button>
+		</div>
 	</div>
 </aside>

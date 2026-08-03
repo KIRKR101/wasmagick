@@ -10,12 +10,14 @@
 		open = $bindable(false),
 		fileName = '',
 		kind = 'replace',
+		hasUnsavedEdits = false,
 		onConfirm,
 		onCancel
 	}: {
 		open?: boolean;
 		fileName?: string;
 		kind?: 'replace' | 'close' | 'clear-history' | 'reset-all';
+		hasUnsavedEdits?: boolean;
 		onConfirm: () => void;
 		onCancel: () => void;
 	} = $props();
@@ -55,18 +57,30 @@
 
 			<div class="px-4 py-4 text-xs leading-relaxed text-muted-foreground">
 				{#if kind === 'close'}
-					You have unsaved edits to the current image
-					{#if fileName}<span class="font-medium text-foreground">({fileName})</span>{/if}. Closing
-					it will discard the processed result and history.
+					{#if hasUnsavedEdits}
+						You have unsaved edits to the current image
+						{#if fileName}<span class="font-medium text-foreground">({fileName})</span>{/if}.
+						Closing it will discard the processed result and history.
+					{:else}
+						Are you sure you want to close the current image
+						{#if fileName}<span class="font-medium text-foreground">({fileName})</span>{/if}? The
+						processed result and history will be discarded.
+					{/if}
 				{:else if kind === 'clear-history'}
 					This will discard all history entries. This action cannot be undone.
 				{:else if kind === 'reset-all'}
 					This will reset all settings to their defaults. Processed result and history will be
 					preserved.
 				{:else}
-					You have unsaved edits to the current image
-					{#if fileName}<span class="font-medium text-foreground">({fileName})</span>{/if}.
-					Replacing it will discard the processed result and history.
+					{#if hasUnsavedEdits}
+						You have unsaved edits to the current image
+						{#if fileName}<span class="font-medium text-foreground">({fileName})</span>{/if}.
+						Replacing it will discard the processed result and history.
+					{:else}
+						Are you sure you want to replace the current image
+						{#if fileName}<span class="font-medium text-foreground">({fileName})</span>{/if}? The
+						processed result and history will be discarded.
+					{/if}
 				{/if}
 			</div>
 

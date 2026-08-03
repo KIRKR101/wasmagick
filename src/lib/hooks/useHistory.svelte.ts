@@ -160,6 +160,8 @@ export interface HistoryEntry {
 	/** Creation timestamp. */
 	ts: number;
 	isOriginal: boolean;
+	/** Whether the processed result of this entry was downloaded. */
+	saved: boolean;
 	statsMessage: string;
 }
 
@@ -231,6 +233,7 @@ export class HistoryState {
 			time: 0,
 			ts: Date.now(),
 			isOriginal: true,
+			saved: false,
 			statsMessage: 'Original'
 		};
 		this.entries = [entry];
@@ -256,6 +259,7 @@ export class HistoryState {
 			time: 0,
 			ts: Date.now(),
 			isOriginal: false,
+			saved: false,
 			statsMessage: magick.statsMessage
 		};
 		// Estimate size from the blob.
@@ -290,6 +294,11 @@ export class HistoryState {
 		if (!this.canUndo) return;
 		this.pointer -= 1;
 		await this.restore(magick);
+	}
+
+	/** Mark the current entry's processed result as downloaded. */
+	markCurrentSaved(): void {
+		if (this.current) this.current.saved = true;
 	}
 
 	/** Restore state at `pointer + 1`. */
@@ -328,6 +337,8 @@ export class HistoryState {
 			magick.processedHeight = entry.height;
 		}
 		magick.statsMessage = entry.statsMessage;
+		magick.processedImageTime = entry.time;
+		magick.hasUnsavedEdits = !entry.isOriginal && !entry.saved;
 		magick.hasError = false;
 		magick.errorMessage = null;
 		magick.cropMode = false;

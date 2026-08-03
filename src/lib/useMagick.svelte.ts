@@ -387,6 +387,7 @@ export class MagickState {
 	hasError = $state(false);
 	errorMessage = $state<string | null>(null);
 	statsMessage = $state('Ready');
+	hasUnsavedEdits = $state(false);
 	sourceBytes = $state<Uint8Array | null>(null);
 	originalName = $state('image');
 	originalImageSize = $state(0);
@@ -827,6 +828,7 @@ export class MagickState {
 			this.exifChecked = false;
 
 			this.statsMessage = 'Ready';
+			this.hasUnsavedEdits = false;
 			return true;
 		} catch (error) {
 			const message = error instanceof Error ? error.message : 'Failed to read file';
@@ -869,6 +871,7 @@ export class MagickState {
 		this.processedWidth = 0;
 		this.processedHeight = 0;
 		this.statsMessage = 'Ready';
+		this.hasUnsavedEdits = false;
 		this.currentProcessingStep = null;
 		this.exif = null;
 		this.exifLoading = false;
@@ -1614,6 +1617,7 @@ export class MagickState {
 		this.processedImageFormat = format.toLowerCase();
 		this.processedWidth = newWidth;
 		this.processedHeight = newHeight;
+		this.hasUnsavedEdits = true;
 
 		const nameParts = this.originalName.split('.');
 		if (nameParts.length > 1) nameParts.pop();
@@ -1649,6 +1653,7 @@ export class MagickState {
 			document.body.appendChild(a);
 			a.click();
 			document.body.removeChild(a);
+			this.hasUnsavedEdits = false;
 		}
 	}
 }

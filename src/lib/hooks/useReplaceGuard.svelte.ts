@@ -3,8 +3,9 @@
  * sample selection) with a dirty-state confirmation.
  *
  * "Dirty" means the current image has a processed result that would be lost
- * on replacement. When dirty, `requestReplace(file)` stages the file and the
- * caller renders a ConfirmDialog; on confirm, `confirmReplace()` proceeds.
+ * on replacement or close (regardless of whether it was downloaded). When
+ * dirty, `requestReplace(file)` stages the file and the caller renders a
+ * ConfirmDialog; on confirm, `confirmReplace()` proceeds.
  *
  * Also installs a global `paste` listener that converts clipboard images to
  * a File and routes them through `requestReplace`.
@@ -25,13 +26,9 @@ export class ReplaceGuardState {
 	private _onClose: (() => void) | null = null;
 
 	get isDirty(): boolean {
-		// A processed result exists that won't apply to a new image.
+		// A processed result exists that would be lost on replacement.
 		// `this._magick` is set in `install`.
 		return this._magick ? this._magick.processedImageUrl != null : false;
-	}
-
-	get pendingFile(): File | null {
-		return this.pending?.kind === 'replace' ? this.pending.file : null;
 	}
 
 	private _magick: MagickState | null = null;

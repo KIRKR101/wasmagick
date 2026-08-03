@@ -29,7 +29,8 @@
 		onDownload,
 		onUndo,
 		onRedo,
-		onReplace
+		onReplace,
+		onClose
 	}: {
 		magick: MagickState;
 		history: HistoryState;
@@ -48,6 +49,7 @@
 		onUndo: () => void;
 		onRedo: () => void;
 		onReplace: (file: File) => Promise<void>;
+		onClose: () => void;
 	} = $props();
 
 	let fileInputEl = $state<HTMLInputElement | null>(null);
@@ -82,7 +84,7 @@
 	);
 
 	let confirmOpen = $derived(guard.pending != null);
-	let pendingName = $derived(guard.pendingFile?.name ?? '');
+	let currentImageName = $derived(magick.originalName);
 	let confirmKind: 'close' | 'replace' = $derived(
 		guard.pending?.kind === 'close' ? 'close' : 'replace'
 	);
@@ -96,6 +98,10 @@
 	}
 	function onCancelReplace() {
 		guard.cancelPending();
+	}
+
+	function onCloseRequest() {
+		guard.requestClose(onClose);
 	}
 
 	let clearHistoryOpen = $state(false);
@@ -113,7 +119,7 @@
 	}
 
 	function onResetRequest() {
-		if (guard.isDirty) {
+		if (magick.hasUnsavedEdits) {
 			resetConfirmOpen = true;
 		} else {
 			onReset();
@@ -148,6 +154,7 @@
 			onSectionChange={setSection}
 			onUploadClick={openFilePicker}
 			onReset={onResetRequest}
+			onClose={onCloseRequest}
 			{onToggleDebug}
 			{onToggleTheme}
 			{onToggleShortcuts}
@@ -192,13 +199,14 @@
 		</div>
 	</div>
 
-	<StatusBar {magick} isDirty={guard.isDirty} />
+	<StatusBar {magick} isDirty={magick.hasUnsavedEdits} />
 </div>
 
 <ConfirmDialog
 	bind:open={confirmOpen}
-	fileName={pendingName}
+	fileName={currentImageName}
 	kind={confirmKind}
+	hasUnsavedEdits={magick.hasUnsavedEdits}
 	onConfirm={onConfirmReplace}
 	onCancel={onCancelReplace}
 />
