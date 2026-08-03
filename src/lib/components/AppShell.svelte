@@ -4,6 +4,7 @@
 	import PropertiesPanel from './PropertiesPanel.svelte';
 	import StatusBar from './StatusBar.svelte';
 	import ConfirmDialog from './ConfirmDialog.svelte';
+	import { IMAGE_FILE_ACCEPT } from '$lib/utils';
 	import type { MagickState } from '$lib/useMagick.svelte';
 	import type { HistoryState } from '$lib/hooks/useHistory.svelte';
 	import type { PresetsState } from '$lib/hooks/usePresets.svelte';
@@ -131,7 +132,7 @@
 <input
 	bind:this={fileInputEl}
 	type="file"
-	accept="image/*"
+	accept={IMAGE_FILE_ACCEPT}
 	onchange={onFileInputChange}
 	class="hidden"
 />
@@ -171,6 +172,7 @@
 				bind:this={viewport}
 				originalImageUrl={magick.originalImageUrl}
 				processedImageUrl={magick.processedImageUrl}
+				originalPreviewFailed={magick.originalPreviewFailed}
 				isLoading={magick.isLoading}
 				wasmLoaded={magick.wasmLoaded}
 				magickSettings={magick.settings}

@@ -227,16 +227,6 @@ export const DEFAULT_SETTINGS: MagickSettings = {
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
 
-const SUPPORTED_MIME_TYPES = [
-	'image/jpeg',
-	'image/png',
-	'image/gif',
-	'image/webp',
-	'image/tiff',
-	'image/bmp',
-	'image/avif'
-];
-
 const FORMAT_MAP: Record<string, keyof typeof MagickFormat> = {
 	WEBP: 'WebP',
 	JPEG: 'Jpeg',
@@ -249,6 +239,34 @@ const FORMAT_MAP: Record<string, keyof typeof MagickFormat> = {
 
 function snapSettings(settings: MagickSettings): MagickSettings {
 	return JSON.parse(JSON.stringify(settings));
+}
+
+/**
+ * Probe whether the browser's native image pipeline can render the given
+ * bytes. This is a per-file decode check rather than a format heuristic:
+ * whatever the browser's decoder rejects (e.g. DNG) is exactly what cannot
+ * be previewed, independent of extension or MIME type.
+ */
+function canBrowserRender(bytes: Uint8Array): Promise<boolean> {
+	return new Promise((resolve) => {
+		let url: string;
+		try {
+			url = URL.createObjectURL(new Blob([bytes as BlobPart]));
+		} catch {
+			resolve(false);
+			return;
+		}
+		const img = new Image();
+		img.onload = () => {
+			URL.revokeObjectURL(url);
+			resolve(true);
+		};
+		img.onerror = () => {
+			URL.revokeObjectURL(url);
+			resolve(false);
+		};
+		img.src = url;
+	});
 }
 
 function readUint16BE(bytes: Uint8Array, offset: number): number {
@@ -383,6 +401,12 @@ export class MagickState {
 	processedWidth = $state(0);
 	processedHeight = $state(0);
 	currentProcessingStep = $state<string | null>(null);
+	/**
+	 * True when the browser's own image pipeline cannot render the source file
+	 * (e.g. raw camera formats like DNG). The image still processes fine in
+	 * wasm; only the in-browser preview is unavailable until then.
+	 */
+	originalPreviewFailed = $state(false);
 	settings = $state<MagickSettings>({
 		...DEFAULT_SETTINGS,
 		levelBlackpoint: {
@@ -606,13 +630,9 @@ export class MagickState {
 			};
 		}
 
-		if (!SUPPORTED_MIME_TYPES.includes(file.type)) {
-			return {
-				isValid: false,
-				error: `Unsupported format: ${file.type || 'unknown'}. Supported: JPEG, PNG, GIF, WebP, TIFF, BMP, AVIF`
-			};
-		}
-
+		// No format gate here: any file the magick-wasm build can read (see
+		// `IMAGE_FILE_ACCEPT`) is allowed through; unreadable content surfaces
+		// as a load/process error instead.
 		return { isValid: true };
 	}
 
@@ -769,6 +789,7 @@ export class MagickState {
 			const buffer = await file.arrayBuffer();
 			this.sourceBytes = new Uint8Array(buffer);
 			this.originalImageSize = this.sourceBytes.length;
+			this.originalPreviewFailed = !(await canBrowserRender(this.sourceBytes));
 
 			const fastDims = fastImageDimensions(this.sourceBytes);
 			if (fastDims) {
@@ -835,6 +856,7 @@ export class MagickState {
 		this.processedHeight = 0;
 		this.statsMessage = 'Ready';
 		this.currentProcessingStep = null;
+		this.originalPreviewFailed = false;
 	}
 
 	private revokeImageUrls(): void {

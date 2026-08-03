@@ -1,5 +1,13 @@
 <script lang="ts">
-	import { Columns2, Images, Loader2, Maximize, ZoomIn, ZoomOut } from 'lucide-svelte';
+	import {
+		AlertTriangle,
+		Columns2,
+		Images,
+		Loader2,
+		Maximize,
+		ZoomIn,
+		ZoomOut
+	} from 'lucide-svelte';
 	import FileDropzone from './FileDropzone.svelte';
 	import SplitCompare from './SplitCompare.svelte';
 	import CropOverlay from './CropOverlay.svelte';
@@ -9,6 +17,7 @@
 	let {
 		originalImageUrl = null,
 		processedImageUrl = null,
+		originalPreviewFailed = false,
 		isLoading = false,
 		wasmLoaded = true,
 		magickSettings = null,
@@ -26,6 +35,7 @@
 	}: {
 		originalImageUrl?: string | null;
 		processedImageUrl?: string | null;
+		originalPreviewFailed?: boolean;
 		isLoading?: boolean;
 		wasmLoaded?: boolean;
 		magickSettings?: { rotate?: string; resizeW?: number | null; resizeH?: number | null } | null;
@@ -76,6 +86,12 @@
 
 	let displayedImage = $derived(
 		isComparing ? originalImageUrl : processedImageUrl || originalImageUrl
+	);
+
+	// Warn exactly while the original (which the browser cannot render) is the
+	// image on screen — before processing, and in compare/split views.
+	let showPreviewWarning = $derived(
+		!!originalPreviewFailed && displayedImage === originalImageUrl && !!originalImageUrl
 	);
 
 	let canSplit = $derived(
@@ -435,6 +451,16 @@
 					onAspectRatioChange={onCropAspectRatioChange}
 				/>
 			{/if}
+		{/if}
+
+		{#if showPreviewWarning}
+			<div
+				class="pointer-events-none absolute top-3 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1.5 border border-amber-600/40 bg-amber-50/90 px-2 py-1 font-mono text-[11px] text-amber-700 backdrop-blur-sm dark:bg-amber-950/80 dark:text-amber-400"
+				role="status"
+			>
+				<AlertTriangle class="size-3 shrink-0" />
+				<span>Original not renderable in this browser — it will appear after processing</span>
+			</div>
 		{/if}
 
 		<!-- Floating zoom/compare toolbar -->

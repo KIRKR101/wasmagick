@@ -7,6 +7,14 @@ export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
 
+/**
+ * File-picker accept hint for everything the magick-wasm build can read:
+ * all `image/*` MIME types plus common formats that report non-image (PDF,
+ * PostScript) or no MIME type (raw camera files, XCF, PSD, EXR, ...).
+ */
+export const IMAGE_FILE_ACCEPT =
+	'image/*,.pdf,.eps,.ps,.cr2,.cr3,.crw,.nef,.nrw,.arw,.srf,.sr2,.dng,.raf,.rw2,.rwl,.orf,.erf,.mef,.mos,.raw,.iiq,.3fr,.fff,.kdc,.dcr,.k25,.x3f,.pef,.mrw,.xcf,.psd,.psb,.ico,.cur,.jxl,.heic,.heif,.tga,.exr,.hdr,.qoi,.dds,.dpx,.dcm,.fits,.sgi,.pcx,.pict,.pct,.ras,.sun,.xbm,.xpm,.pbm,.pgm,.ppm,.pnm,.pam,.jp2,.jpc,.jng,.mng,.wbmp,.svgz,.apng,.palm,.pcd,.sct,.viff,.vips,.mat,.miff,.pcl,.avs';
+
 export function formatBytes(bytes: number): string {
 	if (bytes < 1024) return bytes + ' B';
 	if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
