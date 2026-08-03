@@ -329,6 +329,7 @@
 		{presets}
 		{guard}
 		bind:activeSection
+		bind:viewport
 		onProcess={processCurrent}
 		onReset={() => magick.resetSettings()}
 		onDownload={() => magick.downloadImage()}
@@ -346,6 +347,7 @@
 		{debugMode}
 		{isDarkMode}
 		bind:activeSection
+		bind:viewport
 		onToggleDebug={() => (debugMode = !debugMode)}
 		onToggleTheme={toggleDarkMode}
 		onToggleShortcuts={() => (showShortcuts = !showShortcuts)}

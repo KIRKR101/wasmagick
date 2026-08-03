@@ -17,6 +17,7 @@
 		presets,
 		guard,
 		activeSection = $bindable('geometry'),
+		viewport = $bindable(null),
 		onProcess,
 		onReset,
 		onDownload,
@@ -30,6 +31,7 @@
 		presets: PresetsState;
 		guard: ReplaceGuardState;
 		activeSection?: EditorSection;
+		viewport?: ReturnType<typeof CanvasViewport> | null;
 		onProcess: () => void;
 		onReset: () => void;
 		onDownload: () => void;
@@ -46,8 +48,6 @@
 	let splitMode = $state(false);
 
 	// Viewport ref
-	let viewport = $state<ReturnType<typeof CanvasViewport> | null>(null);
-
 	function openFilePicker() {
 		fileInputEl?.click();
 	}
