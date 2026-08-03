@@ -1,13 +1,12 @@
 {
   "lockfileVersion": 1,
-  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "wasmagick-svelte",
       "dependencies": {
         "@fontsource-variable/geist-mono": "^5.2.7",
         "@fontsource-variable/jetbrains-mono": "^5.2.8",
-        "@imagemagick/magick-wasm": "^0.0.41",
+        "@imagemagick/magick-wasm": "^0.0.42",
         "lucide-svelte": "^1.0.1",
       },
       "devDependencies": {
@@ -350,7 +349,7 @@
 
     "@humanwhocodes/retry": ["@humanwhocodes/retry@0.4.3", "", {}, ""],
 
-    "@imagemagick/magick-wasm": ["@imagemagick/magick-wasm@0.0.41", "", {}, "sha512-ywIISf4/8/6k9lLfHUIE/uGuZCJfDG+NEcHJ7OHvzr2w+uLCoK5cIBsp6KlpQfq/EppYiNM+NqKXFiUSbJvHZA=="],
+    "@imagemagick/magick-wasm": ["@imagemagick/magick-wasm@0.0.42", "", {}, "sha512-SUX54Pf3uMBS4ThdmHvbcKqP83W2FRc8kVnqxtwm1csgeaDPn8h47zQh6Yt7U1kmZL7ziV22j4W3GmAef5uLWg=="],
 
     "@img/colour": ["@img/colour@1.1.0", "", {}, ""],
 

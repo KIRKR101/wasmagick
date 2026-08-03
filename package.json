@@ -63,7 +63,7 @@
 	"dependencies": {
 		"@fontsource-variable/geist-mono": "^5.2.7",
 		"@fontsource-variable/jetbrains-mono": "^5.2.8",
-		"@imagemagick/magick-wasm": "^0.0.41",
+		"@imagemagick/magick-wasm": "^0.0.42",
 		"lucide-svelte": "^1.0.1"
 	}
 }

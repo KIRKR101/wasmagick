@@ -499,6 +499,21 @@ genAllSources(
 console.log();
 console.log('=== Updating manifest.json ===');
 const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf-8').replace(/^\uFEFF/, ''));
+const imVersion = execSync(`"${MAGICK}" -version`, { encoding: 'utf-8' }).match(
+	/ImageMagick (\d+\.\d+\.\d+-\d+)/
+)?.[1];
+if (!imVersion) throw new Error('Could not determine ImageMagick version from magick -version');
+const packageJson = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf-8'));
+manifest.tool = {
+	path: 'tooling/imagemagick (auto-downloaded)',
+	version: `ImageMagick ${imVersion}`,
+	source: `https://github.com/ImageMagick/ImageMagick/releases/tag/${imVersion}`
+};
+manifest['magick-wasm'] = {
+	package: '@imagemagick/magick-wasm',
+	version: packageJson.dependencies['@imagemagick/magick-wasm'].replace(/^\^/, ''),
+	bundledImageMagick: imVersion
+};
 manifest.fixtures = allFixtures;
 manifest.generated = new Date().toISOString().slice(0, 10);
 fs.writeFileSync(MANIFEST_PATH, JSON.stringify(manifest, null, 4) + '\n');
