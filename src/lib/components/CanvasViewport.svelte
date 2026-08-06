@@ -3,7 +3,6 @@
 		AlertTriangle,
 		Columns2,
 		Images,
-		Loader2,
 		Maximize,
 		ZoomIn,
 		ZoomOut
@@ -21,7 +20,6 @@
 		isLoading = false,
 		wasmLoaded = true,
 		magickSettings = null,
-		currentProcessingStep = null,
 		cropActive = false,
 		cropAspectRatio = 'free',
 		initialCrop = null,
@@ -90,7 +88,7 @@
 
 	// Warn exactly while the original (which the browser cannot render) is the
 	// image on screen — before processing, and in compare/split views.
-	let showPreviewWarning = $derived(
+	let imageFailed = $derived(
 		!!originalPreviewFailed && displayedImage === originalImageUrl && !!originalImageUrl
 	);
 
@@ -406,6 +404,13 @@
 				alt=""
 				aria-hidden="true"
 			/>
+		{:else if imageFailed}
+		    <div
+				class="checkerboard p-36 lg:p-64 flex items-center justify-center font-medium text-xl text-foreground"
+				style={imageStyle}
+			>
+				PLACEHOLDER
+			</div>
 		{:else}
 			<img
 				bind:this={previewImageRef}
@@ -453,13 +458,13 @@
 			{/if}
 		{/if}
 
-		{#if showPreviewWarning}
+		{#if imageFailed}
 			<div
 				class="pointer-events-none absolute top-3 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1.5 border border-amber-600/40 bg-amber-50/90 px-2 py-1 font-mono text-[11px] text-amber-700 backdrop-blur-sm dark:bg-amber-950/80 dark:text-amber-400"
 				role="status"
 			>
 				<AlertTriangle class="size-3 shrink-0" />
-				<span>Original not renderable in this browser — it will appear after processing</span>
+				<span class="pl-2">Original not renderable in this browser - it will appear after processing</span>
 			</div>
 		{/if}
 
@@ -475,35 +480,31 @@
 				onpointerleave={(e) => e.stopPropagation()}
 				class="pointer-events-auto absolute bottom-3 left-1/2 z-20 hidden -translate-x-1/2 animate-in items-center gap-0 border border-foreground/30 bg-[#f7f7f4]/85 px-1 font-mono text-[11px] backdrop-blur-sm duration-200 fade-in slide-in-from-bottom-2 md:flex dark:bg-background/85"
 			>
-				{#if isLoading}
-					<Loader2 class="mx-1 size-3.5 animate-spin text-muted-foreground" />
-					<span class="mx-1 text-muted-foreground">{currentProcessingStep ?? 'Processing...'}</span>
-					<div class="mx-0.5 h-4 w-px bg-border"></div>
-				{/if}
 				<button
 					onclick={zoomOut}
-					class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+					class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground cursor-pointer focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 					aria-label="Zoom out (Ctrl+-)"
 				>
 					<ZoomOut class="size-3.5" />
 				</button>
 				<button
 					onclick={zoomToOneToOne}
-					class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+					class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground cursor-pointer focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 					aria-label="Reset zoom to 100%"
 				>
 					<span class="tabular-nums">{Math.round(currentZoom)}%</span>
 				</button>
 				<button
 					onclick={zoomIn}
-					class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+					class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground cursor-pointer focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 					aria-label="Zoom in (Ctrl+=)"
 				>
 					<ZoomIn class="size-3.5" />
 				</button>
 				<button
 					onclick={resetView}
-					class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+					disabled={imageFailed}
+					class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground cursor-pointer focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-40 disabled:cursor-not-allowed"
 					aria-label="Fit to screen (Ctrl+0)"
 				>
 					<Maximize class="size-3.5" />
@@ -523,7 +524,7 @@
 						endCompare();
 					}}
 					disabled={!processedImageUrl}
-					class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-40 {isComparing
+					class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground cursor-pointer focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-40 disabled:cursor-not-allowed {isComparing
 						? 'bg-muted text-foreground'
 						: ''}"
 					aria-label="Hold to compare (Space)"
@@ -533,7 +534,7 @@
 				<button
 					onclick={toggleSplitCompare}
 					disabled={!canSplit}
-					class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-40 {splitMode
+					class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground cursor-pointer focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-40 disabled:cursor-not-allowed {splitMode
 						? 'bg-muted text-foreground'
 						: ''}"
 					aria-label="Split compare (B)"
