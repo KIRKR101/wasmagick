@@ -8,8 +8,7 @@ const STATIC_DIR = join(REPO_ROOT, 'static');
  * The wasm engines that run in the browser are fetched from `/` (see
  * `initWasm` and the `exif.ts` fetch remap), so `static/` must hold copies of
  * the engine binaries from node_modules. Copying them at build/dev time keeps
- * the copies in lockstep with the installed dependency versions instead of
- * relying on manually checked-in binaries.
+ * the copies in lockstep with the installed dependency versions
  */
 const SOURCES = [
 	{
@@ -32,5 +31,6 @@ for (const { from, to } of SOURCES) {
 		process.exit(1);
 	}
 	copyFileSync(from, to);
-	console.log(`Copied ${to} (${from})`);
 }
+
+console.log(`Copied ${SOURCES.length} WASM engine binaries to ${STATIC_DIR}`);
