@@ -26,7 +26,9 @@
 				<span>{magick.currentProcessingStep || 'Processing…'}</span>
 			</span>
 		{:else if magick.processedImageUrl}
-			<span class="text-foreground/80 tabular-nums">Processed in {magick.processedImageTime} ms</span>
+			<span class="text-foreground/80 tabular-nums"
+				>Processed in {magick.processedImageTime} ms</span
+			>
 		{:else if !magick.originalImageUrl}
 			<span class="text-muted-foreground/50">No image</span>
 		{/if}

@@ -1,12 +1,5 @@
 <script lang="ts">
-	import {
-		AlertTriangle,
-		Columns2,
-		Images,
-		Maximize,
-		ZoomIn,
-		ZoomOut
-	} from 'lucide-svelte';
+	import { AlertTriangle, Columns2, Images, Maximize, ZoomIn, ZoomOut } from 'lucide-svelte';
 	import FileDropzone from './FileDropzone.svelte';
 	import SplitCompare from './SplitCompare.svelte';
 	import CropOverlay from './CropOverlay.svelte';
@@ -405,8 +398,8 @@
 				aria-hidden="true"
 			/>
 		{:else if imageFailed}
-		    <div
-				class="checkerboard p-36 lg:p-64 flex items-center justify-center font-medium text-xl text-foreground"
+			<div
+				class="checkerboard flex items-center justify-center p-36 text-xl font-medium text-foreground lg:p-64"
 				style={imageStyle}
 			>
 				PLACEHOLDER
@@ -464,7 +457,9 @@
 				role="status"
 			>
 				<AlertTriangle class="size-3 shrink-0" />
-				<span class="pl-2">Original not renderable in this browser - it will appear after processing</span>
+				<span class="pl-2"
+					>Original not renderable in this browser - it will appear after processing</span
+				>
 			</div>
 		{/if}
 
@@ -482,21 +477,21 @@
 			>
 				<button
 					onclick={zoomOut}
-					class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground cursor-pointer focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+					class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 					aria-label="Zoom out (Ctrl+-)"
 				>
 					<ZoomOut class="size-3.5" />
 				</button>
 				<button
 					onclick={zoomToOneToOne}
-					class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground cursor-pointer focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+					class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 					aria-label="Reset zoom to 100%"
 				>
 					<span class="tabular-nums">{Math.round(currentZoom)}%</span>
 				</button>
 				<button
 					onclick={zoomIn}
-					class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground cursor-pointer focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+					class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 					aria-label="Zoom in (Ctrl+=)"
 				>
 					<ZoomIn class="size-3.5" />
@@ -504,7 +499,7 @@
 				<button
 					onclick={resetView}
 					disabled={imageFailed}
-					class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground cursor-pointer focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-40 disabled:cursor-not-allowed"
+					class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40"
 					aria-label="Fit to screen (Ctrl+0)"
 				>
 					<Maximize class="size-3.5" />
@@ -524,7 +519,7 @@
 						endCompare();
 					}}
 					disabled={!processedImageUrl}
-					class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground cursor-pointer focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-40 disabled:cursor-not-allowed {isComparing
+					class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 {isComparing
 						? 'bg-muted text-foreground'
 						: ''}"
 					aria-label="Hold to compare (Space)"
@@ -534,7 +529,7 @@
 				<button
 					onclick={toggleSplitCompare}
 					disabled={!canSplit}
-					class="flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground cursor-pointer focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-40 disabled:cursor-not-allowed {splitMode
+					class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 {splitMode
 						? 'bg-muted text-foreground'
 						: ''}"
 					aria-label="Split compare (B)"

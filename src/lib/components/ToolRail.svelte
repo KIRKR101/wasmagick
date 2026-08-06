@@ -345,107 +345,108 @@
 					>
 						{magick.originalName}
 					</div>
-				<div class="flex justify-between gap-2">
-					<span class="shrink-0 text-[10px] text-muted-foreground/60">DIMS</span>
-					<span class="truncate text-foreground/80">
-						{#if magick.processedImageUrl && (magick.processedWidth || magick.processedHeight)}
-							{magick.originalWidth}×{magick.originalHeight}
-							<span class="text-muted-foreground/60">→</span>
-							{magick.processedWidth}×{magick.processedHeight}
-						{:else}
-							{magick.originalWidth}×{magick.originalHeight}
-						{/if}
-					</span>
-				</div>
-				<div class="flex justify-between gap-2">
-					<span class="shrink-0 text-[10px] text-muted-foreground/60">FORMAT</span>
-					<span class="truncate text-foreground/80">
-						{#if magick.processedImageFormat}
-							{magick.originalImageFormat}
-							<span class="text-muted-foreground/60">→</span>
-							{magick.processedImageFormat}
-						{:else}
-							{magick.originalImageFormat}
-						{/if}
-					</span>
-				</div>
-				<div class="flex justify-between gap-2">
-					<span class="shrink-0 text-[10px] text-muted-foreground/60">SIZE</span>
-					<span class="truncate text-foreground/80">
-						{#if delta}
-							<span
-								class={delta.pct != null && delta.pct < 0
-									? 'text-emerald-600 dark:text-emerald-400'
-									: 'text-foreground/80'}
-							>
-								{delta.kb} KB
-							</span>
-							{#if delta.pct != null}
-								<span
-									class={delta.pct < 0
-										? 'text-emerald-600 dark:text-emerald-400'
-										: delta.pct > 0
-											? 'text-amber-600 dark:text-amber-400'
-											: 'text-muted-foreground'}
-								>
-									({delta.pct > 0 ? '+' : ''}{delta.pct}%)
-								</span>
+					<div class="flex justify-between gap-2">
+						<span class="shrink-0 text-[10px] text-muted-foreground/60">DIMS</span>
+						<span class="truncate text-foreground/80">
+							{#if magick.processedImageUrl && (magick.processedWidth || magick.processedHeight)}
+								{magick.originalWidth}×{magick.originalHeight}
+								<span class="text-muted-foreground/60">→</span>
+								{magick.processedWidth}×{magick.processedHeight}
+							{:else}
+								{magick.originalWidth}×{magick.originalHeight}
 							{/if}
-						{:else}
-							{formatBytes(magick.originalImageSize)}
-						{/if}
-					</span>
+						</span>
+					</div>
+					<div class="flex justify-between gap-2">
+						<span class="shrink-0 text-[10px] text-muted-foreground/60">FORMAT</span>
+						<span class="truncate text-foreground/80">
+							{#if magick.processedImageFormat}
+								{magick.originalImageFormat}
+								<span class="text-muted-foreground/60">→</span>
+								{magick.processedImageFormat}
+							{:else}
+								{magick.originalImageFormat}
+							{/if}
+						</span>
+					</div>
+					<div class="flex justify-between gap-2">
+						<span class="shrink-0 text-[10px] text-muted-foreground/60">SIZE</span>
+						<span class="truncate text-foreground/80">
+							{#if delta}
+								<span
+									class={delta.pct != null && delta.pct < 0
+										? 'text-emerald-600 dark:text-emerald-400'
+										: 'text-foreground/80'}
+								>
+									{delta.kb} KB
+								</span>
+								{#if delta.pct != null}
+									<span
+										class={delta.pct < 0
+											? 'text-emerald-600 dark:text-emerald-400'
+											: delta.pct > 0
+												? 'text-amber-600 dark:text-amber-400'
+												: 'text-muted-foreground'}
+									>
+										({delta.pct > 0 ? '+' : ''}{delta.pct}%)
+									</span>
+								{/if}
+							{:else}
+								{formatBytes(magick.originalImageSize)}
+							{/if}
+						</span>
+					</div>
 				</div>
 			</div>
-		</div>
-	{/if}
+		{/if}
 
-	<div class="mb-3 text-muted-foreground">/NAV</div>
-	<div class="flex flex-col gap-1.5">
-		<div class="mb-2 flex border border-foreground/30">
+		<div class="mb-3 text-muted-foreground">/NAV</div>
+		<div class="flex flex-col gap-1.5">
+			<div class="mb-2 flex border border-foreground/30">
+				<button
+					onclick={onUndo}
+					disabled={!history.canUndo}
+					class="group flex-1 cursor-pointer px-2 py-1 text-center font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+				>
+					[&lt;] <span class="group-hover:underline">UNDO</span>
+				</button>
+				<div class="w-px self-stretch bg-foreground/30"></div>
+				<button
+					onclick={onRedo}
+					disabled={!history.canRedo}
+					class="group flex-1 cursor-pointer px-2 py-1 text-center font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+				>
+					<span class="group-hover:underline">REDO</span> [&gt;]
+				</button>
+			</div>
+
 			<button
-				onclick={onUndo}
-				disabled={!history.canUndo}
-				class="group flex-1 cursor-pointer px-2 py-1 text-center font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+				onclick={onToggleDebug}
+				class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {debugMode
+					? 'text-foreground'
+					: ''}"
 			>
-				[&lt;] <span class="group-hover:underline">UNDO</span>
+				<span class="truncate"
+					><span>[{debugMode ? '⚠' : 'B'}]</span> <span class="hover:underline">DEBUG</span></span
+				>
 			</button>
-			<div class="w-px self-stretch bg-foreground/30"></div>
+
 			<button
-				onclick={onRedo}
-				disabled={!history.canRedo}
-				class="group flex-1 cursor-pointer px-2 py-1 text-center font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+				onclick={onToggleTheme}
+				class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 			>
-				<span class="group-hover:underline">REDO</span> [&gt;]
+				<span class="truncate"
+					><span>[{isDarkMode ? '~' : 'O'}]</span> <span class="hover:underline">THEME</span></span
+				>
 			</button>
-		</div>
 
-		<button
-			onclick={onToggleDebug}
-			class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {debugMode
-				? 'text-foreground'
-				: ''}"
-		>
-			<span class="truncate"
-				><span>[{debugMode ? '⚠' : 'B'}]</span> <span class="hover:underline">DEBUG</span></span
+			<button
+				onclick={onToggleShortcuts}
+				class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 			>
-		</button>
-
-		<button
-			onclick={onToggleTheme}
-			class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-		>
-			<span class="truncate"
-				><span>[{isDarkMode ? '~' : 'O'}]</span> <span class="hover:underline">THEME</span></span
-			>
-		</button>
-
-		<button
-			onclick={onToggleShortcuts}
-			class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-		>
-			<span class="truncate"><span>[?]</span> <span class="hover:underline">SHORTCUTS</span></span>
-		</button>
+				<span class="truncate"><span>[?]</span> <span class="hover:underline">SHORTCUTS</span></span
+				>
+			</button>
 		</div>
 	</div>
 </aside>

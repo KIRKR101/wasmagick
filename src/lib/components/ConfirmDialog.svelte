@@ -71,16 +71,14 @@
 				{:else if kind === 'reset-all'}
 					This will reset all settings to their defaults. Processed result and history will be
 					preserved.
+				{:else if hasUnsavedEdits}
+					You have unsaved edits to the current image
+					{#if fileName}<span class="font-medium text-foreground">({fileName})</span>{/if}.
+					Replacing it will discard the processed result and history.
 				{:else}
-					{#if hasUnsavedEdits}
-						You have unsaved edits to the current image
-						{#if fileName}<span class="font-medium text-foreground">({fileName})</span>{/if}.
-						Replacing it will discard the processed result and history.
-					{:else}
-						Are you sure you want to replace the current image
-						{#if fileName}<span class="font-medium text-foreground">({fileName})</span>{/if}? The
-						processed result and history will be discarded.
-					{/if}
+					Are you sure you want to replace the current image
+					{#if fileName}<span class="font-medium text-foreground">({fileName})</span>{/if}? The
+					processed result and history will be discarded.
 				{/if}
 			</div>
 
