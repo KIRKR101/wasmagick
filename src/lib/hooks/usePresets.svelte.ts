@@ -29,11 +29,10 @@ export interface UserPreset {
 const STORAGE_KEY = 'wasmagick.presets.v1';
 
 function clonePatch(patch: Partial<MagickSettings>): Partial<MagickSettings> {
-	const out: Record<string, unknown> = {};
-	for (const [k, v] of Object.entries(patch)) {
-		out[k] = Array.isArray(v) ? [...(v as unknown[])] : v;
-	}
-	return out as Partial<MagickSettings>;
+	// Deep clone: patches contain arrays and per-channel records (e.g.
+	// levelGamma) that must not be shared by reference with live settings,
+	// otherwise user edits would mutate the preset definition itself.
+	return JSON.parse(JSON.stringify(patch)) as Partial<MagickSettings>;
 }
 
 function snapSettings(settings: MagickSettings): MagickSettings {
@@ -99,6 +98,61 @@ export const BUILTIN_PRESETS: BuiltInPreset[] = [
 		name: 'HQ PNG',
 		description: 'PNG · lossless · keep metadata',
 		patch: { imageFormat: 'PNG', stripMeta: false }
+	},
+	{
+		id: 'poster-print',
+		name: 'Poster Print',
+		description: 'Posterize · 16-color dither · punchy',
+		patch: {
+			sigmoidalContrast: [10],
+			brightness: [80],
+			saturation: [160],
+			autoLevel: true,
+			sharpen: [2],
+			quantizeColors: [16],
+			ditherMethod: 'FloydSteinberg',
+			quantizeColorSpace: 'Oklab',
+			quantizeTreeDepth: [4],
+			imageFormat: 'PNG',
+			quality: [100]
+		}
+	},
+	{
+		id: 'instant-polaroid',
+		name: 'Instant Polaroid',
+		description: 'Vintage CLUT · warm level colors · white border · grain',
+		patch: {
+			clutMap: 'vintage',
+			levelColorsBlack: '#40260d',
+			levelColorsWhite: '#ffe9c9',
+			levelGamma: { All: [1.12], Red: [1.12], Green: [1.12], Blue: [1.12] },
+			borderSize: [14],
+			borderColor: '#faf3e7',
+			addNoiseType: 'Gaussian',
+			addNoiseAttenuate: [0.8],
+			adaptiveSharpenRadius: [1],
+			adaptiveSharpenSigma: [0.7],
+			contrast: [10],
+			saturation: [85],
+			imageFormat: 'JPEG',
+			quality: [92],
+			stripMeta: true
+		}
+	},
+	{
+		id: 'film-noir',
+		name: 'Film Noir',
+		description: 'Grayscale · crushed blacks · moody contrast',
+		patch: {
+			colorSpace: 'Gray',
+			blackThreshold: [8],
+			whiteThreshold: [95],
+			contrast: [20],
+			sharpen: [1.5],
+			imageFormat: 'JPEG',
+			quality: [92],
+			stripMeta: true
+		}
 	}
 ];
 
