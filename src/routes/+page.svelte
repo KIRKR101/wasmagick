@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { stashPendingFile } from '$lib/pending-drop';
+	import { applyTheme, resolveInitialTheme } from '$lib/theme';
 
 	let isDarkMode = $state(false);
 
@@ -15,16 +16,7 @@
 	}
 
 	onMount(() => {
-		if (
-			localStorage.getItem('theme') === 'dark' ||
-			(!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
-		) {
-			document.documentElement.classList.add('dark');
-			isDarkMode = true;
-		} else {
-			document.documentElement.classList.remove('dark');
-			isDarkMode = false;
-		}
+		isDarkMode = resolveInitialTheme();
 	});
 </script>
 
@@ -79,13 +71,7 @@
 			<button
 				onclick={() => {
 					isDarkMode = !isDarkMode;
-					if (isDarkMode) {
-						document.documentElement.classList.add('dark');
-						localStorage.setItem('theme', 'dark');
-					} else {
-						document.documentElement.classList.remove('dark');
-						localStorage.setItem('theme', 'light');
-					}
+					applyTheme(isDarkMode);
 				}}
 				class="group cursor-pointer border border-foreground/30 px-2 py-1 text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 			>

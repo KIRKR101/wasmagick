@@ -145,6 +145,12 @@
 	animation: opacity-pulse 1.5s ease-in-out infinite;
 }
 
+.theme-transition-off *,
+.theme-transition-off *::before,
+.theme-transition-off *::after {
+	transition: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
 	*,
 	*::before,

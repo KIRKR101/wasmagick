@@ -10,6 +10,7 @@
 	import { MOBILE_BREAKPOINT } from '$lib/constants.js';
 	import { getClutPresets, getInterpolationOptions } from '$lib/luts';
 	import { takePendingFile } from '$lib/pending-drop';
+	import { applyTheme, resolveInitialTheme } from '$lib/theme';
 	import type { EditorSection } from '$lib/editor-types';
 
 	const magick = useMagick();
@@ -136,13 +137,7 @@
 
 	function toggleDarkMode() {
 		isDarkMode = !isDarkMode;
-		if (isDarkMode) {
-			document.documentElement.classList.add('dark');
-			localStorage.setItem('theme', 'dark');
-		} else {
-			document.documentElement.classList.remove('dark');
-			localStorage.setItem('theme', 'light');
-		}
+		applyTheme(isDarkMode);
 	}
 
 	function processCurrent() {
@@ -267,16 +262,7 @@
 	}
 
 	onMount(async () => {
-		if (
-			localStorage.getItem('theme') === 'dark' ||
-			(!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
-		) {
-			document.documentElement.classList.add('dark');
-			isDarkMode = true;
-		} else {
-			document.documentElement.classList.remove('dark');
-			isDarkMode = false;
-		}
+		isDarkMode = resolveInitialTheme();
 
 		presets.load();
 		guard.install(magick, history);
