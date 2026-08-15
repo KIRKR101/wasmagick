@@ -9,6 +9,7 @@
 	import { useReplaceGuard, installClipboardPaste } from '$lib/hooks/useReplaceGuard.svelte';
 	import { MOBILE_BREAKPOINT } from '$lib/constants.js';
 	import { getClutPresets, getInterpolationOptions } from '$lib/luts';
+	import { takePendingFile } from '$lib/pending-drop';
 	import type { EditorSection } from '$lib/editor-types';
 
 	const magick = useMagick();
@@ -282,6 +283,12 @@
 		installClipboardPaste(guard, replaceImage);
 
 		magick.initWorker();
+
+		const pendingFile = takePendingFile();
+		if (pendingFile) {
+			await replaceImage(pendingFile);
+		}
+
 		await magick.initWasm(debugMode);
 
 		if ('serviceWorker' in navigator) {

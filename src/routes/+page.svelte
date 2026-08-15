@@ -1,7 +1,18 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
+	import { stashPendingFile } from '$lib/pending-drop';
 
 	let isDarkMode = $state(false);
+
+	function handleDrop(e: DragEvent) {
+		e.preventDefault();
+		const files = e.dataTransfer?.files;
+		if (files && files.length > 0) {
+			stashPendingFile(files[0]);
+			void goto('/editor');
+		}
+	}
 
 	onMount(() => {
 		if (
@@ -16,6 +27,13 @@
 		}
 	});
 </script>
+
+<svelte:window
+	ondragover={(e) => {
+		e.preventDefault();
+	}}
+	ondrop={handleDrop}
+/>
 
 <div
 	class="flex min-h-screen flex-col items-center justify-center bg-[#f7f7f4] px-4 font-mono dark:bg-background"
