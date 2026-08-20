@@ -16,7 +16,6 @@ const DEV_URL = 'http://localhost:5173';
 const APP_HOST = 'wasmagick';
 const APP_ID = 'com.wasmagick.app';
 const GITHUB_URL = 'https://github.com/KIRKR101/wasmagick';
-const CUSTOM_TITLEBAR = process.platform === 'win32' || process.platform === 'linux';
 const TITLEBAR_HEIGHT = 40;
 const TITLEBAR_COLORS = {
 	light: { color: '#f7f7f4', symbolColor: '#18181b' },
@@ -250,9 +249,7 @@ function registerIpc() {
 }
 
 function applyTitleBarTheme() {
-	if (!CUSTOM_TITLEBAR || !mainWindow || typeof mainWindow.setTitleBarOverlay !== 'function') {
-		return;
-	}
+	if (process.platform !== 'win32' || !mainWindow) return;
 	const colors = isDarkTheme ? TITLEBAR_COLORS.dark : TITLEBAR_COLORS.light;
 	mainWindow.setTitleBarOverlay({ ...colors, height: TITLEBAR_HEIGHT });
 }
