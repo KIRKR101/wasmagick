@@ -1,4 +1,13 @@
-const { app, BrowserWindow, Menu, dialog, ipcMain, protocol, shell } = require('electron');
+const {
+	app,
+	BrowserWindow,
+	Menu,
+	dialog,
+	ipcMain,
+	nativeImage,
+	protocol,
+	shell
+} = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -15,6 +24,14 @@ const TITLEBAR_COLORS = {
 };
 
 const BUILD_DIR = path.join(__dirname, '..', 'build');
+
+function resolveIconPath() {
+	const candidates = [
+		path.join(__dirname, '..', 'static', 'icons', 'icon-512.png'),
+		path.join(BUILD_DIR, 'icons', 'icon-512.png')
+	];
+	return candidates.find((p) => fs.existsSync(p)) ?? null;
+}
 
 const IMAGE_EXTENSIONS = [
 	'png',
@@ -352,7 +369,7 @@ function buildMenu(win) {
 }
 
 function createWindow() {
-	const iconPath = path.join(BUILD_DIR, 'icons', 'icon-512.png');
+	const iconPath = resolveIconPath();
 
 	mainWindow = new BrowserWindow({
 		width: 1440,
@@ -360,13 +377,15 @@ function createWindow() {
 		minWidth: 900,
 		minHeight: 600,
 		show: false,
-		...(fs.existsSync(iconPath) ? { icon: iconPath } : {}),
-		...(CUSTOM_TITLEBAR
+		...(iconPath ? { icon: iconPath } : {}),
+		...(process.platform === 'win32'
 			? {
 					titleBarStyle: 'hidden',
 					titleBarOverlay: { ...TITLEBAR_COLORS.light, height: TITLEBAR_HEIGHT }
 				}
-			: {}),
+			: process.platform === 'linux'
+				? { frame: false }
+				: {}),
 		webPreferences: {
 			preload: path.join(__dirname, 'preload.cjs'),
 			contextIsolation: true,
@@ -376,6 +395,10 @@ function createWindow() {
 	});
 
 	mainWindow.once('ready-to-show', () => mainWindow.show());
+
+	if (process.platform === 'darwin' && iconPath) {
+		app.dock?.setIcon(nativeImage.createFromPath(iconPath));
+	}
 
 	const sendMaximizeState = () => {
 		if (!mainWindow || mainWindow.webContents.isDestroyed()) return;

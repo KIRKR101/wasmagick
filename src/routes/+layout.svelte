@@ -1,9 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import FaWindowClose from 'svelte-icons/fa/FaWindowClose.svelte';
-	import FaWindowMaximize from 'svelte-icons/fa/FaWindowMaximize.svelte';
-	import FaWindowMinimize from 'svelte-icons/fa/FaWindowMinimize.svelte';
-	import FaWindowRestore from 'svelte-icons/fa/FaWindowRestore.svelte';
+	import { Copy, Minus, Square, X } from 'lucide-svelte';
 	import { pwaInstall } from '$lib/stores/pwa.svelte';
 	import { hasCustomTitleBar } from '$lib/theme';
 	import './layout.css';
@@ -36,20 +33,32 @@
 		<span aria-hidden="true">WASMAGICK</span>
 		{#if isLinux}
 			<div class="titlebar-controls">
-				<button type="button" aria-label="Minimize window" onclick={controls.minimize}>
-					<span class="titlebar-control-icon"><FaWindowMinimize /></span>
+				<button
+					type="button"
+					title="Minimize"
+					aria-label="Minimize window"
+					onclick={controls.minimize}
+				>
+					<span class="titlebar-control-icon"><Minus size={12} /></span>
 				</button>
 				<button
 					type="button"
+					title={isMaximized ? 'Restore' : 'Maximize'}
 					aria-label={isMaximized ? 'Restore window' : 'Maximize window'}
 					onclick={controls.toggleMaximize}
 				>
 					<span class="titlebar-control-icon"
-						>{#if isMaximized}<FaWindowRestore />{:else}<FaWindowMaximize />{/if}</span
+						>{#if isMaximized}<Copy size={12} />{:else}<Square size={12} />{/if}</span
 					>
 				</button>
-				<button type="button" class="close" aria-label="Close window" onclick={controls.close}>
-					<span class="titlebar-control-icon"><FaWindowClose /></span>
+				<button
+					type="button"
+					class="close"
+					title="Close"
+					aria-label="Close window"
+					onclick={controls.close}
+				>
+					<span class="titlebar-control-icon"><X size={12} /></span>
 				</button>
 			</div>
 		{/if}
