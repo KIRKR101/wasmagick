@@ -25,11 +25,15 @@ const TITLEBAR_COLORS = {
 const BUILD_DIR = path.join(__dirname, '..', 'build');
 
 function resolveIconPath() {
-	const isMac = process.platform === 'darwin';
-	const dirs = [path.join(__dirname, '..', 'static', 'icons'), path.join(BUILD_DIR, 'icons')];
+	const dirs = [
+		path.join(process.resourcesPath, 'icons'),
+		path.join(process.resourcesPath, 'app.asar.unpacked', 'build', 'icons'),
+		path.join(__dirname, '..', 'static', 'icons'),
+		path.join(BUILD_DIR, 'icons')
+	];
 	for (const dir of dirs) {
-		if (isMac && fs.existsSync(path.join(dir, 'icon-mac-512.png'))) {
-			return path.join(dir, 'icon-mac-512.png');
+		if (process.platform === 'darwin' && fs.existsSync(path.join(dir, 'icon-mac-1024.png'))) {
+			return path.join(dir, 'icon-mac-1024.png');
 		}
 		if (fs.existsSync(path.join(dir, 'icon-512.png'))) {
 			return path.join(dir, 'icon-512.png');
@@ -379,7 +383,7 @@ function createWindow() {
 		height: 900,
 		minWidth: 900,
 		minHeight: 600,
-		show: false,
+		show: true,
 		...(iconPath ? { icon: iconPath } : {}),
 		...(process.platform === 'win32'
 			? {
@@ -396,8 +400,6 @@ function createWindow() {
 			nodeIntegration: false
 		}
 	});
-
-	mainWindow.once('ready-to-show', () => mainWindow.show());
 
 	if (process.platform === 'linux' && iconPath) {
 		mainWindow.setIcon(nativeImage.createFromPath(iconPath));
@@ -467,6 +469,10 @@ const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
 	app.quit();
 } else {
+	// Electron uses the executable name as the application identity when run
+	// from the CLI. Set it explicitly so the macOS dock label is WASMagick in
+	// development as well as in packaged builds.
+	app.setName('WASMagick');
 	app.setAppUserModelId(APP_ID);
 	if (process.platform === 'linux') app.setDesktopName('wasmagick.desktop');
 	app.setAboutPanelOptions({

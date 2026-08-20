@@ -2,6 +2,7 @@
 	"name": "wasmagick",
 	"private": true,
 	"version": "0.0.1",
+	"desktopName": "wasmagick.desktop",
 	"description": "Client-side image editor powered by WebAssembly ImageMagick.",
 	"author": "WASMagick contributors",
 	"type": "module",
@@ -93,6 +94,19 @@
 			"build/**",
 			"electron/**"
 		],
+		"asarUnpack": [
+			"build/icons/**"
+		],
+		"extraResources": [
+			{
+				"from": "static/icons/linux/512x512.png",
+				"to": "icons/icon-512.png"
+			},
+			{
+				"from": "static/icons/icon-mac-1024.png",
+				"to": "icons/icon-mac-1024.png"
+			}
+		],
 		"win": {
 			"target": "nsis",
 			"icon": "static/icons/icon-512.png",
@@ -123,13 +137,23 @@
 		},
 		"mac": {
 			"target": "dmg",
-			"icon": "static/icons/icon-mac-512.png",
-			"category": "public.app-category.photography"
+			"icon": "static/icons/icon-mac-1024.png",
+			"category": "public.app-category.photography",
+			"extendInfo": {
+				"CFBundleDisplayName": "WASMagick",
+				"CFBundleName": "WASMagick"
+			}
 		},
 		"linux": {
-			"target": "AppImage",
-			"icon": "static/icons/icon-512.png",
-			"category": "Graphics"
+			"target": [
+				"AppImage",
+				"deb"
+			],
+			"executableName": "wasmagick",
+			"syncDesktopName": true,
+			"icon": "static/icons/linux",
+			"category": "Graphics",
+			"maintainer": "WASMagick contributors <104659112+KIRKR101@users.noreply.github.com>"
 		}
 	}
 }
