@@ -399,6 +399,10 @@ function createWindow() {
 
 	mainWindow.once('ready-to-show', () => mainWindow.show());
 
+	if (process.platform === 'linux' && iconPath) {
+		mainWindow.setIcon(nativeImage.createFromPath(iconPath));
+	}
+
 	if (process.platform === 'darwin' && iconPath) {
 		app.dock?.setIcon(nativeImage.createFromPath(iconPath));
 	}
@@ -464,6 +468,7 @@ if (!gotLock) {
 	app.quit();
 } else {
 	app.setAppUserModelId(APP_ID);
+	if (process.platform === 'linux') app.setDesktopName('wasmagick.desktop');
 	app.setAboutPanelOptions({
 		applicationName: 'WASMagick',
 		applicationVersion: app.getVersion(),

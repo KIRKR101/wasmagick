@@ -213,13 +213,6 @@
 	background: #18181b;
 }
 
-.titlebar-icon {
-	width: 18px;
-	height: 18px;
-	margin-right: 8px;
-	border-radius: 4px;
-}
-
 /* Window controls (Linux only; Windows uses the native title bar overlay) */
 .titlebar-controls {
 	-webkit-app-region: no-drag;
