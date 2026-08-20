@@ -197,7 +197,7 @@
 		</div>
 
 		<!-- Section content -->
-		<div bind:this={contentRef} class="mobile-sheet-content custom-scrollbar">
+		<div bind:this={contentRef} class="mobile-sheet-content @container">
 			{#if activeSection === 'geometry'}
 				<GeometrySection {magick} />
 			{:else if activeSection === 'color'}

@@ -41,7 +41,7 @@
 	--sidebar-width: 400px;
 
 	/* Editor layout tokens */
-	--topbar-h: 48px;
+	--titlebar-h: 40px;
 	--statusbar-h: 36px;
 	--panel-min: 300px;
 	--panel-max: 460px;
@@ -162,36 +162,107 @@
 	}
 }
 
-/* Custom Scrollbar */
-.custom-scrollbar {
-	scrollbar-width: thin;
-	scrollbar-color: color-mix(in oklch, var(--muted-foreground) 25%, transparent) transparent;
-}
-
-.custom-scrollbar::-webkit-scrollbar {
+/* Custom Scrollbar (app-wide) */
+*::-webkit-scrollbar {
 	width: 6px;
 	height: 6px;
 }
 
-.custom-scrollbar::-webkit-scrollbar-track {
+*::-webkit-scrollbar-track {
 	background: transparent;
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb {
+*::-webkit-scrollbar-thumb {
 	background: color-mix(in oklch, var(--muted-foreground) 30%, transparent);
 	border-radius: 99px;
 }
 
-.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+.dark *::-webkit-scrollbar-thumb {
 	background: color-mix(in oklch, var(--muted-foreground) 25%, transparent);
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+*::-webkit-scrollbar-thumb:hover {
 	background: color-mix(in oklch, var(--muted-foreground) 45%, transparent);
 }
 
-.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+.dark *::-webkit-scrollbar-thumb:hover {
 	background: color-mix(in oklch, var(--muted-foreground) 40%, transparent);
+}
+
+/* Desktop title bar (Electron, custom window chrome) */
+.titlebar {
+	-webkit-app-region: drag;
+	position: sticky;
+	top: 0;
+	z-index: 40;
+	display: flex;
+	height: var(--titlebar-h);
+	align-items: center;
+	padding: 0 12px;
+	background: #f7f7f4;
+	color: var(--muted-foreground);
+	font-family: var(--font-mono);
+	font-size: 11px;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	user-select: none;
+	-webkit-user-select: none;
+}
+
+.dark .titlebar {
+	background: #18181b;
+}
+
+/* Window controls (Linux only; Windows uses the native title bar overlay) */
+.titlebar-controls {
+	-webkit-app-region: no-drag;
+	display: flex;
+	align-items: stretch;
+	height: 100%;
+	margin-left: auto;
+}
+
+.titlebar-controls button {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 46px;
+	height: 100%;
+	padding: 0;
+	border: none;
+	background: transparent;
+	color: var(--muted-foreground);
+	cursor: default;
+}
+
+.titlebar-controls button:hover {
+	background: color-mix(in oklch, var(--foreground) 10%, transparent);
+	color: var(--foreground);
+}
+
+.titlebar-controls button.close:hover {
+	background: var(--destructive);
+	color: var(--destructive-foreground);
+}
+
+.titlebar-control-icon {
+	display: flex;
+	width: 12px;
+	height: 12px;
+}
+
+/* App frame: pages fill exactly the window minus the title bar */
+.app-frame {
+	height: 100dvh;
+}
+
+.app-frame.has-titlebar {
+	height: calc(100dvh - var(--titlebar-h));
+	border-top: 1px solid color-mix(in oklch, var(--foreground) 30%, transparent);
+}
+
+.dark .app-frame.has-titlebar {
+	border-top-color: var(--border);
 }
 
 /* Image Checkerboard Pattern */
@@ -301,7 +372,7 @@ input[type='number'] {
 .mobile-layout {
 	display: flex;
 	flex-direction: column;
-	height: 100dvh;
+	height: 100%;
 	width: 100%;
 	overflow: hidden;
 	position: relative;

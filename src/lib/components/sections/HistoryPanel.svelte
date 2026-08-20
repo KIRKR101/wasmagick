@@ -67,7 +67,7 @@
 		</div>
 	{/if}
 
-	<div class="custom-scrollbar flex-1 overflow-y-auto pt-2">
+	<div class="flex-1 overflow-y-auto pt-2">
 		{#if history.entries.length === 0}
 			<div class="flex flex-col items-center justify-center gap-2 py-10 text-center">
 				<p class="text-xs text-muted-foreground">No history yet</p>

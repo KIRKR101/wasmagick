@@ -1,14 +1,18 @@
 <script lang="ts">
 	let { open = $bindable(false) } = $props<{ open?: boolean }>();
 
+	const isDesktop = typeof window !== 'undefined' && window.wasmagick != null;
+
 	const shortcuts = [
 		{
 			category: 'General',
 			items: [
+				...(isDesktop ? [{ keys: ['Ctrl', 'O'], description: 'Open Image' }] : []),
 				{ keys: ['Ctrl', 'Enter'], description: 'Process Image' },
-				{ keys: ['Ctrl', 'S'], description: 'Download Result' },
+				{ keys: ['Ctrl', 'S'], description: 'Save Result' },
 				{ keys: ['Ctrl', 'Z'], description: 'Undo' },
 				{ keys: ['Ctrl', 'Shift', 'Z'], description: 'Redo' },
+				...(isDesktop ? [{ keys: ['Ctrl', 'W'], description: 'Close Image' }] : []),
 				{ keys: ['V'], description: 'Open File Picker' },
 				{ keys: ['Ctrl', 'Shift', '?'], description: 'Show Shortcuts' }
 			]
@@ -106,7 +110,7 @@
 				</h2>
 			</div>
 
-			<div class="custom-scrollbar max-h-[60vh] space-y-6 overflow-y-auto pr-4">
+			<div class="max-h-[60vh] space-y-6 overflow-y-auto pr-4">
 				{#each shortcuts as section}
 					<div class="space-y-3">
 						<h3

@@ -1645,16 +1645,30 @@ export class MagickState {
 		this.processedImageDelta = sizeChangeStr;
 	}
 
-	downloadImage(): void {
-		if (this.processedImageUrl && this.processedImageName) {
-			const a = document.createElement('a');
-			a.href = this.processedImageUrl;
-			a.download = this.processedImageName;
-			document.body.appendChild(a);
-			a.click();
-			document.body.removeChild(a);
-			this.hasUnsavedEdits = false;
+	async downloadImage(): Promise<boolean> {
+		if (!this.processedImageUrl || !this.processedImageName) return false;
+
+		if (window.wasmagick) {
+			try {
+				const response = await fetch(this.processedImageUrl);
+				const data = new Uint8Array(await response.arrayBuffer());
+				const saved = await window.wasmagick.saveFile({ name: this.processedImageName, data });
+				if (saved) this.hasUnsavedEdits = false;
+				return saved;
+			} catch (err) {
+				console.error('Export failed:', err);
+				return false;
+			}
 		}
+
+		const a = document.createElement('a');
+		a.href = this.processedImageUrl;
+		a.download = this.processedImageName;
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		this.hasUnsavedEdits = false;
+		return true;
 	}
 }
 
