@@ -25,11 +25,17 @@ const TITLEBAR_COLORS = {
 const BUILD_DIR = path.join(__dirname, '..', 'build');
 
 function resolveIconPath() {
-	const candidates = [
-		path.join(__dirname, '..', 'static', 'icons', 'icon-512.png'),
-		path.join(BUILD_DIR, 'icons', 'icon-512.png')
-	];
-	return candidates.find((p) => fs.existsSync(p)) ?? null;
+	const isMac = process.platform === 'darwin';
+	const dirs = [path.join(__dirname, '..', 'static', 'icons'), path.join(BUILD_DIR, 'icons')];
+	for (const dir of dirs) {
+		if (isMac && fs.existsSync(path.join(dir, 'icon-mac-512.png'))) {
+			return path.join(dir, 'icon-mac-512.png');
+		}
+		if (fs.existsSync(path.join(dir, 'icon-512.png'))) {
+			return path.join(dir, 'icon-512.png');
+		}
+	}
+	return null;
 }
 
 const IMAGE_EXTENSIONS = [

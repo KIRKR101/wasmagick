@@ -30,6 +30,7 @@
 
 {#if showTitleBar}
 	<div class="titlebar">
+		<img class="titlebar-icon" src="/icons/icon-144.png" alt="" aria-hidden="true" />
 		<span aria-hidden="true">WASMAGICK</span>
 		{#if isLinux}
 			<div class="titlebar-controls">

@@ -123,7 +123,7 @@
 		},
 		"mac": {
 			"target": "dmg",
-			"icon": "static/icons/icon-512.png",
+			"icon": "static/icons/icon-mac-512.png",
 			"category": "public.app-category.photography"
 		},
 		"linux": {
