@@ -2,6 +2,14 @@ A browser-based image editor powered by WebAssembly for fast, client-side image 
 
 WASMagick can be installed as a PWA for offline use on PC or mobile.
 
+## Web app
+
+Install dependencies, then run the web app using:
+
+- `npm install`
+- `npm run dev`
+- or: `npm run build`, `npm run preview`
+
 ## Desktop app (Electron)
 
 WASMagick also ships as a native desktop app:
