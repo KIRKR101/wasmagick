@@ -137,6 +137,7 @@
 		},
 		"mac": {
 			"target": "dmg",
+			"artifactName": "${productName}-${version}-${arch}.${ext}",
 			"icon": "static/icons/icon-mac-1024.png",
 			"category": "public.app-category.photography",
 			"extendInfo": {

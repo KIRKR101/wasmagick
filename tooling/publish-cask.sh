@@ -25,6 +25,7 @@ TAP_REPO="${TAP_REPO:-KIRKR101/homebrew-tap}"
 TOKEN="${HOMEBREW_TAP_TOKEN:-}"
 VERSION="${VERSION:-$(git -C "$REPO_ROOT" describe --tags --abbrev=0 | sed 's/^v//')}"
 VERSION="${VERSION#v}"
+VERSION="${VERSION#v}"
 BASE_URL="https://github.com/${SOURCE_REPO}/releases/download/v#{version}"
 HOMEPAGE="https://github.com/${SOURCE_REPO}"
 
@@ -108,14 +109,15 @@ git clone --depth 1 "https://x-access-token:${TOKEN}@github.com/${TAP_REPO}.git"
 mkdir -p "$TMP/tap/Casks"
 printf '%b\n' "$RUBY" > "$TMP/tap/Casks/wasmagick.rb"
 
-if git -C "$TMP/tap" diff --quiet; then
+git -C "$TMP/tap" add Casks/wasmagick.rb
+
+if git -C "$TMP/tap" diff --cached --quiet; then
   echo "cask is unchanged; skipping push"
   exit 0
 fi
 
 git -C "$TMP/tap" config user.name "wasmagick release bot"
 git -C "$TMP/tap" config user.email "104659112+KIRKR101@users.noreply.github.com"
-git -C "$TMP/tap" add Casks/wasmagick.rb
 git -C "$TMP/tap" commit -m "chore: bump wasmagick to $VERSION"
 git -C "$TMP/tap" push
 
