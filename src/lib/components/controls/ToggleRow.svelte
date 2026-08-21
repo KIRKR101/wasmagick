@@ -28,10 +28,16 @@
 	onclick={() => (checked = !checked)}
 >
 	<span class="flex min-w-0 items-center gap-2">
-		<span class="font-mono text-sm text-foreground">[{checked ? '*' : ' '}]</span>
-		<span class="block font-mono text-xs text-foreground uppercase hover:underline">{label}</span>
+		<span class="shrink-0 font-mono text-sm text-foreground">[{checked ? '*' : ' '}]</span>
+		<span
+			class="block font-mono text-xs whitespace-nowrap text-foreground uppercase hover:underline"
+			>{label}</span
+		>
 		{#if description}
-			<span class="ml-2 block text-[10px] text-muted-foreground uppercase">({description})</span>
+			<span
+				class="ml-2 hidden text-[10px] whitespace-nowrap text-muted-foreground uppercase @min-[20rem]:block"
+				>({description})</span
+			>
 		{/if}
 	</span>
 	{#if chevron}

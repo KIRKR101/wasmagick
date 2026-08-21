@@ -168,10 +168,10 @@
 	}
 
 	/** Download the processed result and mark it saved in history. */
-	function downloadCurrent(): void {
+	async function downloadCurrent(): Promise<void> {
 		if (!magick.processedImageUrl) return;
-		magick.downloadImage();
-		history.markCurrentSaved();
+		const saved = await magick.downloadImage();
+		if (saved) history.markCurrentSaved();
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -205,6 +205,12 @@
 		if (cmdOrCtrl && (e.key === 's' || e.key === 'S')) {
 			e.preventDefault();
 			downloadCurrent();
+		} else if (window.wasmagick && cmdOrCtrl && (e.key === 'o' || e.key === 'O')) {
+			e.preventDefault();
+			window.wasmagick.openImage();
+		} else if (window.wasmagick && cmdOrCtrl && (e.key === 'w' || e.key === 'W')) {
+			e.preventDefault();
+			guard.requestClose(closeCurrent);
 		} else if (cmdOrCtrl && e.key === '0') {
 			e.preventDefault();
 			viewport?.resetView();
@@ -287,6 +293,27 @@
 				}
 			});
 		}
+
+		if (window.wasmagick) {
+			window.wasmagick.onOpenFile(({ name, type, data }) => {
+				guard.requestReplace(new File([data], name, { type }), replaceImage);
+			});
+			window.wasmagick.onMenuExport(() => downloadCurrent());
+			window.wasmagick.onMenuUndo(() => void history.undo(magick));
+			window.wasmagick.onMenuRedo(() => void history.redo(magick));
+			window.wasmagick.onMenuClose(() => guard.requestClose(closeCurrent));
+			await window.wasmagick.markReady();
+		}
+	});
+
+	$effect(() => {
+		if (!window.wasmagick) return;
+		window.wasmagick.updateMenuState({
+			hasImage: magick.originalImageUrl != null,
+			hasUnsavedEdits: magick.hasUnsavedEdits,
+			canUndo: history.canUndo,
+			canRedo: history.canRedo
+		});
 	});
 </script>
 

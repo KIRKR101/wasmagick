@@ -143,7 +143,7 @@
 	class="hidden"
 />
 
-<div class="flex h-screen max-h-screen w-full flex-col overflow-hidden bg-background">
+<div class="flex h-full w-full flex-col overflow-hidden bg-background">
 	<div class="flex min-h-0 flex-1">
 		<ToolRail
 			{magick}
