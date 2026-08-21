@@ -24,6 +24,7 @@ SOURCE_REPO="${SOURCE_REPO:-$(git -C "$REPO_ROOT" remote get-url origin | sed -E
 TAP_REPO="${TAP_REPO:-KIRKR101/homebrew-tap}"
 TOKEN="${HOMEBREW_TAP_TOKEN:-}"
 VERSION="${VERSION:-$(git -C "$REPO_ROOT" describe --tags --abbrev=0 | sed 's/^v//')}"
+VERSION="${VERSION#v}"
 BASE_URL="https://github.com/${SOURCE_REPO}/releases/download/v#{version}"
 HOMEPAGE="https://github.com/${SOURCE_REPO}"
 
