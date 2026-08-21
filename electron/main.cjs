@@ -435,6 +435,7 @@ function createWindow() {
 	});
 	mainWindow.on('closed', () => {
 		mainWindow = null;
+		closeConfirmed = false;
 	});
 
 	mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -446,8 +447,9 @@ function createWindow() {
 
 	mainWindow.webContents.on('will-navigate', (event, url) => {
 		const isAppUrl = url.startsWith('app://') || (isDev && url.startsWith(DEV_URL));
-		if (!isAppUrl) {
-			event.preventDefault();
+		if (isAppUrl) return;
+		event.preventDefault();
+		if (url.startsWith('http://') || url.startsWith('https://')) {
 			shell.openExternal(url);
 		}
 	});
