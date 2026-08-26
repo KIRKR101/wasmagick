@@ -10,9 +10,16 @@ const STATIC_DIR = join(REPO_ROOT, 'static');
  * the engine binaries from node_modules. Copying them at build/dev time keeps
  * the copies in lockstep with the installed dependency versions
  */
+function resolveMagickWasm(): string {
+	const x86 = join(REPO_ROOT, 'node_modules/@imagemagick/magick-wasm/dist/x86/magick.wasm');
+	if (existsSync(x86)) return x86;
+	// fallback for <0.0.43
+	return join(REPO_ROOT, 'node_modules/@imagemagick/magick-wasm/dist/magick.wasm');
+}
+
 const SOURCES = [
 	{
-		from: join(REPO_ROOT, 'node_modules/@imagemagick/magick-wasm/dist/x86/magick.wasm'),
+		from: resolveMagickWasm(),
 		to: join(STATIC_DIR, 'magick.wasm')
 	},
 	{

@@ -32,7 +32,12 @@ let fontLoaded = false;
 
 beforeAll(async () => {
 	if (!wasmInitialized) {
-		const wasmPath = path.resolve('node_modules/@imagemagick/magick-wasm/dist/magick.wasm');
+		// 0.0.43 moved the binary to dist/x86/ and dist/x64/; keep a fallback
+		// for older checkouts so the file still resolves locally.
+		let wasmPath = path.resolve('node_modules/@imagemagick/magick-wasm/dist/x86/magick.wasm');
+		if (!fs.existsSync(wasmPath)) {
+			wasmPath = path.resolve('node_modules/@imagemagick/magick-wasm/dist/magick.wasm');
+		}
 		const wasmBytes = fs.readFileSync(wasmPath);
 		await initializeImageMagick(new Uint8Array(wasmBytes));
 		wasmInitialized = true;
