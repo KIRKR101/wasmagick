@@ -12,7 +12,7 @@ const STATIC_DIR = join(REPO_ROOT, 'static');
  */
 const SOURCES = [
 	{
-		from: join(REPO_ROOT, 'node_modules/@imagemagick/magick-wasm/dist/magick.wasm'),
+		from: join(REPO_ROOT, 'node_modules/@imagemagick/magick-wasm/dist/x86/magick.wasm'),
 		to: join(STATIC_DIR, 'magick.wasm')
 	},
 	{

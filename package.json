@@ -80,7 +80,7 @@
 	"dependencies": {
 		"@fontsource-variable/geist-mono": "^5.2.7",
 		"@fontsource-variable/jetbrains-mono": "^5.2.8",
-		"@imagemagick/magick-wasm": "^0.0.42",
+		"@imagemagick/magick-wasm": "^0.0.43",
 		"@uswriting/exiftool": "^1.0.9",
 		"lucide-svelte": "^1.0.1"
 	},
