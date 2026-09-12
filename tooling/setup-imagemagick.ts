@@ -17,19 +17,37 @@
  * checkouts keep working.
  */
 
-import { existsSync, mkdirSync, rmSync, writeFileSync, copyFileSync, readdirSync } from 'node:fs';
-import { execSync } from 'node:child_process';
-import { join, dirname, basename } from 'node:path';
+import {
+	existsSync,
+	mkdirSync,
+	rmSync,
+	writeFileSync,
+	copyFileSync,
+	readdirSync,
+	cpSync,
+	statSync
+} from 'node:fs';
+import { execSync, spawnSync } from 'node:child_process';
+import { join, dirname, basename, delimiter } from 'node:path';
 import { tmpdir } from 'node:os';
 
 const IM_VERSION = '7.1.2-29';
 const TOOL_DIR = join(import.meta.dirname, 'imagemagick');
+const WEBP_VERSION = '1.6.0';
+const WEBP_DIR = join(import.meta.dirname, 'webp');
 
 const LINUX_APPIMAGE = `ImageMagick-${IM_VERSION}-gcc-x86_64.AppImage`;
 const LINUX_URL = `https://github.com/ImageMagick/ImageMagick/releases/download/${IM_VERSION}/${LINUX_APPIMAGE}`;
 
 const WIN_ARCHIVE = `ImageMagick-${IM_VERSION}-portable-Q16-x64.7z`;
 const WIN_URL = `https://github.com/ImageMagick/ImageMagick/releases/download/${IM_VERSION}/${WIN_ARCHIVE}`;
+
+const WEBP_URLS: Record<Slug, string> = {
+	'linux-x64': `https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-${WEBP_VERSION}-linux-x86-64.tar.gz`,
+	'win-x64': `https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-${WEBP_VERSION}-windows-x64.zip`,
+	'mac-arm64': `https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-${WEBP_VERSION}-mac-arm64.tar.gz`,
+	'mac-x64': `https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-${WEBP_VERSION}-mac-x86-64.tar.gz`
+};
 
 // Official macOS archive tarballs (relocatable, @executable_path-linked).
 const MAC_TARBALL_CANDIDATES: Record<string, string[]> = {
@@ -58,6 +76,138 @@ function slugBin(slug: Slug): string {
 	const root = join(TOOL_DIR, slug);
 	if (slug === 'win-x64') return join(root, 'magick.exe');
 	return join(root, 'bin', 'magick');
+}
+
+/**
+ * Verify the host build has the WebP ImageMagick coder available.
+ *
+ * The desktop app invokes `magick`, not the standalone libwebp tools
+ * (`cwebp`/`dwebp`). ImageMagick needs its WebP coder module and libwebp
+ * libraries in the bundle, so a real 1x1 encode catches an incomplete bundle
+ * before electron-builder produces an installer.
+ */
+function verifyWebpSupport(slug: Slug): void {
+	const slugDir = join(TOOL_DIR, slug);
+	const bin = slugBin(slug);
+	const env = { ...process.env };
+	const libDir = join(slugDir, 'lib');
+	const coderDir = join(slugDir, 'lib', 'ImageMagick', 'modules-Q16HDRI', 'coders');
+	const filterDir = join(slugDir, 'lib', 'ImageMagick', 'modules-Q16HDRI', 'filters');
+	const configDirs = [
+		join(slugDir, 'etc', 'ImageMagick-7'),
+		join(slugDir, 'lib', 'ImageMagick', 'config-Q16HDRI')
+	];
+
+	if (existsSync(libDir)) {
+		const libraryKey = process.platform === 'darwin' ? 'DYLD_LIBRARY_PATH' : 'LD_LIBRARY_PATH';
+		env[libraryKey] = [libDir, env[libraryKey]].filter(Boolean).join(delimiter);
+	}
+	if (existsSync(coderDir)) env.MAGICK_CODER_MODULE_PATH = coderDir;
+	if (existsSync(filterDir)) env.MAGICK_FILTER_MODULE_PATH = filterDir;
+	env.MAGICK_CONFIGURE_PATH = configDirs.filter(existsSync).join(delimiter);
+	if (slug === 'win-x64') env.MAGICK_HOME = slugDir;
+
+	const result = spawnSync(bin, ['-list', 'format'], {
+		cwd: slugDir,
+		env,
+		encoding: 'utf8'
+	});
+	const output = `${result.stdout ?? ''}\n${result.stderr ?? ''}`;
+	const probe = join(tmpdir(), `wasmagick-webp-${slug}-${process.pid}.webp`);
+	const probeResult = spawnSync(bin, ['-size', '1x1', 'xc:white', '-quality', '80', probe], {
+		cwd: slugDir,
+		env,
+		encoding: 'utf8'
+	});
+	const probeOkay = !probeResult.error && probeResult.status === 0 && existsSync(probe);
+	rmSync(probe, { force: true });
+	if (result.error || result.status !== 0 || !probeOkay) {
+		const detail =
+			result.error?.message || probeResult.error?.message || output.trim().slice(-1200);
+		throw new Error(
+			`ImageMagick WebP support is unavailable for ${slug}.${detail ? ` ${detail}` : ''}`
+		);
+	}
+	console.log(`Verified ImageMagick WebP support for ${slug}.`);
+}
+
+function findFile(root: string, names: Set<string>): string | null {
+	for (const entry of readdirSync(root, { withFileTypes: true })) {
+		const full = join(root, entry.name);
+		if (entry.isFile() && names.has(entry.name.toLowerCase())) return full;
+		if (entry.isDirectory()) {
+			const found = findFile(full, names);
+			if (found) return found;
+		}
+	}
+	return null;
+}
+
+function webpToolNames(slug: Slug): { cwebp: string; dwebp: string } {
+	const suffix = slug === 'win-x64' ? '.exe' : '';
+	return { cwebp: `cwebp${suffix}`, dwebp: `dwebp${suffix}` };
+}
+
+function webpToolDir(slug: Slug): string {
+	return join(WEBP_DIR, slug);
+}
+
+function webpToolPath(slug: Slug, tool: 'cwebp' | 'dwebp'): string | null {
+	const names = webpToolNames(slug);
+	const root = webpToolDir(slug);
+	if (!existsSync(root)) return null;
+	return findFile(root, new Set([names[tool].toLowerCase()]));
+}
+
+function ensureWebpTools(slug: Slug): void {
+	const names = webpToolNames(slug);
+	if (webpToolPath(slug, 'cwebp') && webpToolPath(slug, 'dwebp')) {
+		console.log(`WebP tools ${WEBP_VERSION} (${slug}) already installed.`);
+		return;
+	}
+
+	const destination = webpToolDir(slug);
+	const archive = join(tmpdir(), `wasmagick-webp-${slug}.${slug === 'win-x64' ? 'zip' : 'tar.gz'}`);
+	const extracted = join(tmpdir(), `wasmagick-webp-${slug}-extract`);
+	rmSync(destination, { recursive: true, force: true });
+	rmSync(extracted, { recursive: true, force: true });
+	mkdirSync(extracted, { recursive: true });
+
+	console.log(`Downloading WebP tools ${WEBP_VERSION} (${slug})...`);
+	if (!download(WEBP_URLS[slug], archive)) {
+		throw new Error(`Download failed: ${WEBP_URLS[slug]}`);
+	}
+	try {
+		if (slug === 'win-x64') exec(`7z x "${archive}" -o"${extracted}" -y`);
+		else exec(`tar -xzf "${archive}" -C "${extracted}"`);
+		mkdirSync(destination, { recursive: true });
+		const entries = readdirSync(extracted);
+		const archiveRoot =
+			entries.length === 1 && statSync(join(extracted, entries[0])).isDirectory()
+				? join(extracted, entries[0])
+				: extracted;
+		cpSync(archiveRoot, destination, { recursive: true });
+	} finally {
+		rmSync(archive, { force: true });
+		rmSync(extracted, { recursive: true, force: true });
+	}
+
+	if (!webpToolPath(slug, 'cwebp') || !webpToolPath(slug, 'dwebp')) {
+		throw new Error(`WebP archive did not contain ${names.cwebp} and ${names.dwebp}`);
+	}
+	console.log(`WebP tools ready at ${destination}`);
+}
+
+function verifyWebpTools(slug: Slug): void {
+	for (const tool of ['cwebp', 'dwebp'] as const) {
+		const bin = webpToolPath(slug, tool);
+		if (!bin) throw new Error(`Missing bundled WebP tool: ${tool}`);
+		const result = spawnSync(bin, ['-version'], { encoding: 'utf8' });
+		if (result.error || result.status !== 0) {
+			throw new Error(`Bundled ${tool} could not start: ${result.error?.message ?? result.stderr}`);
+		}
+	}
+	console.log(`Verified bundled cwebp and dwebp for ${slug}.`);
 }
 
 function exec(cmd: string, cwd?: string): void {
@@ -421,6 +571,7 @@ function ensureSlug(slug: Slug): void {
 	if (!existsSync(slugBin(slug))) {
 		throw new Error(`Setup finished but no binary at ${slugBin(slug)}`);
 	}
+	ensureWebpTools(slug);
 }
 
 function parseArgs(): { slugs: Slug[] } {
@@ -463,6 +614,15 @@ for (const slug of slugs) {
 		console.error(`Failed to set up ${slug}:`, err instanceof Error ? err.message : err);
 		process.exit(1);
 	}
+}
+
+// `--all` prepares foreign-platform bundles that cannot be executed on the
+// current host. Verify the host bundle only; each release runner verifies its
+// own platform before packaging.
+const hostSlug = slugFor(process.platform, process.arch);
+if (slugs.includes(hostSlug)) {
+	verifyWebpSupport(hostSlug);
+	verifyWebpTools(hostSlug);
 }
 
 try {
