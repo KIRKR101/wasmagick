@@ -15,7 +15,14 @@ Install dependencies, then run the web app using:
 WASMagick also ships as a native desktop app:
 
 - `npm run dev:electron` — run the app against the Vite dev server
+- `npm run dev:electron:native` — same, but with the bundled native ImageMagick
 - `npm run build:electron` — build a packaged installer into `release/`
+
+The desktop app processes images with a fully bundled native ImageMagick
+binary (no system install needed, no WASM download). The web app and PWA
+keep using the WebAssembly engine. Native binaries are fetched/assembled per
+platform with `npm run setup:imagemagick` and staged for packaging with
+`npm run stage:native` (runs automatically on `build:electron`).
 
 ### Homebrew (macOS)
 

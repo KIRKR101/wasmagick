@@ -9,6 +9,8 @@ function subscribe(channel, callback) {
 contextBridge.exposeInMainWorld('wasmagick', {
 	platform: process.platform,
 	markReady: () => ipcRenderer.invoke('renderer:ready'),
+	isNativeAvailable: () => ipcRenderer.invoke('magick:native-available'),
+	processNativeImage: (payload) => ipcRenderer.invoke('magick:process-native', payload),
 	saveFile: (payload) => ipcRenderer.invoke('file:save', payload),
 	openImage: () => ipcRenderer.invoke('file:open-dialog'),
 	setTheme: (dark) => ipcRenderer.send('theme:set', dark),

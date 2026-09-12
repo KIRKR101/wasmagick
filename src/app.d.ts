@@ -35,9 +35,32 @@ declare global {
 		canRedo: boolean;
 	}
 
+	interface WasmagickNativeProcessPayload {
+		inputName: string;
+		inputData: Uint8Array;
+		/** Middle args from buildNativeMagickArgs (no shell involved). */
+		args: string[];
+		outputExtension: string;
+		outputFormat: string;
+		clutData?: Uint8Array | null;
+		fontData?: Uint8Array | null;
+		fontFileName?: string | null;
+	}
+
+	interface WasmagickNativeProcessResult {
+		data: Uint8Array;
+		width: number;
+		height: number;
+		format: string;
+	}
+
 	interface WasmagickElectronApi {
 		readonly platform: string;
 		markReady(): Promise<void>;
+		isNativeAvailable(): Promise<boolean>;
+		processNativeImage(
+			payload: WasmagickNativeProcessPayload
+		): Promise<WasmagickNativeProcessResult>;
 		saveFile(payload: { name: string; data: Uint8Array<ArrayBuffer> }): Promise<boolean>;
 		openImage(): Promise<void>;
 		setTheme(dark: boolean): void;

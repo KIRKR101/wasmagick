@@ -374,7 +374,7 @@
 					</div>
 				</div>
 				<h3 class="mb-1 font-mono text-xs font-semibold tracking-wider text-foreground uppercase">
-					Initializing WASM Engine
+					Initializing Image Engine
 				</h3>
 				<p class="font-mono text-[11px]">Loading ImageMagick…</p>
 			</div>
