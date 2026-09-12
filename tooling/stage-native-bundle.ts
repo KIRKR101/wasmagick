@@ -1,8 +1,9 @@
 /**
- * Stage the native ImageMagick bundle for electron-builder.
+ * Stage the native ImageMagick and WebP tool bundles for electron-builder.
  *
  * Copies the current platform's canonical build
- * (`tooling/imagemagick/<os>-<arch>/`, with legacy fallbacks) into
+ * (`tooling/imagemagick/<os>-<arch>/`, with legacy fallbacks) and the
+ * matching `tooling/webp/<os>-<arch>/` tool bundle into
  * `native-bundle/magick/`, which `package.json`'s `extraResources` picks up
  * as `<resources>/magick-bundle` (see `electron/magick-native.cjs`).
  *
@@ -59,5 +60,11 @@ if (process.platform === 'win32' && source.endsWith('imagemagick')) {
 } else {
 	cpSync(source, STAGE_DIR, { recursive: true });
 }
+
+const webpSource = join(REPO_ROOT, 'tooling', 'webp', slugFor());
+if (!existsSync(webpSource)) {
+	throw new Error(`No bundled WebP tools found at ${webpSource}. Run: npm run setup:imagemagick`);
+}
+cpSync(webpSource, join(STAGE_DIR, 'webp-tools'), { recursive: true });
 
 console.log(`Staged to ${STAGE_DIR}`);

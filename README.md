@@ -23,6 +23,9 @@ binary (no system install needed, no WASM download). The web app and PWA
 keep using the WebAssembly engine. Native binaries are fetched/assembled per
 platform with `npm run setup:imagemagick` and staged for packaging with
 `npm run stage:native` (runs automatically on `build:electron`).
+The same setup step downloads the official precompiled WebP utilities and
+bundles `cwebp` and `dwebp` alongside ImageMagick for future native paths.
+ImageMagick's own WebP coder is also verified before packaging.
 
 Packaged desktop builds also integrate with the host desktop:
 

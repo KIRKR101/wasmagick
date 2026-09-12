@@ -92,6 +92,45 @@ function isNativeAvailable() {
 	return resolveMagickBin() !== null;
 }
 
+function webpToolName(tool) {
+	if (tool !== 'cwebp' && tool !== 'dwebp') throw new Error(`Unknown WebP tool: ${tool}`);
+	return process.platform === 'win32' ? `${tool}.exe` : tool;
+}
+
+/**
+ * Resolve a bundled standalone WebP utility. The setup script keeps the
+ * archive's other files beside the tools because Windows builds may need
+ * accompanying DLLs at runtime.
+ */
+function resolveWebpTool(tool) {
+	const name = webpToolName(tool);
+	const slug = platformSlug();
+	const dirs = [];
+	try {
+		const { app } = require('electron');
+		if (app && app.isPackaged) {
+			dirs.push(path.join(process.resourcesPath, 'magick-bundle', 'webp-tools'));
+		}
+	} catch {
+		// electron not ready / running under plain node (tests)
+	}
+	const repoRoot = path.join(__dirname, '..');
+	dirs.push(path.join(repoRoot, 'native-bundle', 'magick', 'webp-tools'));
+	dirs.push(path.join(repoRoot, 'tooling', 'webp', slug));
+
+	for (const dir of dirs) {
+		const candidates = [path.join(dir, 'bin', name), path.join(dir, name)];
+		for (const candidate of candidates) {
+			try {
+				if (fs.statSync(candidate).isFile()) return candidate;
+			} catch {
+				// try next location
+			}
+		}
+	}
+	return null;
+}
+
 /** Library search paths bundled next to the binary (Linux AppImage layout). */
 function bundledLibDirs(magickBin) {
 	const root = path.dirname(magickBin);
@@ -309,6 +348,7 @@ function registerMagickNative(ipcMain) {
 module.exports = {
 	TOKENS,
 	resolveMagickBin,
+	resolveWebpTool,
 	isNativeAvailable,
 	processNative,
 	registerMagickNative
