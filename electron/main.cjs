@@ -13,6 +13,7 @@ const { execFile } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 const { registerMagickNative } = require('./magick-native.cjs');
+const { listSystemFonts, readSystemFont } = require('./system-fonts.cjs');
 
 const isDev = process.argv.includes('--dev');
 const DEV_URL = 'http://localhost:5173';
@@ -288,6 +289,10 @@ function registerAppProtocol() {
 
 function registerIpc() {
 	registerMagickNative(ipcMain);
+	ipcMain.handle('fonts:list-system', () => listSystemFonts());
+	ipcMain.handle('fonts:read-system', (_event, postscriptName) =>
+		readSystemFont(String(postscriptName || ''))
+	);
 
 	ipcMain.handle('renderer:ready', () => {
 		rendererReady = true;

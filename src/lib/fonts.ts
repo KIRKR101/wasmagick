@@ -12,6 +12,8 @@ const loadedFonts = new Set<string>();
 const localFontLabels = new Map<string, string>();
 /** Raw font bytes by family/postscript name (also feeds the native engine). */
 const fontBytesCache = new Map<string, Uint8Array>();
+const localFontSources = new Map<string, () => Promise<Uint8Array | null>>();
+const localFontFileNames = new Map<string, string>();
 export const DEFAULT_FONT = 'Roboto-Regular';
 
 export function fontAssetPath(name: string): string | null {
@@ -21,6 +23,17 @@ export function fontAssetPath(name: string): string | null {
 export async function fetchFontBytes(name: string): Promise<Uint8Array | null> {
 	const cached = fontBytesCache.get(name);
 	if (cached) return cached;
+	const localSource = localFontSources.get(name);
+	if (localSource) {
+		try {
+			const bytes = await localSource();
+			if (bytes) fontBytesCache.set(name, bytes);
+			return bytes;
+		} catch (err) {
+			console.warn(`Failed to read local font "${name}":`, err);
+			return null;
+		}
+	}
 	const url = FONT_URLS[name];
 	if (!url) return null;
 	try {
@@ -40,6 +53,10 @@ export function getFontBytes(name: string): Uint8Array | null {
 	return fontBytesCache.get(name) ?? null;
 }
 
+export function getFontFileName(name: string): string | null {
+	return localFontFileNames.get(name) ?? null;
+}
+
 export async function ensureFont(name: string): Promise<boolean> {
 	if (loadedFonts.has(name)) return true;
 	const bytes = await fetchFontBytes(name);
@@ -56,6 +73,8 @@ export async function ensureFont(name: string): Promise<boolean> {
 
 export function registerLocalFont(postscriptName: string, data: Uint8Array, label: string): void {
 	if (!fontBytesCache.has(postscriptName)) fontBytesCache.set(postscriptName, data);
+	localFontLabels.set(postscriptName, label);
+	localFontSources.delete(postscriptName);
 	if (loadedFonts.has(postscriptName)) return;
 	try {
 		Magick.addFont(postscriptName, data);
@@ -64,6 +83,18 @@ export function registerLocalFont(postscriptName: string, data: Uint8Array, labe
 	} catch (err) {
 		console.warn(`Failed to register font "${postscriptName}":`, err);
 	}
+}
+
+/** Register system-font metadata and load the bytes only when needed. */
+export function registerLocalFontSource(
+	postscriptName: string,
+	label: string,
+	fileName: string,
+	load: () => Promise<Uint8Array | null>
+): void {
+	localFontLabels.set(postscriptName, label);
+	localFontFileNames.set(postscriptName, fileName);
+	if (!loadedFonts.has(postscriptName)) localFontSources.set(postscriptName, load);
 }
 
 export function isFontLoaded(name: string): boolean {
