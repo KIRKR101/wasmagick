@@ -24,6 +24,19 @@
 	let showShortcuts = $state(false);
 	let activeSection = $state<EditorSection>('geometry');
 	let isMobile = $state(false);
+	let actionNotice = $state('');
+	let actionNoticeTimer: ReturnType<typeof setTimeout> | null = null;
+	let toastCanReveal = $state(false);
+
+	function showNotice(message: string, canReveal = false, duration = 2400): void {
+		if (actionNoticeTimer) clearTimeout(actionNoticeTimer);
+		actionNotice = message;
+		toastCanReveal = canReveal;
+		actionNoticeTimer = setTimeout(() => {
+			actionNotice = '';
+			toastCanReveal = false;
+		}, duration);
+	}
 
 	$effect(() => {
 		const base = document.title.replace(/~$/, '');
@@ -171,7 +184,16 @@
 	async function downloadCurrent(): Promise<void> {
 		if (!magick.processedImageUrl) return;
 		const saved = await magick.downloadImage();
-		if (saved) history.markCurrentSaved();
+		if (saved) {
+			history.markCurrentSaved();
+			if (window.wasmagick) showNotice('Image saved', true, 5000);
+		} else {
+			showNotice('Could not save image');
+		}
+	}
+
+	function revealSavedFile(): void {
+		window.wasmagick?.revealSavedFile();
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -305,10 +327,6 @@
 			window.wasmagick.onOpenFile(({ name, type, data }) => {
 				guard.requestReplace(new File([data], name, { type }), replaceImage);
 			});
-			window.wasmagick.onMenuExport(() => downloadCurrent());
-			window.wasmagick.onMenuUndo(() => void history.undo(magick));
-			window.wasmagick.onMenuRedo(() => void history.redo(magick));
-			window.wasmagick.onMenuClose(() => guard.requestClose(closeCurrent));
 			await window.wasmagick.markReady();
 		}
 	});
@@ -317,9 +335,11 @@
 		if (!window.wasmagick) return;
 		window.wasmagick.updateMenuState({
 			hasImage: magick.originalImageUrl != null,
+			hasProcessedImage: magick.processedImageUrl != null,
 			hasUnsavedEdits: magick.hasUnsavedEdits,
 			canUndo: history.canUndo,
-			canRedo: history.canRedo
+			canRedo: history.canRedo,
+			fileName: magick.originalImageUrl ? magick.originalName : ''
 		});
 	});
 </script>
@@ -396,3 +416,21 @@
 {/if}
 
 <KeyboardShortcuts bind:open={showShortcuts} />
+
+{#if actionNotice}
+	<div
+		class="fixed right-4 bottom-12 z-50 flex items-center gap-3 border border-foreground/30 bg-background px-3 py-2 font-mono text-xs text-foreground shadow-sm"
+		role="status"
+	>
+		{actionNotice}
+		{#if toastCanReveal}
+			<button
+				type="button"
+				onclick={revealSavedFile}
+				class="border-l border-foreground/30 pl-3 text-muted-foreground underline decoration-dashed underline-offset-3 transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+			>
+				SHOW IN FOLDER
+			</button>
+		{/if}
+	</div>
+{/if}
