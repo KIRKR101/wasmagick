@@ -9,6 +9,7 @@ const {
 	screen,
 	shell
 } = require('electron');
+const { execFile } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 const { registerMagickNative } = require('./magick-native.cjs');
@@ -72,8 +73,16 @@ const MIME_TYPES = {
 	'.png': 'image/png',
 	'.jpg': 'image/jpeg',
 	'.jpeg': 'image/jpeg',
+	'.gif': 'image/gif',
+	'.webp': 'image/webp',
+	'.bmp': 'image/bmp',
+	'.tif': 'image/tiff',
+	'.tiff': 'image/tiff',
+	'.avif': 'image/avif',
 	'.svg': 'image/svg+xml',
 	'.ico': 'image/x-icon',
+	'.heic': 'image/heic',
+	'.heif': 'image/heif',
 	'.txt': 'text/plain'
 };
 
@@ -94,6 +103,7 @@ let editorState = {
 
 const WINDOW_STATE_FILE = 'window-state.json';
 const DEFAULT_WINDOW_BOUNDS = { width: 1440, height: 900 };
+const MAC_QUICK_ACTION_NAME = 'Edit with WASMagick.workflow';
 
 function windowStatePath() {
 	return path.join(app.getPath('userData'), WINDOW_STATE_FILE);
@@ -179,6 +189,25 @@ function pushFilePayload(win, payload) {
 function trackOpenedFile(filePath) {
 	if (process.platform === 'darwin' || process.platform === 'win32') {
 		app.addRecentDocument(filePath);
+	}
+}
+
+function installMacQuickAction() {
+	if (process.platform !== 'darwin' || isDev) return;
+
+	const source = path.join(process.resourcesPath, 'WASMagick.workflow');
+	const destination = path.join(app.getPath('home'), 'Library', 'Services', MAC_QUICK_ACTION_NAME);
+	try {
+		if (!fs.existsSync(source)) return;
+		fs.mkdirSync(path.dirname(destination), { recursive: true });
+		fs.cpSync(source, destination, { recursive: true });
+
+		const servicesDatabase = '/System/Library/CoreServices/pbs';
+		if (fs.existsSync(servicesDatabase)) {
+			execFile(servicesDatabase, ['-update'], { timeout: 5000 }, () => {});
+		}
+	} catch (err) {
+		console.warn('Could not install the Finder Quick Action:', err);
 	}
 }
 
@@ -481,6 +510,7 @@ if (!gotLock) {
 	app.on('second-instance', (_event, argv) => {
 		const argFile = findImageArg(argv);
 		if (argFile) void pushFilePath(mainWindow, argFile);
+		if (argv.includes('--open-dialog')) void openFileWithDialog(mainWindow);
 		if (mainWindow) {
 			if (mainWindow.isMinimized()) mainWindow.restore();
 			mainWindow.focus();
@@ -493,10 +523,12 @@ if (!gotLock) {
 	});
 
 	app.whenReady().then(() => {
+		installMacQuickAction();
 		createWindow();
 
 		const argFile = findImageArg(process.argv);
 		if (argFile) void pushFilePath(mainWindow, argFile);
+		if (process.argv.includes('--open-dialog')) void openFileWithDialog(mainWindow);
 
 		app.on('activate', () => {
 			if (BrowserWindow.getAllWindows().length === 0) createWindow();
