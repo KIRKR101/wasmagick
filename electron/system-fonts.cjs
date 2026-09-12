@@ -144,7 +144,7 @@ async function scanSystemFonts() {
 async function listSystemFonts() {
 	await scanSystemFonts();
 	return Array.from(fontsByPostscriptName.values())
-		.map(({ filePath, ...font }) => font)
+		.map(({ filePath: _filePath, ...font }) => font)
 		.sort((a, b) => a.family.localeCompare(b.family) || a.fullName.localeCompare(b.fullName));
 }
 
