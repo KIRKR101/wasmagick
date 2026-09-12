@@ -10,6 +10,7 @@ const {
 } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
+const { registerMagickNative } = require('./magick-native.cjs');
 
 const isDev = process.argv.includes('--dev');
 const DEV_URL = 'http://localhost:5173';
@@ -193,6 +194,8 @@ function registerAppProtocol() {
 }
 
 function registerIpc() {
+	registerMagickNative(ipcMain);
+
 	ipcMain.handle('renderer:ready', () => {
 		rendererReady = true;
 		if (mainWindow && !mainWindow.webContents.isDestroyed()) {

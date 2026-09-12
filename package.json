@@ -20,14 +20,16 @@
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
 		"setup:imagemagick": "npx tsx tooling/setup-imagemagick.ts",
+		"stage:native": "npx tsx tooling/stage-native-bundle.ts",
 		"golden-gen": "npm run setup:imagemagick && npx tsx test/golden-gen/generate.ts",
 		"test:unit": "vitest",
 		"test:unit:run": "vitest run --exclude 'test/parity/**'",
 		"test:parity": "npm run setup:imagemagick && vitest run test/parity/",
 		"test": "npm run setup:imagemagick && vitest run",
 		"dev:electron": "concurrently -k \"npm run dev -- --port 5173 --strictPort\" \"wait-on http://localhost:5173 && electron . --dev\"",
-		"build:electron": "cross-env ELECTRON=1 npm run build && electron-builder",
-		"build:electron:dir": "cross-env ELECTRON=1 npm run build && electron-builder --dir"
+		"dev:electron:native": "npm run setup:imagemagick && concurrently -k \"npm run dev -- --port 5173 --strictPort\" \"wait-on http://localhost:5173 && electron . --dev\"",
+		"build:electron": "npm run setup:imagemagick && npm run stage:native && cross-env ELECTRON=1 npm run build && electron-builder",
+		"build:electron:dir": "npm run setup:imagemagick && npm run stage:native && cross-env ELECTRON=1 npm run build && electron-builder --dir"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^2.0.3",
@@ -105,6 +107,10 @@
 			{
 				"from": "static/icons/icon-mac-1024.png",
 				"to": "icons/icon-mac-1024.png"
+			},
+			{
+				"from": "native-bundle/magick",
+				"to": "magick-bundle"
 			}
 		],
 		"win": {

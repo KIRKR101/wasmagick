@@ -274,14 +274,21 @@
 		guard.install(magick, history);
 		installClipboardPaste(guard, replaceImage);
 
-		magick.initWorker();
+		// In Electron with a bundled binary, the native engine replaces WASM
+		// entirely: no magick.wasm fetch, no worker.
+		const native = await magick.initNative();
+		if (!native) {
+			magick.initWorker();
+		}
 
 		const pendingFile = takePendingFile();
 		if (pendingFile) {
 			await replaceImage(pendingFile);
 		}
 
-		await magick.initWasm(debugMode);
+		if (!native) {
+			await magick.initWasm(debugMode);
+		}
 
 		if ('serviceWorker' in navigator) {
 			navigator.serviceWorker.addEventListener('message', (event) => {
