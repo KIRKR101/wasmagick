@@ -6,10 +6,14 @@ const {
 	ipcMain,
 	nativeImage,
 	protocol,
+	screen,
 	shell
 } = require('electron');
+const { execFile } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
+const { registerMagickNative } = require('./magick-native.cjs');
+const { listSystemFonts, readSystemFont } = require('./system-fonts.cjs');
 
 const isDev = process.argv.includes('--dev');
 const DEV_URL = 'http://localhost:5173';
@@ -70,8 +74,16 @@ const MIME_TYPES = {
 	'.png': 'image/png',
 	'.jpg': 'image/jpeg',
 	'.jpeg': 'image/jpeg',
+	'.gif': 'image/gif',
+	'.webp': 'image/webp',
+	'.bmp': 'image/bmp',
+	'.tif': 'image/tiff',
+	'.tiff': 'image/tiff',
+	'.avif': 'image/avif',
 	'.svg': 'image/svg+xml',
 	'.ico': 'image/x-icon',
+	'.heic': 'image/heic',
+	'.heif': 'image/heif',
 	'.txt': 'text/plain'
 };
 
@@ -80,7 +92,60 @@ let pendingArgFiles = [];
 let rendererReady = false;
 let closeConfirmed = false;
 let isDarkTheme = false;
-let editorState = { hasImage: false, hasUnsavedEdits: false, canUndo: false, canRedo: false };
+let lastSavedPath = null;
+let editorState = {
+	hasImage: false,
+	hasProcessedImage: false,
+	hasUnsavedEdits: false,
+	canUndo: false,
+	canRedo: false,
+	fileName: ''
+};
+
+const WINDOW_STATE_FILE = 'window-state.json';
+const DEFAULT_WINDOW_BOUNDS = { width: 1440, height: 900 };
+const MAC_QUICK_ACTION_NAME = 'Edit with WASMagick.workflow';
+
+function windowStatePath() {
+	return path.join(app.getPath('userData'), WINDOW_STATE_FILE);
+}
+
+function readWindowState() {
+	try {
+		const state = JSON.parse(fs.readFileSync(windowStatePath(), 'utf8'));
+		if (!state || !Number.isFinite(state.x) || !Number.isFinite(state.y)) return null;
+		if (!Number.isFinite(state.width) || !Number.isFinite(state.height)) return null;
+
+		const display = screen.getDisplayMatching(state);
+		const { x: areaX, y: areaY, width: areaWidth, height: areaHeight } = display.workArea;
+		const width = Math.min(Math.max(state.width, 900), areaWidth);
+		const height = Math.min(Math.max(state.height, 600), areaHeight);
+		return {
+			x: Math.min(Math.max(state.x, areaX - width + 80), areaX + areaWidth - 80),
+			y: Math.min(Math.max(state.y, areaY), areaY + areaHeight - 80),
+			width,
+			height,
+			isMaximized: Boolean(state.isMaximized)
+		};
+	} catch {
+		return null;
+	}
+}
+
+function saveWindowState(win) {
+	if (!win || win.isDestroyed() || win.isMinimized()) return;
+	const bounds = win.getNormalBounds();
+	try {
+		fs.mkdirSync(app.getPath('userData'), { recursive: true });
+		fs.writeFileSync(
+			windowStatePath(),
+			JSON.stringify({ ...bounds, isMaximized: win.isMaximized() }),
+			'utf8'
+		);
+	} catch {
+		// A read-only profile should not prevent the app from closing.
+	}
+}
 
 function mimeFromPath(filePath) {
 	const ext = path.extname(filePath).toLowerCase();
@@ -122,6 +187,41 @@ function pushFilePayload(win, payload) {
 	}
 }
 
+function trackOpenedFile(filePath) {
+	if (process.platform === 'darwin' || process.platform === 'win32') {
+		app.addRecentDocument(filePath);
+	}
+}
+
+function installMacQuickAction() {
+	if (process.platform !== 'darwin' || isDev) return;
+
+	const source = path.join(process.resourcesPath, 'WASMagick.workflow');
+	const destination = path.join(app.getPath('home'), 'Library', 'Services', MAC_QUICK_ACTION_NAME);
+	try {
+		if (!fs.existsSync(source)) return;
+		fs.mkdirSync(path.dirname(destination), { recursive: true });
+		fs.cpSync(source, destination, { recursive: true });
+
+		const servicesDatabase = '/System/Library/CoreServices/pbs';
+		if (fs.existsSync(servicesDatabase)) {
+			execFile(servicesDatabase, ['-update'], { timeout: 5000 }, () => {});
+		}
+	} catch (err) {
+		console.warn('Could not install the Finder Quick Action:', err);
+	}
+}
+
+async function pushFilePath(win, filePath) {
+	try {
+		const payload = await readFilePayload(filePath);
+		trackOpenedFile(filePath);
+		pushFilePayload(win, payload);
+	} catch (err) {
+		dialog.showErrorBox('Open failed', String(err));
+	}
+}
+
 async function openFileWithDialog(win) {
 	const result = await dialog.showOpenDialog(win, {
 		title: 'Open Image',
@@ -133,12 +233,7 @@ async function openFileWithDialog(win) {
 	});
 	if (result.canceled || result.filePaths.length === 0) return;
 
-	const filePath = result.filePaths[0];
-	try {
-		pushFilePayload(win, await readFilePayload(filePath));
-	} catch (err) {
-		dialog.showErrorBox('Open failed', String(err));
-	}
+	await pushFilePath(win, result.filePaths[0]);
 }
 
 function registerAppProtocol() {
@@ -193,6 +288,12 @@ function registerAppProtocol() {
 }
 
 function registerIpc() {
+	registerMagickNative(ipcMain);
+	ipcMain.handle('fonts:list-system', () => listSystemFonts());
+	ipcMain.handle('fonts:read-system', (_event, postscriptName) =>
+		readSystemFont(String(postscriptName || ''))
+	);
+
 	ipcMain.handle('renderer:ready', () => {
 		rendererReady = true;
 		if (mainWindow && !mainWindow.webContents.isDestroyed()) {
@@ -206,11 +307,13 @@ function registerIpc() {
 	ipcMain.on('menu:state', (_event, state) => {
 		editorState = {
 			hasImage: Boolean(state?.hasImage),
+			hasProcessedImage: Boolean(state?.hasProcessedImage),
 			hasUnsavedEdits: Boolean(state?.hasUnsavedEdits),
 			canUndo: Boolean(state?.canUndo),
-			canRedo: Boolean(state?.canRedo)
+			canRedo: Boolean(state?.canRedo),
+			fileName: typeof state?.fileName === 'string' ? state.fileName : ''
 		};
-		updateMenuItems();
+		updateWindowTitle();
 	});
 
 	ipcMain.on('theme:set', (_event, dark) => {
@@ -245,16 +348,28 @@ function registerIpc() {
 	ipcMain.handle('file:save', async (event, payload) => {
 		const win = BrowserWindow.fromWebContents(event.sender);
 		const ext = path.extname(payload.name).replace('.', '').toLowerCase() || 'png';
+		const previousPath =
+			lastSavedPath && path.extname(lastSavedPath).toLowerCase() === `.${ext}`
+				? lastSavedPath
+				: lastSavedPath
+					? path.join(path.dirname(lastSavedPath), payload.name)
+					: null;
 
 		const result = await dialog.showSaveDialog(win, {
 			title: 'Save Image',
-			defaultPath: path.join(app.getPath('downloads'), payload.name),
+			defaultPath: previousPath || path.join(app.getPath('downloads'), payload.name),
 			filters: [{ name: 'Image', extensions: [ext] }]
 		});
 		if (result.canceled || !result.filePath) return false;
 
 		await fs.promises.writeFile(result.filePath, payload.data);
+		lastSavedPath = result.filePath;
+		trackOpenedFile(result.filePath);
 		return true;
+	});
+
+	ipcMain.on('file:reveal-saved', () => {
+		if (lastSavedPath) shell.showItemInFolder(lastSavedPath);
 	});
 }
 
@@ -264,126 +379,25 @@ function applyTitleBarTheme() {
 	mainWindow.setTitleBarOverlay({ ...colors, height: TITLEBAR_HEIGHT });
 }
 
-function updateMenuItems() {
-	const menu = Menu.getApplicationMenu();
-	if (!menu) return;
-	const byId = (id) => menu.getMenuItemById(id);
-	const items = [
-		['menu-export', editorState.hasImage],
-		['menu-close-image', editorState.hasImage],
-		['menu-undo', editorState.canUndo],
-		['menu-redo', editorState.canRedo]
-	];
-	for (const [id, enabled] of items) {
-		const item = byId(id);
-		if (item) item.enabled = enabled;
-	}
-}
-
-function buildMenu(win) {
-	const send = (channel) => () => {
-		if (win && !win.webContents.isDestroyed()) win.webContents.send(channel);
-	};
-
-	const template = [
-		{ role: 'appMenu' },
-		{
-			label: 'File',
-			submenu: [
-				{
-					label: 'Open Image…',
-					accelerator: 'CmdOrCtrl+O',
-					click: () => openFileWithDialog(win)
-				},
-				{
-					id: 'menu-close-image',
-					label: 'Close Image',
-					accelerator: 'CmdOrCtrl+W',
-					enabled: false,
-					click: send('menu:close-image')
-				},
-				{ type: 'separator' },
-				{
-					id: 'menu-export',
-					label: 'Export Image…',
-					accelerator: 'CmdOrCtrl+S',
-					enabled: false,
-					click: send('menu:export')
-				},
-				{ type: 'separator' },
-				{ role: 'close', accelerator: 'Cmd+Shift+W' }
-			]
-		},
-		{
-			label: 'Edit',
-			submenu: [
-				{
-					id: 'menu-undo',
-					label: 'Undo',
-					accelerator: 'CmdOrCtrl+Z',
-					enabled: false,
-					click: send('menu:undo')
-				},
-				{
-					id: 'menu-redo',
-					label: 'Redo',
-					accelerator: 'CmdOrCtrl+Shift+Z',
-					enabled: false,
-					click: send('menu:redo')
-				},
-				{ type: 'separator' },
-				{ role: 'cut' },
-				{ role: 'copy' },
-				{ role: 'paste' },
-				{ role: 'selectAll' }
-			]
-		},
-		{
-			label: 'View',
-			submenu: [
-				...(isDev
-					? [
-							{ role: 'reload' },
-							{ role: 'forceReload' },
-							{ role: 'toggleDevTools' },
-							{ type: 'separator' }
-						]
-					: []),
-				{ role: 'togglefullscreen' }
-			]
-		},
-		{ role: 'windowMenu' },
-		{
-			label: 'Help',
-			submenu: [
-				{
-					label: 'About WASMagick',
-					click: () =>
-						dialog.showMessageBox(win, {
-							title: 'About WASMagick',
-							message: `WASMagick ${app.getVersion()}`,
-							detail: 'Client-side image editor powered by WebAssembly ImageMagick.',
-							buttons: ['OK']
-						})
-				},
-				{ type: 'separator' },
-				{ label: 'WASMagick on GitHub', click: () => shell.openExternal(GITHUB_URL) }
-			]
-		}
-	];
-
-	Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+function updateWindowTitle() {
+	if (!mainWindow || mainWindow.isDestroyed()) return;
+	const file = editorState.fileName ? ` — ${editorState.fileName}` : '';
+	const dirty = editorState.hasUnsavedEdits ? ' •' : '';
+	mainWindow.setTitle(`WASMagick${file}${dirty}`);
 }
 
 function createWindow() {
 	const iconPath = resolveIconPath();
+	const savedState = readWindowState();
 
 	mainWindow = new BrowserWindow({
-		width: 1440,
-		height: 900,
+		width: savedState?.width ?? DEFAULT_WINDOW_BOUNDS.width,
+		height: savedState?.height ?? DEFAULT_WINDOW_BOUNDS.height,
+		...(savedState ? { x: savedState.x, y: savedState.y } : {}),
 		minWidth: 900,
 		minHeight: 600,
-		show: true,
+		show: false,
+		backgroundColor: '#f7f7f4',
 		...(iconPath ? { icon: iconPath } : {}),
 		...(process.platform === 'win32'
 			? {
@@ -413,10 +427,19 @@ function createWindow() {
 		if (!mainWindow || mainWindow.webContents.isDestroyed()) return;
 		mainWindow.webContents.send('window:maximized-changed', mainWindow.isMaximized());
 	};
-	mainWindow.on('maximize', sendMaximizeState);
-	mainWindow.on('unmaximize', sendMaximizeState);
+	mainWindow.on('maximize', () => {
+		saveWindowState(mainWindow);
+		sendMaximizeState();
+	});
+	mainWindow.on('unmaximize', () => {
+		saveWindowState(mainWindow);
+		sendMaximizeState();
+	});
+	mainWindow.on('resize', () => saveWindowState(mainWindow));
+	mainWindow.on('move', () => saveWindowState(mainWindow));
 
 	mainWindow.on('close', (event) => {
+		saveWindowState(mainWindow);
 		if (closeConfirmed || !editorState.hasUnsavedEdits) return;
 		event.preventDefault();
 		const choice = dialog.showMessageBoxSync(mainWindow, {
@@ -454,11 +477,12 @@ function createWindow() {
 		}
 	});
 
-	if (process.platform === 'darwin') {
-		buildMenu(mainWindow);
-	} else {
-		Menu.setApplicationMenu(null);
-	}
+	updateWindowTitle();
+	mainWindow.once('ready-to-show', () => {
+		if (savedState?.isMaximized) mainWindow.maximize();
+		mainWindow.show();
+		mainWindow.focus();
+	});
 
 	if (isDev) {
 		mainWindow.loadURL(`${DEV_URL}/editor`);
@@ -476,6 +500,8 @@ if (!gotLock) {
 	// development as well as in packaged builds.
 	app.setName('WASMagick');
 	app.setAppUserModelId(APP_ID);
+	// Suppress Electron's default File/Edit/View/Window menu before ready.
+	Menu.setApplicationMenu(null);
 	if (process.platform === 'linux') app.setDesktopName('wasmagick.desktop');
 	app.setAboutPanelOptions({
 		applicationName: 'WASMagick',
@@ -488,11 +514,8 @@ if (!gotLock) {
 
 	app.on('second-instance', (_event, argv) => {
 		const argFile = findImageArg(argv);
-		if (argFile) {
-			readFilePayload(argFile)
-				.then((payload) => pushFilePayload(mainWindow, payload))
-				.catch(() => {});
-		}
+		if (argFile) void pushFilePath(mainWindow, argFile);
+		if (argv.includes('--open-dialog')) void openFileWithDialog(mainWindow);
 		if (mainWindow) {
 			if (mainWindow.isMinimized()) mainWindow.restore();
 			mainWindow.focus();
@@ -501,22 +524,16 @@ if (!gotLock) {
 
 	app.on('open-file', (event, filePath) => {
 		event.preventDefault();
-		if (isImagePath(filePath)) {
-			readFilePayload(filePath)
-				.then((payload) => pushFilePayload(mainWindow, payload))
-				.catch(() => {});
-		}
+		if (isImagePath(filePath)) void pushFilePath(mainWindow, filePath);
 	});
 
 	app.whenReady().then(() => {
+		installMacQuickAction();
 		createWindow();
 
 		const argFile = findImageArg(process.argv);
-		if (argFile) {
-			readFilePayload(argFile)
-				.then((payload) => pushFilePayload(mainWindow, payload))
-				.catch(() => {});
-		}
+		if (argFile) void pushFilePath(mainWindow, argFile);
+		if (process.argv.includes('--open-dialog')) void openFileWithDialog(mainWindow);
 
 		app.on('activate', () => {
 			if (BrowserWindow.getAllWindows().length === 0) createWindow();

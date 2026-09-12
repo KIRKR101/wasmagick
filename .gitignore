@@ -20,6 +20,10 @@ test/*-diff*.png
 
 # ImageMagick binaries (downloaded by tooling/setup-imagemagick.ts)
 tooling/imagemagick/
+tooling/webp/
+
+# Staged native bundle for electron-builder (tooling/stage-native-bundle.ts)
+native-bundle/
 
 # WASM engines (copied into static/ by tooling/copy-wasm.ts)
 static/magick.wasm

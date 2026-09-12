@@ -1,16 +1,32 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 
-const isWindows = process.platform === 'win32';
+function slugFor(): string {
+	if (process.platform === 'win32') return 'win-x64';
+	if (process.platform === 'darwin') return process.arch === 'arm64' ? 'mac-arm64' : 'mac-x64';
+	return 'linux-x64';
+}
 
 export function magickCommand(): string {
-	const bin = isWindows
-		? path.resolve('tooling/imagemagick/magick.exe')
-		: path.resolve('tooling/imagemagick/squashfs-root/usr/bin/magick');
-
-	if (!existsSync(bin)) {
-		throw new Error(`ImageMagick not found at ${bin}. Run: npm run setup:imagemagick`);
+	const candidates: string[] = [];
+	if (process.platform === 'win32') {
+		candidates.push(path.resolve('tooling/imagemagick/win-x64/magick.exe'));
+		// Legacy setup-imagemagick.ts layout (root-level extract).
+		candidates.push(path.resolve('tooling/imagemagick/magick.exe'));
+	} else {
+		const slug = slugFor();
+		candidates.push(path.resolve(`tooling/imagemagick/${slug}/bin/magick`));
+		if (slug === 'linux-x64') {
+			// Legacy layout (pre-canonical extract).
+			candidates.push(path.resolve('tooling/imagemagick/squashfs-root/usr/bin/magick'));
+		}
 	}
 
-	return bin;
+	for (const bin of candidates) {
+		if (existsSync(bin)) return bin;
+	}
+
+	throw new Error(
+		`ImageMagick not found (tried ${candidates.join(', ')}). Run: npm run setup:imagemagick`
+	);
 }

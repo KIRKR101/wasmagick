@@ -9,7 +9,12 @@ function subscribe(channel, callback) {
 contextBridge.exposeInMainWorld('wasmagick', {
 	platform: process.platform,
 	markReady: () => ipcRenderer.invoke('renderer:ready'),
+	listSystemFonts: () => ipcRenderer.invoke('fonts:list-system'),
+	readSystemFont: (postscriptName) => ipcRenderer.invoke('fonts:read-system', postscriptName),
+	isNativeAvailable: () => ipcRenderer.invoke('magick:native-available'),
+	processNativeImage: (payload) => ipcRenderer.invoke('magick:process-native', payload),
 	saveFile: (payload) => ipcRenderer.invoke('file:save', payload),
+	revealSavedFile: () => ipcRenderer.send('file:reveal-saved'),
 	openImage: () => ipcRenderer.invoke('file:open-dialog'),
 	setTheme: (dark) => ipcRenderer.send('theme:set', dark),
 	updateMenuState: (state) => ipcRenderer.send('menu:state', state),
@@ -18,9 +23,5 @@ contextBridge.exposeInMainWorld('wasmagick', {
 	closeWindow: () => ipcRenderer.send('window:close'),
 	isMaximized: () => ipcRenderer.invoke('window:is-maximized'),
 	onMaximizeChange: (callback) => subscribe('window:maximized-changed', callback),
-	onOpenFile: (callback) => subscribe('file:opened', callback),
-	onMenuExport: (callback) => subscribe('menu:export', callback),
-	onMenuUndo: (callback) => subscribe('menu:undo', callback),
-	onMenuRedo: (callback) => subscribe('menu:redo', callback),
-	onMenuClose: (callback) => subscribe('menu:close-image', callback)
+	onOpenFile: (callback) => subscribe('file:opened', callback)
 });

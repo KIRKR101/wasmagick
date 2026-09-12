@@ -28,8 +28,17 @@ import {
 } from '@imagemagick/magick-wasm';
 
 import type { MagickSettings, AppliedOptions, LevelChannel } from './types';
-import { ensureFont, DEFAULT_FONT, isLocalFont } from './fonts';
+import {
+	ensureFont,
+	DEFAULT_FONT,
+	isLocalFont,
+	fetchFontBytes,
+	getFontBytes,
+	getFontFileName
+} from './fonts';
 import { generateClutImage } from './luts';
+import { renderClutPngBytes } from './clut-data';
+import { buildNativeMagickArgs } from './magick-args';
 import { applyCrop, resolveNoiseAttenuate } from './magick-process';
 import { extractExif, type ExifData } from './exif';
 import { computeCropStepOffset, type CropRect } from './crop-utils';
@@ -436,6 +445,17 @@ export class MagickState {
 		...loadPersistedSettings()
 	});
 	workerReady = $state(false);
+	/**
+	 * True once the Electron main process confirms a bundled native
+	 * ImageMagick binary is available. When set, `processImage()` routes
+	 * through `_processViaNative()` and the WASM engine is never loaded.
+	 */
+	nativeAvailable = $state(false);
+
+	/** 'native' in Electron with a bundled binary, 'wasm' everywhere else. */
+	get engine(): 'native' | 'wasm' {
+		return this.nativeAvailable ? 'native' : 'wasm';
+	}
 
 	private _worker: Worker | null = null;
 	private _requestId = 0;
@@ -494,6 +514,32 @@ export class MagickState {
 			b = parseInt(hex.substring(4, 6), 16);
 		}
 		return { r, g, b };
+	}
+
+	/**
+	 * Probe for a bundled native ImageMagick binary (Electron only). Returns
+	 * true when the native engine should be used; the caller should then skip
+	 * `initWasm()`/`initWorker()` entirely.
+	 *
+	 * On success `wasmLoaded` is also set: it is the app-wide "engine ready"
+	 * flag that the viewport and panels gate on. Without it the UI would sit
+	 * on the loading screen forever despite the native engine being ready.
+	 */
+	async initNative(): Promise<boolean> {
+		try {
+			if (typeof window === 'undefined' || !window.wasmagick?.isNativeAvailable) {
+				return false;
+			}
+			this.nativeAvailable = await window.wasmagick.isNativeAvailable();
+			if (this.nativeAvailable) {
+				this.wasmLoaded = true;
+				this.statsMessage = 'Ready (native ImageMagick)';
+			}
+			return this.nativeAvailable;
+		} catch {
+			this.nativeAvailable = false;
+			return false;
+		}
 	}
 
 	async initWasm(debugMode = false): Promise<void> {
@@ -947,6 +993,11 @@ export class MagickState {
 			return;
 		}
 
+		if (this.nativeAvailable && window.wasmagick?.processNativeImage) {
+			this._processViaNative(debugMode, onComplete);
+			return;
+		}
+
 		if (!this.wasmLoaded) {
 			this.statsMessage = 'WASM Not Ready';
 			return;
@@ -958,6 +1009,80 @@ export class MagickState {
 			this._processViaWorker(debugMode, onComplete);
 		} else {
 			this._processOnMainThread(debugMode, onComplete);
+		}
+	}
+
+	private async _processViaNative(debugMode = false, onComplete?: () => void): Promise<void> {
+		this.hasError = false;
+		this.errorMessage = null;
+		this.isLoading = true;
+		this.currentProcessingStep = 'Processing with native ImageMagick...';
+		const startTime = performance.now();
+
+		try {
+			const built = buildNativeMagickArgs(snapSettings(this.settings), {
+				width: this.originalWidth,
+				height: this.originalHeight
+			});
+			const args = [...built.args];
+
+			let clutData: Uint8Array | null = null;
+			if (built.needsClut) {
+				clutData = await renderClutPngBytes(built.needsClut);
+			}
+
+			let fontData: Uint8Array | null = null;
+			let fontFileName: string | null = null;
+			if (built.needsFont) {
+				fontData = getFontBytes(built.needsFont) ?? (await fetchFontBytes(built.needsFont));
+				fontFileName = getFontFileName(built.needsFont) ?? `${built.needsFont}.ttf`;
+				if (!fontData) {
+					// No font bytes (e.g. unregistered local font): drop the
+					// -font flag and let ImageMagick fall back to its default.
+					const fontFlag = args.indexOf('-font');
+					if (fontFlag >= 0) args.splice(fontFlag, 2);
+				}
+			}
+
+			if (debugMode) {
+				console.log('NativeImageMagick', { args, format: this.settings.imageFormat });
+			}
+
+			const result = await window.wasmagick!.processNativeImage({
+				inputName: this.originalName,
+				inputData: this.sourceBytes!,
+				args,
+				outputExtension: built.outputExtension,
+				outputFormat: this.settings.imageFormat,
+				clutData,
+				fontData,
+				fontFileName
+			});
+
+			const elapsed = Math.round(performance.now() - startTime);
+			const appliedOptions: AppliedOptions = {};
+			if (debugMode) {
+				appliedOptions.outputDimensions = { width: result.width, height: result.height };
+				appliedOptions.outputSize = result.data.length;
+				appliedOptions.processTime = elapsed + 'ms';
+				console.log('ImageMagickSettings', { ...this.settings, ...appliedOptions });
+			}
+			this.handleDownload(
+				result.data,
+				result.format,
+				elapsed,
+				result.width,
+				result.height,
+				appliedOptions
+			);
+			if (onComplete) onComplete();
+		} catch (err: unknown) {
+			console.error('Native image processing failed:', err);
+			const message = err instanceof Error ? err.message : 'Unknown error';
+			this.hasError = true;
+			this.errorMessage = message;
+			this.isLoading = false;
+			this.currentProcessingStep = null;
 		}
 	}
 

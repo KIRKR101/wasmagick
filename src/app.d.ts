@@ -30,15 +30,56 @@ declare global {
 
 	interface WasmagickMenuState {
 		hasImage: boolean;
+		hasProcessedImage?: boolean;
 		hasUnsavedEdits: boolean;
 		canUndo: boolean;
 		canRedo: boolean;
+		fileName?: string;
+	}
+
+	interface WasmagickNativeProcessPayload {
+		inputName: string;
+		inputData: Uint8Array;
+		/** Middle args from buildNativeMagickArgs (no shell involved). */
+		args: string[];
+		outputExtension: string;
+		outputFormat: string;
+		clutData?: Uint8Array | null;
+		fontData?: Uint8Array | null;
+		fontFileName?: string | null;
+	}
+
+	interface WasmagickNativeProcessResult {
+		data: Uint8Array;
+		width: number;
+		height: number;
+		format: string;
+	}
+
+	interface WasmagickSystemFont {
+		family: string;
+		fullName: string;
+		postscriptName: string;
+		style: string;
+		fileName: string;
+	}
+
+	interface WasmagickSystemFontData {
+		fileName: string;
+		data: Uint8Array;
 	}
 
 	interface WasmagickElectronApi {
 		readonly platform: string;
 		markReady(): Promise<void>;
+		listSystemFonts(): Promise<WasmagickSystemFont[]>;
+		readSystemFont(postscriptName: string): Promise<WasmagickSystemFontData | null>;
+		isNativeAvailable(): Promise<boolean>;
+		processNativeImage(
+			payload: WasmagickNativeProcessPayload
+		): Promise<WasmagickNativeProcessResult>;
 		saveFile(payload: { name: string; data: Uint8Array<ArrayBuffer> }): Promise<boolean>;
+		revealSavedFile(): void;
 		openImage(): Promise<void>;
 		setTheme(dark: boolean): void;
 		updateMenuState(state: WasmagickMenuState): void;
@@ -48,10 +89,6 @@ declare global {
 		isMaximized(): Promise<boolean>;
 		onMaximizeChange(callback: (maximized: boolean) => void): () => void;
 		onOpenFile(callback: (payload: WasmagickFilePayload) => void): () => void;
-		onMenuExport(callback: () => void): () => void;
-		onMenuUndo(callback: () => void): () => void;
-		onMenuRedo(callback: () => void): () => void;
-		onMenuClose(callback: () => void): () => void;
 	}
 
 	interface BeforeInstallPromptEvent extends Event {

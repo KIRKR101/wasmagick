@@ -11,7 +11,12 @@
 	import SliderRow from '$lib/components/controls/SliderRow.svelte';
 	import ToggleRow from '$lib/components/controls/ToggleRow.svelte';
 	import SectionCard from '$lib/components/controls/SectionCard.svelte';
-	import { registerLocalFont, getLocalFonts, isFontLoaded } from '$lib/fonts';
+	import {
+		registerLocalFont,
+		registerLocalFontSource,
+		getLocalFonts,
+		isFontLoaded
+	} from '$lib/fonts';
 
 	let { magick } = $props<{ magick: MagickState }>();
 
@@ -27,24 +32,37 @@
 	let loadingSystemFonts = $state(false);
 
 	const hasLocalFontAPI =
-		typeof window !== 'undefined' && typeof window.queryLocalFonts === 'function';
+		typeof window !== 'undefined' &&
+		(typeof window.wasmagick?.listSystemFonts === 'function' ||
+			typeof window.queryLocalFonts === 'function');
 
 	async function loadSystemFonts() {
-		if (!window.queryLocalFonts) return;
+		if (!window.wasmagick?.listSystemFonts && !window.queryLocalFonts) return;
 		loadingSystemFonts = true;
 		try {
-			const fonts = await window.queryLocalFonts();
-			for (const font of fonts) {
-				if (!font.postscriptName || font.postscriptName === '' || font.postscriptName === '.')
-					continue;
-				if (isFontLoaded(font.postscriptName)) continue;
-				try {
-					const blob = await font.blob();
-					const data = new Uint8Array(await blob.arrayBuffer());
+			if (window.wasmagick?.listSystemFonts) {
+				const fonts = await window.wasmagick.listSystemFonts();
+				for (const font of fonts) {
 					const label = font.style ? `${font.family} ${font.style}` : font.family;
-					registerLocalFont(font.postscriptName, data, label);
-				} catch (err) {
-					console.warn(`Skipping font "${font.family}":`, err);
+					registerLocalFontSource(font.postscriptName, label, font.fileName, async () => {
+						const result = await window.wasmagick?.readSystemFont(font.postscriptName);
+						return result ? new Uint8Array(result.data) : null;
+					});
+				}
+			} else if (window.queryLocalFonts) {
+				const fonts = await window.queryLocalFonts();
+				for (const font of fonts) {
+					if (!font.postscriptName || font.postscriptName === '' || font.postscriptName === '.')
+						continue;
+					if (isFontLoaded(font.postscriptName)) continue;
+					try {
+						const blob = await font.blob();
+						const data = new Uint8Array(await blob.arrayBuffer());
+						const label = font.style ? `${font.family} ${font.style}` : font.family;
+						registerLocalFont(font.postscriptName, data, label);
+					} catch (err) {
+						console.warn(`Skipping font "${font.family}":`, err);
+					}
 				}
 			}
 			localFonts = getLocalFonts();

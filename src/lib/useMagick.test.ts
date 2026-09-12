@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { useMagick, type MagickState } from './useMagick.svelte';
 import type { MagickSettings } from './types';
 import { isColorDirty } from './utils';
@@ -162,11 +162,53 @@ describe('MagickState', () => {
 	describe('state initialization', () => {
 		it('should initialize with correct default values', () => {
 			expect(magick.wasmLoaded).toBe(false);
+			expect(magick.nativeAvailable).toBe(false);
+			expect(magick.engine).toBe('wasm');
 			expect(magick.isLoading).toBe(false);
 			expect(magick.statsMessage).toBe('Ready');
 			expect(magick.sourceBytes).toBeNull();
 			expect(magick.originalImageUrl).toBeNull();
 			expect(magick.processedImageUrl).toBeNull();
+		});
+
+		describe('initNative', () => {
+			const g = globalThis as unknown as { window?: unknown };
+			let savedWindow: unknown;
+
+			beforeEach(() => {
+				savedWindow = g.window;
+			});
+
+			afterEach(() => {
+				if (savedWindow === undefined) delete g.window;
+				else g.window = savedWindow;
+			});
+
+			it('returns false without an Electron bridge', async () => {
+				delete g.window;
+				expect(await magick.initNative()).toBe(false);
+				expect(magick.nativeAvailable).toBe(false);
+				expect(magick.wasmLoaded).toBe(false);
+			});
+
+			it('returns false when no native binary is bundled', async () => {
+				g.window = { wasmagick: { isNativeAvailable: async () => false } };
+				expect(await magick.initNative()).toBe(false);
+				expect(magick.nativeAvailable).toBe(false);
+				expect(magick.wasmLoaded).toBe(false);
+			});
+
+			it('marks the engine ready when a native binary is bundled', async () => {
+				g.window = { wasmagick: { isNativeAvailable: async () => true } };
+				expect(await magick.initNative()).toBe(true);
+				expect(magick.nativeAvailable).toBe(true);
+				expect(magick.engine).toBe('native');
+				// wasmLoaded is the app-wide "engine ready" flag that the
+				// viewport and panels gate on; without it the UI would sit on
+				// the loading screen forever despite native being ready.
+				expect(magick.wasmLoaded).toBe(true);
+				expect(magick.statsMessage).toBe('Ready (native ImageMagick)');
+			});
 		});
 
 		it('should have correct default settings', () => {
