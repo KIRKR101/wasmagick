@@ -24,6 +24,14 @@ keep using the WebAssembly engine. Native binaries are fetched/assembled per
 platform with `npm run setup:imagemagick` and staged for packaging with
 `npm run stage:native` (runs automatically on `build:electron`).
 
+Packaged desktop builds also integrate with the host desktop:
+
+- Windows NSIS installs an `Edit with WASMagick` Explorer context action for supported image files.
+- macOS installs an `Edit with WASMagick` Finder Quick Action on first launch and registers the app as an image editor.
+- Linux packages include image MIME registrations and an `Open Image…` desktop action.
+
+Windows and macOS file actions pass paths to the existing single-instance open-file handling; the Linux launcher action opens the native image picker.
+
 ### Homebrew (macOS)
 
 ```bash

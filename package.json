@@ -111,6 +111,10 @@
 			{
 				"from": "native-bundle/magick",
 				"to": "magick-bundle"
+			},
+			{
+				"from": "packaging/macos/WASMagick.workflow",
+				"to": "WASMagick.workflow"
 			}
 		],
 		"win": {
@@ -125,6 +129,7 @@
 						"gif",
 						"webp",
 						"bmp",
+						"tif",
 						"tiff",
 						"avif",
 						"svg",
@@ -139,7 +144,8 @@
 		},
 		"nsis": {
 			"oneClick": false,
-			"allowToChangeInstallationDirectory": true
+			"allowToChangeInstallationDirectory": true,
+			"include": "packaging/windows/installer.nsh"
 		},
 		"mac": {
 			"target": "dmg",
@@ -149,7 +155,29 @@
 			"extendInfo": {
 				"CFBundleDisplayName": "WASMagick",
 				"CFBundleName": "WASMagick"
-			}
+			},
+			"fileAssociations": [
+				{
+					"ext": [
+						"png",
+						"jpg",
+						"jpeg",
+						"gif",
+						"webp",
+						"bmp",
+						"tif",
+						"tiff",
+						"avif",
+						"svg",
+						"ico",
+						"heic",
+						"heif"
+					],
+					"name": "Image",
+					"role": "Editor",
+					"rank": "Alternate"
+				}
+			]
 		},
 		"linux": {
 			"target": [
@@ -160,6 +188,31 @@
 			"syncDesktopName": true,
 			"icon": "static/icons/linux",
 			"category": "Graphics",
+			"mimeTypes": [
+				"image/png",
+				"image/jpeg",
+				"image/gif",
+				"image/webp",
+				"image/bmp",
+				"image/tiff",
+				"image/avif",
+				"image/svg+xml",
+				"image/x-icon",
+				"image/heic",
+				"image/heif"
+			],
+			"desktop": {
+				"entry": {
+					"Keywords": "image;editor;photo;convert;",
+					"MimeType": "image/png;image/jpeg;image/gif;image/webp;image/bmp;image/tiff;image/avif;image/svg+xml;image/x-icon;image/heic;image/heif;"
+				},
+				"desktopActions": {
+					"OpenImage": {
+						"Name": "Open Image…",
+						"Exec": "wasmagick --open-dialog"
+					}
+				}
+			},
 			"maintainer": "WASMagick contributors <104659112+KIRKR101@users.noreply.github.com>"
 		}
 	}
