@@ -56,9 +56,24 @@ declare global {
 		format: string;
 	}
 
+	interface WasmagickSystemFont {
+		family: string;
+		fullName: string;
+		postscriptName: string;
+		style: string;
+		fileName: string;
+	}
+
+	interface WasmagickSystemFontData {
+		fileName: string;
+		data: Uint8Array;
+	}
+
 	interface WasmagickElectronApi {
 		readonly platform: string;
 		markReady(): Promise<void>;
+		listSystemFonts(): Promise<WasmagickSystemFont[]>;
+		readSystemFont(postscriptName: string): Promise<WasmagickSystemFontData | null>;
 		isNativeAvailable(): Promise<boolean>;
 		processNativeImage(
 			payload: WasmagickNativeProcessPayload

@@ -28,7 +28,14 @@ import {
 } from '@imagemagick/magick-wasm';
 
 import type { MagickSettings, AppliedOptions, LevelChannel } from './types';
-import { ensureFont, DEFAULT_FONT, isLocalFont, fetchFontBytes, getFontBytes } from './fonts';
+import {
+	ensureFont,
+	DEFAULT_FONT,
+	isLocalFont,
+	fetchFontBytes,
+	getFontBytes,
+	getFontFileName
+} from './fonts';
 import { generateClutImage } from './luts';
 import { renderClutPngBytes } from './clut-data';
 import { buildNativeMagickArgs } from './magick-args';
@@ -1028,7 +1035,7 @@ export class MagickState {
 			let fontFileName: string | null = null;
 			if (built.needsFont) {
 				fontData = getFontBytes(built.needsFont) ?? (await fetchFontBytes(built.needsFont));
-				fontFileName = `${built.needsFont}.ttf`;
+				fontFileName = getFontFileName(built.needsFont) ?? `${built.needsFont}.ttf`;
 				if (!fontData) {
 					// No font bytes (e.g. unregistered local font): drop the
 					// -font flag and let ImageMagick fall back to its default.
