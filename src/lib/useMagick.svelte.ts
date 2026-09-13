@@ -1642,7 +1642,7 @@ export class MagickState {
 
 										const angle = this.settings.annotateAngle[0];
 										if (angle !== 0) {
-											const rad = (angle * Math.PI) / 360;
+							const rad = (angle * Math.PI) / 180;
 											// magick-wasm's affine(scaleX, scaleY, shearX, shearY, tx, ty) maps to
 											// ImageMagick's AffineMatrix { sx, rx, ry, sy, tx, ty }. ImageMagick's
 											// -annotate uses a clockwise rotation for positive angles, so shearX

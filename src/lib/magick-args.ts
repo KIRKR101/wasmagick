@@ -68,6 +68,20 @@ function fmtNum(v: number): string {
 	return String(v);
 }
 
+/** Quote text for ImageMagick's MVG `-draw` syntax without using a shell. */
+function drawTextLiteral(text: string): string {
+	// MVG does not consistently honor backslash-escaped quote delimiters.
+	// Encode syntax-sensitive characters as hex escapes inside a single-quoted
+	// literal so arbitrary user text cannot terminate the drawing primitive.
+	return `'${text
+		.replace(/\\/g, '\\x5c')
+		.replace(/'/g, '\\x27')
+		.replace(/"/g, '\\x22')
+		.replace(/\r/g, '\\x0d')
+		.replace(/\n/g, '\\x0a')
+		.replace(/\t/g, '\\x09')}'`;
+}
+
 /**
  * Mirror of `resolveNoiseAttenuate` in `magick-process.ts` (duplicated here
  * to stay dependency-free): ImageMagick's Poisson noise sigma is inversely
@@ -434,12 +448,25 @@ export function buildNativeMagickArgs(
 		const oy = settings.annotateOffsetY;
 
 		const angle = settings.annotateAngle[0];
-		let geometry = angle !== 0 ? String(angle) : '';
-		if (ox !== 0 || oy !== 0) {
-			geometry += `${ox >= 0 ? '+' : ''}${ox}${oy >= 0 ? '+' : ''}${oy}`;
+		if (angle !== 0) {
+			// `-annotate` accepts either an angle or an offset geometry, but not
+			// both in the same argument (e.g. `45+10+20` is invalid). Use the
+			// equivalent affine + text drawable sequence as the WASM path instead.
+			// ImageMagick's CLI affine fields are ordered as sx, rx, ry, sy;
+			// passing the shear terms in the wrong slots creates a reflection.
+			const rad = (angle * Math.PI) / 180;
+			args.push(
+				'-draw',
+				`affine ${fmtNum(Math.cos(rad))},${fmtNum(-Math.sin(rad))},${fmtNum(Math.sin(rad))},${fmtNum(Math.cos(rad))},0,0 text ${fmtNum(ox)},${fmtNum(oy)} ${drawTextLiteral(settings.annotateText)}`
+			);
+		} else {
+			let geometry = '';
+			if (ox !== 0 || oy !== 0) {
+				geometry = `${ox >= 0 ? '+' : ''}${ox}${oy >= 0 ? '+' : ''}${oy}`;
+			}
+			if (geometry === '') geometry = '0';
+			args.push('-annotate', geometry, settings.annotateText);
 		}
-		if (geometry === '') geometry = '0';
-		args.push('-annotate', geometry, settings.annotateText);
 	}
 
 	if (settings.stripMeta) args.push('-strip');

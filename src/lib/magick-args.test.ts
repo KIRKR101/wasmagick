@@ -347,7 +347,24 @@ describe('buildNativeMagickArgs', () => {
 			annotateFontColor: '#e74c3c',
 			annotateAngle: [45]
 		});
-		expect(angled.args).toContain('45');
+		expect(angled.args).toContain('-draw');
+		expect(angled.args.join(' ')).toContain(
+			"text 0,0 'Rotated'"
+		);
+		const angledWithOffset = build({
+			annotateText: 'Rotated',
+			annotateAngle: [45],
+			annotateOffsetX: -6,
+			annotateOffsetY: 332
+		});
+		const angleRad = (45 * Math.PI) / 180;
+		expect(angledWithOffset.args).toEqual(
+			expect.arrayContaining([
+				'-draw',
+				`affine ${Math.cos(angleRad)},${-Math.sin(angleRad)},${Math.sin(angleRad)},${Math.cos(angleRad)},0,0 text -6,332 'Rotated'`
+			])
+		);
+		expect(angledWithOffset.args).not.toContain('45-6+332');
 		const stroked = build({
 			annotateText: 'Outline',
 			annotateStroke: true,
