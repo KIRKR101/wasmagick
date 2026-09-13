@@ -5,6 +5,12 @@
 	import CropOverlay from './CropOverlay.svelte';
 	import type { SampleImage } from '$lib/editor-types';
 	import type { CropRect } from '$lib/crop-utils';
+	import {
+		annotationPlacementFromPoint,
+		topLeftFromAnnotationPlacement,
+		type AnnotationPlacement,
+		type AnnotationTextMetrics
+	} from '$lib/annotation-utils';
 
 	let {
 		originalImageUrl = null,
@@ -13,12 +19,17 @@
 		isLoading = false,
 		wasmLoaded = true,
 		magickSettings = null,
+		annotationMetrics = null,
+		annotationPlacementActive = false,
+		annotationMenuActive = false,
 		cropActive = false,
 		cropAspectRatio = 'free',
 		initialCrop = null,
 		onBrowse = () => {},
 		onSelectSample = () => {},
 		onStateChange = () => {},
+		onAnnotationPlace = () => {},
+		onAnnotationPlacementChange = () => {},
 		onCropConfirm = () => {},
 		onCropCancel = () => {},
 		onCropChange = () => {},
@@ -29,14 +40,30 @@
 		originalPreviewFailed?: boolean;
 		isLoading?: boolean;
 		wasmLoaded?: boolean;
-		magickSettings?: { rotate?: string; resizeW?: number | null; resizeH?: number | null } | null;
+		magickSettings?: {
+			rotate?: string;
+			resizeW?: number | null;
+			resizeH?: number | null;
+			annotateText?: string;
+			annotateFontFamily?: string;
+			annotateFontSize?: [number];
+			annotateGravity?: AnnotationPlacement['gravity'];
+			annotateOffsetX?: number;
+			annotateOffsetY?: number;
+			annotateAngle?: [number];
+		} | null;
+		annotationMetrics?: AnnotationTextMetrics | null;
 		currentProcessingStep?: string | null;
+		annotationPlacementActive?: boolean;
+		annotationMenuActive?: boolean;
 		cropActive?: boolean;
 		cropAspectRatio?: string;
 		initialCrop?: { x: number; y: number; w: number; h: number } | null;
 		onBrowse?: () => void;
 		onSelectSample?: (s: SampleImage) => void;
 		onStateChange?: (s: { zoom: number }) => void;
+		onAnnotationPlace?: (placement: AnnotationPlacement) => void;
+		onAnnotationPlacementChange?: (active: boolean) => void;
 		onCropConfirm?: (crop: CropRect) => void;
 		onCropCancel?: () => void;
 		onCropChange?: (crop: CropRect | null) => void;
@@ -65,6 +92,136 @@
 	let loadedOriginalUrl: string | null | undefined = null;
 	let displayedWidth = $state(0);
 	let displayedHeight = $state(0);
+	let annotationFontReady = $state(0);
+
+	$effect(() => {
+		const fontFamily = magickSettings?.annotateFontFamily?.trim();
+		const fontSize = magickSettings?.annotateFontSize?.[0] ?? 24;
+		if (typeof document === 'undefined' || !fontFamily) return;
+		let active = true;
+		void document.fonts.load(`${fontSize}px "${fontFamily}"`).then(() => {
+			if (active) annotationFontReady += 1;
+		});
+		return () => {
+			active = false;
+		};
+	});
+
+	function measureAnnotationText(_fontReady: number): AnnotationTextMetrics {
+		const text = magickSettings?.annotateText ?? '';
+		if (!text) {
+			return {
+				advanceWidth: 0,
+				layoutHeight: 0,
+				inkWidth: 0,
+				inkHeight: 0,
+				inkOffsetX: 0,
+				inkOffsetYNorth: 0,
+				inkOffsetYCenter: 0,
+				inkOffsetYSouth: 0
+			};
+		}
+		const fontSize = magickSettings?.annotateFontSize?.[0] ?? 24;
+		const fontFamily = magickSettings?.annotateFontFamily?.trim() || 'sans-serif';
+		const lines = text.split(/\r?\n/);
+		let advanceWidth = Math.max(
+			1,
+			fontSize * 0.6 * Math.max(...lines.map((line) => line.length), 1)
+		);
+		let inkWidth = advanceWidth;
+		let lineHeight = fontSize * 1.2;
+		let inkHeight = lineHeight * lines.length;
+
+		if (typeof document !== 'undefined') {
+			const canvas = document.createElement('canvas');
+			const context = canvas.getContext('2d');
+			if (context) {
+				context.font = `${fontSize}px "${fontFamily}"`;
+				let measuredInkHeight = 0;
+				advanceWidth = Math.max(1, ...lines.map((line) => context.measureText(line || ' ').width));
+				inkWidth = Math.max(
+					1,
+					...lines.map((line) => {
+						const metrics = context.measureText(line || ' ');
+						const lineInkWidth =
+							(metrics.actualBoundingBoxLeft || 0) +
+							(metrics.actualBoundingBoxRight || metrics.width);
+						measuredInkHeight = Math.max(
+							measuredInkHeight,
+							(metrics.actualBoundingBoxAscent || fontSize * 0.8) +
+								(metrics.actualBoundingBoxDescent || fontSize * 0.2)
+						);
+						return lineInkWidth;
+					})
+				);
+				if (measuredInkHeight > 0) {
+					lineHeight = measuredInkHeight;
+					inkHeight = measuredInkHeight * lines.length;
+				}
+			}
+		}
+
+		const angle = Math.abs(magickSettings?.annotateAngle?.[0] ?? 0) * (Math.PI / 180);
+		const layoutHeight = lineHeight * lines.length;
+		const rotatedAdvanceWidth =
+			Math.abs(advanceWidth * Math.cos(angle)) + Math.abs(layoutHeight * Math.sin(angle));
+		const rotatedLayoutHeight =
+			Math.abs(advanceWidth * Math.sin(angle)) + Math.abs(layoutHeight * Math.cos(angle));
+		const rotatedInkWidth =
+			Math.abs(inkWidth * Math.cos(angle)) + Math.abs(inkHeight * Math.sin(angle));
+		const rotatedInkHeight =
+			Math.abs(inkWidth * Math.sin(angle)) + Math.abs(inkHeight * Math.cos(angle));
+		const horizontalInkInset = Math.max(0, (advanceWidth - inkWidth) / 2);
+		const verticalInkInset = Math.max(0, (layoutHeight - inkHeight) / 2);
+		return {
+			advanceWidth: rotatedAdvanceWidth,
+			layoutHeight: rotatedLayoutHeight,
+			inkWidth: rotatedInkWidth,
+			inkHeight: rotatedInkHeight,
+			inkOffsetX: horizontalInkInset,
+			inkOffsetYNorth: 0,
+			inkOffsetYCenter: verticalInkInset,
+			inkOffsetYSouth: verticalInkInset
+		};
+	}
+
+	let annotationTextMetrics = $derived(
+		annotationMetrics ?? measureAnnotationText(annotationFontReady)
+	);
+
+	$effect(() => {
+		if (splitMode && annotationPlacementActive) onAnnotationPlacementChange(false);
+	});
+
+	let annotationPoint = $derived.by(() => {
+		if (
+			!magickSettings?.annotateGravity ||
+			!displayedWidth ||
+			!displayedHeight ||
+			magickSettings.annotateOffsetX == null ||
+			magickSettings.annotateOffsetY == null
+		) {
+			return null;
+		}
+		return topLeftFromAnnotationPlacement(
+			{
+				gravity: magickSettings.annotateGravity,
+				offsetX: magickSettings.annotateOffsetX,
+				offsetY: magickSettings.annotateOffsetY
+			},
+			displayedWidth,
+			displayedHeight,
+			annotationTextMetrics
+		);
+	});
+
+	let annotationMarkerStyle = $derived.by(() => {
+		if (!annotationPoint || !viewportRef) return '';
+		const scale = currentZoom / 100;
+		const x = imageX + (annotationPoint.x - displayedWidth / 2) * scale;
+		const y = imageY + (annotationPoint.y - displayedHeight / 2) * scale;
+		return `left: calc(50% + ${x}px); top: calc(50% + ${y}px);`;
+	});
 
 	let imageStyle = $derived(`
 		position: absolute;
@@ -72,7 +229,13 @@
 		left: 50%;
 		transform: translate(calc(-50% + ${imageX}px), calc(-50% + ${imageY}px)) scale(${currentZoom / 100});
 		display: ${showPlaceholder ? 'none' : 'block'};
-		cursor: ${isPanning ? 'grabbing' : 'grab'};
+		cursor: ${
+			annotationPlacementActive && annotationMenuActive
+				? 'crosshair'
+				: isPanning
+					? 'grabbing'
+					: 'grab'
+		};
 	`);
 
 	let displayedImage = $derived(
@@ -165,7 +328,10 @@
 		isComparing = false;
 	}
 	export function toggleSplitCompare() {
-		if (canSplit) splitMode = !splitMode;
+		if (canSplit) {
+			splitMode = !splitMode;
+			if (splitMode && annotationPlacementActive) onAnnotationPlacementChange(false);
+		}
 	}
 	export function zoomToOneToOne() {
 		const { x, y } = getViewportCenter();
@@ -225,6 +391,12 @@
 
 	function onPointerDown(e: PointerEvent) {
 		if (showPlaceholder || e.button !== 0 || cropActive) return;
+		if (annotationPlacementActive && annotationMenuActive) {
+			e.preventDefault();
+			e.stopPropagation();
+			placeAnnotationAt(e.clientX, e.clientY);
+			return;
+		}
 		isPanning = true;
 		startPointerX = e.clientX;
 		startPointerY = e.clientY;
@@ -265,7 +437,13 @@
 	let lastTouchDistance = $state<number | null>(null);
 
 	function onTouchStart(e: TouchEvent) {
-		if (showPlaceholder) return;
+		if (showPlaceholder || cropActive) return;
+		if (annotationPlacementActive && annotationMenuActive) {
+			e.preventDefault();
+			const touch = e.touches[0];
+			if (touch) placeAnnotationAt(touch.clientX, touch.clientY);
+			return;
+		}
 		if (e.touches.length === 1) {
 			touchMode = 'pan';
 			touchPanStartX = e.touches[0].clientX;
@@ -318,7 +496,7 @@
 	}
 
 	function onDblClick(e: MouseEvent) {
-		if (showPlaceholder) return;
+		if (showPlaceholder || (annotationPlacementActive && annotationMenuActive)) return;
 		e.preventDefault();
 		if (Math.abs(currentZoom - getFitZoom()) < 1) {
 			zoomAt(e.clientX, e.clientY, 100);
@@ -328,6 +506,11 @@
 	}
 
 	function handleKeyDown(e: KeyboardEvent) {
+		if (e.code === 'Escape' && annotationPlacementActive && annotationMenuActive) {
+			e.preventDefault();
+			onAnnotationPlacementChange(false);
+			return;
+		}
 		if (showPlaceholder || !processedImageUrl) return;
 		if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 		if (e.code === 'Space') {
@@ -341,6 +524,20 @@
 			e.preventDefault();
 			endCompare();
 		}
+	}
+
+	function placeAnnotationAt(clientX: number, clientY: number): void {
+		if (!previewImageRef || !displayedWidth || !displayedHeight) return;
+		const rect = previewImageRef.getBoundingClientRect();
+		if (!rect.width || !rect.height) return;
+		if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom)
+			return;
+
+		const x = ((clientX - rect.left) / rect.width) * displayedWidth;
+		const y = ((clientY - rect.top) / rect.height) * displayedHeight;
+		onAnnotationPlace(
+			annotationPlacementFromPoint({ x, y }, displayedWidth, displayedHeight, annotationTextMetrics)
+		);
 	}
 </script>
 
@@ -417,6 +614,24 @@
 					? 'opacity-100'
 					: 'opacity-0'} {isLoading ? 'animate-opacity-pulse' : ''}"
 			/>
+			{#if annotationMenuActive && annotationPoint && (annotationPlacementActive || magickSettings?.annotateText?.trim()) && !isComparing}
+				<div
+					class="pointer-events-none absolute z-30 size-5 -translate-x-1/2 -translate-y-1/2 mix-blend-difference"
+					style={annotationMarkerStyle}
+					aria-hidden="true"
+				>
+					<span class="absolute top-1/2 left-0 h-px w-5 -translate-y-1/2 bg-white"></span>
+					<span class="absolute top-0 left-1/2 h-5 w-px -translate-x-1/2 bg-white"></span>
+				</div>
+			{/if}
+			{#if annotationMenuActive && annotationPlacementActive && !isComparing}
+				<div
+					class="pointer-events-none absolute top-3 left-1/2 z-30 -translate-x-1/2 border border-foreground/30 bg-[#f7f7f4]/90 px-2 py-1 font-mono text-[11px] text-foreground backdrop-blur-sm dark:bg-background/90"
+					role="status"
+				>
+					CLICK TO PLACE · ESC TO EXIT
+				</div>
+			{/if}
 			{#if isComparing}
 				<div
 					class="pointer-events-none absolute top-3 z-30 border border-foreground/30 bg-[#f7f7f4] px-2 py-1 font-mono text-[11px] text-muted-foreground dark:bg-background"

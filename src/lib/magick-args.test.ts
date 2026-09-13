@@ -365,6 +365,22 @@ describe('buildNativeMagickArgs', () => {
 		expect(offset.args).toContain('+30+20');
 	});
 
+	it('keeps positive edge offsets inset from the canvas edge', () => {
+		const right = build({
+			annotateText: 'Right',
+			annotateGravity: 'East',
+			annotateOffsetX: 30
+		});
+		const bottom = build({
+			annotateText: 'Bottom',
+			annotateGravity: 'South',
+			annotateOffsetY: 20
+		});
+
+		expect(right.args).toContain('+30+0');
+		expect(bottom.args).toContain('+0+20');
+	});
+
 	it('emits strip and quality last', () => {
 		const r = build({ stripMeta: true, quality: [85], imageFormat: 'WebP' });
 		expect(r.args).toContain('-strip');

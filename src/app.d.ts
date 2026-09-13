@@ -56,6 +56,24 @@ declare global {
 		format: string;
 	}
 
+	interface WasmagickNativeFontMetricsPayload {
+		text: string;
+		fontSize: number;
+		fontData: Uint8Array;
+		fontFileName?: string | null;
+	}
+
+	interface WasmagickNativeFontMetrics {
+		advanceWidth: number;
+		layoutHeight: number;
+		inkWidth: number;
+		inkHeight: number;
+		inkOffsetX: number;
+		inkOffsetYNorth: number;
+		inkOffsetYCenter: number;
+		inkOffsetYSouth: number;
+	}
+
 	interface WasmagickSystemFont {
 		family: string;
 		fullName: string;
@@ -78,6 +96,9 @@ declare global {
 		processNativeImage(
 			payload: WasmagickNativeProcessPayload
 		): Promise<WasmagickNativeProcessResult>;
+		getNativeFontMetrics(
+			payload: WasmagickNativeFontMetricsPayload
+		): Promise<WasmagickNativeFontMetrics>;
 		saveFile(payload: { name: string; data: Uint8Array<ArrayBuffer> }): Promise<boolean>;
 		revealSavedFile(): void;
 		openImage(): Promise<void>;

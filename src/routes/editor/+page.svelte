@@ -12,6 +12,7 @@
 	import { takePendingFile } from '$lib/pending-drop';
 	import { applyTheme, resolveInitialTheme } from '$lib/theme';
 	import type { EditorSection } from '$lib/editor-types';
+	import type { AnnotationPlacement } from '$lib/annotation-utils';
 
 	const magick = useMagick();
 	const history = useHistory();
@@ -27,6 +28,21 @@
 	let actionNotice = $state('');
 	let actionNoticeTimer: ReturnType<typeof setTimeout> | null = null;
 	let toastCanReveal = $state(false);
+	let annotationPlacementActive = $state(false);
+
+	$effect(() => {
+		if (activeSection !== 'annotate') annotationPlacementActive = false;
+	});
+
+	$effect(() => {
+		// Track the annotation inputs here so the viewport can use metrics from
+		// the same ImageMagick engine that renders the final text.
+		const metricsKey = `${magick.nativeAvailable ? 'native' : 'wasm'}\u0000${magick.settings.annotateFontFamily}\u0000${magick.settings.annotateFontSize[0]}\u0000${magick.settings.annotateAngle[0]}\u0000${magick.settings.annotateText}`;
+		const timer = setTimeout(() => {
+			void magick.refreshAnnotationTextMetrics(metricsKey);
+		}, 120);
+		return () => clearTimeout(timer);
+	});
 
 	function showNotice(message: string, canReveal = false, duration = 2400): void {
 		if (actionNoticeTimer) clearTimeout(actionNoticeTimer);
@@ -164,8 +180,15 @@
 		});
 	}
 
+	function handleAnnotationPlace(placement: AnnotationPlacement): void {
+		magick.settings.annotateGravity = placement.gravity;
+		magick.settings.annotateOffsetX = placement.offsetX;
+		magick.settings.annotateOffsetY = placement.offsetY;
+	}
+
 	/** Replace the current image (called by the replace guard after confirmation). */
 	async function replaceImage(file: File): Promise<void> {
+		annotationPlacementActive = false;
 		const ok = await magick.setSourceFile(file);
 		if (ok) {
 			history.clear();
@@ -176,6 +199,7 @@
 
 	/** Close the current image (called by the replace guard after confirmation). */
 	function closeCurrent(): void {
+		annotationPlacementActive = false;
 		history.clear();
 		magick.clearSource();
 	}
@@ -384,6 +408,9 @@
 		{guard}
 		bind:activeSection
 		bind:viewport
+		{annotationPlacementActive}
+		onAnnotationPlacementChange={(active) => (annotationPlacementActive = active)}
+		onAnnotationPlace={handleAnnotationPlace}
 		onProcess={processCurrent}
 		onReset={() => magick.resetSettings()}
 		onDownload={downloadCurrent}
@@ -402,6 +429,9 @@
 		{isDarkMode}
 		bind:activeSection
 		bind:viewport
+		{annotationPlacementActive}
+		onAnnotationPlacementChange={(active) => (annotationPlacementActive = active)}
+		onAnnotationPlace={handleAnnotationPlace}
 		onToggleDebug={() => (debugMode = !debugMode)}
 		onToggleTheme={toggleDarkMode}
 		onToggleShortcuts={() => (showShortcuts = !showShortcuts)}

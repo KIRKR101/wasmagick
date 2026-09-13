@@ -30,7 +30,10 @@
 		onUndo,
 		onRedo,
 		onReplace,
-		onClose
+		onClose,
+		annotationPlacementActive = false,
+		onAnnotationPlacementChange = () => {},
+		onAnnotationPlace = () => {}
 	}: {
 		magick: MagickState;
 		history: HistoryState;
@@ -50,6 +53,9 @@
 		onRedo: () => void;
 		onReplace: (file: File) => Promise<void>;
 		onClose: () => void;
+		annotationPlacementActive?: boolean;
+		onAnnotationPlacementChange?: (active: boolean) => void;
+		onAnnotationPlace?: (placement: import('$lib/annotation-utils').AnnotationPlacement) => void;
 	} = $props();
 
 	let fileInputEl = $state<HTMLInputElement | null>(null);
@@ -168,6 +174,8 @@
 				{history}
 				{presets}
 				{activeSection}
+				{annotationPlacementActive}
+				{onAnnotationPlacementChange}
 				{onProcess}
 				{onDownload}
 				onClearRequest={onClearHistoryRequest}
@@ -183,12 +191,17 @@
 				isLoading={magick.isLoading}
 				wasmLoaded={magick.wasmLoaded}
 				magickSettings={magick.settings}
+				annotationMetrics={magick.annotationTextMetrics}
+				{annotationPlacementActive}
+				annotationMenuActive={activeSection === 'annotate'}
 				currentProcessingStep={magick.currentProcessingStep}
 				cropActive={magick.cropMode}
 				cropAspectRatio={magick.cropAspectRatio}
 				initialCrop={magick.cropSelection ?? cropInitialRect}
 				onBrowse={openFilePicker}
 				{onSelectSample}
+				{onAnnotationPlace}
+				{onAnnotationPlacementChange}
 				onCropConfirm={(crop) => magick.confirmCrop(crop)}
 				onCropCancel={() => magick.cancelCrop()}
 				onCropChange={(crop) => (magick.cropSelection = crop)}

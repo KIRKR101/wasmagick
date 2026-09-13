@@ -376,15 +376,6 @@ export function processImageSync(sourceBytes: Uint8Array, settings: MagickSettin
 				const gravityKey = settings.annotateGravity as keyof typeof Gravity;
 				draws.gravity(Gravity[gravityKey]);
 
-				let ox = settings.annotateOffsetX;
-				let oy = settings.annotateOffsetY;
-				if (gravityKey === 'East' || gravityKey === 'Northeast' || gravityKey === 'Southeast') {
-					ox = -ox;
-				}
-				if (gravityKey === 'South' || gravityKey === 'Southwest' || gravityKey === 'Southeast') {
-					oy = -oy;
-				}
-
 				const angle = settings.annotateAngle[0];
 				if (angle !== 0) {
 					const rad = (angle * Math.PI) / 360;
@@ -395,7 +386,7 @@ export function processImageSync(sourceBytes: Uint8Array, settings: MagickSettin
 					draws.affine(Math.cos(rad), Math.cos(rad), Math.sin(rad), -Math.sin(rad), 0, 0);
 				}
 
-				draws.text(ox, oy, settings.annotateText);
+				draws.text(settings.annotateOffsetX, settings.annotateOffsetY, settings.annotateText);
 				draws.draw(image);
 			} catch (e) {
 				console.warn('Annotate failed:', e);

@@ -26,7 +26,9 @@
 		presets,
 		onProcess,
 		onDownload,
-		onClearRequest
+		onClearRequest,
+		annotationPlacementActive = false,
+		onAnnotationPlacementChange = () => {}
 	}: {
 		activeSection: EditorSection;
 		magick: MagickState;
@@ -35,6 +37,8 @@
 		onProcess: () => void;
 		onDownload: () => void;
 		onClearRequest?: () => void;
+		annotationPlacementActive?: boolean;
+		onAnnotationPlacementChange?: (active: boolean) => void;
 	} = $props();
 
 	const META: Record<
@@ -121,7 +125,7 @@
 		{:else if activeSection === 'filters'}
 			<FiltersSection {magick} />
 		{:else if activeSection === 'annotate'}
-			<AnnotateSection {magick} />
+			<AnnotateSection {magick} {annotationPlacementActive} {onAnnotationPlacementChange} />
 		{:else if activeSection === 'export'}
 			<ExportSection {magick} />
 		{:else if activeSection === 'presets'}

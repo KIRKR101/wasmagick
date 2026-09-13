@@ -430,11 +430,8 @@ export function buildNativeMagickArgs(
 		}
 		args.push('-gravity', settings.annotateGravity);
 
-		let ox = settings.annotateOffsetX;
-		let oy = settings.annotateOffsetY;
-		const g = settings.annotateGravity;
-		if (g === 'East' || g === 'Northeast' || g === 'Southeast') ox = -ox;
-		if (g === 'South' || g === 'Southwest' || g === 'Southeast') oy = -oy;
+		const ox = settings.annotateOffsetX;
+		const oy = settings.annotateOffsetY;
 
 		const angle = settings.annotateAngle[0];
 		let geometry = angle !== 0 ? String(angle) : '';

@@ -28,7 +28,9 @@
 		onProcess,
 		onDownload,
 		onClearRequest,
-		onClose
+		onClose,
+		annotationPlacementActive = false,
+		onAnnotationPlacementChange = () => {}
 	}: {
 		open?: boolean;
 		magick: MagickState;
@@ -39,6 +41,8 @@
 		onDownload: () => void;
 		onClearRequest?: () => void;
 		onClose: () => void;
+		annotationPlacementActive?: boolean;
+		onAnnotationPlacementChange?: (active: boolean) => void;
 	} = $props();
 
 	const TABS: { id: EditorSection; label: string; dirty: () => boolean }[] = [
@@ -205,7 +209,7 @@
 			{:else if activeSection === 'filters'}
 				<FiltersSection {magick} />
 			{:else if activeSection === 'annotate'}
-				<AnnotateSection {magick} />
+				<AnnotateSection {magick} {annotationPlacementActive} {onAnnotationPlacementChange} />
 			{:else if activeSection === 'export'}
 				<ExportSection {magick} />
 			{:else if activeSection === 'presets'}

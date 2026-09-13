@@ -4,6 +4,36 @@
 @import '@fontsource-variable/geist';
 @import '@fontsource-variable/jetbrains-mono';
 
+@font-face {
+	font-family: 'Roboto-Regular';
+	src: url('/fonts/Roboto-Regular.ttf') format('truetype');
+	font-display: block;
+}
+
+@font-face {
+	font-family: 'Lato-Regular';
+	src: url('/fonts/Lato-Regular.ttf') format('truetype');
+	font-display: block;
+}
+
+@font-face {
+	font-family: 'PT_Serif-Regular';
+	src: url('/fonts/PT_Serif-Web-Regular.ttf') format('truetype');
+	font-display: block;
+}
+
+@font-face {
+	font-family: 'SpaceMono-Regular';
+	src: url('/fonts/SpaceMono-Regular.ttf') format('truetype');
+	font-display: block;
+}
+
+@font-face {
+	font-family: 'Pacifico-Regular';
+	src: url('/fonts/Pacifico-Regular.ttf') format('truetype');
+	font-display: block;
+}
+
 @custom-variant dark (&:is(.dark *));
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';

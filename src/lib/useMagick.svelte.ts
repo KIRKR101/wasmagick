@@ -42,6 +42,7 @@ import { buildNativeMagickArgs } from './magick-args';
 import { applyCrop, resolveNoiseAttenuate } from './magick-process';
 import { extractExif, type ExifData } from './exif';
 import { computeCropStepOffset, type CropRect } from './crop-utils';
+import type { AnnotationTextMetrics } from './annotation-utils';
 
 const AUTO_PROCESS_DELAY = 300;
 
@@ -411,6 +412,7 @@ export class MagickState {
 	originalHeight = $state(0);
 	processedWidth = $state(0);
 	processedHeight = $state(0);
+	annotationTextMetrics = $state<AnnotationTextMetrics | null>(null);
 	currentProcessingStep = $state<string | null>(null);
 	exif = $state<ExifData | null>(null);
 	exifLoading = $state(false);
@@ -496,6 +498,8 @@ export class MagickState {
 	// runs never interleave on the shared ExifTool wasm engine (its output
 	// buffers are module-scoped; concurrent runs corrupt each other).
 	private _exifPromise: Promise<void> | null = null;
+	private _annotationMetricsKey = '';
+	private _annotationMetricsRequest = 0;
 
 	hexToRgb(hex: string): { r: number; g: number; b: number } {
 		let r = 0,
@@ -539,6 +543,45 @@ export class MagickState {
 		} catch {
 			this.nativeAvailable = false;
 			return false;
+		}
+	}
+
+	/** Refresh the preview metrics from the active ImageMagick engine. */
+	async refreshAnnotationTextMetrics(keyOverride?: string): Promise<void> {
+		const text = this.settings.annotateText;
+		const font = this.settings.annotateFontFamily;
+		const fontSize = this.settings.annotateFontSize[0];
+		const angle = this.settings.annotateAngle[0];
+		const key =
+			keyOverride ??
+			`${this.nativeAvailable ? 'native' : 'wasm'}\u0000${font}\u0000${fontSize}\u0000${angle}\u0000${text}`;
+		if (key === this._annotationMetricsKey) return;
+		this._annotationMetricsKey = key;
+		const request = ++this._annotationMetricsRequest;
+
+		if (!text.trim() || angle !== 0) {
+			this.annotationTextMetrics = null;
+			return;
+		}
+
+		try {
+			if (this.nativeAvailable && window.wasmagick?.getNativeFontMetrics) {
+				const fontData = getFontBytes(font) ?? (await fetchFontBytes(font));
+				if (fontData) {
+					const metrics = await window.wasmagick.getNativeFontMetrics({
+						text,
+						fontSize,
+						fontData,
+						fontFileName: getFontFileName(font) ?? `${font}.ttf`
+					});
+					if (request === this._annotationMetricsRequest) {
+						this.annotationTextMetrics = metrics;
+					}
+				}
+			}
+		} catch (err) {
+			console.warn('Could not load ImageMagick annotation metrics:', err);
+			if (request === this._annotationMetricsRequest) this.annotationTextMetrics = null;
 		}
 	}
 
@@ -1597,23 +1640,6 @@ export class MagickState {
 										const gravityKey = this.settings.annotateGravity as keyof typeof Gravity;
 										draws.gravity(Gravity[gravityKey]);
 
-										let ox = this.settings.annotateOffsetX;
-										let oy = this.settings.annotateOffsetY;
-										if (
-											gravityKey === 'East' ||
-											gravityKey === 'Northeast' ||
-											gravityKey === 'Southeast'
-										) {
-											ox = -ox;
-										}
-										if (
-											gravityKey === 'South' ||
-											gravityKey === 'Southwest' ||
-											gravityKey === 'Southeast'
-										) {
-											oy = -oy;
-										}
-
 										const angle = this.settings.annotateAngle[0];
 										if (angle !== 0) {
 											const rad = (angle * Math.PI) / 360;
@@ -1631,7 +1657,11 @@ export class MagickState {
 											);
 										}
 
-										draws.text(ox, oy, this.settings.annotateText);
+										draws.text(
+											this.settings.annotateOffsetX,
+											this.settings.annotateOffsetY,
+											this.settings.annotateText
+										);
 										draws.draw(image);
 										appliedOptions.annotate = {
 											text: this.settings.annotateText,

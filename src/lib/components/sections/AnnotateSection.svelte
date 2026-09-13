@@ -18,7 +18,15 @@
 		isFontLoaded
 	} from '$lib/fonts';
 
-	let { magick } = $props<{ magick: MagickState }>();
+	let {
+		magick,
+		annotationPlacementActive = false,
+		onAnnotationPlacementChange = () => {}
+	} = $props<{
+		magick: MagickState;
+		annotationPlacementActive?: boolean;
+		onAnnotationPlacementChange?: (active: boolean) => void;
+	}>();
 
 	const BUILTIN_FONTS = [
 		{ value: 'Roboto-Regular', label: 'Roboto' },
@@ -181,6 +189,39 @@
 			magick.settings.annotateAngle[0] !== 0}
 	>
 		<div class="space-y-3">
+			<div class="border border-dashed border-foreground/30 p-2.5">
+				<div class="flex items-center justify-between gap-3">
+					<div class="min-w-0">
+						<p class="font-mono text-[11px] text-foreground">Place on canvas</p>
+						<p class="mt-0.5 font-mono text-[10px] leading-relaxed text-muted-foreground/70">
+							Click the image to set gravity and offset.
+						</p>
+					</div>
+					<button
+						type="button"
+						disabled={!magick.originalImageUrl}
+						onclick={() => onAnnotationPlacementChange(!annotationPlacementActive)}
+						aria-pressed={annotationPlacementActive}
+						class="shrink-0 cursor-pointer border border-foreground/40 px-2 py-1.5 font-mono text-[10px] tracking-wide text-muted-foreground uppercase transition-colors hover:border-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 {annotationPlacementActive
+							? 'bg-foreground text-background hover:bg-foreground hover:text-background'
+							: ''}"
+					>
+						{annotationPlacementActive ? 'DONE' : 'PLACE'}
+					</button>
+				</div>
+				{#if annotationPlacementActive}
+					<p
+						class="mt-2 border-t border-dashed border-foreground/20 pt-2 font-mono text-[10px] text-muted-foreground"
+					>
+						Placement mode on · press Esc to exit
+					</p>
+				{/if}
+			</div>
+			<div class="flex items-center gap-2 font-mono text-[10px] text-muted-foreground/50">
+				<span class="h-px flex-1 bg-foreground/15"></span>
+				<span>or set manually</span>
+				<span class="h-px flex-1 bg-foreground/15"></span>
+			</div>
 			<Select type="single" bind:value={magick.settings.annotateGravity}>
 				<SelectTrigger class="h-9 w-full font-mono text-xs">
 					{GRAVITY_OPTIONS.find((o) => o.value === magick.settings.annotateGravity)?.label ??

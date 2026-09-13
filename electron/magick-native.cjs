@@ -340,9 +340,107 @@ async function processNative(payload) {
 	}
 }
 
+function parseMetricGeometry(output) {
+	const match = String(output)
+		.trim()
+		.match(/^(\d+)\s+(\d+)\s+([+-]?\d+)\s+([+-]?\d+)$/);
+	if (!match) throw new Error(`Could not parse ImageMagick text bounds: ${String(output).trim()}`);
+	return {
+		width: Number(match[1]),
+		height: Number(match[2]),
+		x: Number(match[3]),
+		y: Number(match[4])
+	};
+}
+
+/**
+ * Query the same ImageMagick font metrics used by -annotate. The renderer
+ * needs both the logical advance box and the visible ink box: gravity aligns
+ * the former, while the marker represents the latter.
+ */
+async function getNativeFontMetrics(payload) {
+	if (
+		!payload ||
+		typeof payload.text !== 'string' ||
+		!payload.text ||
+		!Number.isFinite(payload.fontSize) ||
+		payload.fontSize <= 0 ||
+		!(payload.fontData instanceof Uint8Array)
+	) {
+		throw new Error('Invalid native font metrics request');
+	}
+
+	const magickBin = resolveMagickBin();
+	if (!magickBin) throw new Error('Native ImageMagick binary not found');
+	const tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'wasmagick-metrics-'));
+	const fontPath = path.join(
+		tmpDir,
+		path.basename(String(payload.fontFileName || 'font.ttf')).replace(/[^a-zA-Z0-9._-]/g, '_') ||
+			'font.ttf'
+	);
+
+	try {
+		await fs.promises.writeFile(fontPath, payload.fontData);
+		const baseArgs = ['-font', fontPath, '-pointsize', String(payload.fontSize), '-fill', 'white'];
+		const metricRun = await runBinary(magickBin, [
+			'-size',
+			'1x1',
+			'xc:none',
+			...baseArgs,
+			'-debug',
+			'annotate',
+			'-annotate',
+			'0',
+			payload.text,
+			'null:'
+		]);
+		const metricMatch = metricRun.stderr
+			.toString('utf-8')
+			.match(/Metrics:[\s\S]*?width:\s*([+-]?\d+(?:\.\d+)?); height:\s*([+-]?\d+(?:\.\d+)?);/);
+		if (!metricMatch) throw new Error('Could not parse ImageMagick font metrics');
+		const advanceWidth = Number(metricMatch[1]);
+		const layoutHeight = Number(metricMatch[2]);
+
+		const render = async (gravity, annotateArgs) => {
+			const result = await runBinary(magickBin, [
+				'-size',
+				'1500x1200',
+				'xc:none',
+				...baseArgs,
+				'-gravity',
+				gravity,
+				'-annotate',
+				...annotateArgs,
+				'-trim',
+				'-format',
+				'%w %h %X %Y',
+				'info:'
+			]);
+			return parseMetricGeometry(result.stdout.toString('utf-8'));
+		};
+
+		const northwest = await render('Northwest', ['+100+100', payload.text]);
+		const center = await render('Center', ['0', payload.text]);
+		const centerAnchorY = 1200 / 2;
+		return {
+			advanceWidth,
+			layoutHeight,
+			inkWidth: northwest.width,
+			inkHeight: northwest.height,
+			inkOffsetX: northwest.x - 100,
+			inkOffsetYNorth: northwest.y - 100,
+			inkOffsetYCenter: center.y - (centerAnchorY - layoutHeight / 2),
+			inkOffsetYSouth: center.y - (centerAnchorY - layoutHeight / 2)
+		};
+	} finally {
+		await fs.promises.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
+	}
+}
+
 function registerMagickNative(ipcMain) {
 	ipcMain.handle('magick:native-available', () => isNativeAvailable());
 	ipcMain.handle('magick:process-native', async (_event, payload) => processNative(payload));
+	ipcMain.handle('magick:font-metrics', async (_event, payload) => getNativeFontMetrics(payload));
 }
 
 module.exports = {
@@ -351,5 +449,6 @@ module.exports = {
 	resolveWebpTool,
 	isNativeAvailable,
 	processNative,
+	getNativeFontMetrics,
 	registerMagickNative
 };
