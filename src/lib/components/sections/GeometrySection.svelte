@@ -20,10 +20,10 @@
 	const t2 = (v: number | null) => (v == null ? '' : String(Math.round(v * 100) / 100));
 
 	const ROTATE_OPTIONS = [
-		{ value: '0', label: '0° (None)' },
-		{ value: '90', label: '90° CW' },
+		{ value: '0', label: '0°' },
+		{ value: '90', label: '90°' },
 		{ value: '180', label: '180°' },
-		{ value: '-90', label: '270° CCW' }
+		{ value: '-90', label: '-90°' }
 	];
 
 	const GRAVITY_OPTIONS = [

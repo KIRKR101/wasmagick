@@ -235,8 +235,11 @@
 							? 'Settings changed — process to update preview'
 							: 'Process image'}
 			>
-				PROCESS{#if magick.isStale}<span class="ml-1" aria-hidden="true">●</span>{/if}<span
-					class="ml-1 inline-block w-3 text-left">{magick.isLoading ? ' ~' : ''}</span
+				PROCESS{#if magick.isStale}<span
+						class="ml-1.5 inline-block size-1.5 rounded-full bg-current"
+						aria-hidden="true"
+					></span>{/if}<span class="ml-1 inline-block w-3 text-left"
+					>{magick.isLoading ? ' ~' : ''}</span
 				>
 			</button>
 			<button onclick={onDownload} disabled={!canDownload} class="mobile-action-btn">

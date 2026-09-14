@@ -166,11 +166,11 @@
 					aria-label={processTip}
 					class="group flex h-8 w-full shrink-0 cursor-pointer items-center justify-between border border-foreground/30 bg-transparent px-2 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 				>
-					<span
+					<span class="inline-flex items-center"
 						><span class="group-hover:underline">PROCESS</span>{#if magick.isStale}<span
-								class="ml-1"
-								aria-hidden="true">●</span
-							>{/if}<span class="ml-1 inline-block w-3 text-left"
+								class="ml-1.5 inline-block size-1.5 rounded-full bg-current"
+								aria-hidden="true"
+							></span>{/if}<span class="ml-1 inline-block w-3 text-left"
 							>{magick.isLoading ? ' ~' : ''}</span
 						></span
 					>
