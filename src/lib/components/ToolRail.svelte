@@ -293,7 +293,7 @@
 								>{sectionSummary(item.id)}</span
 							>
 							<span
-								class="pointer-events-none absolute top-1/2 left-full z-50 ml-1.5 -translate-y-1/2 rounded-none border border-foreground/30 bg-[#f7f7f4] px-2 py-1 font-mono text-[11px] text-muted-foreground normal-case opacity-0 shadow-md transition-opacity group-hover/tip:opacity-100 max-md:hidden dark:border-border dark:bg-background"
+								class="pointer-events-none absolute top-1/2 left-full z-50 ml-1.5 -translate-y-1/2 rounded-none border border-foreground/30 bg-[#f7f7f4] px-2 py-1 font-mono text-[11px] text-muted-foreground normal-case opacity-0 shadow-md transition-opacity group-hover/tip:opacity-100 group-hover/tip:delay-500 max-md:hidden dark:border-border dark:bg-background"
 							>
 								<div class="flex flex-col gap-0.5 whitespace-nowrap">
 									{#each lines as line}

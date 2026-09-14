@@ -150,7 +150,7 @@
 		role="tooltip"
 		aria-hidden="true"
 		style={positionStyle}
-		class="pointer-events-none fixed z-[9999] max-w-48 rounded-xs border bg-popover px-2 py-1 text-[11px] font-medium whitespace-normal text-popover-foreground opacity-0 shadow-md transition-opacity duration-100 group-focus-within:opacity-100 group-hover:opacity-100 max-md:hidden {className}"
+		class="pointer-events-none fixed z-[9999] max-w-48 rounded-xs border bg-popover px-2 py-1 text-[11px] font-medium whitespace-normal text-popover-foreground opacity-0 shadow-md transition-opacity duration-100 group-focus-within:opacity-100 group-hover:opacity-100 group-hover:delay-500 max-md:hidden {className}"
 	>
 		{#if labelChildren}
 			{@render labelChildren()}
