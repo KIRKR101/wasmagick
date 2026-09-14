@@ -1,6 +1,9 @@
 node_modules
 bun.lockb
 
+# Local-only notes
+TODO.md
+
 # Output
 .output
 .vercel
