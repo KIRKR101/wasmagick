@@ -77,7 +77,8 @@
 			});
 			guard.requestReplace(file, onReplace);
 		} catch {
-			// ignore
+			magick.hasError = true;
+			magick.errorMessage = 'Could not load sample image';
 		}
 	}
 

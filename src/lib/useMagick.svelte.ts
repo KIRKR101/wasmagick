@@ -237,6 +237,7 @@ export const DEFAULT_SETTINGS: MagickSettings = {
 };
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
+export const MAX_FILE_SIZE_MB = MAX_FILE_SIZE / 1024 / 1024;
 
 const FORMAT_MAP: Record<string, keyof typeof MagickFormat> = {
 	WEBP: 'WebP',
@@ -900,6 +901,8 @@ export class MagickState {
 
 		const validation = this.validateFile(file);
 		if (!validation.isValid) {
+			this.hasError = true;
+			this.errorMessage = validation.error ?? 'Invalid file';
 			return false;
 		}
 
@@ -951,6 +954,8 @@ export class MagickState {
 		} catch (error) {
 			const message = error instanceof Error ? error.message : 'Failed to read file';
 			this.statsMessage = message;
+			this.hasError = true;
+			this.errorMessage = message;
 			return false;
 		}
 	}

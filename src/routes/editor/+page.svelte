@@ -323,6 +323,9 @@
 		globalDragging = false;
 		const files = e.dataTransfer?.files;
 		if (files && files.length > 0) {
+			if (files.length > 1) {
+				showNotice(`Only one image at a time — opening the first of ${files.length}`);
+			}
 			guard.requestReplace(files[0], replaceImage);
 		}
 	}
