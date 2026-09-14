@@ -61,7 +61,6 @@
 	} = $props();
 
 	let fileInputEl = $state<HTMLInputElement | null>(null);
-	let viewportZoom = $state(100);
 
 	function openFilePicker() {
 		fileInputEl?.click();
@@ -207,7 +206,6 @@
 				{onSelectSample}
 				{onAnnotationPlace}
 				{onAnnotationPlacementChange}
-				onStateChange={(st) => (viewportZoom = st.zoom)}
 				onCropConfirm={(crop) => magick.confirmCrop(crop)}
 				onCropCancel={() => magick.cancelCrop()}
 				onCropChange={(crop) => (magick.cropSelection = crop)}
@@ -218,7 +216,7 @@
 		</div>
 	</div>
 
-	<StatusBar {magick} isDirty={magick.hasUnsavedEdits} onRetry={onProcess} zoomPct={viewportZoom} />
+	<StatusBar {magick} isDirty={magick.hasUnsavedEdits} onRetry={onProcess} />
 </div>
 
 <ConfirmDialog

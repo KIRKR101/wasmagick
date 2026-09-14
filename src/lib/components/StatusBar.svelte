@@ -6,13 +6,11 @@
 	let {
 		magick,
 		isDirty,
-		onRetry,
-		zoomPct = 100
+		onRetry
 	}: {
 		magick: MagickState;
 		isDirty: boolean;
 		onRetry?: () => void;
-		zoomPct?: number;
 	} = $props();
 
 	let errorOpen = $state(false);
@@ -48,9 +46,6 @@
 	</div>
 
 	<div class="ml-auto flex items-center gap-3">
-		{#if magick.originalImageUrl}
-			<span class="text-foreground/60 tabular-nums" title="Zoom level">{Math.round(zoomPct)}%</span>
-		{/if}
 		{#if isDirty}
 			<span
 				class="flex items-center gap-1 text-foreground/70"
