@@ -176,6 +176,20 @@ function snapSettings(settings: MagickSettings): MagickSettings {
 	return JSON.parse(JSON.stringify(settings));
 }
 
+/**
+ * Compact one-line summary of a relative diff for tooltips and toasts.
+ * Single change reads `Contrast 0 → 5`; several collapse to names.
+ */
+function summarizeDiff(items: SettingsDiffItem[], fallback: string): string {
+	if (items.length === 0) return fallback;
+	if (items.length === 1) return `${items[0].label} ${items[0].prev} → ${items[0].curr}`;
+	const names = items
+		.slice(0, 2)
+		.map((d) => d.label)
+		.join(', ');
+	return items.length > 2 ? `${names} +${items.length - 2} more` : names;
+}
+
 let nextId = 1;
 
 export class HistoryState {
@@ -199,13 +213,15 @@ export class HistoryState {
 	get count(): number {
 		return this.entries.length;
 	}
-	/** Label of the change undo would revert (the current entry), if any. */
+	/** Short description of what undo would revert (current entry's changes vs previous). */
 	get undoTargetLabel(): string | null {
-		return this.canUndo ? this.entries[this.pointer].label : null;
+		if (!this.canUndo) return null;
+		return summarizeDiff(this.getDiff(this.pointer), this.entries[this.pointer].label);
 	}
-	/** Label of the entry redo would land on, if any. */
+	/** Short description of what redo would re-apply (next entry's changes vs current). */
 	get redoTargetLabel(): string | null {
-		return this.canRedo ? this.entries[this.pointer + 1].label : null;
+		if (!this.canRedo) return null;
+		return summarizeDiff(this.getDiff(this.pointer + 1), this.entries[this.pointer + 1].label);
 	}
 
 	/** Diff of entry at `index` vs the previous entry (relative). */
