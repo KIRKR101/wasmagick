@@ -199,9 +199,9 @@ export class HistoryState {
 	get count(): number {
 		return this.entries.length;
 	}
-	/** Label of the entry undo would land on, if any. */
+	/** Label of the change undo would revert (the current entry), if any. */
 	get undoTargetLabel(): string | null {
-		return this.canUndo ? this.entries[this.pointer - 1].label : null;
+		return this.canUndo ? this.entries[this.pointer].label : null;
 	}
 	/** Label of the entry redo would land on, if any. */
 	get redoTargetLabel(): string | null {
