@@ -59,7 +59,9 @@
 		const body = encodeURIComponent(
 			[
 				'**Error**',
+				'```',
 				magick.errorMessage ?? 'Unknown error',
+				'```',
 				'',
 				'**Engine**',
 				magick.engine,
