@@ -22,7 +22,7 @@
 	type="button"
 	{id}
 	class={cn(
-		'flex w-full cursor-pointer items-center justify-between gap-3 px-1 py-1.5 text-left transition-colors focus:outline-none',
+		'flex w-full cursor-pointer items-center justify-between gap-3 px-1 py-1.5 text-left transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none',
 		className
 	)}
 	onclick={() => (checked = !checked)}

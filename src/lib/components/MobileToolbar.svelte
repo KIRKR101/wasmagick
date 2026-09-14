@@ -96,6 +96,7 @@
 				disabled={!magick.processedImageUrl}
 				class="mobile-btn-sm {isComparing ? 'bg-muted text-foreground' : ''}"
 				aria-label="Hold to compare"
+				aria-pressed={isComparing}
 			>
 				<Images class="size-4" />
 			</button>
@@ -104,6 +105,7 @@
 				disabled={!magick.processedImageUrl}
 				class="mobile-btn-sm {splitMode ? 'bg-muted text-foreground' : ''}"
 				aria-label="Split compare"
+				aria-pressed={splitMode}
 			>
 				<Columns2 class="size-4" />
 			</button>

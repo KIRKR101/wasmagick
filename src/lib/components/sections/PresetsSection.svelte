@@ -36,7 +36,7 @@
 				<button
 					onclick={() => applyBuiltIn(p)}
 					aria-pressed={active}
-					class="group flex items-center justify-between gap-3 border px-3 py-2 text-left transition-colors focus:outline-none {active
+					class="group flex items-center justify-between gap-3 border px-3 py-2 text-left transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {active
 						? 'border-foreground bg-muted/50'
 						: 'border-foreground/30 bg-transparent hover:border-foreground/60 hover:bg-muted/30'}"
 				>
@@ -99,7 +99,7 @@
 						<button
 							onclick={() => applyUser(p)}
 							aria-pressed={active}
-							class="flex min-w-0 flex-1 items-center justify-between gap-3 text-left"
+							class="flex min-w-0 flex-1 items-center justify-between gap-3 text-left focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 						>
 							<span class="min-w-0">
 								<span class="block truncate text-xs font-semibold text-foreground">{p.name}</span>
@@ -113,8 +113,8 @@
 						</button>
 						<button
 							onclick={() => presets.deleteUser(p.id)}
-							class="shrink-0 cursor-pointer font-mono text-xs text-muted-foreground focus:outline-none"
-							aria-label="Delete preset"
+							class="flex min-h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center font-mono text-xs text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+							aria-label="Delete preset {p.name}"
 						>
 							[x]
 						</button>

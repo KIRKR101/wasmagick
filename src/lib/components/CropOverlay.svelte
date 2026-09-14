@@ -547,10 +547,11 @@
 	<div class="mx-0.5 h-4 w-px bg-border"></div>
 	{#each RATIO_PRESETS as preset (preset.id)}
 		<button
-			class="flex h-6 cursor-pointer items-center px-1.5 transition-colors hover:bg-muted {aspectPreset ===
+			class="flex min-h-9 cursor-pointer items-center px-2 transition-colors hover:bg-muted focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {aspectPreset ===
 			preset.id
 				? 'bg-muted font-bold text-foreground'
 				: 'text-muted-foreground'}"
+			aria-pressed={aspectPreset === preset.id}
 			onclick={() => onAspectRatioChange(preset.id)}
 		>
 			{preset.label}
@@ -567,13 +568,13 @@
 	onpointerdown={(e) => e.stopPropagation()}
 >
 	<button
-		class="h-6 cursor-pointer border border-foreground/30 px-3 text-muted-foreground transition-colors hover:bg-muted"
+		class="min-h-11 cursor-pointer border border-foreground/30 px-4 text-muted-foreground transition-colors hover:bg-muted focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 		onclick={onCancel}
 	>
 		Cancel
 	</button>
 	<button
-		class="h-6 cursor-pointer border border-foreground bg-foreground px-3 text-background transition-opacity hover:opacity-90 disabled:opacity-40"
+		class="min-h-11 cursor-pointer border border-foreground bg-foreground px-4 text-background transition-opacity hover:opacity-90 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-40"
 		disabled={!cropRect || cropRect.w < MIN_CROP_PX || cropRect.h < MIN_CROP_PX}
 		onclick={() => cropRect && onConfirm(cropRect)}
 	>

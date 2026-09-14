@@ -469,6 +469,14 @@ input[type='number'] {
 	background: var(--muted);
 }
 
+.mobile-btn:focus-visible,
+.mobile-btn-sm:focus-visible,
+.mobile-tab:focus-visible,
+.mobile-action-btn:focus-visible {
+	outline: 2px solid var(--ring);
+	outline-offset: 2px;
+}
+
 .mobile-btn:disabled {
 	opacity: 0.35;
 	pointer-events: none;
@@ -478,8 +486,8 @@ input[type='number'] {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	min-width: 32px;
-	min-height: 32px;
+	min-width: 44px;
+	min-height: 44px;
 	padding: 4px;
 	color: var(--muted-foreground);
 	background: transparent;
@@ -563,6 +571,7 @@ input[type='number'] {
 	flex-shrink: 0;
 	display: flex;
 	align-items: center;
+	min-height: 44px;
 	gap: 4px;
 	padding: 8px 14px;
 	font-family: var(--font-mono);
