@@ -26,7 +26,7 @@
 				<span>{magick.currentProcessingStep || 'Processing…'}</span>
 			</span>
 		{:else if magick.isStale}
-			<span class="text-amber-600 dark:text-amber-400">Unprocessed changes</span>
+			<span class="text-amber-500">Unprocessed changes</span>
 		{:else if magick.processedImageUrl}
 			<span class="text-foreground/80 tabular-nums"
 				>Processed in {magick.processedImageTime} ms</span

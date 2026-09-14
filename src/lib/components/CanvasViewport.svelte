@@ -253,12 +253,6 @@
 		!!processedImageUrl && !!originalImageUrl && processedImageUrl !== originalImageUrl
 	);
 
-	let rotationLabel = $derived.by(() => {
-		if (!magickSettings) return '';
-		const r = parseInt(magickSettings.rotate ?? '0');
-		if (r === 0) return '';
-		return r > 0 ? `${r}° CW` : `${Math.abs(r)}° CCW`;
-	});
 	// Report state (zoom) to parent for the status bar.
 	$effect(() => {
 		onStateChange({ zoom: currentZoom });
@@ -639,13 +633,6 @@
 					style="left: 12px"
 				>
 					[ Before ]
-				</div>
-			{/if}
-			{#if rotationLabel && !isComparing}
-				<div
-					class="pointer-events-none absolute top-3 right-3 z-30 border border-foreground/30 bg-[#f7f7f4] px-2 py-1 font-mono text-[11px] text-muted-foreground dark:bg-background"
-				>
-					↻ {rotationLabel}
 				</div>
 			{/if}
 			{#if cropActive}

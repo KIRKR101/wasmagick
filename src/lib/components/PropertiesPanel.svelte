@@ -164,13 +164,14 @@
 					onclick={onProcess}
 					disabled={!magick.wasmLoaded || !magick.sourceBytes}
 					aria-label={processTip}
-					class="group flex h-8 w-full shrink-0 cursor-pointer items-center justify-between border px-2 font-mono text-[11px] uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 {magick.isStale
-						? 'border-foreground bg-muted/50 font-bold text-foreground'
-						: 'border-foreground/30 bg-transparent text-muted-foreground'}"
+					class="group flex h-8 w-full shrink-0 cursor-pointer items-center justify-between border border-foreground/30 bg-transparent px-2 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 				>
 					<span
-						><span class="group-hover:underline">PROCESS</span><span
-							class="ml-1 inline-block w-3 text-left">{magick.isLoading ? ' ~' : ''}</span
+						><span class="group-hover:underline">PROCESS</span>{#if magick.isStale}<span
+								class="ml-1"
+								aria-hidden="true">●</span
+							>{/if}<span class="ml-1 inline-block w-3 text-left"
+							>{magick.isLoading ? ' ~' : ''}</span
 						></span
 					>
 					<span class="text-[11px] opacity-70">CTRL+<span class="text-sm">↵</span></span>
