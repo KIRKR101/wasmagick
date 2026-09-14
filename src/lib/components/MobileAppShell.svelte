@@ -26,6 +26,7 @@
 		onRedo,
 		onReplace,
 		onClose,
+		onHistoryNavigate,
 		annotationPlacementActive = false,
 		onAnnotationPlacementChange = () => {},
 		onAnnotationPlace = () => {}
@@ -43,6 +44,7 @@
 		onRedo: () => void;
 		onReplace: (file: File) => Promise<void>;
 		onClose: () => void;
+		onHistoryNavigate?: (message: string) => void;
 		annotationPlacementActive?: boolean;
 		onAnnotationPlacementChange?: (active: boolean) => void;
 		onAnnotationPlace?: (placement: import('$lib/annotation-utils').AnnotationPlacement) => void;
@@ -146,12 +148,12 @@
 	}
 
 	function handleCompareStart() {
-		viewport?.startCompare();
-		isComparing = true;
+		viewport?.pressCompareDown();
+		isComparing = viewport?.isCompareActive() ?? false;
 	}
 	function handleCompareEnd() {
-		viewport?.endCompare();
-		isComparing = false;
+		viewport?.pressCompareUp();
+		isComparing = viewport?.isCompareActive() ?? false;
 	}
 
 	function handleToggleSplit() {
@@ -240,6 +242,7 @@
 		{onProcess}
 		{onDownload}
 		onClearRequest={onClearHistoryRequest}
+		onNavigate={onHistoryNavigate}
 		onClose={() => (panelOpen = false)}
 	/>
 </div>

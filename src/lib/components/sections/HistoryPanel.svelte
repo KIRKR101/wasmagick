@@ -6,10 +6,35 @@
 	let {
 		magick,
 		history,
-		onClearRequest
-	}: { magick: MagickState; history: HistoryState; onClearRequest?: () => void } = $props();
+		onClearRequest,
+		onNavigate
+	}: {
+		magick: MagickState;
+		history: HistoryState;
+		onClearRequest?: () => void;
+		onNavigate?: (message: string) => void;
+	} = $props();
 
 	let diffMode = $state<'relative' | 'absolute'>('relative');
+
+	async function undo() {
+		const target = history.undoTargetLabel;
+		if (!target) return;
+		await history.undo(magick);
+		onNavigate?.(`Undid — ${target}`);
+	}
+
+	async function redo() {
+		const target = history.redoTargetLabel;
+		if (!target) return;
+		await history.redo(magick);
+		onNavigate?.(`Redid — ${target}`);
+	}
+
+	async function jump(id: number, label: string) {
+		await history.jumpTo(magick, id);
+		onNavigate?.(`History — ${label}`);
+	}
 
 	function getDiff(i: number): SettingsDiffItem[] {
 		if (i === 0) return [];
@@ -21,15 +46,17 @@
 	<!-- Undo/redo controls -->
 	<div class="flex shrink-0 gap-1.5 border-b border-foreground/30 pb-3">
 		<button
-			onclick={() => history.undo(magick)}
+			onclick={undo}
 			disabled={!history.canUndo}
+			aria-label={history.undoTargetLabel ? `Undo ${history.undoTargetLabel}` : 'Undo'}
 			class="flex-1 cursor-pointer border border-foreground/30 px-2 py-1.5 font-mono text-[11px] uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 		>
 			[&lt;] <span class="hover:underline">UNDO</span>
 		</button>
 		<button
-			onclick={() => history.redo(magick)}
+			onclick={redo}
 			disabled={!history.canRedo}
+			aria-label={history.redoTargetLabel ? `Redo ${history.redoTargetLabel}` : 'Redo'}
 			class="flex-1 cursor-pointer border border-foreground/30 px-2 py-1.5 font-mono text-[11px] uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 		>
 			<span class="hover:underline">REDO</span> [&gt;]
@@ -80,7 +107,7 @@
 					{@const diffs = getDiff(i)}
 					<li>
 						<button
-							onclick={() => history.jumpTo(magick, entry.id)}
+							onclick={() => jump(entry.id, entry.label)}
 							class="flex w-full flex-col border text-left transition-colors {isCurrent
 								? 'border-foreground bg-muted/50'
 								: 'border-foreground/30 bg-transparent hover:border-foreground/60 hover:bg-muted/30'}"

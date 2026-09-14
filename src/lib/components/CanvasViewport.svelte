@@ -74,6 +74,11 @@
 	let showPlaceholder = $derived(!originalImageUrl);
 	let isInitializing = $derived(!wasmLoaded);
 	let isComparing = $state(false);
+	// Locked compare (toggled by tapping the compare button); independent of
+	// the momentary hold. A quick tap toggles, a longer press just peeks.
+	let compareLocked = $state(false);
+	let comparePressStart = 0;
+	let compareActive = $derived(isComparing || compareLocked);
 	let splitMode = $state(false);
 	let skipNextFit = false;
 
@@ -240,7 +245,7 @@
 	`);
 
 	let displayedImage = $derived(
-		isComparing ? originalImageUrl : processedImageUrl || originalImageUrl
+		compareActive ? originalImageUrl : processedImageUrl || originalImageUrl
 	);
 
 	// Warn exactly while the original (which the browser cannot render) is the
@@ -321,6 +326,20 @@
 	export function endCompare() {
 		skipNextFit = true;
 		isComparing = false;
+	}
+	/** Press-and-hold entry point: tap toggles a locked compare, hold just peeks. */
+	export function pressCompareDown() {
+		if (!processedImageUrl) return;
+		comparePressStart = performance.now();
+		startCompare();
+	}
+	export function pressCompareUp() {
+		const quickTap = performance.now() - comparePressStart < 250;
+		endCompare();
+		if (quickTap && processedImageUrl) compareLocked = !compareLocked;
+	}
+	export function isCompareActive() {
+		return compareActive;
 	}
 	export function toggleSplitCompare() {
 		if (canSplit) {
@@ -507,7 +526,13 @@
 			return;
 		}
 		if (showPlaceholder || !processedImageUrl) return;
-		if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+		if (
+			e.target instanceof HTMLInputElement ||
+			e.target instanceof HTMLTextAreaElement ||
+			e.target instanceof HTMLSelectElement ||
+			e.target instanceof HTMLButtonElement
+		)
+			return;
 		if (e.code === 'Space') {
 			e.preventDefault();
 			if (!isComparing) isComparing = true;
@@ -516,6 +541,13 @@
 
 	function handleKeyUp(e: KeyboardEvent) {
 		if (e.code === 'Space') {
+			if (
+				e.target instanceof HTMLInputElement ||
+				e.target instanceof HTMLTextAreaElement ||
+				e.target instanceof HTMLSelectElement ||
+				e.target instanceof HTMLButtonElement
+			)
+				return;
 			e.preventDefault();
 			endCompare();
 		}
@@ -602,14 +634,14 @@
 				src={displayedImage ?? ''}
 				onload={handleImageLoad}
 				style={imageStyle}
-				alt={isComparing ? 'Original image before processing' : 'Processed image preview'}
+				alt={compareActive ? 'Original image before processing' : 'Processed image preview'}
 				draggable="false"
 				class="checkerboard max-h-none max-w-none origin-center object-contain {processedImageUrl ||
 				originalImageUrl
 					? 'opacity-100'
 					: 'opacity-0'} {isLoading ? 'animate-opacity-pulse' : ''}"
 			/>
-			{#if annotationMenuActive && annotationPoint && (annotationPlacementActive || magickSettings?.annotateText?.trim()) && !isComparing}
+			{#if annotationMenuActive && annotationPoint && (annotationPlacementActive || magickSettings?.annotateText?.trim()) && !compareActive}
 				<div
 					class="pointer-events-none absolute z-30 size-5 -translate-x-1/2 -translate-y-1/2 mix-blend-difference"
 					style={annotationMarkerStyle}
@@ -619,7 +651,7 @@
 					<span class="absolute top-0 left-1/2 h-5 w-px -translate-x-1/2 bg-white"></span>
 				</div>
 			{/if}
-			{#if annotationMenuActive && annotationPlacementActive && !isComparing}
+			{#if annotationMenuActive && annotationPlacementActive && !compareActive}
 				<div
 					class="pointer-events-none absolute top-3 left-1/2 z-30 -translate-x-1/2 border border-foreground/30 bg-[#f7f7f4]/90 px-2 py-1 font-mono text-[11px] text-foreground backdrop-blur-sm dark:bg-background/90"
 					role="status"
@@ -627,13 +659,18 @@
 					CLICK TO PLACE · ESC TO EXIT
 				</div>
 			{/if}
-			{#if isComparing}
+			{#if compareActive}
 				<div
 					class="pointer-events-none absolute top-3 z-30 border border-foreground/30 bg-[#f7f7f4] px-2 py-1 font-mono text-[11px] text-muted-foreground dark:bg-background"
 					style="left: 12px"
 				>
 					[ Before ]
 				</div>
+			{/if}
+			{#if originalImageUrl}
+				<span class="sr-only" role="status"
+					>{compareActive ? 'Showing original image' : 'Showing processed preview'}</span
+				>
 			{/if}
 			{#if cropActive}
 				<CropOverlay
@@ -728,20 +765,21 @@
 					<button
 						onpointerdown={(e) => {
 							e.stopPropagation();
-							startCompare();
+							pressCompareDown();
 						}}
 						onpointerup={(e) => {
 							e.stopPropagation();
-							endCompare();
+							pressCompareUp();
 						}}
 						onpointerleave={(e) => {
 							e.stopPropagation();
-							endCompare();
+							pressCompareUp();
 						}}
 						disabled={!processedImageUrl}
-						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 {isComparing
+						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 {compareActive
 							? 'bg-muted text-foreground'
 							: ''}"
+						aria-pressed={compareActive}
 						aria-label={processedImageUrl
 							? 'Hold to compare original (Space)'
 							: 'Compare unavailable — process image first'}
@@ -759,6 +797,7 @@
 						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 {splitMode
 							? 'bg-muted text-foreground'
 							: ''}"
+						aria-pressed={splitMode}
 						aria-label={canSplit ? 'Split compare (B)' : 'Split unavailable — process image first'}
 					>
 						<Columns2 class="size-3.5" />

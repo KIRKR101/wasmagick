@@ -169,6 +169,20 @@
 		applyTheme(isDarkMode);
 	}
 
+	async function handleUndo(): Promise<void> {
+		const target = history.undoTargetLabel;
+		if (!target) return;
+		await history.undo(magick);
+		showNotice(`Undid — ${target}`);
+	}
+
+	async function handleRedo(): Promise<void> {
+		const target = history.redoTargetLabel;
+		if (!target) return;
+		await history.redo(magick);
+		showNotice(`Redid — ${target}`);
+	}
+
 	function processCurrent() {
 		if (!magick.sourceBytes) return;
 		magick.processImage(debugMode, () => {
@@ -248,17 +262,17 @@
 		// Undo / Redo
 		if (cmdOrCtrl && !e.shiftKey && (e.key === 'z' || e.key === 'Z')) {
 			e.preventDefault();
-			void history.undo(magick);
+			void handleUndo();
 			return;
 		}
 		if (cmdOrCtrl && e.shiftKey && (e.key === 'z' || e.key === 'Z')) {
 			e.preventDefault();
-			void history.redo(magick);
+			void handleRedo();
 			return;
 		}
 		if (cmdOrCtrl && !e.shiftKey && (e.key === 'y' || e.key === 'Y')) {
 			e.preventDefault();
-			void history.redo(magick);
+			void handleRedo();
 			return;
 		}
 
@@ -282,7 +296,8 @@
 			viewport?.zoomOut();
 		} else if (!cmdOrCtrl && (e.key === 'b' || e.key === 'B')) {
 			e.preventDefault();
-			viewport?.toggleSplitCompare();
+			if (magick.processedImageUrl) viewport?.toggleSplitCompare();
+			else showNotice('Process an image first to compare');
 		} else if (!cmdOrCtrl && (e.key === 'v' || e.key === 'V')) {
 			// Paste shortcut hint: the global paste listener handles actual paste.
 			// 'V' alone triggers the file picker as an upload shortcut.
@@ -431,8 +446,9 @@
 		onProcess={processCurrent}
 		onReset={() => magick.resetSettings()}
 		onDownload={downloadCurrent}
-		onUndo={() => history.undo(magick)}
-		onRedo={() => history.redo(magick)}
+		onUndo={handleUndo}
+		onRedo={handleRedo}
+		onHistoryNavigate={(message) => showNotice(message)}
 		onReplace={replaceImage}
 		onClose={closeCurrent}
 	/>
@@ -455,8 +471,9 @@
 		onProcess={processCurrent}
 		onReset={() => magick.resetSettings()}
 		onDownload={downloadCurrent}
-		onUndo={() => history.undo(magick)}
-		onRedo={() => history.redo(magick)}
+		onUndo={handleUndo}
+		onRedo={handleRedo}
+		onHistoryNavigate={(message) => showNotice(message)}
 		onReplace={replaceImage}
 		onClose={closeCurrent}
 	/>

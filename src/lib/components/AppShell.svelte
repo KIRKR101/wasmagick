@@ -31,6 +31,7 @@
 		onRedo,
 		onReplace,
 		onClose,
+		onHistoryNavigate,
 		annotationPlacementActive = false,
 		onAnnotationPlacementChange = () => {},
 		onAnnotationPlace = () => {}
@@ -53,12 +54,14 @@
 		onRedo: () => void;
 		onReplace: (file: File) => Promise<void>;
 		onClose: () => void;
+		onHistoryNavigate?: (message: string) => void;
 		annotationPlacementActive?: boolean;
 		onAnnotationPlacementChange?: (active: boolean) => void;
 		onAnnotationPlace?: (placement: import('$lib/annotation-utils').AnnotationPlacement) => void;
 	} = $props();
 
 	let fileInputEl = $state<HTMLInputElement | null>(null);
+	let viewportZoom = $state(100);
 
 	function openFilePicker() {
 		fileInputEl?.click();
@@ -180,6 +183,7 @@
 				{onProcess}
 				{onDownload}
 				onClearRequest={onClearHistoryRequest}
+				onNavigate={onHistoryNavigate}
 			/>
 		</div>
 
@@ -203,6 +207,7 @@
 				{onSelectSample}
 				{onAnnotationPlace}
 				{onAnnotationPlacementChange}
+				onStateChange={(st) => (viewportZoom = st.zoom)}
 				onCropConfirm={(crop) => magick.confirmCrop(crop)}
 				onCropCancel={() => magick.cancelCrop()}
 				onCropChange={(crop) => (magick.cropSelection = crop)}
@@ -213,7 +218,7 @@
 		</div>
 	</div>
 
-	<StatusBar {magick} isDirty={magick.hasUnsavedEdits} onRetry={onProcess} />
+	<StatusBar {magick} isDirty={magick.hasUnsavedEdits} onRetry={onProcess} zoomPct={viewportZoom} />
 </div>
 
 <ConfirmDialog

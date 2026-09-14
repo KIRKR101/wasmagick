@@ -29,6 +29,7 @@
 		onDownload,
 		onClearRequest,
 		onClose,
+		onNavigate,
 		annotationPlacementActive = false,
 		onAnnotationPlacementChange = () => {}
 	}: {
@@ -41,6 +42,7 @@
 		onDownload: () => void;
 		onClearRequest?: () => void;
 		onClose: () => void;
+		onNavigate?: (message: string) => void;
 		annotationPlacementActive?: boolean;
 		onAnnotationPlacementChange?: (active: boolean) => void;
 	} = $props();
@@ -215,7 +217,7 @@
 			{:else if activeSection === 'presets'}
 				<PresetsSection {magick} {presets} />
 			{:else if activeSection === 'history'}
-				<HistoryPanel {magick} {history} {onClearRequest} />
+				<HistoryPanel {magick} {history} {onClearRequest} {onNavigate} />
 			{/if}
 		</div>
 

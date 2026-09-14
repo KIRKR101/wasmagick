@@ -132,11 +132,21 @@
 		<div class="h-5 w-px bg-foreground/30"></div>
 
 		<!-- History -->
-		<button onclick={onUndo} disabled={!history.canUndo} class="mobile-btn" aria-label="Undo">
+		<button
+			onclick={onUndo}
+			disabled={!history.canUndo}
+			class="mobile-btn"
+			aria-label={history.undoTargetLabel ? `Undo ${history.undoTargetLabel}` : 'Undo'}
+		>
 			<Undo2 class="size-4.5" />
 			<span class="text-[9px]">UNDO</span>
 		</button>
-		<button onclick={onRedo} disabled={!history.canRedo} class="mobile-btn" aria-label="Redo">
+		<button
+			onclick={onRedo}
+			disabled={!history.canRedo}
+			class="mobile-btn"
+			aria-label={history.redoTargetLabel ? `Redo ${history.redoTargetLabel}` : 'Redo'}
+		>
 			<Redo2 class="size-4.5" />
 			<span class="text-[9px]">REDO</span>
 		</button>

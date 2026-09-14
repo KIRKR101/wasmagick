@@ -254,6 +254,14 @@
 	}
 
 	let delta = $derived(sizeDelta());
+	let undoTip = $derived(
+		history.undoTargetLabel ? `Undo ${history.undoTargetLabel} (Ctrl+Z)` : 'Undo (Ctrl+Z)'
+	);
+	let redoTip = $derived(
+		history.redoTargetLabel
+			? `Redo ${history.redoTargetLabel} (Ctrl+Shift+Z / Ctrl+Y)`
+			: 'Redo (Ctrl+Shift+Z / Ctrl+Y)'
+	);
 </script>
 
 <aside
@@ -421,22 +429,22 @@
 		<div class="mb-3 text-muted-foreground">/NAV</div>
 		<div class="flex flex-col gap-1.5">
 			<div class="mb-2 flex border border-foreground/30">
-				<HoverTooltip label="Undo (Ctrl+Z)" triggerClass="flex-1">
+				<HoverTooltip label={undoTip} triggerClass="flex-1">
 					<button
 						onclick={onUndo}
 						disabled={!history.canUndo}
-						aria-label="Undo (Ctrl+Z)"
+						aria-label={undoTip}
 						class="group flex-1 cursor-pointer px-2 py-1 text-center font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 					>
 						[&lt;] <span class="group-hover:underline">UNDO</span>
 					</button>
 				</HoverTooltip>
 				<div class="w-px self-stretch bg-foreground/30"></div>
-				<HoverTooltip label="Redo (Ctrl+Shift+Z / Ctrl+Y)" triggerClass="flex-1">
+				<HoverTooltip label={redoTip} triggerClass="flex-1">
 					<button
 						onclick={onRedo}
 						disabled={!history.canRedo}
-						aria-label="Redo (Ctrl+Shift+Z / Ctrl+Y)"
+						aria-label={redoTip}
 						class="group flex-1 cursor-pointer px-2 py-1 text-center font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 					>
 						<span class="group-hover:underline">REDO</span> [&gt;]

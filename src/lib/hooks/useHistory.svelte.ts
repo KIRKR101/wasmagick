@@ -199,6 +199,14 @@ export class HistoryState {
 	get count(): number {
 		return this.entries.length;
 	}
+	/** Label of the entry undo would land on, if any. */
+	get undoTargetLabel(): string | null {
+		return this.canUndo ? this.entries[this.pointer - 1].label : null;
+	}
+	/** Label of the entry redo would land on, if any. */
+	get redoTargetLabel(): string | null {
+		return this.canRedo ? this.entries[this.pointer + 1].label : null;
+	}
 
 	/** Diff of entry at `index` vs the previous entry (relative). */
 	getDiff(index: number): SettingsDiffItem[] {

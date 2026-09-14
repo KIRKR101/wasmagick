@@ -28,6 +28,7 @@
 		onProcess,
 		onDownload,
 		onClearRequest,
+		onNavigate,
 		annotationPlacementActive = false,
 		onAnnotationPlacementChange = () => {}
 	}: {
@@ -40,6 +41,7 @@
 		onClearRequest?: () => void;
 		annotationPlacementActive?: boolean;
 		onAnnotationPlacementChange?: (active: boolean) => void;
+		onNavigate?: (message: string) => void;
 	} = $props();
 
 	const META: Record<
@@ -144,7 +146,7 @@
 		{:else if activeSection === 'presets'}
 			<PresetsSection {magick} {presets} />
 		{:else if activeSection === 'history'}
-			<HistoryPanel {magick} {history} {onClearRequest} />
+			<HistoryPanel {magick} {history} {onClearRequest} {onNavigate} />
 		{/if}
 	</div>
 
