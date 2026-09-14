@@ -87,7 +87,9 @@
 			? 'Process — load an image first'
 			: !magick.wasmLoaded
 				? 'Process — engine loading…'
-				: 'Process image (Ctrl+Enter)'
+				: magick.isStale
+					? 'Settings changed — process to update preview (Ctrl+Enter)'
+					: 'Process image (Ctrl+Enter)'
 	);
 	let exportTip = $derived(
 		!canDownload ? 'Export — process image first' : 'Export result (Ctrl+S)'
@@ -162,7 +164,9 @@
 					onclick={onProcess}
 					disabled={!magick.wasmLoaded || !magick.sourceBytes}
 					aria-label={processTip}
-					class="group flex h-8 w-full shrink-0 cursor-pointer items-center justify-between border border-foreground/30 bg-transparent px-2 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+					class="group flex h-8 w-full shrink-0 cursor-pointer items-center justify-between border px-2 font-mono text-[11px] uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 {magick.isStale
+						? 'border-foreground bg-muted/50 font-bold text-foreground'
+						: 'border-foreground/30 bg-transparent text-muted-foreground'}"
 				>
 					<span
 						><span class="group-hover:underline">PROCESS</span><span
@@ -179,7 +183,7 @@
 					aria-label={exportTip}
 					class="group flex h-8 w-full shrink-0 cursor-pointer items-center justify-between border border-foreground/30 bg-transparent px-2 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 				>
-					<span class="group-hover:underline">EXPORT CANVAS</span>
+					<span class="group-hover:underline">EXPORT</span>
 					<span class="text-[11px] opacity-70">CTRL+S</span>
 				</button>
 			</HoverTooltip>

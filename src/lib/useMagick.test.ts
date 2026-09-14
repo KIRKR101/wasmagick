@@ -599,4 +599,38 @@ describe('MagickSettings type', () => {
 		expect(settings.imageFormat).toBe('WebP');
 		expect(settings.quality[0]).toBe(85);
 	});
+
+	describe('preview staleness', () => {
+		let staleMagick: MagickState;
+
+		beforeEach(() => {
+			staleMagick = useMagick();
+		});
+
+		it('is not stale with no processed preview', () => {
+			expect(staleMagick.isStale).toBe(false);
+		});
+
+		it('is fresh after marking, stale after a settings change', () => {
+			staleMagick.processedImageUrl = 'blob:preview';
+			staleMagick.markPreviewFresh();
+			expect(staleMagick.isStale).toBe(false);
+
+			staleMagick.settings.brightness = [120];
+			expect(staleMagick.isStale).toBe(true);
+
+			staleMagick.markPreviewFresh();
+			expect(staleMagick.isStale).toBe(false);
+		});
+
+		it('clears the snapshot for a new image', () => {
+			staleMagick.processedImageUrl = 'blob:preview';
+			staleMagick.markPreviewFresh();
+			staleMagick.settings.brightness = [120];
+			expect(staleMagick.isStale).toBe(true);
+
+			staleMagick.clearPreviewSnapshot();
+			expect(staleMagick.isStale).toBe(false);
+		});
+	});
 });

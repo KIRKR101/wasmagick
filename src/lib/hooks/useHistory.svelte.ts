@@ -339,6 +339,10 @@ export class HistoryState {
 		magick.statsMessage = entry.statsMessage;
 		magick.processedImageTime = entry.time;
 		magick.hasUnsavedEdits = !entry.isOriginal && !entry.saved;
+		// The restored preview was rendered from the restored settings, so
+		// re-mark them fresh — undo/redo itself must never read as stale.
+		if (entry.isOriginal) magick.clearPreviewSnapshot();
+		else magick.markPreviewFresh();
 		magick.hasError = false;
 		magick.errorMessage = null;
 		magick.cropMode = false;

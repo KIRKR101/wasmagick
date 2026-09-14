@@ -207,10 +207,19 @@
 	/** Download the processed result and mark it saved in history. */
 	async function downloadCurrent(): Promise<void> {
 		if (!magick.processedImageUrl) return;
+		const stale = magick.isStale;
 		const saved = await magick.downloadImage();
 		if (saved) {
 			history.markCurrentSaved();
-			if (window.wasmagick) showNotice('Image saved', true, 5000);
+			if (window.wasmagick) {
+				showNotice(
+					stale ? 'Image saved — settings changed since preview' : 'Image saved',
+					true,
+					5000
+				);
+			} else {
+				showNotice(stale ? 'Exported last preview — settings changed' : 'Image exported');
+			}
 		} else {
 			showNotice('Could not save image');
 		}

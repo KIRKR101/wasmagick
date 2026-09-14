@@ -143,5 +143,9 @@
 				{/if}
 			</div>
 		</div>
+	{:else}
+		<div class="border border-dashed border-foreground/30 bg-transparent p-3">
+			<div class="font-mono text-xs text-muted-foreground">No output yet — press PROCESS</div>
+		</div>
 	{/if}
 </div>

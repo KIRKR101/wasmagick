@@ -408,6 +408,11 @@ export class MagickState {
 	processedImageName = $state<string | null>(null);
 	processedImageTime = $state(0);
 	processedImageDelta = $state('N/A');
+	/**
+	 * JSON signature of `settings` at the moment the visible preview was
+	 * rendered. Compared against current settings to derive `isStale`.
+	 */
+	lastProcessedSignature = $state<string | null>(null);
 	originalWidth = $state(0);
 	originalHeight = $state(0);
 	processedWidth = $state(0);
@@ -457,6 +462,27 @@ export class MagickState {
 	/** 'native' in Electron with a bundled binary, 'wasm' everywhere else. */
 	get engine(): 'native' | 'wasm' {
 		return this.nativeAvailable ? 'native' : 'wasm';
+	}
+
+	/**
+	 * True when a processed preview exists but settings have changed since
+	 * it was rendered. History navigation restores settings and preview
+	 * together (and re-marks them fresh), so it never trips this — only
+	 * real edits after a process do.
+	 */
+	get isStale(): boolean {
+		if (!this.processedImageUrl || this.lastProcessedSignature == null) return false;
+		return JSON.stringify(this.settings) !== this.lastProcessedSignature;
+	}
+
+	/** Snapshot current settings as the ones the visible preview was rendered from. */
+	markPreviewFresh(): void {
+		this.lastProcessedSignature = JSON.stringify(this.settings);
+	}
+
+	/** Forget the preview snapshot (new/closed image, or reverted to original). */
+	clearPreviewSnapshot(): void {
+		this.lastProcessedSignature = null;
 	}
 
 	private _worker: Worker | null = null;
@@ -905,6 +931,7 @@ export class MagickState {
 			this.originalImageUrl = URL.createObjectURL(
 				new Blob([this.sourceBytes as unknown as BlobPart])
 			);
+			this.clearPreviewSnapshot();
 
 			this.processedImageFormat = null;
 			this.processedImageName = null;
@@ -962,6 +989,7 @@ export class MagickState {
 		this.statsMessage = 'Ready';
 		this.hasUnsavedEdits = false;
 		this.currentProcessingStep = null;
+		this.clearPreviewSnapshot();
 		this.exif = null;
 		this.exifLoading = false;
 		this.exifError = null;
@@ -1773,6 +1801,7 @@ export class MagickState {
 		this.processedWidth = newWidth;
 		this.processedHeight = newHeight;
 		this.hasUnsavedEdits = true;
+		this.markPreviewFresh();
 
 		const nameParts = this.originalName.split('.');
 		if (nameParts.length > 1) nameParts.pop();

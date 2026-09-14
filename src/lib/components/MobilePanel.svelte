@@ -224,9 +224,20 @@
 			<button
 				onclick={onProcess}
 				disabled={!magick.wasmLoaded || !magick.sourceBytes}
-				class="mobile-action-btn primary"
+				class="mobile-action-btn primary {magick.isStale
+					? 'font-bold underline underline-offset-4'
+					: ''}"
+				aria-label={!magick.sourceBytes
+					? 'Process — load an image first'
+					: !magick.wasmLoaded
+						? 'Process — engine loading…'
+						: magick.isStale
+							? 'Settings changed — process to update preview'
+							: 'Process image'}
 			>
-				PROCESS<span class="ml-1 inline-block w-3 text-left">{magick.isLoading ? ' ~' : ''}</span>
+				PROCESS{#if magick.isStale}<span class="ml-1" aria-hidden="true">●</span>{/if}<span
+					class="ml-1 inline-block w-3 text-left">{magick.isLoading ? ' ~' : ''}</span
+				>
 			</button>
 			<button onclick={onDownload} disabled={!canDownload} class="mobile-action-btn">
 				EXPORT
