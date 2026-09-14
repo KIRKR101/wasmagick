@@ -313,7 +313,6 @@
 		<HoverTooltip label="Upload image (V)" triggerClass="w-full">
 			<button
 				onclick={onUploadClick}
-				title="Upload image (V)"
 				aria-label="Upload image (V)"
 				class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 			>
@@ -328,7 +327,6 @@
 			<button
 				onclick={onReset}
 				disabled={!anyDirty}
-				title={anyDirty ? 'Reset all settings' : 'Reset all (no changes to reset)'}
 				aria-label={anyDirty ? 'Reset all settings' : 'Reset all (no changes to reset)'}
 				class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 			>
@@ -344,7 +342,6 @@
 			<button
 				onclick={onClose}
 				disabled={!magick.originalImageUrl}
-				title={magick.originalImageUrl ? 'Close image (Ctrl+W)' : 'Close (no image open)'}
 				aria-label={magick.originalImageUrl ? 'Close image (Ctrl+W)' : 'Close (no image open)'}
 				class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 			>
@@ -428,7 +425,6 @@
 					<button
 						onclick={onUndo}
 						disabled={!history.canUndo}
-						title="Undo (Ctrl+Z)"
 						aria-label="Undo (Ctrl+Z)"
 						class="group flex-1 cursor-pointer px-2 py-1 text-center font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 					>
@@ -440,7 +436,6 @@
 					<button
 						onclick={onRedo}
 						disabled={!history.canRedo}
-						title="Redo (Ctrl+Shift+Z / Ctrl+Y)"
 						aria-label="Redo (Ctrl+Shift+Z / Ctrl+Y)"
 						class="group flex-1 cursor-pointer px-2 py-1 text-center font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 					>
@@ -452,7 +447,6 @@
 			<HoverTooltip label="Toggle debug panel" triggerClass="w-full">
 				<button
 					onclick={onToggleDebug}
-					title="Toggle debug panel"
 					aria-label="Toggle debug panel"
 					class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {debugMode
 						? 'text-foreground'
@@ -467,7 +461,6 @@
 			<HoverTooltip label="Toggle theme" triggerClass="w-full">
 				<button
 					onclick={onToggleTheme}
-					title="Toggle theme"
 					aria-label="Toggle theme"
 					class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 				>
@@ -481,7 +474,6 @@
 			<HoverTooltip label="Keyboard shortcuts (Ctrl+Shift+?)" triggerClass="w-full">
 				<button
 					onclick={onToggleShortcuts}
-					title="Keyboard shortcuts (Ctrl+Shift+?)"
 					aria-label="Keyboard shortcuts (Ctrl+Shift+?)"
 					class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 				>

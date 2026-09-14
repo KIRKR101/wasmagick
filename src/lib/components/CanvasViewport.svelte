@@ -695,7 +695,6 @@
 					<button
 						onclick={zoomOut}
 						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-						title="Zoom out (Ctrl+-)"
 						aria-label="Zoom out (Ctrl+-)"
 					>
 						<ZoomOut class="size-3.5" />
@@ -705,7 +704,6 @@
 					<button
 						onclick={zoomToOneToOne}
 						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-						title="Zoom level — click to reset to 100%"
 						aria-label="Zoom level — click to reset to 100%"
 					>
 						<span class="tabular-nums">{Math.round(currentZoom)}%</span>
@@ -715,7 +713,6 @@
 					<button
 						onclick={zoomIn}
 						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-						title="Zoom in (Ctrl+=)"
 						aria-label="Zoom in (Ctrl+=)"
 					>
 						<ZoomIn class="size-3.5" />
@@ -729,7 +726,6 @@
 						onclick={resetView}
 						disabled={imageFailed}
 						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40"
-						title={imageFailed ? 'Fit unavailable (preview failed)' : 'Fit to screen (Ctrl+0)'}
 						aria-label={imageFailed ? 'Fit unavailable (preview failed)' : 'Fit to screen (Ctrl+0)'}
 					>
 						<Maximize class="size-3.5" />
@@ -759,9 +755,6 @@
 						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 {isComparing
 							? 'bg-muted text-foreground'
 							: ''}"
-						title={processedImageUrl
-							? 'Hold to compare original (Space)'
-							: 'Compare unavailable — process image first'}
 						aria-label={processedImageUrl
 							? 'Hold to compare original (Space)'
 							: 'Compare unavailable — process image first'}
@@ -779,7 +772,6 @@
 						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 {splitMode
 							? 'bg-muted text-foreground'
 							: ''}"
-						title={canSplit ? 'Split compare (B)' : 'Split unavailable — process image first'}
 						aria-label={canSplit ? 'Split compare (B)' : 'Split unavailable — process image first'}
 					>
 						<Columns2 class="size-3.5" />

@@ -161,7 +161,6 @@
 				<button
 					onclick={onProcess}
 					disabled={!magick.wasmLoaded || !magick.sourceBytes}
-					title={processTip}
 					aria-label={processTip}
 					class="group flex h-8 w-full shrink-0 cursor-pointer items-center justify-between border border-foreground/30 bg-transparent px-2 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 				>
@@ -177,7 +176,6 @@
 				<button
 					onclick={onDownload}
 					disabled={!canDownload}
-					title={exportTip}
 					aria-label={exportTip}
 					class="group flex h-8 w-full shrink-0 cursor-pointer items-center justify-between border border-foreground/30 bg-transparent px-2 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 				>
