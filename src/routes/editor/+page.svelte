@@ -247,6 +247,11 @@
 			void history.redo(magick);
 			return;
 		}
+		if (cmdOrCtrl && !e.shiftKey && (e.key === 'y' || e.key === 'Y')) {
+			e.preventDefault();
+			void history.redo(magick);
+			return;
+		}
 
 		if (cmdOrCtrl && (e.key === 's' || e.key === 'S')) {
 			e.preventDefault();

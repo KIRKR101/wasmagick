@@ -9,11 +9,12 @@
 			items: [
 				...(isDesktop ? [{ keys: ['Ctrl', 'O'], description: 'Open Image' }] : []),
 				{ keys: ['Ctrl', 'Enter'], description: 'Process Image' },
-				{ keys: ['Ctrl', 'S'], description: 'Save Result' },
+				{ keys: ['Ctrl', 'S'], description: 'Export Result' },
 				{ keys: ['Ctrl', 'Z'], description: 'Undo' },
 				{ keys: ['Ctrl', 'Shift', 'Z'], description: 'Redo' },
+				{ keys: ['Ctrl', 'Y'], description: 'Redo (alternative)' },
 				...(isDesktop ? [{ keys: ['Ctrl', 'W'], description: 'Close Image' }] : []),
-				{ keys: ['V'], description: 'Open File Picker' },
+				{ keys: ['V'], description: 'Open File Picker (upload)' },
 				{ keys: ['Ctrl', 'Shift', '?'], description: 'Show Shortcuts' }
 			]
 		},
@@ -37,6 +38,7 @@
 				{ keys: ['Ctrl', '-'], description: 'Zoom Out' },
 				{ keys: ['Scroll'], description: 'Zoom In/Out' },
 				{ keys: ['Drag'], description: 'Pan Image' },
+				{ keys: ['Double-click'], description: 'Toggle Fit / 100%' },
 				{ keys: ['B'], description: 'Toggle Split Compare' },
 				{ keys: ['Space'], description: 'Hold to Compare (Before/After)' }
 			]
@@ -144,7 +146,7 @@
 			<button
 				class="absolute top-3 right-3 flex size-6 cursor-pointer items-center justify-center font-mono text-[11px] text-muted-foreground/40 focus:outline-none"
 				onclick={() => (open = false)}
-				aria-label="Close"
+				aria-label="Close shortcuts dialog"
 			>
 				[X]
 			</button>

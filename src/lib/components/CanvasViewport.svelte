@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { AlertTriangle, Columns2, Images, Maximize, ZoomIn, ZoomOut } from 'lucide-svelte';
 	import FileDropzone from './FileDropzone.svelte';
+	import HoverTooltip from './controls/HoverTooltip.svelte';
 	import SplitCompare from './SplitCompare.svelte';
 	import CropOverlay from './CropOverlay.svelte';
 	import type { SampleImage } from '$lib/editor-types';
@@ -690,67 +691,100 @@
 				onpointerleave={(e) => e.stopPropagation()}
 				class="pointer-events-auto absolute bottom-3 left-1/2 z-20 hidden -translate-x-1/2 animate-in items-center gap-0 border border-foreground/30 bg-[#f7f7f4]/85 px-1 font-mono text-[11px] backdrop-blur-sm duration-200 fade-in slide-in-from-bottom-2 md:flex dark:bg-background/85"
 			>
-				<button
-					onclick={zoomOut}
-					class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-					aria-label="Zoom out (Ctrl+-)"
+				<HoverTooltip label="Zoom out (Ctrl+-)" side="top">
+					<button
+						onclick={zoomOut}
+						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+						title="Zoom out (Ctrl+-)"
+						aria-label="Zoom out (Ctrl+-)"
+					>
+						<ZoomOut class="size-3.5" />
+					</button>
+				</HoverTooltip>
+				<HoverTooltip label="Zoom level — click to reset to 100%" side="top">
+					<button
+						onclick={zoomToOneToOne}
+						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+						title="Zoom level — click to reset to 100%"
+						aria-label="Zoom level — click to reset to 100%"
+					>
+						<span class="tabular-nums">{Math.round(currentZoom)}%</span>
+					</button>
+				</HoverTooltip>
+				<HoverTooltip label="Zoom in (Ctrl+=)" side="top">
+					<button
+						onclick={zoomIn}
+						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+						title="Zoom in (Ctrl+=)"
+						aria-label="Zoom in (Ctrl+=)"
+					>
+						<ZoomIn class="size-3.5" />
+					</button>
+				</HoverTooltip>
+				<HoverTooltip
+					label={imageFailed ? 'Fit unavailable (preview failed)' : 'Fit to screen (Ctrl+0)'}
+					side="top"
 				>
-					<ZoomOut class="size-3.5" />
-				</button>
-				<button
-					onclick={zoomToOneToOne}
-					class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-					aria-label="Reset zoom to 100%"
-				>
-					<span class="tabular-nums">{Math.round(currentZoom)}%</span>
-				</button>
-				<button
-					onclick={zoomIn}
-					class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-					aria-label="Zoom in (Ctrl+=)"
-				>
-					<ZoomIn class="size-3.5" />
-				</button>
-				<button
-					onclick={resetView}
-					disabled={imageFailed}
-					class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40"
-					aria-label="Fit to screen (Ctrl+0)"
-				>
-					<Maximize class="size-3.5" />
-				</button>
+					<button
+						onclick={resetView}
+						disabled={imageFailed}
+						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40"
+						title={imageFailed ? 'Fit unavailable (preview failed)' : 'Fit to screen (Ctrl+0)'}
+						aria-label={imageFailed ? 'Fit unavailable (preview failed)' : 'Fit to screen (Ctrl+0)'}
+					>
+						<Maximize class="size-3.5" />
+					</button>
+				</HoverTooltip>
 				<div class="mx-0.5 h-4 w-px bg-border"></div>
-				<button
-					onpointerdown={(e) => {
-						e.stopPropagation();
-						startCompare();
-					}}
-					onpointerup={(e) => {
-						e.stopPropagation();
-						endCompare();
-					}}
-					onpointerleave={(e) => {
-						e.stopPropagation();
-						endCompare();
-					}}
-					disabled={!processedImageUrl}
-					class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 {isComparing
-						? 'bg-muted text-foreground'
-						: ''}"
-					aria-label="Hold to compare (Space)"
+				<HoverTooltip
+					label={processedImageUrl
+						? 'Hold to compare original (Space)'
+						: 'Compare unavailable — process image first'}
+					side="top"
 				>
-					<Images class="size-3.5" />
-				</button>
-				<button
-					onclick={toggleSplitCompare}
-					disabled={!canSplit}
-					class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 {splitMode
-						? 'bg-muted text-foreground'
-						: ''}"
-					aria-label="Split compare (B)"
+					<button
+						onpointerdown={(e) => {
+							e.stopPropagation();
+							startCompare();
+						}}
+						onpointerup={(e) => {
+							e.stopPropagation();
+							endCompare();
+						}}
+						onpointerleave={(e) => {
+							e.stopPropagation();
+							endCompare();
+						}}
+						disabled={!processedImageUrl}
+						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 {isComparing
+							? 'bg-muted text-foreground'
+							: ''}"
+						title={processedImageUrl
+							? 'Hold to compare original (Space)'
+							: 'Compare unavailable — process image first'}
+						aria-label={processedImageUrl
+							? 'Hold to compare original (Space)'
+							: 'Compare unavailable — process image first'}
+					>
+						<Images class="size-3.5" />
+					</button>
+				</HoverTooltip>
+				<HoverTooltip
+					label={canSplit ? 'Split compare (B)' : 'Split unavailable — process image first'}
+					side="top"
 				>
-					<Columns2 class="size-3.5" />
-				</button>
+					<button
+						onclick={toggleSplitCompare}
+						disabled={!canSplit}
+						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 {splitMode
+							? 'bg-muted text-foreground'
+							: ''}"
+						title={canSplit ? 'Split compare (B)' : 'Split unavailable — process image first'}
+						aria-label={canSplit ? 'Split compare (B)' : 'Split unavailable — process image first'}
+					>
+						<Columns2 class="size-3.5" />
+					</button>
+				</HoverTooltip>
 			</div>
 		{/if}
 	</div>

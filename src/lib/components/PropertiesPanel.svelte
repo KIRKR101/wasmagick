@@ -18,6 +18,7 @@
 	import ExportSection from './sections/ExportSection.svelte';
 	import PresetsSection from './sections/PresetsSection.svelte';
 	import HistoryPanel from './sections/HistoryPanel.svelte';
+	import HoverTooltip from './controls/HoverTooltip.svelte';
 
 	let {
 		activeSection,
@@ -81,6 +82,16 @@
 	});
 	let meta = $derived({ ...META[activeSection], dirty: dirty[activeSection] });
 	let canDownload = $derived(!!magick.processedImageUrl);
+	let processTip = $derived(
+		!magick.sourceBytes
+			? 'Process — load an image first'
+			: !magick.wasmLoaded
+				? 'Process — engine loading…'
+				: 'Process image (Ctrl+Enter)'
+	);
+	let exportTip = $derived(
+		!canDownload ? 'Export — process image first' : 'Export result (Ctrl+S)'
+	);
 
 	let bodyEl = $state<HTMLElement | null>(null);
 	let lastSection: EditorSection | null = null;
@@ -146,26 +157,34 @@
 			>
 		</div>
 		<div class="flex flex-col gap-1.5">
-			<button
-				onclick={onProcess}
-				disabled={!magick.wasmLoaded || !magick.sourceBytes}
-				class="group flex h-8 w-full shrink-0 cursor-pointer items-center justify-between border border-foreground/30 bg-transparent px-2 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-			>
-				<span
-					><span class="group-hover:underline">PROCESS</span><span
-						class="ml-1 inline-block w-3 text-left">{magick.isLoading ? ' ~' : ''}</span
-					></span
+			<HoverTooltip label={processTip} side="top" triggerClass="w-full">
+				<button
+					onclick={onProcess}
+					disabled={!magick.wasmLoaded || !magick.sourceBytes}
+					title={processTip}
+					aria-label={processTip}
+					class="group flex h-8 w-full shrink-0 cursor-pointer items-center justify-between border border-foreground/30 bg-transparent px-2 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 				>
-				<span class="text-[11px] opacity-70">CTRL+<span class="text-sm">↵</span></span>
-			</button>
-			<button
-				onclick={onDownload}
-				disabled={!canDownload}
-				class="group flex h-8 w-full shrink-0 cursor-pointer items-center justify-between border border-foreground/30 bg-transparent px-2 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-			>
-				<span class="group-hover:underline">EXPORT CANVAS</span>
-				<span class="text-[11px] opacity-70">CTRL+S</span>
-			</button>
+					<span
+						><span class="group-hover:underline">PROCESS</span><span
+							class="ml-1 inline-block w-3 text-left">{magick.isLoading ? ' ~' : ''}</span
+						></span
+					>
+					<span class="text-[11px] opacity-70">CTRL+<span class="text-sm">↵</span></span>
+				</button>
+			</HoverTooltip>
+			<HoverTooltip label={exportTip} side="top" triggerClass="w-full">
+				<button
+					onclick={onDownload}
+					disabled={!canDownload}
+					title={exportTip}
+					aria-label={exportTip}
+					class="group flex h-8 w-full shrink-0 cursor-pointer items-center justify-between border border-foreground/30 bg-transparent px-2 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+				>
+					<span class="group-hover:underline">EXPORT CANVAS</span>
+					<span class="text-[11px] opacity-70">CTRL+S</span>
+				</button>
+			</HoverTooltip>
 		</div>
 	</div>
 </aside>

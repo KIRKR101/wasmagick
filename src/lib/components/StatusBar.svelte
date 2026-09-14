@@ -36,7 +36,10 @@
 
 	<div class="ml-auto flex items-center gap-3">
 		{#if isDirty}
-			<span class="flex items-center gap-1 text-foreground/70" title="Unsaved edits">
+			<span
+				class="flex items-center gap-1 text-foreground/70"
+				title="Unsaved edits — press Ctrl+S to export"
+			>
 				<span class="font-mono text-xs text-amber-500">[*]</span>
 				<span>Unsaved</span>
 			</span>

@@ -12,6 +12,7 @@
 		formatBytes
 	} from '$lib/utils';
 	import { DEFAULT_SETTINGS } from '$lib/useMagick.svelte';
+	import HoverTooltip from './controls/HoverTooltip.svelte';
 
 	let {
 		activeSection,
@@ -271,6 +272,7 @@
 					? 'font-bold text-foreground'
 					: 'text-muted-foreground'}"
 				aria-label="{item.label} (Alt+{item.shortcut})"
+				title="{item.label} (Alt+{item.shortcut})"
 				aria-pressed={activeSection === item.id}
 			>
 				<span class="inline-flex items-center gap-1.5 truncate"
@@ -308,28 +310,47 @@
 
 	<div class="mb-3 text-muted-foreground">/ACTIONS</div>
 	<div class="flex flex-col gap-1.5">
-		<button
-			onclick={onUploadClick}
-			class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-		>
-			<span class="truncate"><span>[ ]</span> <span class="hover:underline">UPLOAD</span></span>
-		</button>
+		<HoverTooltip label="Upload image (V)" triggerClass="w-full">
+			<button
+				onclick={onUploadClick}
+				title="Upload image (V)"
+				aria-label="Upload image (V)"
+				class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+			>
+				<span class="truncate"><span>[ ]</span> <span class="hover:underline">UPLOAD</span></span>
+			</button>
+		</HoverTooltip>
 
-		<button
-			onclick={onReset}
-			disabled={!anyDirty}
-			class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+		<HoverTooltip
+			label={anyDirty ? 'Reset all settings' : 'Reset all (no changes to reset)'}
+			triggerClass="w-full"
 		>
-			<span class="truncate"><span>[ ]</span> <span class="hover:underline">RESET ALL</span></span>
-		</button>
+			<button
+				onclick={onReset}
+				disabled={!anyDirty}
+				title={anyDirty ? 'Reset all settings' : 'Reset all (no changes to reset)'}
+				aria-label={anyDirty ? 'Reset all settings' : 'Reset all (no changes to reset)'}
+				class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+			>
+				<span class="truncate"><span>[ ]</span> <span class="hover:underline">RESET ALL</span></span
+				>
+			</button>
+		</HoverTooltip>
 
-		<button
-			onclick={onClose}
-			disabled={!magick.originalImageUrl}
-			class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+		<HoverTooltip
+			label={magick.originalImageUrl ? 'Close image (Ctrl+W)' : 'Close (no image open)'}
+			triggerClass="w-full"
 		>
-			<span class="truncate"><span>[ ]</span> <span class="hover:underline">CLOSE</span></span>
-		</button>
+			<button
+				onclick={onClose}
+				disabled={!magick.originalImageUrl}
+				title={magick.originalImageUrl ? 'Close image (Ctrl+W)' : 'Close (no image open)'}
+				aria-label={magick.originalImageUrl ? 'Close image (Ctrl+W)' : 'Close (no image open)'}
+				class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+			>
+				<span class="truncate"><span>[ ]</span> <span class="hover:underline">CLOSE</span></span>
+			</button>
+		</HoverTooltip>
 	</div>
 
 	<div class="mt-auto">
@@ -403,50 +424,72 @@
 		<div class="mb-3 text-muted-foreground">/NAV</div>
 		<div class="flex flex-col gap-1.5">
 			<div class="mb-2 flex border border-foreground/30">
-				<button
-					onclick={onUndo}
-					disabled={!history.canUndo}
-					class="group flex-1 cursor-pointer px-2 py-1 text-center font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-				>
-					[&lt;] <span class="group-hover:underline">UNDO</span>
-				</button>
+				<HoverTooltip label="Undo (Ctrl+Z)" triggerClass="flex-1">
+					<button
+						onclick={onUndo}
+						disabled={!history.canUndo}
+						title="Undo (Ctrl+Z)"
+						aria-label="Undo (Ctrl+Z)"
+						class="group flex-1 cursor-pointer px-2 py-1 text-center font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+					>
+						[&lt;] <span class="group-hover:underline">UNDO</span>
+					</button>
+				</HoverTooltip>
 				<div class="w-px self-stretch bg-foreground/30"></div>
-				<button
-					onclick={onRedo}
-					disabled={!history.canRedo}
-					class="group flex-1 cursor-pointer px-2 py-1 text-center font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-				>
-					<span class="group-hover:underline">REDO</span> [&gt;]
-				</button>
+				<HoverTooltip label="Redo (Ctrl+Shift+Z / Ctrl+Y)" triggerClass="flex-1">
+					<button
+						onclick={onRedo}
+						disabled={!history.canRedo}
+						title="Redo (Ctrl+Shift+Z / Ctrl+Y)"
+						aria-label="Redo (Ctrl+Shift+Z / Ctrl+Y)"
+						class="group flex-1 cursor-pointer px-2 py-1 text-center font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+					>
+						<span class="group-hover:underline">REDO</span> [&gt;]
+					</button>
+				</HoverTooltip>
 			</div>
 
-			<button
-				onclick={onToggleDebug}
-				class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {debugMode
-					? 'text-foreground'
-					: ''}"
-			>
-				<span class="truncate"
-					><span>[{debugMode ? '⚠' : 'B'}]</span> <span class="hover:underline">DEBUG</span></span
+			<HoverTooltip label="Toggle debug panel" triggerClass="w-full">
+				<button
+					onclick={onToggleDebug}
+					title="Toggle debug panel"
+					aria-label="Toggle debug panel"
+					class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {debugMode
+						? 'text-foreground'
+						: ''}"
 				>
-			</button>
+					<span class="truncate"
+						><span>[{debugMode ? '⚠' : 'B'}]</span> <span class="hover:underline">DEBUG</span></span
+					>
+				</button>
+			</HoverTooltip>
 
-			<button
-				onclick={onToggleTheme}
-				class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-			>
-				<span class="truncate"
-					><span>[{isDarkMode ? '~' : 'O'}]</span> <span class="hover:underline">THEME</span></span
+			<HoverTooltip label="Toggle theme" triggerClass="w-full">
+				<button
+					onclick={onToggleTheme}
+					title="Toggle theme"
+					aria-label="Toggle theme"
+					class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 				>
-			</button>
+					<span class="truncate"
+						><span>[{isDarkMode ? '~' : 'O'}]</span>
+						<span class="hover:underline">THEME</span></span
+					>
+				</button>
+			</HoverTooltip>
 
-			<button
-				onclick={onToggleShortcuts}
-				class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-			>
-				<span class="truncate"><span>[?]</span> <span class="hover:underline">SHORTCUTS</span></span
+			<HoverTooltip label="Keyboard shortcuts (Ctrl+Shift+?)" triggerClass="w-full">
+				<button
+					onclick={onToggleShortcuts}
+					title="Keyboard shortcuts (Ctrl+Shift+?)"
+					aria-label="Keyboard shortcuts (Ctrl+Shift+?)"
+					class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 				>
-			</button>
+					<span class="truncate"
+						><span>[?]</span> <span class="hover:underline">SHORTCUTS</span></span
+					>
+				</button>
+			</HoverTooltip>
 		</div>
 	</div>
 </aside>
