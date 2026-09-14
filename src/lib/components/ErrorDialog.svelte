@@ -96,8 +96,7 @@
 					{magick.errorMessage || 'Unknown error'}
 				</p>
 				<p class="mt-3 text-[11px] leading-relaxed text-muted-foreground">
-					If this keeps happening, reporting it helps fix the issue. Your images never leave this
-					device — only include details you are comfortable sharing.
+					Your images never leave your device, only include details you want to.
 				</p>
 			</div>
 

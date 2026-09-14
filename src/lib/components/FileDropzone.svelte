@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { SampleImage } from '$lib/editor-types';
-	import { MAX_FILE_SIZE_MB } from '$lib/useMagick.svelte';
 
 	let {
 		onBrowse,
@@ -32,10 +31,6 @@
 		</h2>
 		<p class="font-mono text-[11px] text-muted-foreground/60">
 			Drag &amp; drop anywhere, paste from clipboard, or browse.
-		</p>
-		<p class="font-mono text-[10px] text-muted-foreground/50">
-			PNG · JPEG · GIF · WebP · AVIF · TIFF · SVG · HEIC · RAW + more — up to
-			{MAX_FILE_SIZE_MB}MB
 		</p>
 	</div>
 
