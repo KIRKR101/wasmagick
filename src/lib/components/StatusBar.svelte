@@ -1,14 +1,19 @@
 <script lang="ts">
 	import { AlertCircle, Loader2 } from 'lucide-svelte';
 	import type { MagickState } from '$lib/useMagick.svelte';
+	import ErrorDialog from './ErrorDialog.svelte';
 
 	let {
 		magick,
-		isDirty
+		isDirty,
+		onRetry
 	}: {
 		magick: MagickState;
 		isDirty: boolean;
+		onRetry?: () => void;
 	} = $props();
+
+	let errorOpen = $state(false);
 </script>
 
 <div
@@ -16,10 +21,14 @@
 >
 	<div class="flex min-w-0 items-center gap-3 truncate">
 		{#if magick.hasError}
-			<span class="flex items-center gap-1 text-destructive">
-				<AlertCircle class="size-3" />
+			<button
+				onclick={() => (errorOpen = true)}
+				class="flex min-w-0 cursor-pointer items-center gap-1 text-destructive focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+				aria-label="Show full error details"
+			>
+				<AlertCircle class="size-3 shrink-0" />
 				<span class="max-w-[40ch] truncate">{magick.errorMessage || 'Error'}</span>
-			</span>
+			</button>
 		{:else if magick.isLoading}
 			<span class="flex items-center gap-1 text-foreground/80">
 				<Loader2 class="size-3 animate-spin" />
@@ -48,3 +57,5 @@
 		{/if}
 	</div>
 </div>
+
+<ErrorDialog {magick} bind:open={errorOpen} {onRetry} />

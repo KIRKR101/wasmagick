@@ -3,6 +3,7 @@
 	import MobileToolbar from './MobileToolbar.svelte';
 	import MobilePanel from './MobilePanel.svelte';
 	import ConfirmDialog from './ConfirmDialog.svelte';
+	import ErrorDialog from './ErrorDialog.svelte';
 	import { IMAGE_FILE_ACCEPT } from '$lib/utils';
 	import type { MagickState } from '$lib/useMagick.svelte';
 	import type { HistoryState } from '$lib/hooks/useHistory.svelte';
@@ -49,6 +50,7 @@
 
 	let fileInputEl = $state<HTMLInputElement | null>(null);
 	let panelOpen = $state(false);
+	let errorOpen = $state(false);
 	let viewportZoom = $state(100);
 	let isComparing = $state(false);
 	let splitMode = $state(false);
@@ -240,6 +242,8 @@
 		onClose={() => (panelOpen = false)}
 	/>
 </div>
+
+<ErrorDialog {magick} bind:open={errorOpen} onRetry={onProcess} />
 
 <ConfirmDialog
 	bind:open={confirmOpen}

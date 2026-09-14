@@ -702,6 +702,7 @@ export class MagickState {
 					this.errorMessage = error;
 
 					this.isLoading = false;
+					this.currentProcessingStep = null;
 					return;
 				}
 
@@ -733,6 +734,7 @@ export class MagickState {
 					this.hasError = true;
 					this.errorMessage = 'Worker crashed';
 					this.isLoading = false;
+					this.currentProcessingStep = null;
 				}
 				this._pendingRequests.clear();
 			};
@@ -1748,6 +1750,7 @@ export class MagickState {
 								this.hasError = true;
 								this.errorMessage = message;
 								this.isLoading = false;
+								this.currentProcessingStep = null;
 							}
 						});
 					} catch (err: unknown) {
@@ -1756,6 +1759,7 @@ export class MagickState {
 						this.hasError = true;
 						this.errorMessage = message;
 						this.isLoading = false;
+						this.currentProcessingStep = null;
 					}
 				});
 			});

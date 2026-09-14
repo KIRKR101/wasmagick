@@ -212,7 +212,7 @@
 		</div>
 	</div>
 
-	<StatusBar {magick} isDirty={magick.hasUnsavedEdits} />
+	<StatusBar {magick} isDirty={magick.hasUnsavedEdits} onRetry={onProcess} />
 </div>
 
 <ConfirmDialog
