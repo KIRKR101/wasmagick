@@ -123,11 +123,14 @@ ImageMagick version: 7.1.2-29
 		]);
 	});
 
-	it('keeps delegate-backed WebP available when the format table omits it', async () => {
-		if (!resolveMagickBin() || !resolveWebpTool('cwebp')) return;
-		const formats = await listNativeFormats();
-		expect(formats.some((format) => format.format === 'WEBP')).toBe(true);
-	}, 15_000);
+	it.skipIf(!resolveMagickBin() || !resolveWebpTool('cwebp'))(
+		'keeps delegate-backed WebP available when the format table omits it',
+		async () => {
+			const formats = await listNativeFormats();
+			expect(formats.some((format) => format.format === 'WEBP')).toBe(true);
+		},
+		15_000
+	);
 
 	it('filters the complete non-image and video denylist for native capabilities', () => {
 		const formats = parseNativeFormatList(
@@ -169,26 +172,29 @@ ImageMagick version: 7.1.2-29
 		expect(outputSpecifierFor('', '/tmp/output.png')).toBe('PNG:/tmp/output.png');
 	});
 
-	it('exports a real TIFF through the native bundle', async () => {
-		expect(outputSpecifierFor('TIFF', '/tmp/output.tiff')).toBe('TIFF:/tmp/output.tiff');
-		expect(outputSpecifierFor('TIFF64', '/tmp/output.tiff')).toBe('TIFF64:/tmp/output.tiff');
+	it.skipIf(!resolveMagickBin())(
+		'exports a real TIFF through the native bundle',
+		async () => {
+			expect(outputSpecifierFor('TIFF', '/tmp/output.tiff')).toBe('TIFF:/tmp/output.tiff');
+			expect(outputSpecifierFor('TIFF64', '/tmp/output.tiff')).toBe('TIFF64:/tmp/output.tiff');
 
-		if (!resolveMagickBin()) return;
-		const formats = await listNativeFormats();
-		expect(formats.some((format) => format.format === 'TIFF')).toBe(true);
-		const inputData = new Uint8Array(readFileSync('static/icons/icon-512.png'));
-		const result = await processNative({
-			inputName: 'source.png',
-			inputData,
-			args: [],
-			outputExtension: 'tiff',
-			outputFormat: 'TIFF'
-		});
-		expect(result.data.length).toBeGreaterThan(0);
-		expect([result.width, result.height]).toEqual([512, 512]);
-		expect(
-			[...result.data.slice(0, 4)].join(',') === '73,73,42,0' ||
-				[...result.data.slice(0, 4)].join(',') === '77,77,0,42'
-		).toBe(true);
-	}, 15_000);
+			const formats = await listNativeFormats();
+			expect(formats.some((format) => format.format === 'TIFF')).toBe(true);
+			const inputData = new Uint8Array(readFileSync('static/icons/icon-512.png'));
+			const result = await processNative({
+				inputName: 'source.png',
+				inputData,
+				args: [],
+				outputExtension: 'tiff',
+				outputFormat: 'TIFF'
+			});
+			expect(result.data.length).toBeGreaterThan(0);
+			expect([result.width, result.height]).toEqual([512, 512]);
+			expect(
+				[...result.data.slice(0, 4)].join(',') === '73,73,42,0' ||
+					[...result.data.slice(0, 4)].join(',') === '77,77,0,42'
+			).toBe(true);
+		},
+		15_000
+	);
 });
