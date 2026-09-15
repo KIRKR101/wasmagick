@@ -264,6 +264,16 @@ function spawnEnv(magickBin) {
 	const root = path.dirname(magickBin);
 	const parents = [root, path.dirname(root), path.dirname(path.dirname(root))];
 	const flat = (sub) => parents.map((p) => path.join(p, sub));
+	const bundleRoot = path.basename(root).toLowerCase() === 'bin' ? path.dirname(root) : root;
+	if (!env.MAGICK_HOME) env.MAGICK_HOME = bundleRoot;
+	const bundledWebpTool = resolveWebpTool('cwebp');
+	if (bundledWebpTool) {
+		const webpBinDir = path.dirname(bundledWebpTool);
+		const pathEntries = String(env.PATH || '').split(path.delimiter).filter(Boolean);
+		if (!pathEntries.includes(webpBinDir)) {
+			env.PATH = [webpBinDir, ...pathEntries].join(path.delimiter);
+		}
+	}
 	const coderDir = firstDir(flat(path.join('lib', 'ImageMagick', 'modules-Q16HDRI', 'coders')));
 	const filterDir = firstDir(flat(path.join('lib', 'ImageMagick', 'modules-Q16HDRI', 'filters')));
 	const configDir = firstDir([
