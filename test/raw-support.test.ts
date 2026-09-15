@@ -61,7 +61,7 @@ describe('RAW ImageMagick capability parsing', () => {
 	});
 
 	it('normalizes common ExifTool orientation labels', () => {
-		 expect(parseExifOrientation('Rotate 90 CW')).toBe(6);
+		expect(parseExifOrientation('Rotate 90 CW')).toBe(6);
 		expect(parseExifOrientation('Mirror horizontal and rotate 270 CW')).toBe(5);
 		expect(parseExifOrientation('Mirror horizontal and rotate 90 CW')).toBe(7);
 		expect(parseExifOrientation('Horizontal (normal)')).toBe(1);
