@@ -23,13 +23,16 @@ import {
 	rmSync,
 	writeFileSync,
 	copyFileSync,
+	chmodSync,
 	readdirSync,
+	readFileSync,
 	cpSync,
 	statSync
 } from 'node:fs';
 import { execSync, spawnSync } from 'node:child_process';
 import { join, dirname, basename, delimiter } from 'node:path';
 import { tmpdir } from 'node:os';
+import { describeRawCapability, isRawCapable } from './raw-support.js';
 
 const IM_VERSION = '7.1.2-29';
 const TOOL_DIR = join(import.meta.dirname, 'imagemagick');
@@ -129,6 +132,82 @@ function verifyWebpSupport(slug: Slug): void {
 		);
 	}
 	console.log(`Verified ImageMagick WebP support for ${slug}.`);
+}
+
+/**
+ * Verify the host build decodes RAW camera formats (CR2, NEF, ARW, DNG, ...)
+ * internally via libraw.
+ *
+ * `--with-raw=no` builds list the same formats but decode through an
+ * external `darktable-cli` delegate that WASMagick does not bundle, so RAW
+ * input fails with `darktable-cli: command not found` + `no images for
+ * write`. Shared parsers live in `tooling/raw-support.ts` (unit-tested).
+ *
+ * On macOS this throws when RAW is missing (fix: `brew install
+ * imagemagick-full` + re-run setup). On Linux/Windows the upstream
+ * AppImage/portable builds also ship `--with-raw=no`; setup warns and the
+ * Electron runtime routes RAW to the embedded WASM decoder instead of calling
+ * their unbundled external delegate.
+ */
+function verifyRawSupport(slug: Slug): void {
+	const slugDir = join(TOOL_DIR, slug);
+	const bin = slugBin(slug);
+	const env = { ...process.env };
+	const libDir = join(slugDir, 'lib');
+	const coderDir = join(slugDir, 'lib', 'ImageMagick', 'modules-Q16HDRI', 'coders');
+	const filterDir = join(slugDir, 'lib', 'ImageMagick', 'modules-Q16HDRI', 'filters');
+	const configDirs = [
+		join(slugDir, 'etc', 'ImageMagick-7'),
+		join(slugDir, 'lib', 'ImageMagick', 'config-Q16HDRI')
+	];
+
+	if (existsSync(libDir)) {
+		const libraryKey = process.platform === 'darwin' ? 'DYLD_LIBRARY_PATH' : 'LD_LIBRARY_PATH';
+		env[libraryKey] = [libDir, env[libraryKey]].filter(Boolean).join(delimiter);
+	}
+	if (existsSync(coderDir)) env.MAGICK_CODER_MODULE_PATH = coderDir;
+	if (existsSync(filterDir)) env.MAGICK_FILTER_MODULE_PATH = filterDir;
+	env.MAGICK_CONFIGURE_PATH = configDirs.filter(existsSync).join(delimiter);
+	if (slug === 'win-x64') env.MAGICK_HOME = slugDir;
+
+	const run = (args: string[]): string | null => {
+		const result = spawnSync(bin, args, { cwd: slugDir, env, encoding: 'utf8' });
+		if (result.error || result.status !== 0) return null;
+		return String(result.stdout ?? '');
+	};
+
+	const configure = run(['-list', 'configure']);
+	const format = run(['-list', 'format']);
+	if (configure == null || format == null) {
+		console.warn(`Could not probe RAW support for ${slug}; skipping RAW verification.`);
+		return;
+	}
+
+	const capability = describeRawCapability(configure, format);
+	const delegatesPath = join(slugDir, 'etc', 'ImageMagick-7', 'delegates.xml');
+	const delegates = existsSync(delegatesPath) ? readFileSync(delegatesPath, 'utf8') : '';
+	if (isRawCapable(capability) && !/darktable-cli/i.test(delegates)) {
+		console.log(
+			`Verified ImageMagick RAW support for ${slug} ` +
+				`(${capability.formatCount} formats${capability.librawAnnotation ? ', libraw' : ''}).`
+		);
+		return;
+	}
+
+	const message =
+		`ImageMagick RAW support is unavailable for ${slug}: ` +
+		`RAW camera formats (CR2, NEF, ARW, DNG, ...) would fail via the external ` +
+		`darktable-cli delegate. ` +
+		(capability.missingFormats.length > 0
+			? `Missing formats: ${capability.missingFormats.join(', ')}. `
+			: '') +
+		(slug.startsWith('mac')
+			? `On macOS, install the RAW-capable formula and re-run setup: brew install imagemagick-full`
+			: `Upstream ${slug} builds compile --with-raw=no; rebuild ImageMagick with libraw (--with-raw=yes).`);
+	if (slug.startsWith('mac')) {
+		throw new Error(message);
+	}
+	console.warn(message);
 }
 
 function findFile(root: string, names: Set<string>): string | null {
@@ -275,12 +354,31 @@ function ensureWindows(slugDir: string): void {
 	console.log(`ImageMagick ready at ${bin}`);
 }
 
+/**
+ * Resolve the RAW-capable Homebrew ImageMagick prefix. The regular formula
+ * deliberately omits libraw and must never be used to assemble a desktop
+ * bundle that advertises camera RAW input.
+ */
+function resolveBrewPrefix(): { prefix: string; formula: 'imagemagick-full' } {
+	try {
+		const prefix = execSync('brew --prefix imagemagick-full', { encoding: 'utf-8' }).trim();
+		if (prefix && existsSync(join(prefix, 'bin', 'magick'))) {
+			return { prefix, formula: 'imagemagick-full' };
+		}
+	} catch {
+		// report the actionable installation command below
+	}
+	throw new Error(
+		'RAW-capable Homebrew ImageMagick not found. Install it with: brew install imagemagick-full'
+	);
+}
+
 /** Copy a Homebrew-installed magick into a relocatable dir via install_name_tool. */
 function bundleFromBrew(slugDir: string): void {
-	const brewPrefix = execSync('brew --prefix imagemagick', { encoding: 'utf-8' }).trim();
+	const { prefix: brewPrefix, formula } = resolveBrewPrefix();
 	const brewBin = join(brewPrefix, 'bin', 'magick');
 	if (!existsSync(brewBin)) throw new Error(`No magick at ${brewBin}`);
-	console.log(`Assembling relocatable bundle from Homebrew prefix ${brewPrefix}...`);
+	console.log(`Assembling relocatable bundle from Homebrew ${formula} prefix ${brewPrefix}...`);
 
 	const binDir = join(slugDir, 'bin');
 	const libDir = join(slugDir, 'lib');
@@ -289,6 +387,7 @@ function bundleFromBrew(slugDir: string): void {
 
 	const destBin = join(binDir, 'magick');
 	copyFileSync(brewBin, destBin);
+	chmodSync(destBin, 0o755);
 
 	const otool = (file: string): string[] => {
 		try {
@@ -356,6 +455,7 @@ function bundleFromBrew(slugDir: string): void {
 	const brewEtcIM = join(dirname(dirname(brewBin)), 'etc', 'ImageMagick-7');
 	if (existsSync(brewLibIM)) {
 		execSync(`cp -R "${brewLibIM}" "${join(libDir, 'ImageMagick')}"`);
+		execSync(`chmod -R u+rwX "${join(libDir, 'ImageMagick')}"`);
 		// The libtool `.la` files embed the build-time `libdir` (the brew
 		// Cellar). ImageMagick resolves the module .so through it, which
 		// would load the Cellar build and register coders against the wrong
@@ -375,6 +475,32 @@ function bundleFromBrew(slugDir: string): void {
 	if (existsSync(brewEtcIM)) {
 		mkdirSync(join(slugDir, 'etc'), { recursive: true });
 		execSync(`cp -R "${brewEtcIM}" "${join(slugDir, 'etc', 'ImageMagick-7')}"`);
+		execSync(`chmod -R u+rwX "${join(slugDir, 'etc', 'ImageMagick-7')}"`);
+		// Some Homebrew installations retain the generic dng delegate even in
+		// imagemagick-full. Once the libraw-backed DNG coder is present that
+		// delegate is both unnecessary and dangerous: it makes ImageMagick try
+		// darktable-cli before the bundled coder can handle CR2/NEF/etc.
+		const delegatesPath = join(slugDir, 'etc', 'ImageMagick-7', 'delegates.xml');
+		if (existsSync(delegatesPath)) {
+			const delegates = readFileSync(delegatesPath, 'utf8');
+			const sanitized = delegates.replace(
+				/\s*<delegate\b(?=[^>]*\bdecode=["']dng:decode["'])[^>]*\/>\s*/gi,
+				'\n'
+			);
+			if (sanitized !== delegates) writeFileSync(delegatesPath, sanitized);
+		}
+		const configurePath = join(slugDir, 'lib', 'ImageMagick', 'config-Q16HDRI', 'configure.xml');
+		if (existsSync(configurePath)) {
+			// The copied Homebrew XML records its absolute Cellar CONFIGURE_PATH.
+			// Remove that build-host override so MAGICK_CONFIGURE_PATH from the
+			// Electron runner selects the files inside the relocatable bundle.
+			const configure = readFileSync(configurePath, 'utf8');
+			const portable = configure.replace(
+				/^\s*<configure\s+name=["']CONFIGURE_PATH["'][^>]*\/?>\s*$/gim,
+				''
+			);
+			if (portable !== configure) writeFileSync(configurePath, portable);
+		}
 	}
 
 	// Fold in the modules' own brew dylib deps (e.g. libpng via png.so).
@@ -474,14 +600,79 @@ function bundleFromBrew(slugDir: string): void {
 	// Sanity: the bundled binary must report a version.
 	const version = execSync(`"${destBin}" -version`, { encoding: 'utf-8' });
 	console.log(version.split('\n')[0]);
+	const rawModules = ['dng.so', 'raw.so'].map((name) =>
+		join(modulesRoot, 'modules-Q16HDRI', 'coders', name)
+	);
+	const hasLibraw = readdirSync(libDir).some((file) => /^libraw(?:_r)?\./i.test(file));
+	const missingRawModules = rawModules.filter((file) => !existsSync(file));
+	if (!hasLibraw || missingRawModules.length > 0) {
+		throw new Error(
+			'Homebrew bundle is missing libraw-backed RAW coders. ' +
+				'Install imagemagick-full and re-run setup.'
+		);
+	}
+	console.log('Bundled ImageMagick includes libraw RAW support.');
 	console.log(`ImageMagick ready at ${destBin} (${needed.size} bundled dylibs)`);
+}
+
+/**
+ * File-based RAW check for an already-assembled macOS bundle (avoids
+ * spawning the binary): true when `lib/libraw*` is staged and the bundled
+ * `configure.xml` claims a `raw` delegate / `--with-raw=yes`.
+ */
+function existingBundleHasRaw(slugDir: string): boolean {
+	try {
+		const libDir = join(slugDir, 'lib');
+		const modulesRoot = join(libDir, 'ImageMagick', 'modules-Q16HDRI', 'coders');
+		const hasLibraw =
+			existsSync(libDir) && readdirSync(libDir).some((f) => /^libraw(?:_r)?\./i.test(f));
+		const hasRawModules = ['dng.so', 'raw.so'].every((name) => existsSync(join(modulesRoot, name)));
+		const delegatesPath = join(slugDir, 'etc', 'ImageMagick-7', 'delegates.xml');
+		const delegates = existsSync(delegatesPath) ? readFileSync(delegatesPath, 'utf8') : '';
+		const configurePath = join(slugDir, 'lib', 'ImageMagick', 'config-Q16HDRI', 'configure.xml');
+		const configure = existsSync(configurePath) ? readFileSync(configurePath, 'utf8') : '';
+		if (/darktable-cli/i.test(delegates)) return false;
+		if (/name=["']CONFIGURE_PATH["']/i.test(configure)) return false;
+		if (hasLibraw && hasRawModules) return true;
+	} catch {
+		// treat as missing; verifyRawSupport() reports definitively
+	}
+	return false;
 }
 
 function ensureMac(slugDir: string, arch: 'x64' | 'arm64'): void {
 	const bin = join(slugDir, 'bin', 'magick');
+	const hostArchMatches =
+		process.platform === 'darwin' && (arch === 'x64') === (process.arch !== 'arm64');
 	if (existsSync(bin)) {
-		console.log(`ImageMagick ${IM_VERSION} (${slugDir}) already installed.`);
-		return;
+		if (existingBundleHasRaw(slugDir)) {
+			console.log(`ImageMagick ${IM_VERSION} (${slugDir}) already installed.`);
+			return;
+		}
+		if (hostArchMatches) {
+			console.log(
+				`Existing bundle at ${slugDir} lacks libraw RAW support; rebuilding from Homebrew...`
+			);
+			rmSync(slugDir, { recursive: true, force: true });
+		} else {
+			console.log(`ImageMagick ${IM_VERSION} (${slugDir}) already installed.`);
+			return;
+		}
+	}
+	// On a matching host, prefer a Homebrew bundle: `imagemagick-full` is
+	// built --with-raw=yes (libraw), while the official tarballs are
+	// --with-raw=no (RAW fails via darktable-cli). Fall through to the
+	// tarball only when Homebrew bundling is unavailable.
+	if (hostArchMatches) {
+		try {
+			bundleFromBrew(slugDir);
+			return;
+		} catch (err) {
+			console.warn(
+				`Homebrew bundle failed (${err instanceof Error ? err.message : err}); ` +
+					`trying official tarball (note: tarballs lack libraw RAW support)...`
+			);
+		}
 	}
 	mkdirSync(slugDir, { recursive: true });
 	for (const url of MAC_TARBALL_CANDIDATES[arch]) {
@@ -519,7 +710,7 @@ function ensureMac(slugDir: string, arch: 'x64' | 'arm64'): void {
 	}
 	throw new Error(
 		`Could not download a macOS ${arch} build. ` +
-			`On a Mac, install Homebrew ImageMagick (brew install imagemagick) and re-run.`
+			`On a Mac, install the RAW-capable formula (brew install imagemagick-full) and re-run.`
 	);
 }
 
@@ -623,6 +814,7 @@ const hostSlug = slugFor(process.platform, process.arch);
 if (slugs.includes(hostSlug)) {
 	verifyWebpSupport(hostSlug);
 	verifyWebpTools(hostSlug);
+	verifyRawSupport(hostSlug);
 }
 
 try {

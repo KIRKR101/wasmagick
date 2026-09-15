@@ -26,6 +26,7 @@ async function ensureReady() {
 interface WorkerRequest {
 	id: number;
 	sourceBytes: Uint8Array;
+	inputName?: string;
 	settings: MagickSettings;
 }
 
@@ -50,7 +51,7 @@ self.onmessage = async (e: MessageEvent<WorkerRequest | FontSyncMessage>) => {
 		return;
 	}
 
-	const { id, sourceBytes, settings: rawSettings } = msg as WorkerRequest;
+	const { id, sourceBytes, inputName, settings: rawSettings } = msg as WorkerRequest;
 
 	try {
 		await ensureReady();
@@ -62,7 +63,7 @@ self.onmessage = async (e: MessageEvent<WorkerRequest | FontSyncMessage>) => {
 				settings = { ...settings, annotateFontFamily: DEFAULT_FONT };
 			}
 		}
-		const result: ProcessResult = processImageSync(sourceBytes, settings);
+		const result: ProcessResult = processImageSync(sourceBytes, settings, inputName);
 		self.postMessage({ id, result });
 	} catch (err: unknown) {
 		const message = err instanceof Error ? err.message : 'Unknown error';

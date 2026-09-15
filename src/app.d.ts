@@ -44,6 +44,8 @@ declare global {
 		args: string[];
 		outputExtension: string;
 		outputFormat: string;
+		/** ExifTool orientation used only if native ImageMagick reports Undefined. */
+		orientation?: number | null;
 		clutData?: Uint8Array | null;
 		fontData?: Uint8Array | null;
 		fontFileName?: string | null;
@@ -93,6 +95,7 @@ declare global {
 		listSystemFonts(): Promise<WasmagickSystemFont[]>;
 		readSystemFont(postscriptName: string): Promise<WasmagickSystemFontData | null>;
 		isNativeAvailable(): Promise<boolean>;
+		isNativeRawAvailable?(): Promise<boolean>;
 		processNativeImage(
 			payload: WasmagickNativeProcessPayload
 		): Promise<WasmagickNativeProcessResult>;

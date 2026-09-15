@@ -352,10 +352,11 @@
 		guard.install(magick, history);
 		installClipboardPaste(guard, replaceImage);
 
-		// In Electron with a bundled binary, the native engine replaces WASM
-		// entirely: no magick.wasm fetch, no worker.
+		// Native ImageMagick handles ordinary images. RAW falls back to WASM on
+		// bundles built without LibRaw (notably the stock Linux/Windows builds).
 		const native = await magick.initNative();
-		if (!native) {
+		const needsWasm = !native || !magick.nativeRawAvailable;
+		if (needsWasm) {
 			magick.initWorker();
 		}
 
@@ -364,7 +365,7 @@
 			await replaceImage(pendingFile);
 		}
 
-		if (!native) {
+		if (needsWasm) {
 			await magick.initWasm(debugMode);
 		}
 

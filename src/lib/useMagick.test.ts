@@ -209,6 +209,22 @@ describe('MagickState', () => {
 				expect(magick.wasmLoaded).toBe(true);
 				expect(magick.statsMessage).toBe('Ready (native ImageMagick)');
 			});
+
+			it('keeps WASM available when native RAW support is absent', async () => {
+				g.window = {
+					wasmagick: {
+						isNativeAvailable: async () => true,
+						isNativeRawAvailable: async () => false
+					}
+				};
+
+				expect(await magick.initNative()).toBe(true);
+				expect(magick.nativeAvailable).toBe(true);
+				expect(magick.nativeRawAvailable).toBe(false);
+				expect(magick.wasmLoaded).toBe(false);
+				magick.originalName = 'input.cr2';
+				expect(magick.engine).toBe('wasm');
+			});
 		});
 
 		it('should have correct default settings', () => {

@@ -27,6 +27,19 @@ The same setup step downloads the official precompiled WebP utilities and
 bundles `cwebp` and `dwebp` alongside ImageMagick for future native paths.
 ImageMagick's own WebP coder is also verified before packaging.
 
+Camera RAW files (`.cr2`, `.cr3`, `.nef`, `.arw`, `.dng`, `.raf`, `.rw2`,
+and related formats) use ImageMagick's bundled LibRaw coder when the native
+bundle is RAW-capable. The macOS packaging workflow therefore installs
+Homebrew's `imagemagick-full` formula; setup verifies the RAW format matrix and
+removes any stale `darktable-cli` delegate before staging. The current
+upstream Linux AppImage and Windows portable artifacts do not ship LibRaw, so
+setup records that capability and the app routes RAW files directly to the
+embedded WASM engine on those platforms. This avoids invoking the unbundled
+`darktable-cli` delegate; if a future Linux/Windows bundle is built with LibRaw,
+the same capability probe will select native processing automatically. LibRaw
+itself adds roughly 1–2 MB plus its platform runtime closure to a native bundle;
+no GPL `darktable-cli` binary is shipped.
+
 Packaged desktop builds also integrate with the host desktop:
 
 - Windows NSIS installs an `Edit with WASMagick` Explorer context action for supported image files.

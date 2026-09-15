@@ -19,6 +19,38 @@ export interface ExifData {
 	all: ExifEntry[];
 }
 
+/** Standard EXIF orientation values, expressed as their numeric tag values. */
+export type ExifOrientation = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+
+/**
+ * Normalize ExifTool/ImageMagick orientation labels to the EXIF numeric value.
+ * ExifTool normally returns labels such as "Rotate 90 CW", while some files
+ * and test callers expose the numeric value or TIFF position names.
+ */
+export function parseExifOrientation(value: unknown): ExifOrientation | null {
+	if (typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 8) {
+		return value as ExifOrientation;
+	}
+
+	const label = String(value ?? '')
+		.trim()
+		.toLowerCase()
+		.replace(/[_-]+/g, ' ');
+	if (!label) return null;
+
+	const numeric = label.match(/^(?:orientation\s*)?([1-8])$/)?.[1];
+	if (numeric) return Number(numeric) as ExifOrientation;
+	if (/horizontal \(normal\)|top left|top-left/.test(label)) return 1;
+	if (/mirror horizontal|top right|top-right/.test(label) && !/rotate/.test(label)) return 2;
+	if (/rotate 180|bottom right|bottom-right/.test(label)) return 3;
+	if (/mirror vertical|bottom left|bottom-left/.test(label)) return 4;
+	if (/left top|left-top|mirror horizontal.*rotate 270/.test(label)) return 5;
+	if (/right bottom|right-bottom|mirror horizontal.*rotate 90/.test(label)) return 7;
+	if (/right top|right-top|^rotate 90(?: cw)?$/.test(label)) return 6;
+	if (/left bottom|left-bottom|^rotate 270(?: cw)?$/.test(label)) return 8;
+	return null;
+}
+
 /** Matches the `fetch` option type of `@uswriting/exiftool`. */
 export type EngineFetch = (...args: unknown[]) => Promise<Response>;
 

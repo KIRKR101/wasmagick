@@ -10,7 +10,6 @@
  */
 
 import {
-	ImageMagick,
 	Magick,
 	Drawables,
 	initializeImageMagick,
@@ -39,8 +38,8 @@ import {
 import { generateClutImage } from './luts';
 import { renderClutPngBytes } from './clut-data';
 import { buildNativeMagickArgs } from './magick-args';
-import { applyCrop, resolveNoiseAttenuate } from './magick-process';
-import { extractExif, type ExifData } from './exif';
+import { applyCrop, readImageWithFilename, resolveNoiseAttenuate } from './magick-process';
+import { extractExif, parseExifOrientation, type ExifData } from './exif';
 import { computeCropStepOffset, type CropRect } from './crop-utils';
 import type { AnnotationTextMetrics } from './annotation-utils';
 
@@ -249,6 +248,42 @@ const FORMAT_MAP: Record<string, keyof typeof MagickFormat> = {
 	GIF: 'Gif'
 };
 
+const RAW_INPUT_EXTENSIONS = new Set([
+	'3fr',
+	'arw',
+	'cr2',
+	'cr3',
+	'crw',
+	'dcr',
+	'dng',
+	'erf',
+	'fff',
+	'iiq',
+	'k25',
+	'kdc',
+	'mef',
+	'mos',
+	'mrw',
+	'nef',
+	'nrw',
+	'orf',
+	'pef',
+	'raf',
+	'raw',
+	'rmf',
+	'rw2',
+	'rwl',
+	'sr2',
+	'srf',
+	'srw',
+	'x3f'
+]);
+
+function isRawInputName(filename: string): boolean {
+	const extension = filename.toLowerCase().split('.').pop();
+	return extension != null && RAW_INPUT_EXTENSIONS.has(extension);
+}
+
 function snapSettings(settings: MagickSettings): MagickSettings {
 	return JSON.parse(JSON.stringify(settings));
 }
@@ -455,14 +490,18 @@ export class MagickState {
 	workerReady = $state(false);
 	/**
 	 * True once the Electron main process confirms a bundled native
-	 * ImageMagick binary is available. When set, `processImage()` routes
-	 * through `_processViaNative()` and the WASM engine is never loaded.
+	 * ImageMagick binary is available. RAW files additionally require
+	 * `nativeRawAvailable`; otherwise `processImage()` routes them through WASM.
 	 */
 	nativeAvailable = $state(false);
+	/** True when the native bundle has internal LibRaw support for camera RAW. */
+	nativeRawAvailable = $state(false);
 
-	/** 'native' in Electron with a bundled binary, 'wasm' everywhere else. */
+	/** Active engine for the current source; RAW can use WASM on native-only bundles. */
 	get engine(): 'native' | 'wasm' {
-		return this.nativeAvailable ? 'native' : 'wasm';
+		return this.nativeAvailable && (!isRawInputName(this.originalName) || this.nativeRawAvailable)
+			? 'native'
+			: 'wasm';
 	}
 
 	/**
@@ -528,6 +567,14 @@ export class MagickState {
 	private _annotationMetricsKey = '';
 	private _annotationMetricsRequest = 0;
 
+	private async sourceExifOrientation(): Promise<ReturnType<typeof parseExifOrientation>> {
+		if (!this.sourceBytes) return null;
+		await this.ensureExif();
+		if (!this.exif) return null;
+		const entry = this.exif.all.find((item) => item.label === 'Orientation');
+		return parseExifOrientation(entry?.value);
+	}
+
 	hexToRgb(hex: string): { r: number; g: number; b: number } {
 		let r = 0,
 			g = 0,
@@ -563,7 +610,12 @@ export class MagickState {
 			}
 			this.nativeAvailable = await window.wasmagick.isNativeAvailable();
 			if (this.nativeAvailable) {
-				this.wasmLoaded = true;
+				this.nativeRawAvailable = window.wasmagick.isNativeRawAvailable
+					? await window.wasmagick.isNativeRawAvailable()
+					: true;
+				// A native-only bundle is ready for ordinary images, but RAW files
+				// need the WASM engine unless the native probe found LibRaw.
+				this.wasmLoaded = this.nativeRawAvailable;
 				this.statsMessage = 'Ready (native ImageMagick)';
 			}
 			return this.nativeAvailable;
@@ -580,8 +632,7 @@ export class MagickState {
 		const fontSize = this.settings.annotateFontSize[0];
 		const angle = this.settings.annotateAngle[0];
 		const key =
-			keyOverride ??
-			`${this.nativeAvailable ? 'native' : 'wasm'}\u0000${font}\u0000${fontSize}\u0000${angle}\u0000${text}`;
+			keyOverride ?? `${this.engine}\u0000${font}\u0000${fontSize}\u0000${angle}\u0000${text}`;
 		if (key === this._annotationMetricsKey) return;
 		this._annotationMetricsKey = key;
 		const request = ++this._annotationMetricsRequest;
@@ -1071,7 +1122,11 @@ export class MagickState {
 			return;
 		}
 
-		if (this.nativeAvailable && window.wasmagick?.processNativeImage) {
+		const useNative =
+			this.nativeAvailable &&
+			window.wasmagick?.processNativeImage &&
+			(!isRawInputName(this.originalName) || this.nativeRawAvailable);
+		if (useNative) {
 			this._processViaNative(debugMode, onComplete);
 			return;
 		}
@@ -1098,9 +1153,13 @@ export class MagickState {
 		const startTime = performance.now();
 
 		try {
+			const orientation = snapSettings(this.settings).autoOrient
+				? await this.sourceExifOrientation()
+				: null;
 			const built = buildNativeMagickArgs(snapSettings(this.settings), {
 				width: this.originalWidth,
-				height: this.originalHeight
+				height: this.originalHeight,
+				orientation
 			});
 			const args = [...built.args];
 
@@ -1132,6 +1191,7 @@ export class MagickState {
 				args,
 				outputExtension: built.outputExtension,
 				outputFormat: this.settings.imageFormat,
+				orientation,
 				clutData,
 				fontData,
 				fontFileName
@@ -1156,7 +1216,26 @@ export class MagickState {
 			if (onComplete) onComplete();
 		} catch (err: unknown) {
 			console.error('Native image processing failed:', err);
-			const message = err instanceof Error ? err.message : 'Unknown error';
+			let message = err instanceof Error ? err.message : 'Unknown error';
+			// Older or manually assembled desktop bundles can still lack LibRaw.
+			// Keep RAW usable there by loading the embedded WASM engine on demand;
+			// the native error mapper remains the final actionable diagnostic if
+			// that fallback cannot initialize.
+			if (
+				isRawInputName(this.originalName) &&
+				/bundled ImageMagick build has no libraw support/i.test(message)
+			) {
+				try {
+					this.nativeAvailable = false;
+					await this.initWasm(debugMode);
+					this.processImage(debugMode, onComplete);
+					return;
+				} catch (fallbackError: unknown) {
+					const fallbackMessage =
+						fallbackError instanceof Error ? fallbackError.message : 'Unknown WASM error';
+					message = `${message} WASM fallback failed: ${fallbackMessage}`;
+				}
+			}
 			this.hasError = true;
 			this.errorMessage = message;
 			this.isLoading = false;
@@ -1175,6 +1254,7 @@ export class MagickState {
 		this._worker!.postMessage({
 			id: requestId,
 			sourceBytes: this.sourceBytes,
+			inputName: this.originalName,
 			settings: snapSettings(this.settings)
 		});
 	}
@@ -1187,10 +1267,18 @@ export class MagickState {
 					const appliedOptions: AppliedOptions = {};
 
 					try {
-						ImageMagick.read(this.sourceBytes!, (image) => {
+						readImageWithFilename(this.sourceBytes!, this.originalName, (image) => {
 							try {
 								if (image.format) {
 									this.originalImageFormat = String(image.format).toLowerCase();
+								}
+
+								// Apply EXIF orientation before geometry so the native and WASM
+								// pipelines operate on the same physical pixel orientation.
+								if (this.settings.autoOrient) {
+									this.currentProcessingStep = 'Auto-Orienting';
+									image.autoOrient();
+									appliedOptions.autoOrient = true;
 								}
 
 								const resizeW = this.settings.resizeW ?? 0;
@@ -1331,12 +1419,6 @@ export class MagickState {
 									this.currentProcessingStep = 'Auto-Leveling';
 									image.autoLevel();
 									appliedOptions.autoLevel = true;
-								}
-
-								if (this.settings.autoOrient) {
-									this.currentProcessingStep = 'Auto-Orienting';
-									image.autoOrient();
-									appliedOptions.autoOrient = true;
 								}
 
 								if (this.settings.autoGamma) {

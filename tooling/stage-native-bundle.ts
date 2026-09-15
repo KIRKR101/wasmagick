@@ -11,7 +11,15 @@
  * Runs automatically as part of `npm run build:electron`.
  */
 
-import { existsSync, mkdirSync, rmSync, cpSync, readdirSync, statSync } from 'node:fs';
+import {
+	existsSync,
+	mkdirSync,
+	rmSync,
+	cpSync,
+	readdirSync,
+	statSync,
+	readFileSync
+} from 'node:fs';
 import { join } from 'node:path';
 
 const REPO_ROOT = join(import.meta.dirname, '..');
@@ -42,8 +50,33 @@ function findSource(): string {
 	throw new Error(`No native ImageMagick build found for ${slug}. Run: npm run setup:imagemagick`);
 }
 
+function verifyRawBundle(source: string): void {
+	const libDir = join(source, 'lib');
+	const coderDir = join(libDir, 'ImageMagick', 'modules-Q16HDRI', 'coders');
+	const hasLibraw =
+		existsSync(libDir) && readdirSync(libDir).some((entry) => /^libraw(?:_r)?[.]/i.test(entry));
+	const hasRawCoders = ['dng.so', 'raw.so'].every((name) => existsSync(join(coderDir, name)));
+	const delegatesPath = join(source, 'etc', 'ImageMagick-7', 'delegates.xml');
+	const delegates = existsSync(delegatesPath) ? readFileSync(delegatesPath, 'utf8') : '';
+
+	if (hasLibraw && hasRawCoders && /darktable-cli/i.test(delegates)) {
+		throw new Error(
+			`Native bundle ${source} contains LibRaw but still references darktable-cli. ` +
+				'Run setup:imagemagick again before staging.'
+		);
+	}
+	if (!hasLibraw || !hasRawCoders) {
+		console.warn(
+			`Native bundle ${source} has no LibRaw coder; RAW files will use the embedded WASM fallback.`
+		);
+		return;
+	}
+	console.log('Verified staged native bundle contains LibRaw RAW coders.');
+}
+
 const source = findSource();
 console.log(`Staging native bundle for ${slugFor()} from ${source} ...`);
+verifyRawBundle(source);
 rmSync(join(REPO_ROOT, 'native-bundle'), { recursive: true, force: true });
 mkdirSync(STAGE_DIR, { recursive: true });
 

@@ -141,6 +141,25 @@ describe('buildNativeMagickArgs', () => {
 		expect(build({ flop: true }).args).toContain('-flop');
 	});
 
+	it('applies auto-orient before geometry operations', () => {
+		const args = build({ autoOrient: true, resizeW: 80, resizeH: null }).args;
+		expect(args.indexOf('-auto-orient')).toBeLessThan(args.indexOf('-resize'));
+	});
+
+	it('uses post-orientation dimensions for inferred geometry sizes', () => {
+		const crop = build(
+			{ autoOrient: true, cropW: 40, cropH: null },
+			{ width: 400, height: 300, orientation: 6 }
+		).args;
+		expect(crop).toEqual(expect.arrayContaining(['-crop', '40x400+0+0', '+repage']));
+
+		const extent = build(
+			{ autoOrient: true, extentW: 500, extentH: null },
+			{ width: 400, height: 300, orientation: 6 }
+		).args;
+		expect(extent).toEqual(expect.arrayContaining(['-extent', '500x400']));
+	});
+
 	it('matches golden crop flags', () => {
 		const r = build({ cropW: 60, cropH: 60, cropGravity: 'Northwest' });
 		expect(r.args).toEqual(
@@ -348,9 +367,7 @@ describe('buildNativeMagickArgs', () => {
 			annotateAngle: [45]
 		});
 		expect(angled.args).toContain('-draw');
-		expect(angled.args.join(' ')).toContain(
-			"text 0,0 'Rotated'"
-		);
+		expect(angled.args.join(' ')).toContain("text 0,0 'Rotated'");
 		const angledWithOffset = build({
 			annotateText: 'Rotated',
 			annotateAngle: [45],

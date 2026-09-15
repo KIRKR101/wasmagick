@@ -33,6 +33,62 @@ const FORMAT_MAP: Record<string, keyof typeof MagickFormat> = {
 	GIF: 'Gif'
 };
 
+/**
+ * Camera RAW extensions need an explicit format when read from a byte array.
+ * Several RAW containers begin with a TIFF header, so ImageMagick's automatic
+ * sniffing can select TIFF before the DNG/LibRaw coder sees the input. This is
+ * especially visible with CR2 files, which then fail with a TIFF directory
+ * error even though the WASM binary contains the RAW coder.
+ */
+const RAW_READ_FORMATS: Record<string, MagickFormat> = {
+	'3fr': MagickFormat.ThreeFr,
+	arw: MagickFormat.Arw,
+	cr2: MagickFormat.Cr2,
+	cr3: MagickFormat.Cr3,
+	crw: MagickFormat.Crw,
+	dcr: MagickFormat.Dcr,
+	dng: MagickFormat.Dng,
+	erf: MagickFormat.Erf,
+	fff: MagickFormat.Fff,
+	iiq: MagickFormat.Iiq,
+	k25: MagickFormat.K25,
+	kdc: MagickFormat.Kdc,
+	mef: MagickFormat.Mef,
+	mos: MagickFormat.Mos,
+	mrw: MagickFormat.Mrw,
+	nef: MagickFormat.Nef,
+	nrw: MagickFormat.Nrw,
+	orf: MagickFormat.Orf,
+	pef: MagickFormat.Pef,
+	raf: MagickFormat.Raf,
+	raw: MagickFormat.Raw,
+	rmf: MagickFormat.Rmf,
+	rw2: MagickFormat.Rw2,
+	rwl: MagickFormat.Rwl,
+	sr2: MagickFormat.Sr2,
+	srf: MagickFormat.Srf,
+	srw: MagickFormat.Srw,
+	x3f: MagickFormat.X3f
+};
+
+export function rawReadFormatForFilename(filename?: string): MagickFormat | null {
+	const extension = String(filename ?? '')
+		.toLowerCase()
+		.match(/\.([^.]+)$/)?.[1];
+	return extension ? (RAW_READ_FORMATS[extension] ?? null) : null;
+}
+
+export function readImageWithFilename<T>(
+	sourceBytes: Uint8Array,
+	inputName: string | undefined,
+	callback: (image: IMagickImage) => T
+): T {
+	const format = rawReadFormatForFilename(inputName);
+	return format
+		? ImageMagick.read(sourceBytes, format, callback)
+		: ImageMagick.read(sourceBytes, callback);
+}
+
 function hexToRgb(hex: string): { r: number; g: number; b: number } {
 	let r = 0,
 		g = 0,
@@ -100,10 +156,19 @@ export interface ProcessResult {
 	format: string;
 }
 
-export function processImageSync(sourceBytes: Uint8Array, settings: MagickSettings): ProcessResult {
+export function processImageSync(
+	sourceBytes: Uint8Array,
+	settings: MagickSettings,
+	inputName?: string
+): ProcessResult {
 	let result: ProcessResult = { data: new Uint8Array(), width: 0, height: 0, format: '' };
 
-	ImageMagick.read(sourceBytes, (image) => {
+	readImageWithFilename(sourceBytes, inputName, (image) => {
+		// Normalize EXIF orientation before geometry. Some ImageMagick builds
+		// clear or expose the orientation attribute differently after resize/crop,
+		// which otherwise makes native and WASM disagree for camera images.
+		if (settings.autoOrient) image.autoOrient();
+
 		const resizeW = settings.resizeW ?? 0;
 		const resizeH = settings.resizeH ?? 0;
 
@@ -167,7 +232,6 @@ export function processImageSync(sourceBytes: Uint8Array, settings: MagickSettin
 
 		if (settings.normalizeImage) image.normalize();
 		if (settings.autoLevel) image.autoLevel();
-		if (settings.autoOrient) image.autoOrient();
 		if (settings.autoGamma) image.autoGamma();
 
 		{
@@ -405,10 +469,26 @@ export function processImageSync(sourceBytes: Uint8Array, settings: MagickSettin
 		const finalHeight = image.height;
 
 		image.write(MagickFormat[magf], (data) => {
+			const outputData = new Uint8Array(data);
+			let outputWidth = finalWidth;
+			let outputHeight = finalHeight;
+			try {
+				// Some output coders (notably AVIF/HEIC) materialize the source
+				// orientation while encoding. Re-read the bytes so the dimensions
+				// reported by WASM describe the file that was actually produced,
+				// matching the native path's post-write identify call.
+				ImageMagick.read(outputData, MagickFormat[magf], (written) => {
+					outputWidth = written.width;
+					outputHeight = written.height;
+				});
+			} catch {
+				// Keep the in-memory dimensions for formats that cannot be decoded
+				// again by the WASM build.
+			}
 			result = {
-				data: new Uint8Array(data),
-				width: finalWidth,
-				height: finalHeight,
+				data: outputData,
+				width: outputWidth,
+				height: outputHeight,
 				format: settings.imageFormat
 			};
 		});

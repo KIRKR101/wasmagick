@@ -26,9 +26,11 @@ export const NATIVE_TOKENS = {
 } as const;
 
 export interface NativeArgsOptions {
-	/** Original image dimensions; used when extent sets only one side. */
+	/** Source image dimensions; orientation is applied when inferring one side. */
 	width?: number;
 	height?: number;
+	/** Source EXIF orientation, when auto-orient metadata was parsed. */
+	orientation?: number | null;
 }
 
 export interface NativeArgsResult {
@@ -117,6 +119,20 @@ export function buildNativeMagickArgs(
 	const args: string[] = [];
 	let needsClut: string | null = null;
 	let needsFont: string | null = null;
+	const orientation = opts.orientation;
+	const swapsDimensions =
+		settings.autoOrient &&
+		typeof orientation === 'number' &&
+		Number.isInteger(orientation) &&
+		orientation >= 5 &&
+		orientation <= 8;
+	const imageWidth = swapsDimensions ? opts.height : opts.width;
+	const imageHeight = swapsDimensions ? opts.width : opts.height;
+
+	// Normalize EXIF orientation immediately after reading the input. The
+	// native runner adds a fallback only after probing the native decoder, so
+	// already-normalized formats are never rotated twice.
+	if (settings.autoOrient) args.push('-auto-orient');
 
 	// -- Geometry --
 	const resizeW = settings.resizeW ?? 0;
@@ -143,8 +159,8 @@ export function buildNativeMagickArgs(
 		const rawW = settings.cropW;
 		const rawH = settings.cropH;
 		if ((rawW != null && rawW > 0) || (rawH != null && rawH > 0)) {
-			const imgW = opts.width ?? 0;
-			const imgH = opts.height ?? 0;
+			const imgW = imageWidth ?? 0;
+			const imgH = imageHeight ?? 0;
 			const cw = rawW != null && rawW > 0 ? rawW : imgW > 0 ? imgW : (rawH ?? 0);
 			const ch = rawH != null && rawH > 0 ? rawH : imgH > 0 ? imgH : (rawW ?? 0);
 			args.push('-gravity', settings.cropGravity, '-crop', `${cw}x${ch}+0+0`, '+repage');
@@ -169,8 +185,8 @@ export function buildNativeMagickArgs(
 	}
 
 	if ((settings.extentW ?? 0) > 0 || (settings.extentH ?? 0) > 0) {
-		const ew = (settings.extentW ?? 0) > 0 ? settings.extentW : (opts.width ?? 0);
-		const eh = (settings.extentH ?? 0) > 0 ? settings.extentH : (opts.height ?? 0);
+		const ew = (settings.extentW ?? 0) > 0 ? settings.extentW : (imageWidth ?? 0);
+		const eh = (settings.extentH ?? 0) > 0 ? settings.extentH : (imageHeight ?? 0);
 		args.push(
 			'-gravity',
 			settings.extentGravity,
@@ -202,7 +218,6 @@ export function buildNativeMagickArgs(
 
 	if (settings.normalizeImage) args.push('-normalize');
 	if (settings.autoLevel) args.push('-auto-level');
-	if (settings.autoOrient) args.push('-auto-orient');
 	// magick-wasm autoGamma() defaults to Composite (RGB) channels; force RGB
 	// for parity (see golden-gen).
 	if (settings.autoGamma) args.push('-channel', 'RGB', '-auto-gamma', '+channel');

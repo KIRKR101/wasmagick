@@ -8,7 +8,7 @@
  * fully-bundled `magick` binary (no shell, argv only).
  */
 
-const { spawn } = require('node:child_process');
+const { spawn, spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
@@ -22,6 +22,47 @@ const TOKENS = {
 
 const PROCESS_TIMEOUT_MS = 120000;
 const MAX_STDERR_BYTES = 64 * 1024;
+const EXIF_ORIENTATION_NAMES = {
+	1: 'TopLeft',
+	2: 'TopRight',
+	3: 'BottomRight',
+	4: 'BottomLeft',
+	5: 'LeftTop',
+	6: 'RightTop',
+	7: 'RightBottom',
+	8: 'LeftBottom'
+};
+
+const RAW_EXTENSIONS = new Set([
+	'3fr',
+	'arw',
+	'cr2',
+	'cr3',
+	'crw',
+	'dcr',
+	'dng',
+	'erf',
+	'fff',
+	'iiq',
+	'k25',
+	'kdc',
+	'mef',
+	'mos',
+	'mrw',
+	'nef',
+	'nrw',
+	'orf',
+	'pef',
+	'raf',
+	'raw',
+	'rmf',
+	'rw2',
+	'rwl',
+	'sr2',
+	'srf',
+	'srw',
+	'x3f'
+]);
 
 function platformSlug() {
 	const plat =
@@ -90,6 +131,53 @@ function resolveMagickBin() {
 
 function isNativeAvailable() {
 	return resolveMagickBin() !== null;
+}
+
+/**
+ * Return true only for a self-contained LibRaw build. The official Linux
+ * AppImage and Windows portable archives list RAW formats but route them to
+ * darktable-cli, so checking format names alone would report a false positive.
+ */
+function isNativeRawAvailable() {
+	const magickBin = resolveMagickBin();
+	if (!magickBin) return false;
+	const env = spawnEnv(magickBin);
+	const run = (args) => {
+		const result = spawnSync(magickBin, args, {
+			cwd: path.dirname(magickBin),
+			env,
+			encoding: 'utf8',
+			maxBuffer: 1024 * 1024,
+			timeout: 15000
+		});
+		return result.error || result.status !== 0
+			? null
+			: `${result.stdout || ''}\n${result.stderr || ''}`;
+	};
+	const configure = run(['-list', 'configure']);
+	const formats = run(['-list', 'format']);
+	if (!configure || !formats) return false;
+	if (!/--with-(?:lib)?raw=yes/i.test(configure)) return false;
+	if (!/(^|\s)raw(\s|$)/im.test(configure)) return false;
+	const binDir = path.dirname(magickBin);
+	const root = path.basename(binDir).toLowerCase() === 'bin' ? path.dirname(binDir) : binDir;
+	const libDir = path.join(root, 'lib');
+	const coderDir = path.join(libDir, 'ImageMagick', 'modules-Q16HDRI', 'coders');
+	let hasLibraw;
+	try {
+		hasLibraw = fs.readdirSync(libDir).some((name) => /^libraw(?:_r)?[.]/i.test(name));
+	} catch {
+		hasLibraw = false;
+	}
+	if (
+		!hasLibraw ||
+		!['dng.so', 'raw.so'].every((name) => fs.existsSync(path.join(coderDir, name)))
+	) {
+		return false;
+	}
+	return ['CR2', 'CR3', 'NEF', 'ARW', 'DNG', 'RW2', 'ORF', 'RAF'].every((format) =>
+		new RegExp(`^\\s*${format}\\s+.*\\br--(?:\\s|$)`, 'im').test(formats)
+	);
 }
 
 function webpToolName(tool) {
@@ -188,7 +276,38 @@ function spawnEnv(magickBin) {
 	return env;
 }
 
-function runBinary(bin, args, { timeout = PROCESS_TIMEOUT_MS } = {}) {
+function isRawInputName(inputName) {
+	const extension = path
+		.extname(String(inputName || ''))
+		.slice(1)
+		.toLowerCase();
+	return RAW_EXTENSIONS.has(extension);
+}
+
+/**
+ * Convert the known missing-RAW delegate failure into an actionable message.
+ * Keep every other ImageMagick diagnostic byte-for-byte compatible with the
+ * previous error so callers still get the original detail for unrelated
+ * failures.
+ */
+function formatNativeError(code, detail, inputName) {
+	const normalized = String(detail || '');
+	if (
+		isRawInputName(inputName) &&
+		/darktable-cli/i.test(normalized) &&
+		/(command not found|not found|enoent|no such file)/i.test(normalized)
+	) {
+		const extension = path.extname(String(inputName || '')).toLowerCase() || 'RAW';
+		return (
+			`RAW input (${extension}) could not be decoded because the bundled ImageMagick ` +
+			`build has no libraw support. Reinstall the latest WASMagick desktop build ` +
+			`or use the web app, which includes a RAW-capable fallback.`
+		);
+	}
+	return `ImageMagick exited with code ${code}${normalized ? `: ${normalized}` : ''}`;
+}
+
+function runBinary(bin, args, { timeout = PROCESS_TIMEOUT_MS, inputName } = {}) {
 	return new Promise((resolve, reject) => {
 		const child = spawn(bin, args, { env: spawnEnv(bin), stdio: ['ignore', 'pipe', 'pipe'] });
 		let stdout = Buffer.alloc(0);
@@ -215,7 +334,7 @@ function runBinary(bin, args, { timeout = PROCESS_TIMEOUT_MS } = {}) {
 				reject(new Error(`ImageMagick timed out after ${timeout}ms`));
 			} else if (code !== 0) {
 				const detail = stderr.toString('utf-8').trim().slice(0, 2000);
-				reject(new Error(`ImageMagick exited with code ${code}${detail ? `: ${detail}` : ''}`));
+				reject(new Error(formatNativeError(code, detail, inputName)));
 			} else {
 				resolve({ stdout, stderr });
 			}
@@ -251,10 +370,25 @@ async function identifyDimensions(magickBin, filePath) {
 	return { width: 0, height: 0 };
 }
 
+async function identifyOrientation(magickBin, filePath) {
+	try {
+		const { stdout } = await runBinary(magickBin, [
+			'identify',
+			'-format',
+			'%[orientation]',
+			filePath
+		]);
+		return stdout.toString('utf-8').trim();
+	} catch {
+		return null;
+	}
+}
+
 /**
  * Execute a native process request.
  * payload: {
  *   inputName: string, inputData: Uint8Array,
+ *   orientation?: number | null,
  *   args: string[], outputExtension: string, outputFormat: string,
  *   clutData?: Uint8Array | null, fontData?: Uint8Array | null,
  *   fontFileName?: string | null
@@ -325,7 +459,28 @@ async function processNative(payload) {
 			...(hasOutput ? [] : [outputPath])
 		];
 
-		await runBinary(magickBin, finalArgs);
+		// Some coders leave the source EXIF orientation unavailable to
+		// ImageMagick even though the renderer's metadata parser found it.
+		// Preserve native -auto-orient by default, and seed the missing value
+		// only when this exact input probes as Undefined. This avoids applying
+		// an explicit transform twice to formats already normalized by native
+		// decoding.
+		const orientation = Number(payload.orientation);
+		if (
+			Number.isInteger(orientation) &&
+			orientation >= 2 &&
+			orientation <= 8 &&
+			finalArgs.includes('-auto-orient')
+		) {
+			const nativeOrientation = await identifyOrientation(magickBin, inputPath);
+			const orientationName = EXIF_ORIENTATION_NAMES[orientation];
+			if (orientationName && (!nativeOrientation || /^undefined$/i.test(nativeOrientation))) {
+				const autoOrientIndex = finalArgs.indexOf('-auto-orient');
+				finalArgs.splice(autoOrientIndex, 1, '-orient', orientationName, '-auto-orient');
+			}
+		}
+
+		await runBinary(magickBin, finalArgs, { inputName: payload.inputName });
 
 		const data = new Uint8Array(await fs.promises.readFile(outputPath));
 		const { width, height } = await identifyDimensions(magickBin, outputPath);
@@ -439,6 +594,7 @@ async function getNativeFontMetrics(payload) {
 
 function registerMagickNative(ipcMain) {
 	ipcMain.handle('magick:native-available', () => isNativeAvailable());
+	ipcMain.handle('magick:native-raw-available', () => isNativeRawAvailable());
 	ipcMain.handle('magick:process-native', async (_event, payload) => processNative(payload));
 	ipcMain.handle('magick:font-metrics', async (_event, payload) => getNativeFontMetrics(payload));
 }
@@ -448,7 +604,9 @@ module.exports = {
 	resolveMagickBin,
 	resolveWebpTool,
 	isNativeAvailable,
+	isNativeRawAvailable,
 	processNative,
 	getNativeFontMetrics,
-	registerMagickNative
+	registerMagickNative,
+	formatNativeError
 };
