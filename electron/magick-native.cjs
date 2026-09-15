@@ -133,6 +133,53 @@ function isNativeAvailable() {
 	return resolveMagickBin() !== null;
 }
 
+/** Parse the writable rows from `magick -list format`. */
+function parseNativeFormatList(output) {
+	const formats = [];
+	for (const line of String(output || '').split('\n')) {
+		const parts = line.trim().split(/\s+/);
+		if (parts.length < 4) continue;
+		const format = parts[0].replace(/[*!+]+$/, '').toUpperCase();
+		const moduleFormat = parts[1].replace(/[*!+]+$/, '').toUpperCase();
+		const permissions = parts[2];
+		if (
+			!format ||
+			!/^[A-Z0-9][A-Z0-9_-]*$/.test(format) ||
+			!/^[rw-][rw-][+!-]$/.test(permissions)
+		) {
+			continue;
+		}
+		if (permissions[1] !== 'w') continue;
+		formats.push({
+			format,
+			moduleFormat,
+			supportsWriting: true,
+			description: parts.slice(3).join(' ')
+		});
+	}
+	return formats;
+}
+
+async function listNativeFormats() {
+	const magickBin = resolveMagickBin();
+	if (!magickBin) return [];
+	const { stdout } = await runBinary(magickBin, ['-list', 'format']);
+	const formats = parseNativeFormatList(stdout.toString('utf8'));
+	// The bundled desktop build intentionally provides WebP through the
+	// standalone cwebp delegate. Some ImageMagick builds omit WEBP from their
+	// format table even though this export path is available.
+	if (!formats.some(({ format }) => format === 'WEBP') && resolveWebpTool('cwebp')) {
+		formats.push({
+			format: 'WEBP',
+			moduleFormat: 'WEBP',
+			supportsWriting: true,
+			mimeType: 'image/webp',
+			description: 'WebP image'
+		});
+	}
+	return formats;
+}
+
 /**
  * Return true only for a self-contained LibRaw build. The official Linux
  * AppImage and Windows portable archives list RAW formats but route them to
@@ -266,10 +313,21 @@ function spawnEnv(magickBin) {
 	const flat = (sub) => parents.map((p) => path.join(p, sub));
 	const bundleRoot = path.basename(root).toLowerCase() === 'bin' ? path.dirname(root) : root;
 	if (!env.MAGICK_HOME) env.MAGICK_HOME = bundleRoot;
+	const bundleLibDir = path.join(bundleRoot, 'lib');
+	if (process.platform === 'darwin' && fs.existsSync(bundleLibDir)) {
+		// Homebrew's ImageMagick modules and the copied binary can otherwise
+		// load two libomp instances through different dependency paths.
+		env.KMP_DUPLICATE_LIB_OK = 'TRUE';
+		env.DYLD_LIBRARY_PATH = [bundleLibDir, env.DYLD_LIBRARY_PATH]
+			.filter(Boolean)
+			.join(path.delimiter);
+	}
 	const bundledWebpTool = resolveWebpTool('cwebp');
 	if (bundledWebpTool) {
 		const webpBinDir = path.dirname(bundledWebpTool);
-		const pathEntries = String(env.PATH || '').split(path.delimiter).filter(Boolean);
+		const pathEntries = String(env.PATH || '')
+			.split(path.delimiter)
+			.filter(Boolean);
 		if (!pathEntries.includes(webpBinDir)) {
 			env.PATH = [webpBinDir, ...pathEntries].join(path.delimiter);
 		}
@@ -359,6 +417,13 @@ function sanitizeExtension(ext) {
 	return clean || 'png';
 }
 
+function outputSpecifierFor(format, outputPath) {
+	const cleanFormat = String(format || 'PNG')
+		.toUpperCase()
+		.replace(/[^A-Z0-9_-]/g, '');
+	return `${cleanFormat || 'PNG'}:${outputPath}`;
+}
+
 function inputExtensionFor(name) {
 	const ext = path
 		.extname(String(name || ''))
@@ -445,6 +510,7 @@ async function processNative(payload) {
 			await fs.promises.writeFile(fontPath, payload.fontData);
 		}
 
+		const outputSpecifier = outputSpecifierFor(payload.outputFormat, outputPath);
 		const substituted = payload.args.map((arg) => {
 			switch (arg) {
 				case TOKENS.CLUT:
@@ -454,7 +520,7 @@ async function processNative(payload) {
 				case TOKENS.INPUT:
 					return inputPath;
 				case TOKENS.OUTPUT:
-					return outputPath;
+					return outputSpecifier;
 				default:
 					return arg;
 			}
@@ -466,7 +532,7 @@ async function processNative(payload) {
 		const finalArgs = [
 			...(hasInput ? [] : [inputPath]),
 			...substituted,
-			...(hasOutput ? [] : [outputPath])
+			...(hasOutput ? [] : [outputSpecifier])
 		];
 
 		// Some coders leave the source EXIF orientation unavailable to
@@ -605,6 +671,7 @@ async function getNativeFontMetrics(payload) {
 function registerMagickNative(ipcMain) {
 	ipcMain.handle('magick:native-available', () => isNativeAvailable());
 	ipcMain.handle('magick:native-raw-available', () => isNativeRawAvailable());
+	ipcMain.handle('magick:native-formats', () => listNativeFormats());
 	ipcMain.handle('magick:process-native', async (_event, payload) => processNative(payload));
 	ipcMain.handle('magick:font-metrics', async (_event, payload) => getNativeFontMetrics(payload));
 }
@@ -615,6 +682,9 @@ module.exports = {
 	resolveWebpTool,
 	isNativeAvailable,
 	isNativeRawAvailable,
+	parseNativeFormatList,
+	listNativeFormats,
+	outputSpecifierFor,
 	processNative,
 	getNativeFontMetrics,
 	registerMagickNative,

@@ -10,6 +10,7 @@
  */
 
 import type { MagickState } from '$lib/useMagick.svelte';
+import { outputExtensionForFormat } from '$lib/export-formats';
 import type { MagickSettings } from '$lib/types';
 
 export interface SettingsDiffItem {
@@ -356,7 +357,7 @@ export class HistoryState {
 			magick.processedImageUrl = await cloneBlobUrl(entry.blobUrl);
 			magick.processedImageFormat = entry.format;
 			const base = magick.originalName.replace(/\.[^.]+$/, '');
-			magick.processedImageName = `${base}-edited.${entry.format}`;
+			magick.processedImageName = `${base}-edited.${outputExtensionForFormat(entry.format)}`;
 			magick.processedWidth = entry.width;
 			magick.processedHeight = entry.height;
 		}

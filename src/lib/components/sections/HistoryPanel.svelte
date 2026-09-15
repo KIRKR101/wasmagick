@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { MagickState } from '$lib/useMagick.svelte';
 	import type { HistoryState, SettingsDiffItem } from '$lib/hooks/useHistory.svelte';
-	import { formatBytes } from '$lib/utils';
+	import { formatBytes, formatDimensions } from '$lib/utils';
 
 	let {
 		magick,
@@ -141,7 +141,7 @@
 									<div
 										class="flex items-center gap-1.5 font-mono text-[10px] text-muted-foreground"
 									>
-										<span>{entry.width}×{entry.height}</span>
+										<span>{formatDimensions(entry.width, entry.height)}</span>
 										<span class="text-muted-foreground/40">·</span>
 										<span class="uppercase">{entry.format}</span>
 										{#if entry.size > 0}

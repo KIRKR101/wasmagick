@@ -1,19 +1,33 @@
 <script lang="ts">
 	import {
 		Select,
+		SelectGroup,
+		SelectLabel,
 		SelectContent,
 		SelectItem,
+		SelectSeparator,
 		SelectTrigger
 	} from '$lib/components/ui/select/index.js';
 	import { Slider } from '$lib/components/ui/slider/index.js';
 	import type { MagickState } from '$lib/useMagick.svelte';
 	import ToggleRow from '$lib/components/controls/ToggleRow.svelte';
 	import TruncatedText from '$lib/components/controls/TruncatedText.svelte';
+	import { isPopularExportFormat, type ExportFormat } from '$lib/export-formats';
+	import { formatDimensions } from '$lib/utils';
 	let { magick } = $props<{ magick: MagickState }>();
 
-	const FORMAT_OPTIONS = ['WebP', 'JPEG', 'PNG', 'AVIF', 'JXL', 'TIFF', 'GIF'];
 	const LOSSLESS = new Set(['PNG', 'GIF']);
 	let isLossless = $derived(LOSSLESS.has(magick.settings.imageFormat));
+	let popularFormats = $derived(
+		(magick.exportFormats as readonly ExportFormat[]).filter((format: ExportFormat) =>
+			isPopularExportFormat(format.value)
+		)
+	);
+	let otherFormats = $derived(
+		(magick.exportFormats as readonly ExportFormat[]).filter(
+			(format: ExportFormat) => !isPopularExportFormat(format.value)
+		)
+	);
 
 	let showExif = $state(false);
 	$effect(() => {
@@ -38,9 +52,20 @@
 					{magick.settings.imageFormat}
 				</SelectTrigger>
 				<SelectContent>
-					{#each FORMAT_OPTIONS as fmt}
-						<SelectItem value={fmt}>{fmt}</SelectItem>
-					{/each}
+					<SelectGroup>
+						{#each popularFormats as format}
+							<SelectItem value={format.value}>{format.label}</SelectItem>
+						{/each}
+					</SelectGroup>
+					{#if otherFormats.length > 0}
+						<SelectSeparator />
+						<SelectGroup>
+							<SelectLabel>All formats</SelectLabel>
+							{#each otherFormats as format}
+								<SelectItem value={format.value}>{format.label}</SelectItem>
+							{/each}
+						</SelectGroup>
+					{/if}
 				</SelectContent>
 			</Select>
 		</div>
@@ -125,7 +150,9 @@
 			<div class="space-y-1 font-mono text-xs">
 				<div class="flex justify-between">
 					<span class="text-muted-foreground">Dimensions</span>
-					<span class="text-foreground">{magick.processedWidth}×{magick.processedHeight}</span>
+					<span class="text-foreground">
+						{formatDimensions(magick.processedWidth, magick.processedHeight)}
+					</span>
 				</div>
 				<div class="flex justify-between">
 					<span class="text-muted-foreground">Format</span>

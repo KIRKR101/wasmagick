@@ -1,7 +1,13 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { useMagick, type MagickState } from './useMagick.svelte';
 import type { MagickSettings } from './types';
 import { isColorDirty } from './utils';
+import { extractExif } from './exif';
+
+vi.mock('./exif', async () => {
+	const actual = await vi.importActual<typeof import('./exif')>('./exif');
+	return { ...actual, extractExif: vi.fn() };
+});
 
 describe('MagickState', () => {
 	let magick: MagickState;
@@ -171,6 +177,18 @@ describe('MagickState', () => {
 			expect(magick.processedImageUrl).toBeNull();
 		});
 
+		it('uses a friendly unsupported-format message when EXIF extraction fails', async () => {
+			const extractExifMock = vi.mocked(extractExif);
+			extractExifMock.mockReset();
+			extractExifMock.mockRejectedValueOnce(new Error('Unknown error'));
+			magick.sourceBytes = new Uint8Array([1, 2, 3]);
+
+			await magick.ensureExif();
+
+			expect(magick.exifError).toBe('Format probably not supported');
+			expect(magick.exifChecked).toBe(true);
+		});
+
 		describe('initNative', () => {
 			const g = globalThis as unknown as { window?: unknown };
 			let savedWindow: unknown;
@@ -208,6 +226,48 @@ describe('MagickState', () => {
 				// the loading screen forever despite native being ready.
 				expect(magick.wasmLoaded).toBe(true);
 				expect(magick.statsMessage).toBe('Ready (native ImageMagick)');
+			});
+
+			it('uses the native writable-format list and repairs an unavailable saved format', async () => {
+				magick.settings.imageFormat = 'WebP';
+				g.window = {
+					wasmagick: {
+						isNativeAvailable: async () => true,
+						listNativeFormats: async () => [
+							{ format: 'PNG', supportsWriting: true },
+							{ format: 'AVIF', supportsWriting: true },
+							{ format: 'WEBP', supportsWriting: false }
+						]
+					}
+				};
+
+				expect(await magick.initNative()).toBe(true);
+				expect(magick.settings.imageFormat).toBe('PNG');
+				expect(magick.exportFormats.map((format) => format.value)).toEqual(['PNG', 'AVIF']);
+			});
+
+			it('selects the capability list for the active engine across RAW fallback combinations', () => {
+				magick.nativeAvailable = true;
+				magick.nativeRawAvailable = false;
+				magick.nativeExportFormats = [
+					{ value: 'PNG', label: 'PNG', extension: 'png', mimeType: null, description: '' }
+				];
+				magick.wasmExportFormats = [
+					{ value: 'WebP', label: 'WebP', extension: 'webp', mimeType: null, description: '' },
+					{ value: 'HEIC', label: 'HEIC', extension: 'heic', mimeType: null, description: '' }
+				];
+
+				magick.originalName = 'photo.png';
+				expect(magick.engine).toBe('native');
+				expect(magick.exportFormats.map((format) => format.value)).toEqual(['PNG']);
+
+				magick.originalName = 'photo.cr2';
+				expect(magick.engine).toBe('wasm');
+				expect(magick.exportFormats.map((format) => format.value)).toEqual(['WebP', 'HEIC']);
+
+				magick.nativeRawAvailable = true;
+				expect(magick.engine).toBe('native');
+				expect(magick.exportFormats.map((format) => format.value)).toEqual(['PNG']);
 			});
 
 			it('keeps WASM available when native RAW support is absent', async () => {

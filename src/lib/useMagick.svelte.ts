@@ -42,8 +42,18 @@ import { applyCrop, readImageWithFilename, resolveNoiseAttenuate } from './magic
 import { extractExif, parseExifOrientation, type ExifData } from './exif';
 import { computeCropStepOffset, type CropRect } from './crop-utils';
 import type { AnnotationTextMetrics } from './annotation-utils';
+import {
+	FALLBACK_EXPORT_FORMATS,
+	getWasmExportFormats,
+	orderExportFormats,
+	magickFormatForName,
+	mimeTypeForFormat,
+	outputExtensionForFormat,
+	type ExportFormat
+} from './export-formats';
 
 const AUTO_PROCESS_DELAY = 300;
+const EXIF_UNSUPPORTED_MESSAGE = 'Format probably not supported';
 
 const STORAGE_KEY = 'wasmagick-settings';
 
@@ -237,16 +247,6 @@ export const DEFAULT_SETTINGS: MagickSettings = {
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
 export const MAX_FILE_SIZE_MB = MAX_FILE_SIZE / 1024 / 1024;
-
-const FORMAT_MAP: Record<string, keyof typeof MagickFormat> = {
-	WEBP: 'WebP',
-	JPEG: 'Jpeg',
-	PNG: 'Png',
-	AVIF: 'Avif',
-	JXL: 'Jxl',
-	TIFF: 'Tiff',
-	GIF: 'Gif'
-};
 
 const RAW_INPUT_EXTENSIONS = new Set([
 	'3fr',
@@ -496,6 +496,24 @@ export class MagickState {
 	nativeAvailable = $state(false);
 	/** True when the native bundle has internal LibRaw support for camera RAW. */
 	nativeRawAvailable = $state(false);
+	nativeExportFormats = $state<ExportFormat[]>([]);
+	wasmExportFormats = $state<ExportFormat[]>([]);
+
+	/** Formats reported by the engine that will process the current source. */
+	get exportFormats(): readonly ExportFormat[] {
+		const formats = this.engine === 'native' ? this.nativeExportFormats : this.wasmExportFormats;
+		return formats.length > 0 ? formats : FALLBACK_EXPORT_FORMATS;
+	}
+
+	ensureSelectedExportFormat(): void {
+		const selected = this.settings.imageFormat.toUpperCase();
+		const formats = this.exportFormats;
+		if (formats.some((format) => format.value.toUpperCase() === selected)) return;
+		const replacement = formats[0];
+		if (!replacement) return;
+		this.settings.imageFormat = replacement.value;
+		persistSettings(this.settings);
+	}
 
 	/** Active engine for the current source; RAW can use WASM on native-only bundles. */
 	get engine(): 'native' | 'wasm' {
@@ -610,6 +628,15 @@ export class MagickState {
 			}
 			this.nativeAvailable = await window.wasmagick.isNativeAvailable();
 			if (this.nativeAvailable) {
+				if (window.wasmagick.listNativeFormats) {
+					try {
+						const nativeFormats = await window.wasmagick.listNativeFormats();
+						this.nativeExportFormats = orderExportFormats(nativeFormats);
+						this.ensureSelectedExportFormat();
+					} catch (error) {
+						console.warn('Could not query native export formats:', error);
+					}
+				}
 				this.nativeRawAvailable = window.wasmagick.isNativeRawAvailable
 					? await window.wasmagick.isNativeRawAvailable()
 					: true;
@@ -676,6 +703,8 @@ export class MagickState {
 			await initializeImageMagick(wasmBytes);
 			this.currentProcessingStep = 'Loading fonts...';
 			await ensureFont(DEFAULT_FONT);
+			this.wasmExportFormats = getWasmExportFormats();
+			this.ensureSelectedExportFormat();
 			this.wasmLoaded = true;
 			this.currentProcessingStep = null;
 
@@ -912,6 +941,7 @@ export class MagickState {
 
 	resetExport(): void {
 		this.settings.imageFormat = DEFAULT_SETTINGS.imageFormat;
+		this.ensureSelectedExportFormat();
 		this.settings.quality = [...DEFAULT_SETTINGS.quality];
 		this.settings.stripMeta = DEFAULT_SETTINGS.stripMeta;
 		persistSettings(this.settings);
@@ -965,6 +995,7 @@ export class MagickState {
 			format = nameParts.length > 1 ? (nameParts.pop() ?? null) : null;
 		}
 		this.originalImageFormat = format ? format.toLowerCase() : null;
+		this.ensureSelectedExportFormat();
 
 		try {
 			const buffer = await file.arrayBuffer();
@@ -1078,9 +1109,9 @@ export class MagickState {
 				if (this.sourceBytes === bytes) {
 					this.exif = summary;
 				}
-			} catch (e) {
+			} catch {
 				if (this.sourceBytes === bytes) {
-					this.exifError = e instanceof Error ? e.message : String(e);
+					this.exifError = EXIF_UNSUPPORTED_MESSAGE;
 				}
 			} finally {
 				if (this.sourceBytes === bytes) {
@@ -1800,17 +1831,22 @@ export class MagickState {
 									appliedOptions.stripMeta = true;
 								}
 
-								const formatKey = this.settings.imageFormat.toUpperCase();
-								const magf = FORMAT_MAP[formatKey] || 'WebP';
+								const magf = magickFormatForName(this.settings.imageFormat) ?? MagickFormat.WebP;
 
-								image.quality = this.settings.quality[0];
+								// Keep AVIF quality 100 usable with the bundled AOM encoder;
+								// its lossless path rejects the default chroma delta-q setting.
+								image.quality =
+									this.settings.imageFormat.toUpperCase() === 'AVIF' &&
+									this.settings.quality[0] >= 100
+										? 99
+										: this.settings.quality[0];
 								appliedOptions.quality = this.settings.quality[0];
 								appliedOptions.format = magf;
 
 								const finalWidth = image.width;
 								const finalHeight = image.height;
 
-								image.write(MagickFormat[magf], (data) => {
+								image.write(magf, (data) => {
 									const endTime = performance.now();
 
 									if (debugMode) {
@@ -1880,7 +1916,11 @@ export class MagickState {
 		newHeight: number,
 		_appliedOptions: AppliedOptions
 	): void {
-		const mimeType = `image/${format.toLowerCase()}`;
+		const formatInfo = this.exportFormats.find(
+			(candidate) => candidate.value.toUpperCase() === format.toUpperCase()
+		);
+		const outputExtension = formatInfo?.extension ?? outputExtensionForFormat(format);
+		const mimeType = formatInfo?.mimeType ?? mimeTypeForFormat(format, outputExtension);
 		const blob = new Blob([data as unknown as BlobPart], { type: mimeType });
 
 		if (this.processedImageUrl) {
@@ -1897,7 +1937,7 @@ export class MagickState {
 		const nameParts = this.originalName.split('.');
 		if (nameParts.length > 1) nameParts.pop();
 		const baseName = nameParts.join('.') || this.originalName;
-		this.processedImageName = `${baseName}-edited.${this.processedImageFormat}`;
+		this.processedImageName = `${baseName}-edited.${outputExtension}`;
 
 		this.isLoading = false;
 		this.currentProcessingStep = null;

@@ -135,6 +135,87 @@ function verifyWebpSupport(slug: Slug): void {
 }
 
 /**
+ * Keep the relocatable bundle's restrictive coder policy in sync with the
+ * formats the app exposes as native exports. Homebrew's default policy can
+ * omit TIFF even when libtiff and the TIFF coder module are bundled.
+ */
+function allowTiffCoder(slug: Slug): void {
+	const slugDir = join(TOOL_DIR, slug);
+	const configurePath = join(slugDir, 'lib', 'ImageMagick', 'config-Q16HDRI', 'configure.xml');
+	if (existsSync(configurePath)) {
+		const configure = readFileSync(configurePath, 'utf8');
+		const portable = configure.replace(
+			/^\s*<configure\s+name=["'](?:CODER_PATH|FILTER_PATH|CONFIGURE_PATH)["'][^>]*\/>\s*$/gim,
+			''
+		);
+		if (portable !== configure) writeFileSync(configurePath, portable);
+	}
+	const policyPath = join(slugDir, 'etc', 'ImageMagick-7', 'policy.xml');
+	if (!existsSync(policyPath)) return;
+	const policy = readFileSync(policyPath, 'utf8');
+	const updated = policy.replace(
+		/(<policy\s+domain=["']coder["']\s+rights=["']read\|write["']\s+pattern=["']\{)GIF,JPEG,PNG,WEBP(\}["']\s*\/>)/i,
+		'$1GIF,JPEG,PNG,TIFF,WEBP$2'
+	);
+	const withTiffModule = updated.includes('domain="module" rights="read" pattern="TIFF"')
+		? updated
+		: updated.replace(
+				/(<policy\s+domain=["']coder["']\s+rights=["']read\|write["']\s+pattern=["']\{GIF,JPEG,PNG,TIFF,WEBP\}["']\s*\/>)/i,
+				'$1\n  <policy domain="module" rights="read" pattern="TIFF" />'
+			);
+	if (withTiffModule !== policy) {
+		writeFileSync(policyPath, withTiffModule);
+		console.log(`Enabled TIFF coder in native security policy for ${slug}.`);
+	}
+}
+
+/** Verify that TIFF is not merely listed: encode a real TIFF and check its signature. */
+function verifyTiffSupport(slug: Slug): void {
+	const slugDir = join(TOOL_DIR, slug);
+	const bin = slugBin(slug);
+	const env = { ...process.env };
+	const libDir = join(slugDir, 'lib');
+	const coderDir = join(slugDir, 'lib', 'ImageMagick', 'modules-Q16HDRI', 'coders');
+	const filterDir = join(slugDir, 'lib', 'ImageMagick', 'modules-Q16HDRI', 'filters');
+	const configDirs = [
+		join(slugDir, 'etc', 'ImageMagick-7'),
+		join(slugDir, 'lib', 'ImageMagick', 'config-Q16HDRI')
+	];
+
+	if (existsSync(libDir)) {
+		const libraryKey = process.platform === 'darwin' ? 'DYLD_LIBRARY_PATH' : 'LD_LIBRARY_PATH';
+		env[libraryKey] = [libDir, env[libraryKey]].filter(Boolean).join(delimiter);
+	}
+	if (existsSync(coderDir)) env.MAGICK_CODER_MODULE_PATH = coderDir;
+	if (existsSync(filterDir)) env.MAGICK_FILTER_MODULE_PATH = filterDir;
+	env.MAGICK_CONFIGURE_PATH = configDirs.filter(existsSync).join(delimiter);
+	if (slug === 'win-x64') env.MAGICK_HOME = slugDir;
+
+	const fixture = join(import.meta.dirname, '..', 'static', 'icons', 'icon-512.png');
+	const input = existsSync(fixture) ? fixture : null;
+	const probe = join(tmpdir(), `wasmagick-tiff-${slug}-${process.pid}.tiff`);
+	try {
+		const args = input ? [input, probe] : ['-size', '2x2', 'xc:white', probe];
+		const result = spawnSync(bin, args, {
+			cwd: slugDir,
+			env,
+			encoding: 'utf8'
+		});
+		const bytes = existsSync(probe) ? readFileSync(probe) : Buffer.alloc(0);
+		const hasTiffSignature =
+			(bytes.length >= 4 && bytes.subarray(0, 4).equals(Buffer.from([0x49, 0x49, 0x2a, 0x00]))) ||
+			(bytes.length >= 4 && bytes.subarray(0, 4).equals(Buffer.from([0x4d, 0x4d, 0x00, 0x2a])));
+		if (result.error || result.status !== 0 || !hasTiffSignature) {
+			const detail = result.error?.message || result.stderr?.trim() || 'invalid TIFF signature';
+			throw new Error(`ImageMagick TIFF support is unavailable for ${slug}: ${detail}`);
+		}
+		console.log(`Verified ImageMagick TIFF support for ${slug}.`);
+	} finally {
+		rmSync(probe, { force: true });
+	}
+}
+
+/**
  * Verify the host build decodes RAW camera formats (CR2, NEF, ARW, DNG, ...)
  * internally via libraw.
  *
@@ -460,16 +541,15 @@ function bundleFromBrew(slugDir: string): void {
 		// Cellar). ImageMagick resolves the module .so through it, which
 		// would load the Cellar build and register coders against the wrong
 		// libMagickCore instance ("no decode delegate" everywhere, even for
-		// built-ins like xc:). Neuter it: with an invalid libdir,
-		// ImageMagick falls back to the .la file's own directory, which is
-		// correct both in tooling/ and in the packaged Resources dir.
+		// built-ins like xc:). Keep the metadata's `libdir` empty so libltdl
+		// resolves the module beside the `.la` file in the relocatable bundle.
 		for (const la of execSync(`find "${join(libDir, 'ImageMagick')}" -name '*.la'`, {
 			encoding: 'utf-8'
 		})
 			.split('\n')
 			.map((s) => s.trim())
 			.filter(Boolean)) {
-			execSync(`sed -i '' "s|^libdir='.*'|libdir='/nonexistent-wasmagick'|" "${la}"`);
+			execSync(`sed -i '' "s|^libdir='.*'|libdir=''|" "${la}"`);
 		}
 	}
 	if (existsSync(brewEtcIM)) {
@@ -491,12 +571,12 @@ function bundleFromBrew(slugDir: string): void {
 		}
 		const configurePath = join(slugDir, 'lib', 'ImageMagick', 'config-Q16HDRI', 'configure.xml');
 		if (existsSync(configurePath)) {
-			// The copied Homebrew XML records its absolute Cellar CONFIGURE_PATH.
-			// Remove that build-host override so MAGICK_CONFIGURE_PATH from the
-			// Electron runner selects the files inside the relocatable bundle.
+			// The copied Homebrew XML records absolute Cellar module paths. Remove
+			// those build-host overrides so the Electron runner's MAGICK_* paths
+			// select the files inside the relocatable bundle.
 			const configure = readFileSync(configurePath, 'utf8');
 			const portable = configure.replace(
-				/^\s*<configure\s+name=["']CONFIGURE_PATH["'][^>]*\/?>\s*$/gim,
+				/^\s*<configure\s+name=["'](?:CODER_PATH|FILTER_PATH|CONFIGURE_PATH)["'][^>]*\/?>\s*$/gim,
 				''
 			);
 			if (portable !== configure) writeFileSync(configurePath, portable);
@@ -544,7 +624,17 @@ function bundleFromBrew(slugDir: string): void {
 			}
 		}
 		// Same basename under a different brew prefix path (symlink twin).
-		return [...nameMap].find(([dest]) => basename(dest) === basename(orig))?.[0] ?? null;
+		const wanted = basename(orig).replace(/\.dylib$/, '');
+		return (
+			[...nameMap].find(([dest]) => {
+				const candidate = basename(dest).replace(/\.dylib$/, '');
+				return (
+					candidate === wanted ||
+					candidate.startsWith(`${wanted}.`) ||
+					wanted.startsWith(`${candidate}.`)
+				);
+			})?.[0] ?? null
+		);
 	};
 
 	/**
@@ -560,8 +650,10 @@ function bundleFromBrew(slugDir: string): void {
 		const prefix = inModules ? '@loader_path/../../../' : '@executable_path/../lib/';
 		for (const dep of otool(file)) {
 			const dest = destFor(dep);
-			if (!dest || dep.startsWith('@')) continue;
-			execSync(`install_name_tool -change "${dep}" "${prefix}${basename(dest)}" "${file}"`);
+			if (!dest) continue;
+			const replacement = `${prefix}${basename(dest)}`;
+			if (dep === replacement) continue;
+			execSync(`install_name_tool -change "${dep}" "${replacement}" "${file}"`);
 		}
 	};
 	const allMachO = [destBin, ...[...nameMap].map(([dest]) => dest)];
@@ -762,6 +854,7 @@ function ensureSlug(slug: Slug): void {
 	if (!existsSync(slugBin(slug))) {
 		throw new Error(`Setup finished but no binary at ${slugBin(slug)}`);
 	}
+	allowTiffCoder(slug);
 	ensureWebpTools(slug);
 }
 
@@ -813,6 +906,7 @@ for (const slug of slugs) {
 const hostSlug = slugFor(process.platform, process.arch);
 if (slugs.includes(hostSlug)) {
 	verifyWebpSupport(hostSlug);
+	verifyTiffSupport(hostSlug);
 	verifyWebpTools(hostSlug);
 	verifyRawSupport(hostSlug);
 }

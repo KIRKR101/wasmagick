@@ -58,6 +58,14 @@ declare global {
 		format: string;
 	}
 
+	interface WasmagickNativeFormatInfo {
+		format: string;
+		supportsWriting: boolean;
+		moduleFormat?: string;
+		mimeType?: string | null;
+		description?: string;
+	}
+
 	interface WasmagickNativeFontMetricsPayload {
 		text: string;
 		fontSize: number;
@@ -96,6 +104,7 @@ declare global {
 		readSystemFont(postscriptName: string): Promise<WasmagickSystemFontData | null>;
 		isNativeAvailable(): Promise<boolean>;
 		isNativeRawAvailable?(): Promise<boolean>;
+		listNativeFormats?(): Promise<WasmagickNativeFormatInfo[]>;
 		processNativeImage(
 			payload: WasmagickNativeProcessPayload
 		): Promise<WasmagickNativeProcessResult>;

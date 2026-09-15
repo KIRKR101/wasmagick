@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('wasmagick', {
 	readSystemFont: (postscriptName) => ipcRenderer.invoke('fonts:read-system', postscriptName),
 	isNativeAvailable: () => ipcRenderer.invoke('magick:native-available'),
 	isNativeRawAvailable: () => ipcRenderer.invoke('magick:native-raw-available'),
+	listNativeFormats: () => ipcRenderer.invoke('magick:native-formats'),
 	processNativeImage: (payload) => ipcRenderer.invoke('magick:process-native', payload),
 	getNativeFontMetrics: (payload) => ipcRenderer.invoke('magick:font-metrics', payload),
 	saveFile: (payload) => ipcRenderer.invoke('file:save', payload),

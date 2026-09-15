@@ -21,6 +21,12 @@ export function formatBytes(bytes: number): string {
 	return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 }
 
+/** Display dimensions only when both image dimensions were read successfully. */
+export function formatDimensions(width: number, height: number): string {
+	if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return '';
+	return `${width}×${height}`;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type WithoutChild<T> = T extends { child?: any } ? Omit<T, 'child'> : T;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

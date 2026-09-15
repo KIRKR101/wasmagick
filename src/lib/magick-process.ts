@@ -17,21 +17,7 @@ import {
 import type { MagickSettings, LevelChannel } from './types';
 import type { IMagickImage } from '@imagemagick/magick-wasm';
 import { generateClutImage } from './luts';
-
-const FORMAT_MAP: Record<string, keyof typeof MagickFormat> = {
-	WEBP: 'WebP',
-	JPEG: 'Jpeg',
-	PNG: 'Png',
-	AVIF: 'Avif',
-	// JXL lossy quality is broken in the bundled ImageMagick 7.1.2-29
-	// (magick-wasm 0.0.42): WriteJXLImage double-applies the quality-to-distance
-	// conversion, so any quality 1-99 encodes at a catastrophic distance and only
-	// lossless (quality 100) works. Kept as-is; tracked upstream at
-	// https://github.com/ImageMagick/ImageMagick/issues/8901
-	JXL: 'Jxl',
-	TIFF: 'Tiff',
-	GIF: 'Gif'
-};
+import { magickFormatForName } from './export-formats';
 
 /**
  * Camera RAW extensions need an explicit format when read from a byte array.
@@ -461,14 +447,22 @@ export function processImageSync(
 			image.strip();
 		}
 
-		const formatKey = settings.imageFormat.toUpperCase();
-		const magf = FORMAT_MAP[formatKey] || 'WebP';
-		image.quality = settings.quality[0];
+		const magf = magickFormatForName(settings.imageFormat) ?? MagickFormat.WebP;
 
 		const finalWidth = image.width;
 		const finalHeight = image.height;
 
-		image.write(MagickFormat[magf], (data) => {
+		// magick-wasm's AVIF/AOM build rejects the lossless settings it derives
+		// from quality 100 (chroma delta-q is left enabled). Keep the UI's
+		// maximum slider usable by selecting the nearest supported AVIF quality;
+		// native ImageMagick still receives the requested value unchanged.
+		const outputQuality =
+			settings.imageFormat.toUpperCase() === 'AVIF' && settings.quality[0] >= 100
+				? 99
+				: settings.quality[0];
+		image.quality = outputQuality;
+
+		image.write(magf, (data) => {
 			const outputData = new Uint8Array(data);
 			let outputWidth = finalWidth;
 			let outputHeight = finalHeight;
@@ -477,7 +471,7 @@ export function processImageSync(
 				// orientation while encoding. Re-read the bytes so the dimensions
 				// reported by WASM describe the file that was actually produced,
 				// matching the native path's post-write identify call.
-				ImageMagick.read(outputData, MagickFormat[magf], (written) => {
+				ImageMagick.read(outputData, magf, (written) => {
 					outputWidth = written.width;
 					outputHeight = written.height;
 				});

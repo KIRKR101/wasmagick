@@ -17,6 +17,9 @@
 
 import type { MagickSettings } from './types';
 import { interpolateCliKeyword } from './clut-data';
+import { outputExtensionForFormat } from './export-formats';
+
+export { outputExtensionForFormat } from './export-formats';
 
 export const NATIVE_TOKENS = {
 	INPUT: '__INPUT__',
@@ -42,28 +45,6 @@ export interface NativeArgsResult {
 	needsClut: string | null;
 	/** Set when the main process must be sent font bytes for `-font`. */
 	needsFont: string | null;
-}
-
-/** Output file extension for an export format. */
-export function outputExtensionForFormat(format: string): string {
-	switch (format.toUpperCase()) {
-		case 'JPEG':
-			return 'jpg';
-		case 'TIFF':
-			return 'tiff';
-		case 'WEBP':
-			return 'webp';
-		case 'PNG':
-			return 'png';
-		case 'AVIF':
-			return 'avif';
-		case 'JXL':
-			return 'jxl';
-		case 'GIF':
-			return 'gif';
-		default:
-			return 'webp';
-	}
 }
 
 function fmtNum(v: number): string {

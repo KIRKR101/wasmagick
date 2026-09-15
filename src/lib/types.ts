@@ -3,8 +3,8 @@
  * Type definitions for all image processing settings
  */
 
-/** Image export format options */
-export type ImageFormat = 'WebP' | 'JPEG' | 'PNG' | 'AVIF' | 'JXL' | 'TIFF' | 'GIF';
+/** Image export format identifier reported by the active ImageMagick engine. */
+export type ImageFormat = string;
 
 /** Rotation angle options */
 export type RotationAngle = '0' | '90' | '180' | '-90';

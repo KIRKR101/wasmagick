@@ -9,7 +9,8 @@
 		isFiltersDirty,
 		isExportDirty,
 		isAnnotateDirty,
-		formatBytes
+		formatBytes,
+		formatDimensions
 	} from '$lib/utils';
 	import { DEFAULT_SETTINGS } from '$lib/useMagick.svelte';
 	import HoverTooltip from './controls/HoverTooltip.svelte';
@@ -45,6 +46,11 @@
 		onUndo?: () => void;
 		onRedo?: () => void;
 	} = $props();
+
+	let originalDimensions = $derived(formatDimensions(magick.originalWidth, magick.originalHeight));
+	let processedDimensions = $derived(
+		formatDimensions(magick.processedWidth, magick.processedHeight)
+	);
 
 	function sectionSummary(id: EditorSection): string {
 		const s = magick.settings;
@@ -374,12 +380,14 @@
 					<div class="flex justify-between gap-2">
 						<span class="shrink-0 text-[10px] text-muted-foreground/60">DIMS</span>
 						<span class="truncate text-foreground/80">
-							{#if magick.processedImageUrl && (magick.processedWidth || magick.processedHeight)}
-								{magick.originalWidth}×{magick.originalHeight}
+							{#if magick.processedImageUrl && originalDimensions && processedDimensions}
+								{originalDimensions}
 								<span class="text-muted-foreground/60">→</span>
-								{magick.processedWidth}×{magick.processedHeight}
+								{processedDimensions}
+							{:else if processedDimensions}
+								{processedDimensions}
 							{:else}
-								{magick.originalWidth}×{magick.originalHeight}
+								{originalDimensions}
 							{/if}
 						</span>
 					</div>

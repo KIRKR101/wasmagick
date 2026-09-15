@@ -11,6 +11,7 @@
 	import ToggleRow from '$lib/components/controls/ToggleRow.svelte';
 	import SectionCard from '$lib/components/controls/SectionCard.svelte';
 	import { Crop } from 'lucide-svelte';
+	import { formatDimensions } from '$lib/utils';
 
 	let { magick } = $props<{ magick: MagickState }>();
 
@@ -182,7 +183,7 @@
 			<div class="flex items-center justify-between">
 				<span class="font-mono text-[10px] text-muted-foreground/60 uppercase">Source</span>
 				<span class="font-mono text-[10px] text-muted-foreground/40">
-					{magick.originalWidth} × {magick.originalHeight}
+					{formatDimensions(magick.originalWidth, magick.originalHeight)}
 				</span>
 			</div>
 

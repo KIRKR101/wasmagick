@@ -187,10 +187,12 @@ export class PresetsState {
 		magick.resetSettings();
 		const patch = clonePatch(preset.patch);
 		Object.assign(magick.settings, patch);
+		magick.ensureSelectedExportFormat();
 	}
 
 	applyUser(magick: MagickState, preset: UserPreset): void {
 		magick.settings = snapSettings(preset.settings);
+		magick.ensureSelectedExportFormat();
 	}
 
 	/** True when the live settings exactly match what this built-in would produce. */
