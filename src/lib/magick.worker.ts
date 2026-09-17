@@ -5,6 +5,8 @@ import { ensureFont, DEFAULT_FONT } from './fonts';
 
 let ready = false;
 let initPromise: Promise<void> | null = null;
+let cachedSourceRevision: number | null = null;
+let cachedSourceBytes: Uint8Array | null = null;
 
 async function ensureReady() {
 	if (ready) return;
@@ -25,7 +27,8 @@ async function ensureReady() {
 
 interface WorkerRequest {
 	id: number;
-	sourceBytes: Uint8Array;
+	sourceRevision: number;
+	sourceBytes?: Uint8Array;
 	inputName?: string;
 	settings: MagickSettings;
 }
@@ -51,9 +54,21 @@ self.onmessage = async (e: MessageEvent<WorkerRequest | FontSyncMessage>) => {
 		return;
 	}
 
-	const { id, sourceBytes, inputName, settings: rawSettings } = msg as WorkerRequest;
+	const {
+		id,
+		sourceRevision,
+		sourceBytes: incomingSourceBytes,
+		inputName,
+		settings: rawSettings
+	} = msg as WorkerRequest;
+	if (incomingSourceBytes && sourceRevision !== cachedSourceRevision) {
+		cachedSourceRevision = sourceRevision;
+		cachedSourceBytes = incomingSourceBytes;
+	}
+	const sourceBytes = cachedSourceBytes;
 
 	try {
+		if (!sourceBytes) throw new Error('Worker source image is unavailable');
 		await ensureReady();
 		let settings = rawSettings;
 		const fontFamily = settings.annotateFontFamily?.trim();
@@ -64,9 +79,9 @@ self.onmessage = async (e: MessageEvent<WorkerRequest | FontSyncMessage>) => {
 			}
 		}
 		const result: ProcessResult = processImageSync(sourceBytes, settings, inputName);
-		self.postMessage({ id, result });
+		self.postMessage({ id, sourceRevision, result });
 	} catch (err: unknown) {
 		const message = err instanceof Error ? err.message : 'Unknown error';
-		self.postMessage({ id, error: message });
+		self.postMessage({ id, sourceRevision, error: message });
 	}
 };

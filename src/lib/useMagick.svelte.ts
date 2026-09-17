@@ -294,23 +294,25 @@ function snapSettings(settings: MagickSettings): MagickSettings {
  * whatever the browser's decoder rejects (e.g. DNG) is exactly what cannot
  * be previewed, independent of extension or MIME type.
  */
-function canBrowserRender(bytes: Uint8Array): Promise<boolean> {
+function browserImageInfo(
+	bytes: Uint8Array
+): Promise<{ rendered: boolean; width: number; height: number }> {
 	return new Promise((resolve) => {
 		let url: string;
 		try {
 			url = URL.createObjectURL(new Blob([bytes as BlobPart]));
 		} catch {
-			resolve(false);
+			resolve({ rendered: false, width: 0, height: 0 });
 			return;
 		}
 		const img = new Image();
 		img.onload = () => {
 			URL.revokeObjectURL(url);
-			resolve(true);
+			resolve({ rendered: true, width: img.width, height: img.height });
 		};
 		img.onerror = () => {
 			URL.revokeObjectURL(url);
-			resolve(false);
+			resolve({ rendered: false, width: 0, height: 0 });
 		};
 		img.src = url;
 	});
@@ -544,7 +546,10 @@ export class MagickState {
 	}
 
 	private _worker: Worker | null = null;
+	private _workerSourceRevision: number | null = null;
+	private _sourceRevision = 0;
 	private _requestId = 0;
+	private _latestWorkerRequestId = 0;
 	cropMode = $state(false);
 	cropAspectRatio = $state<string>('free');
 	// The in-progress visual crop selection, kept outside the overlay so it
@@ -575,7 +580,7 @@ export class MagickState {
 	// eslint-disable-next-line svelte/prefer-svelte-reactivity
 	private _pendingRequests = new Map<
 		number,
-		{ debugMode: boolean; onComplete?: () => void; startTime: number }
+		{ debugMode: boolean; onComplete?: () => void; startTime: number; sourceRevision: number }
 	>();
 	private _processTimer: ReturnType<typeof setTimeout> | null = null;
 	// In-flight EXIF extraction. Extractions are chained behind this so two
@@ -767,16 +772,24 @@ export class MagickState {
 		if (this._worker) return;
 
 		try {
+			this._workerSourceRevision = null;
 			// eslint-disable-next-line svelte/prefer-svelte-reactivity
 			this._worker = new Worker(new URL('./magick.worker.ts', import.meta.url), {
 				type: 'module'
 			});
 
 			this._worker.onmessage = (e: MessageEvent) => {
-				const { id, result, error } = e.data;
+				const { id, sourceRevision, result, error } = e.data;
 				const pending = this._pendingRequests.get(id);
 				if (!pending) return;
 				this._pendingRequests.delete(id);
+				if (
+					sourceRevision !== this._sourceRevision ||
+					pending.sourceRevision !== sourceRevision ||
+					id !== this._latestWorkerRequestId
+				) {
+					return;
+				}
 
 				if (error) {
 					this.hasError = true;
@@ -810,6 +823,7 @@ export class MagickState {
 				console.error('Worker error:', err);
 				this._worker?.terminate();
 				this._worker = null;
+				this._workerSourceRevision = null;
 				this.workerReady = false;
 				for (const [, _pending] of this._pendingRequests) {
 					this.hasError = true;
@@ -1000,18 +1014,19 @@ export class MagickState {
 		try {
 			const buffer = await file.arrayBuffer();
 			this.sourceBytes = new Uint8Array(buffer);
+			this._sourceRevision++;
 			this.originalImageSize = this.sourceBytes.length;
-			this.originalPreviewFailed = !(await canBrowserRender(this.sourceBytes));
 
 			const fastDims = fastImageDimensions(this.sourceBytes);
 			if (fastDims) {
 				this.originalWidth = fastDims.width;
 				this.originalHeight = fastDims.height;
+				this.originalPreviewFailed = !(await browserImageInfo(this.sourceBytes)).rendered;
 			} else {
-				await this.getImageDimensions(this.sourceBytes).then((dims) => {
-					this.originalWidth = dims.width;
-					this.originalHeight = dims.height;
-				});
+				const info = await browserImageInfo(this.sourceBytes);
+				this.originalPreviewFailed = !info.rendered;
+				this.originalWidth = info.width;
+				this.originalHeight = info.height;
 			}
 
 			this.revokeImageUrls();
@@ -1040,23 +1055,6 @@ export class MagickState {
 			this.errorMessage = message;
 			return false;
 		}
-	}
-
-	private async getImageDimensions(bytes: Uint8Array): Promise<{ width: number; height: number }> {
-		return new Promise((resolve) => {
-			const blob = new Blob([bytes as unknown as BlobPart]);
-			const url = URL.createObjectURL(blob);
-			const img = new Image();
-			img.onload = () => {
-				URL.revokeObjectURL(url);
-				resolve({ width: img.width, height: img.height });
-			};
-			img.onerror = () => {
-				URL.revokeObjectURL(url);
-				resolve({ width: 0, height: 0 });
-			};
-			img.src = url;
-		});
 	}
 
 	clearSource(): void {
@@ -1280,14 +1278,27 @@ export class MagickState {
 		this._pendingRequests.set(requestId, {
 			debugMode,
 			onComplete,
-			startTime: performance.now()
+			startTime: performance.now(),
+			sourceRevision: this._sourceRevision
 		});
-		this._worker!.postMessage({
+		this._latestWorkerRequestId = requestId;
+		const message: {
+			id: number;
+			sourceRevision: number;
+			sourceBytes?: Uint8Array;
+			inputName: string;
+			settings: MagickSettings;
+		} = {
 			id: requestId,
-			sourceBytes: this.sourceBytes,
+			sourceRevision: this._sourceRevision,
 			inputName: this.originalName,
 			settings: snapSettings(this.settings)
-		});
+		};
+		if (this._workerSourceRevision !== this._sourceRevision) {
+			message.sourceBytes = this.sourceBytes!;
+			this._workerSourceRevision = this._sourceRevision;
+		}
+		this._worker!.postMessage(message);
 	}
 
 	private _processOnMainThread(debugMode = false, onComplete?: () => void): void {
