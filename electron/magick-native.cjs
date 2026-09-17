@@ -138,14 +138,22 @@ function parseNativeFormatList(output) {
 	const formats = [];
 	for (const line of String(output || '').split('\n')) {
 		const parts = line.trim().split(/\s+/);
-		if (parts.length < 4) continue;
+		if (parts.length < 3) continue;
 		const format = parts[0].replace(/[*!+]+$/, '').toUpperCase();
-		const moduleFormat = parts[1].replace(/[*!+]+$/, '').toUpperCase();
-		const permissions = parts[2];
+		const permissionIndex = parts.findIndex(
+			(part, index) => index > 0 && /^[rw-][rw-][+!-]$/.test(part)
+		);
+		const moduleFormat = (permissionIndex === 2 ? parts[1] : format)
+			.replace(/[*!+]+$/, '')
+			.toUpperCase();
+		const permissions = permissionIndex >= 0 ? parts[permissionIndex] : '';
+		const description = parts.slice(permissionIndex + 1).join(' ');
 		if (
 			!format ||
 			!/^[A-Z0-9][A-Z0-9_-]*$/.test(format) ||
-			!/^[rw-][rw-][+!-]$/.test(permissions)
+			permissionIndex < 1 ||
+			permissionIndex > 2 ||
+			!description
 		) {
 			continue;
 		}
@@ -154,7 +162,7 @@ function parseNativeFormatList(output) {
 			format,
 			moduleFormat,
 			supportsWriting: true,
-			description: parts.slice(3).join(' ')
+			description
 		});
 	}
 	return formats;

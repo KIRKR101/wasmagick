@@ -71,6 +71,22 @@ describe('native ImageMagick export capability parsing', () => {
 		expect(formats[0].moduleFormat).toBe('APNG');
 	});
 
+	it('parses the Windows three-column format table', () => {
+		const formats = parseNativeFormatList(`
+      Format  Mode  Description
+      JPEG*   rw-   Joint Photographic Experts Group
+      PNG*    rw+   Portable Network Graphics
+      DNG     r--   Digital Negative
+    `);
+
+		expect(formats.map((format) => format.format)).toEqual(['JPEG', 'PNG']);
+		expect(formats[1]).toMatchObject({
+			moduleFormat: 'PNG',
+			supportsWriting: true,
+			description: 'Portable Network Graphics'
+		});
+	});
+
 	it('skips headers, malformed rows, and non-format output safely', () => {
 		const formats = parseNativeFormatList(`
 ImageMagick version: 7.1.2-29
