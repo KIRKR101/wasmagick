@@ -231,6 +231,7 @@
 	padding: 0 12px;
 	background: #f7f7f4;
 	color: var(--muted-foreground);
+	transition: background-color 0.15s, color 0.15s;
 	font-family: var(--font-mono);
 	font-size: 11px;
 	letter-spacing: 0.12em;
@@ -240,7 +241,7 @@
 }
 
 .dark .titlebar {
-	background: #18181b;
+	background: #0a0a0a;
 }
 
 /* Window controls (Linux only; Windows uses the native title bar overlay) */
@@ -263,6 +264,7 @@
 	border: none;
 	background: transparent;
 	color: var(--muted-foreground);
+	transition: background-color 0.15s, color 0.15s;
 	cursor: default;
 }
 

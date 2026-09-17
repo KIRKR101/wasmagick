@@ -23,7 +23,7 @@ const GITHUB_URL = 'https://github.com/KIRKR101/wasmagick';
 const TITLEBAR_HEIGHT = 40;
 const TITLEBAR_COLORS = {
 	light: { color: '#f7f7f4', symbolColor: '#18181b' },
-	dark: { color: '#18181b', symbolColor: '#f4f4f5' }
+	dark: { color: '#0a0a0a', symbolColor: '#f4f4f5' }
 };
 
 const BUILD_DIR = path.join(__dirname, '..', 'build');
