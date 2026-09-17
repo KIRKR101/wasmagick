@@ -99,10 +99,12 @@ declare global {
 
 	interface WasmagickElectronApi {
 		readonly platform: string;
+		readonly electronVersion: string;
 		markReady(): Promise<void>;
 		listSystemFonts(): Promise<WasmagickSystemFont[]>;
 		readSystemFont(postscriptName: string): Promise<WasmagickSystemFontData | null>;
 		isNativeAvailable(): Promise<boolean>;
+		getNativeVersion(): Promise<string | null>;
 		isNativeRawAvailable?(): Promise<boolean>;
 		listNativeFormats?(): Promise<WasmagickNativeFormatInfo[]>;
 		processNativeImage(

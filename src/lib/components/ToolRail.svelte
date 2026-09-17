@@ -21,6 +21,7 @@
 		magick,
 		history,
 		debugMode = false,
+		isElectron = false,
 		isDarkMode = false,
 		onUploadClick,
 		onReset,
@@ -36,6 +37,7 @@
 		magick: MagickState;
 		history: HistoryState;
 		debugMode?: boolean;
+		isElectron?: boolean;
 		isDarkMode?: boolean;
 		onUploadClick: () => void;
 		onReset: () => void;
@@ -460,16 +462,16 @@
 				</HoverTooltip>
 			</div>
 
-			<HoverTooltip label="Toggle debug panel" triggerClass="w-full">
+			<HoverTooltip label={isElectron ? 'Show build details' : 'Toggle debug panel'} triggerClass="w-full">
 				<button
 					onclick={onToggleDebug}
-					aria-label="Toggle debug panel"
+					aria-label={isElectron ? 'Show build details' : 'Toggle debug panel'}
 					class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {debugMode
 						? 'text-foreground'
 						: ''}"
 				>
 					<span class="truncate"
-						><span>[{debugMode ? '⚠' : 'B'}]</span> <span class="hover:underline">DEBUG</span></span
+						><span>[{isElectron ? 'i' : debugMode ? '⚠' : 'B'}]</span> <span class="hover:underline">{isElectron ? 'BUILD' : 'DEBUG'}</span></span
 					>
 				</button>
 			</HoverTooltip>

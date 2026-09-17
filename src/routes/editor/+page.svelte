@@ -29,6 +29,7 @@
 	let actionNoticeTimer: ReturnType<typeof setTimeout> | null = null;
 	let toastCanReveal = $state(false);
 	let annotationPlacementActive = $state(false);
+	let isElectron = $state(false);
 
 	$effect(() => {
 		if (activeSection !== 'annotate') annotationPlacementActive = false;
@@ -60,6 +61,7 @@
 	});
 
 	onMount(() => {
+		isElectron = Boolean(window.wasmagick);
 		const mql = window.matchMedia(MOBILE_BREAKPOINT);
 		isMobile = mql.matches;
 		const handler = (e: MediaQueryListEvent) => (isMobile = e.matches);
@@ -460,6 +462,7 @@
 		{presets}
 		{guard}
 		{debugMode}
+		{isElectron}
 		{isDarkMode}
 		bind:activeSection
 		bind:viewport

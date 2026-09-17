@@ -4,6 +4,7 @@
 	import PropertiesPanel from './PropertiesPanel.svelte';
 	import StatusBar from './StatusBar.svelte';
 	import ConfirmDialog from './ConfirmDialog.svelte';
+	import BuildDetailsDialog from './BuildDetailsDialog.svelte';
 	import { IMAGE_FILE_ACCEPT } from '$lib/utils';
 	import type { MagickState } from '$lib/useMagick.svelte';
 	import type { HistoryState } from '$lib/hooks/useHistory.svelte';
@@ -18,6 +19,7 @@
 		presets,
 		guard,
 		debugMode,
+		isElectron = false,
 		isDarkMode,
 		activeSection = $bindable('geometry'),
 		viewport = $bindable(null),
@@ -41,6 +43,7 @@
 		presets: PresetsState;
 		guard: ReplaceGuardState;
 		debugMode: boolean;
+		isElectron?: boolean;
 		isDarkMode: boolean;
 		activeSection?: EditorSection;
 		viewport?: ReturnType<typeof CanvasViewport> | null;
@@ -115,6 +118,12 @@
 
 	let clearHistoryOpen = $state(false);
 	let resetConfirmOpen = $state(false);
+	let buildDetailsOpen = $state(false);
+
+	function handleDebugClick() {
+		if (isElectron) buildDetailsOpen = true;
+		else onToggleDebug();
+	}
 
 	function onClearHistoryRequest() {
 		clearHistoryOpen = true;
@@ -158,13 +167,14 @@
 			{magick}
 			{history}
 			{debugMode}
+			{isElectron}
 			{isDarkMode}
 			{activeSection}
 			onSectionChange={setSection}
 			onUploadClick={openFilePicker}
 			onReset={onResetRequest}
 			onClose={onCloseRequest}
-			{onToggleDebug}
+			onToggleDebug={handleDebugClick}
 			{onToggleTheme}
 			{onToggleShortcuts}
 			{onUndo}
@@ -241,3 +251,7 @@
 	onConfirm={onResetConfirm}
 	onCancel={onResetCancel}
 />
+
+{#if isElectron}
+	<BuildDetailsDialog bind:open={buildDetailsOpen} />
+{/if}

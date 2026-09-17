@@ -8,10 +8,12 @@ function subscribe(channel, callback) {
 
 contextBridge.exposeInMainWorld('wasmagick', {
 	platform: process.platform,
+	electronVersion: process.versions.electron,
 	markReady: () => ipcRenderer.invoke('renderer:ready'),
 	listSystemFonts: () => ipcRenderer.invoke('fonts:list-system'),
 	readSystemFont: (postscriptName) => ipcRenderer.invoke('fonts:read-system', postscriptName),
 	isNativeAvailable: () => ipcRenderer.invoke('magick:native-available'),
+	getNativeVersion: () => ipcRenderer.invoke('magick:native-version'),
 	isNativeRawAvailable: () => ipcRenderer.invoke('magick:native-raw-available'),
 	listNativeFormats: () => ipcRenderer.invoke('magick:native-formats'),
 	processNativeImage: (payload) => ipcRenderer.invoke('magick:process-native', payload),

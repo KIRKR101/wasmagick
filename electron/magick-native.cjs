@@ -133,6 +133,19 @@ function isNativeAvailable() {
 	return resolveMagickBin() !== null;
 }
 
+function getNativeVersion() {
+	const magickBin = resolveMagickBin();
+	if (!magickBin) return null;
+	const result = spawnSync(magickBin, ['-version'], {
+		cwd: path.dirname(magickBin),
+		env: spawnEnv(magickBin),
+		encoding: 'utf8',
+		timeout: 5000
+	});
+	if (result.error || result.status !== 0) return null;
+	return String(result.stdout || '').match(/^Version:\s*ImageMagick\s+([^\s]+)/m)?.[1] ?? null;
+}
+
 /** Parse the writable rows from `magick -list format`. */
 function parseNativeFormatList(output) {
 	const formats = [];
@@ -678,6 +691,7 @@ async function getNativeFontMetrics(payload) {
 
 function registerMagickNative(ipcMain) {
 	ipcMain.handle('magick:native-available', () => isNativeAvailable());
+	ipcMain.handle('magick:native-version', () => getNativeVersion());
 	ipcMain.handle('magick:native-raw-available', () => isNativeRawAvailable());
 	ipcMain.handle('magick:native-formats', () => listNativeFormats());
 	ipcMain.handle('magick:process-native', async (_event, payload) => processNative(payload));
@@ -689,6 +703,7 @@ module.exports = {
 	resolveMagickBin,
 	resolveWebpTool,
 	isNativeAvailable,
+	getNativeVersion,
 	isNativeRawAvailable,
 	parseNativeFormatList,
 	listNativeFormats,
