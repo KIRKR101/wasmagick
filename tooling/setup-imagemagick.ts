@@ -34,7 +34,7 @@ import { join, dirname, basename, delimiter } from 'node:path';
 import { tmpdir } from 'node:os';
 import { describeRawCapability, isRawCapable } from './raw-support.js';
 
-const IM_VERSION = '7.1.2-29';
+const IM_VERSION = '7.1.2-30';
 const TOOL_DIR = join(import.meta.dirname, 'imagemagick');
 const WEBP_VERSION = '1.6.0';
 const WEBP_DIR = join(import.meta.dirname, 'webp');
