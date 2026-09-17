@@ -178,6 +178,7 @@ export const EXCLUDED_EXPORT_FORMATS = [
 	'SIXEL',
 	// Internal mask/rendering/cache formats and printer control language.
 	'CLIP',
+	'CLIPBOARD',
 	'RSVG',
 	'MSVG',
 	'PCL',
