@@ -290,20 +290,20 @@ All used methods are called from two near-identical processing pipelines:
 The processing order in both pipelines is:
 
 ```
-1. resize
-2. rotate
-3. flop / flip
-4. crop
-5. trim
-6. shave
-7. border (sets borderColor)
-8. extent (sets backgroundColor)
-9. deskew
-10. modulate (brightness/saturation/hue)
-11. brightnessContrast
-12. normalize
-13. autoLevel
-14. autoOrient
+1. autoOrient
+2. resize
+3. rotate
+4. flop / flip
+5. crop
+6. trim
+7. shave
+8. border (sets borderColor)
+9. extent (sets backgroundColor)
+10. deskew
+11. modulate (brightness/saturation/hue)
+12. brightnessContrast
+13. normalize
+14. autoLevel
 15. autoGamma
 16. level (per channel: All, Red, Green, Blue)
 17. levelColors / inverseLevelColors (color endpoints, RGB composite for All)
