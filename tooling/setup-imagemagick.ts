@@ -186,7 +186,7 @@ function removeExternalRawDelegate(slug: Slug): void {
 	if (!existsSync(delegatesPath)) return;
 	const delegates = readFileSync(delegatesPath, 'utf8');
 	const sanitized = delegates.replace(
-		/\s*<delegate\b(?=[^>]*\bdecode=["']dng:decode["'])[^>]*darktable-cli[^>]*\/\>\s*/gi,
+		/\s*<delegate\b(?=[^>]*\bdecode=["']dng:decode["'])[^>]*darktable-cli[^>]*\/>\s*/gi,
 		'\n'
 	);
 	if (sanitized !== delegates) writeFileSync(delegatesPath, sanitized);
