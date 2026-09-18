@@ -60,8 +60,8 @@ describe('export format catalog', () => {
 			'GIF',
 			'BMP',
 			'EXR',
-			'MIFF',
-			'QOI'
+			'QOI',
+			'MIFF'
 		]);
 	});
 

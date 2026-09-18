@@ -27,7 +27,15 @@ export const POPULAR_EXPORT_FORMATS = [
 	'AVIF',
 	'JXL',
 	'TIFF',
-	'GIF'
+	'GIF',
+	'ICO',
+	'BMP',
+	'PSD',
+	'PDF',
+	'EXR',
+	'DDS',
+	'TGA',
+	'QOI'
 ] as const;
 
 /** ImageMagick outputs that are not useful image exports in this editor. */
@@ -200,7 +208,15 @@ const POPULAR_LABELS: Record<string, string> = {
 	AVIF: 'AVIF',
 	JXL: 'JXL',
 	TIFF: 'TIFF',
-	GIF: 'GIF'
+	GIF: 'GIF',
+	ICO: 'ICO',
+	BMP: 'BMP',
+	PSD: 'PSD',
+	PDF: 'PDF',
+	EXR: 'EXR',
+	DDS: 'DDS',
+	TGA: 'TGA',
+	QOI: 'QOI'
 };
 
 /** The old seven-format fallback used before an engine reports its capabilities. */
