@@ -1,3 +1,5 @@
+import packageJson from '../../package.json';
+
 /**
  * App-wide settings backing the settings overlay.
  *
@@ -13,7 +15,7 @@
  * Theme mode lives in `theme` and is handled by `$lib/theme`.
  */
 
-export const APP_VERSION = '0.0.3';
+export const APP_VERSION = packageJson.version;
 export const REPO_URL = 'https://github.com/KIRKR101/wasmagick';
 export const MAGICK_WASM_URL = 'https://github.com/dlemstra/magick-wasm';
 
