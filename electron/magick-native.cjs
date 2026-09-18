@@ -246,7 +246,7 @@ function isNativeRawAvailable() {
 		return false;
 	}
 	return ['CR2', 'CR3', 'NEF', 'ARW', 'DNG', 'RW2', 'ORF', 'RAF'].every((format) =>
-		new RegExp(`^\\s*${format}\\s+.*\\br--(?:\\s|$)`, 'im').test(formats)
+		new RegExp(`^\\s*${format}[*!+]?\\s+.*\\br--(?:\\s|$)`, 'im').test(formats)
 	);
 }
 
