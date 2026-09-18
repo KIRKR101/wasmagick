@@ -406,8 +406,33 @@ function download(url: string, dest: string): boolean {
 	}
 }
 
+/**
+ * True when an already-downloaded binary reports the pinned `IM_VERSION`.
+ * The existence checks below must not trust a stale cache: bumping
+ * `IM_VERSION` alone would otherwise keep shipping the old binary.
+ */
+function cachedVersionMatches(bin: string): boolean {
+	try {
+		const result = spawnSync(bin, ['-version'], { encoding: 'utf8' });
+		if (result.error || result.status !== 0) return false;
+		return (result.stdout ?? '').startsWith(`Version: ImageMagick ${IM_VERSION}`);
+	} catch {
+		return false;
+	}
+}
+
+/** Drop a stale cache whose binary no longer matches `IM_VERSION`. */
+function dropStaleCache(slugDir: string, bin: string): void {
+	if (!existsSync(bin) || cachedVersionMatches(bin)) return;
+	console.log(
+		`Cached ImageMagick at ${slugDir} is not ${IM_VERSION}; re-downloading...`
+	);
+	rmSync(slugDir, { recursive: true, force: true });
+}
+
 function ensureLinux(slugDir: string): void {
 	const bin = join(slugDir, 'bin', 'magick');
+	dropStaleCache(slugDir, bin);
 	if (existsSync(bin)) {
 		console.log(`ImageMagick ${IM_VERSION} (${slugDir}) already installed.`);
 		return;
@@ -438,6 +463,7 @@ function ensureLinux(slugDir: string): void {
 
 function ensureWindows(slugDir: string): void {
 	const bin = join(slugDir, 'magick.exe');
+	dropStaleCache(slugDir, bin);
 	if (existsSync(bin)) {
 		console.log(`ImageMagick ${IM_VERSION} (${slugDir}) already installed.`);
 		return;

@@ -41,7 +41,7 @@
 		type UserPreset
 	} from '$lib/hooks/usePresets.svelte';
 	import { formatBytes } from '$lib/utils';
-	import { ISSUES_URL } from '$lib/constants.js';
+	import { buildGeneralIssueBody, buildIssueUrl } from '$lib/issue-report';
 	import { FALLBACK_EXPORT_FORMATS } from '$lib/export-formats';
 
 	let { onClose }: { onClose: () => void } = $props();
@@ -94,6 +94,14 @@
 		historyLimit = Math.min(MAX_HISTORY_LIMIT, Math.max(MIN_HISTORY_LIMIT, Math.round(value)));
 		setHistoryLimit(historyLimit);
 	}
+
+	let issuesHref = $derived.by(() => {
+		try {
+			return buildIssueUrl('Bug report', buildGeneralIssueBody());
+		} catch {
+			return buildIssueUrl('Bug report', '');
+		}
+	});
 
 	let filenamePreview = $derived.by(() => {
 		try {
@@ -523,7 +531,7 @@
 				[<span class="group-hover:underline">GitHub</span>]
 			</a>
 			<a
-				href={ISSUES_URL}
+				href={issuesHref}
 				target="_blank"
 				rel="noopener noreferrer"
 				class="group border border-foreground/30 px-3 py-1.5 font-mono text-xs text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"

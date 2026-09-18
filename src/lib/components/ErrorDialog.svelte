@@ -6,7 +6,8 @@
 		DialogContent
 	} from '$lib/components/ui/dialog/index.js';
 	import type { MagickState } from '$lib/useMagick.svelte';
-	import { ISSUES_URL } from '$lib/constants';
+	import { Magick } from '@imagemagick/magick-wasm';
+	import { buildErrorDetailsText, buildErrorIssueBody, buildIssueUrl } from '$lib/issue-report';
 
 	let {
 		magick,
@@ -26,6 +27,25 @@
 
 	let copied = $state(false);
 	let copyTimer: ReturnType<typeof setTimeout> | null = null;
+	let nativeVersion = $state<string | null>(null);
+
+	let wasmVersion = $derived.by(() => {
+		try {
+			const raw = Magick.imageMagickVersion;
+			return raw.match(/\bImageMagick\s+([^\s]+)/)?.[1] ?? raw;
+		} catch {
+			return null;
+		}
+	});
+
+	$effect(() => {
+		if (open && window.wasmagick?.getNativeVersion) {
+			window.wasmagick
+				.getNativeVersion()
+				.then((version) => (nativeVersion = version))
+				.catch(() => (nativeVersion = null));
+		}
+	});
 
 	function close() {
 		open = false;
@@ -37,12 +57,12 @@
 	}
 
 	async function copyDetails() {
-		const details = [
-			'WASMagick error report',
-			`Time: ${new Date().toISOString()}`,
-			`Engine: ${magick.engine}`,
-			`Error: ${magick.errorMessage ?? 'Unknown error'}`
-		].join('\n');
+		const details = buildErrorDetailsText({
+			error: magick.errorMessage ?? 'Unknown error',
+			engine: magick.engine,
+			wasmVersion,
+			nativeVersion
+		});
 		try {
 			await navigator.clipboard.writeText(details);
 			copied = true;
@@ -55,23 +75,13 @@
 	}
 
 	let reportHref = $derived.by(() => {
-		const title = encodeURIComponent('Error report');
-		const body = encodeURIComponent(
-			[
-				'**Error**',
-				'```',
-				magick.errorMessage ?? 'Unknown error',
-				'```',
-				'',
-				'**Engine**',
-				magick.engine,
-				'',
-				'**Steps to reproduce**',
-				'1. ',
-				'2. '
-			].join('\n')
-		);
-		return `${ISSUES_URL}/new?title=${title}&body=${body}`;
+		const body = buildErrorIssueBody({
+			error: magick.errorMessage ?? 'Unknown error',
+			engine: magick.engine,
+			wasmVersion,
+			nativeVersion
+		});
+		return buildIssueUrl('Error report', body);
 	});
 </script>
 
