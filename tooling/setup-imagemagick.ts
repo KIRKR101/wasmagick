@@ -169,6 +169,29 @@ function allowTiffCoder(slug: Slug): void {
 	}
 }
 
+function removeExternalRawDelegate(slug: Slug): void {
+	const slugDir = join(TOOL_DIR, slug);
+	const libDir = join(slugDir, 'lib');
+	const coderDir = join(libDir, 'ImageMagick', 'modules-Q16HDRI', 'coders');
+	const hasLibraw =
+		existsSync(libDir) &&
+		readdirSync(libDir).some((name) =>
+			/^libraw(?:_r)?(?:[-.][\w-]+)*\.(?:dll|dylib|so(?:\.\d+)*)$/i.test(name)
+		);
+	const hasRawCoders = ['dng', 'raw'].every((name) =>
+		['.so', '.dll'].some((suffix) => existsSync(join(coderDir, `${name}${suffix}`)))
+	);
+	if (!hasLibraw || !hasRawCoders) return;
+	const delegatesPath = join(slugDir, 'etc', 'ImageMagick-7', 'delegates.xml');
+	if (!existsSync(delegatesPath)) return;
+	const delegates = readFileSync(delegatesPath, 'utf8');
+	const sanitized = delegates.replace(
+		/\s*<delegate\b(?=[^>]*\bdecode=["']dng:decode["'])[^>]*darktable-cli[^>]*\/\>\s*/gi,
+		'\n'
+	);
+	if (sanitized !== delegates) writeFileSync(delegatesPath, sanitized);
+}
+
 /** Verify that TIFF is not merely listed: encode a real TIFF and check its signature. */
 function verifyTiffSupport(slug: Slug): void {
 	const slugDir = join(TOOL_DIR, slug);
@@ -695,7 +718,9 @@ function bundleFromBrew(slugDir: string): void {
 	const rawModules = ['dng.so', 'raw.so'].map((name) =>
 		join(modulesRoot, 'modules-Q16HDRI', 'coders', name)
 	);
-	const hasLibraw = readdirSync(libDir).some((file) => /^libraw(?:_r)?\./i.test(file));
+	const hasLibraw = readdirSync(libDir).some((file) =>
+		/^libraw(?:_r)?(?:[-.][\w-]+)*\.(?:dll|dylib|so(?:\.\d+)*)$/i.test(file)
+	);
 	const missingRawModules = rawModules.filter((file) => !existsSync(file));
 	if (!hasLibraw || missingRawModules.length > 0) {
 		throw new Error(
@@ -717,7 +742,10 @@ function existingBundleHasRaw(slugDir: string): boolean {
 		const libDir = join(slugDir, 'lib');
 		const modulesRoot = join(libDir, 'ImageMagick', 'modules-Q16HDRI', 'coders');
 		const hasLibraw =
-			existsSync(libDir) && readdirSync(libDir).some((f) => /^libraw(?:_r)?\./i.test(f));
+			existsSync(libDir) &&
+			readdirSync(libDir).some((f) =>
+				/^libraw(?:_r)?(?:[-.][\w-]+)*\.(?:dll|dylib|so(?:\.\d+)*)$/i.test(f)
+			);
 		const hasRawModules = ['dng.so', 'raw.so'].every((name) => existsSync(join(modulesRoot, name)));
 		const delegatesPath = join(slugDir, 'etc', 'ImageMagick-7', 'delegates.xml');
 		const delegates = existsSync(delegatesPath) ? readFileSync(delegatesPath, 'utf8') : '';
@@ -855,6 +883,7 @@ function ensureSlug(slug: Slug): void {
 		throw new Error(`Setup finished but no binary at ${slugBin(slug)}`);
 	}
 	allowTiffCoder(slug);
+	removeExternalRawDelegate(slug);
 	ensureWebpTools(slug);
 }
 

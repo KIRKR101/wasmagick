@@ -227,21 +227,30 @@ function isNativeRawAvailable() {
 	const configure = run(['-list', 'configure']);
 	const formats = run(['-list', 'format']);
 	if (!configure || !formats) return false;
-	if (!/--with-(?:lib)?raw=yes/i.test(configure)) return false;
-	if (!/(^|\s)raw(\s|$)/im.test(configure)) return false;
+	if (/--with-(?:lib)?raw=no/i.test(configure)) return false;
 	const binDir = path.dirname(magickBin);
 	const root = path.basename(binDir).toLowerCase() === 'bin' ? path.dirname(binDir) : binDir;
 	const libDir = path.join(root, 'lib');
 	const coderDir = path.join(libDir, 'ImageMagick', 'modules-Q16HDRI', 'coders');
 	let hasLibraw;
 	try {
-		hasLibraw = fs.readdirSync(libDir).some((name) => /^libraw(?:_r)?[.]/i.test(name));
+		hasLibraw = fs
+			.readdirSync(libDir)
+			.some((name) => /^libraw(?:_r)?(?:[-.][\w-]+)*\.(?:dll|dylib|so(?:\.\d+)*)$/i.test(name));
 	} catch {
 		hasLibraw = false;
 	}
+	const rawModuleSuffix = process.platform === 'win32' ? '.dll' : '.so';
 	if (
 		!hasLibraw ||
-		!['dng.so', 'raw.so'].every((name) => fs.existsSync(path.join(coderDir, name)))
+		!['dng', 'raw'].every((name) => fs.existsSync(path.join(coderDir, `${name}${rawModuleSuffix}`)))
+	) {
+		return false;
+	}
+	if (
+		!/--with-(?:lib)?raw=yes/i.test(configure) &&
+		!/(^|\s)raw(\s|$)/im.test(configure) &&
+		!/\(\d+\.\d+.*\)/.test(formats)
 	) {
 		return false;
 	}
@@ -568,7 +577,16 @@ async function processNative(payload) {
 			...(hasOutput ? [] : [outputSpecifier])
 		];
 		const outputIndex = finalArgs.lastIndexOf(outputSpecifier);
-		finalArgs.splice(outputIndex, 0, '-write', `rgba:${previewPath}`);
+		finalArgs.splice(
+			outputIndex,
+			0,
+			'-depth',
+			'8',
+			'-write',
+			`rgba:${previewPath}`,
+			'-depth',
+			'16'
+		);
 
 		// Some coders leave the source EXIF orientation unavailable to
 		// ImageMagick even though the renderer's metadata parser found it.
