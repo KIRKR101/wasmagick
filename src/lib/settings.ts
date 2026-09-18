@@ -15,7 +15,6 @@
 
 export const APP_VERSION = '0.0.3';
 export const REPO_URL = 'https://github.com/KIRKR101/wasmagick';
-export const ISSUES_PAGE_URL = `${REPO_URL}/issues`;
 export const MAGICK_WASM_URL = 'https://github.com/dlemstra/magick-wasm';
 
 const FILENAME_KEY = 'wasmagick.filename-template';

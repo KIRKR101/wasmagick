@@ -219,7 +219,7 @@ const POPULAR_LABELS: Record<string, string> = {
 	QOI: 'QOI'
 };
 
-/** The old seven-format fallback used before an engine reports its capabilities. */
+/** The prioritized fallback used before an engine reports its capabilities. */
 export const FALLBACK_EXPORT_FORMATS: readonly ExportFormat[] = POPULAR_EXPORT_FORMATS.map(
 	(format) => ({
 		value: POPULAR_LABELS[format],

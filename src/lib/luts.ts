@@ -10,10 +10,6 @@ export function getClutPresets(): ClutPreset[] {
 	return CLUT_PRESET_MAPS;
 }
 
-export function getClutPreset(id: string): ClutPreset | undefined {
-	return CLUT_PRESET_MAPS.find((p) => p.id === id);
-}
-
 export function getInterpolationOptions(): { value: ClutInterpolation; label: string }[] {
 	return [
 		{ value: 'catrom', label: 'Catrom (Smooth)' },
