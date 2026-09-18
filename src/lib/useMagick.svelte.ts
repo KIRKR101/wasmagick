@@ -442,6 +442,9 @@ export class MagickState {
 	originalImageUrl = $state<string | null>(null);
 	originalImageFormat = $state<string | null>(null);
 	processedImageUrl = $state<string | null>(null);
+	processedPreviewData = $state<Uint8Array | null>(null);
+	processedPreviewWidth = $state(0);
+	processedPreviewHeight = $state(0);
 	processedImageFormat = $state<string | null>(null);
 	processedImageName = $state<string | null>(null);
 	processedImageTime = $state(0);
@@ -547,6 +550,8 @@ export class MagickState {
 
 	private _worker: Worker | null = null;
 	private _workerSourceRevision: number | null = null;
+	private _nativeSourceRevision: number | null = null;
+	private _nativeRequestId = 0;
 	private _sourceRevision = 0;
 	private _requestId = 0;
 	private _latestWorkerRequestId = 0;
@@ -800,7 +805,7 @@ export class MagickState {
 					return;
 				}
 
-				const { data, width, height, format } = result;
+				const { data, previewData, previewWidth, previewHeight, width, height, format } = result;
 				const elapsed = Math.round(performance.now() - pending.startTime);
 
 				const appliedOptions: AppliedOptions = {};
@@ -814,7 +819,17 @@ export class MagickState {
 					});
 				}
 
-				this.handleDownload(data, format, elapsed, width, height, appliedOptions);
+				this.handleDownload(
+					data,
+					format,
+					elapsed,
+					width,
+					height,
+					appliedOptions,
+					previewData,
+					previewWidth,
+					previewHeight
+				);
 
 				if (pending.onComplete) pending.onComplete();
 			};
@@ -1015,6 +1030,7 @@ export class MagickState {
 			const buffer = await file.arrayBuffer();
 			this.sourceBytes = new Uint8Array(buffer);
 			this._sourceRevision++;
+			this._nativeSourceRevision = null;
 			this.originalImageSize = this.sourceBytes.length;
 
 			const fastDims = fastImageDimensions(this.sourceBytes);
@@ -1036,6 +1052,9 @@ export class MagickState {
 			this.clearPreviewSnapshot();
 
 			this.processedImageFormat = null;
+			this.processedPreviewData = null;
+			this.processedPreviewWidth = 0;
+			this.processedPreviewHeight = 0;
 			this.processedImageName = null;
 			this.processedWidth = 0;
 			this.processedHeight = 0;
@@ -1059,6 +1078,7 @@ export class MagickState {
 
 	clearSource(): void {
 		this.sourceBytes = null;
+		this._nativeSourceRevision = null;
 		this.revokeImageUrls();
 		this.originalName = 'image';
 		this.originalImageSize = 0;
@@ -1067,6 +1087,7 @@ export class MagickState {
 		this.originalWidth = 0;
 		this.originalHeight = 0;
 		this.processedImageUrl = null;
+		this.processedPreviewData = null;
 		this.processedImageFormat = null;
 		this.processedImageName = null;
 		this.processedImageTime = 0;
@@ -1175,6 +1196,8 @@ export class MagickState {
 	}
 
 	private async _processViaNative(debugMode = false, onComplete?: () => void): Promise<void> {
+		const requestId = ++this._nativeRequestId;
+		const sourceRevision = this._sourceRevision;
 		this.hasError = false;
 		this.errorMessage = null;
 		this.isLoading = true;
@@ -1216,7 +1239,9 @@ export class MagickState {
 
 			const result = await window.wasmagick!.processNativeImage({
 				inputName: this.originalName,
-				inputData: this.sourceBytes!,
+				inputData:
+					this._nativeSourceRevision === this._sourceRevision ? undefined : this.sourceBytes!,
+				sourceRevision: this._sourceRevision,
 				args,
 				outputExtension: built.outputExtension,
 				outputFormat: this.settings.imageFormat,
@@ -1225,6 +1250,8 @@ export class MagickState {
 				fontData,
 				fontFileName
 			});
+			if (requestId !== this._nativeRequestId || sourceRevision !== this._sourceRevision) return;
+			this._nativeSourceRevision = this._sourceRevision;
 
 			const elapsed = Math.round(performance.now() - startTime);
 			const appliedOptions: AppliedOptions = {};
@@ -1240,7 +1267,10 @@ export class MagickState {
 				elapsed,
 				result.width,
 				result.height,
-				appliedOptions
+				appliedOptions,
+				result.previewData,
+				result.previewWidth,
+				result.previewHeight
 			);
 			if (onComplete) onComplete();
 		} catch (err: unknown) {
@@ -1856,6 +1886,10 @@ export class MagickState {
 
 								const finalWidth = image.width;
 								const finalHeight = image.height;
+								const previewData = image.getPixels(
+									(pixels) =>
+										pixels.toByteArray(0, 0, finalWidth, finalHeight, 'RGBA') ?? new Uint8Array()
+								);
 
 								image.write(magf, (data) => {
 									const endTime = performance.now();
@@ -1873,7 +1907,10 @@ export class MagickState {
 										Math.round(endTime - startTime),
 										finalWidth,
 										finalHeight,
-										appliedOptions
+										appliedOptions,
+										previewData,
+										finalWidth,
+										finalHeight
 									);
 
 									if (onComplete) onComplete();
@@ -1925,7 +1962,10 @@ export class MagickState {
 		time: number,
 		newWidth: number,
 		newHeight: number,
-		_appliedOptions: AppliedOptions
+		_appliedOptions: AppliedOptions,
+		previewData?: Uint8Array,
+		previewWidth?: number,
+		previewHeight?: number
 	): void {
 		const formatInfo = this.exportFormats.find(
 			(candidate) => candidate.value.toUpperCase() === format.toUpperCase()
@@ -1939,6 +1979,9 @@ export class MagickState {
 		}
 
 		this.processedImageUrl = URL.createObjectURL(blob);
+		this.processedPreviewData = previewData ?? null;
+		this.processedPreviewWidth = previewWidth ?? newWidth;
+		this.processedPreviewHeight = previewHeight ?? newHeight;
 		this.processedImageFormat = format.toLowerCase();
 		this.processedWidth = newWidth;
 		this.processedHeight = newHeight;

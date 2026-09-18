@@ -39,7 +39,8 @@ declare global {
 
 	interface WasmagickNativeProcessPayload {
 		inputName: string;
-		inputData: Uint8Array;
+		sourceRevision?: number;
+		inputData?: Uint8Array;
 		/** Middle args from buildNativeMagickArgs (no shell involved). */
 		args: string[];
 		outputExtension: string;
@@ -53,6 +54,9 @@ declare global {
 
 	interface WasmagickNativeProcessResult {
 		data: Uint8Array;
+		previewData?: Uint8Array;
+		previewWidth?: number;
+		previewHeight?: number;
 		width: number;
 		height: number;
 		format: string;

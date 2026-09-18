@@ -79,7 +79,12 @@ self.onmessage = async (e: MessageEvent<WorkerRequest | FontSyncMessage>) => {
 			}
 		}
 		const result: ProcessResult = processImageSync(sourceBytes, settings, inputName);
-		self.postMessage({ id, sourceRevision, result });
+		self.postMessage(
+			{ id, sourceRevision, result },
+			{
+				transfer: [result.data.buffer, result.previewData.buffer]
+			}
+		);
 	} catch (err: unknown) {
 		const message = err instanceof Error ? err.message : 'Unknown error';
 		self.postMessage({ id, sourceRevision, error: message });

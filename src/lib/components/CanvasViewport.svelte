@@ -16,6 +16,9 @@
 	let {
 		originalImageUrl = null,
 		processedImageUrl = null,
+		processedPreviewData = null,
+		processedPreviewWidth = 0,
+		processedPreviewHeight = 0,
 		originalPreviewFailed = false,
 		isLoading = false,
 		wasmLoaded = true,
@@ -38,6 +41,9 @@
 	}: {
 		originalImageUrl?: string | null;
 		processedImageUrl?: string | null;
+		processedPreviewData?: Uint8Array | null;
+		processedPreviewWidth?: number;
+		processedPreviewHeight?: number;
 		originalPreviewFailed?: boolean;
 		isLoading?: boolean;
 		wasmLoaded?: boolean;
@@ -94,11 +100,33 @@
 	let capturedPointerId = $state<number | null>(null);
 
 	let previewImageRef = $state<HTMLImageElement | null>(null);
+	let previewCanvasRef = $state<HTMLCanvasElement | null>(null);
 	let viewportRef = $state<HTMLDivElement | null>(null);
 	let loadedOriginalUrl: string | null | undefined = null;
 	let displayedWidth = $state(0);
 	let displayedHeight = $state(0);
 	let annotationFontReady = $state(0);
+
+	$effect(() => {
+		if (
+			!previewCanvasRef ||
+			!processedPreviewData ||
+			!processedPreviewWidth ||
+			!processedPreviewHeight
+		)
+			return;
+		const canvas = previewCanvasRef;
+		canvas.width = processedPreviewWidth;
+		canvas.height = processedPreviewHeight;
+		const context = canvas.getContext('2d');
+		if (context) {
+			context.putImageData(
+				new ImageData(new Uint8ClampedArray(processedPreviewData), canvas.width, canvas.height),
+				0,
+				0
+			);
+		}
+	});
 
 	$effect(() => {
 		const fontFamily = magickSettings?.annotateFontFamily?.trim();
@@ -639,8 +667,18 @@
 				class="checkerboard max-h-none max-w-none origin-center object-contain {processedImageUrl ||
 				originalImageUrl
 					? 'opacity-100'
-					: 'opacity-0'} {isLoading ? 'animate-opacity-pulse' : ''}"
+					: 'opacity-0'} {processedPreviewData && !compareActive ? 'invisible' : ''} {isLoading
+					? 'animate-opacity-pulse'
+					: ''}"
 			/>
+			{#if processedPreviewData && !compareActive}
+				<canvas
+					bind:this={previewCanvasRef}
+					style={imageStyle}
+					class="checkerboard max-h-none max-w-none origin-center object-contain"
+					aria-label="Processed image preview"
+				></canvas>
+			{/if}
 			{#if annotationMenuActive && annotationPoint && (annotationPlacementActive || magickSettings?.annotateText?.trim()) && !compareActive}
 				<div
 					class="pointer-events-none absolute z-30 size-5 -translate-x-1/2 -translate-y-1/2 mix-blend-difference"

@@ -137,6 +137,9 @@ export function applyCrop(image: IMagickImage, settings: MagickSettings): boolea
 
 export interface ProcessResult {
 	data: Uint8Array;
+	previewData: Uint8Array;
+	previewWidth: number;
+	previewHeight: number;
 	width: number;
 	height: number;
 	format: string;
@@ -147,7 +150,15 @@ export function processImageSync(
 	settings: MagickSettings,
 	inputName?: string
 ): ProcessResult {
-	let result: ProcessResult = { data: new Uint8Array(), width: 0, height: 0, format: '' };
+	let result: ProcessResult = {
+		data: new Uint8Array(),
+		previewData: new Uint8Array(),
+		previewWidth: 0,
+		previewHeight: 0,
+		width: 0,
+		height: 0,
+		format: ''
+	};
 
 	readImageWithFilename(sourceBytes, inputName, (image) => {
 		// Normalize EXIF orientation before geometry. Some ImageMagick builds
@@ -451,6 +462,9 @@ export function processImageSync(
 
 		const finalWidth = image.width;
 		const finalHeight = image.height;
+		const previewData = image.getPixels(
+			(pixels) => pixels.toByteArray(0, 0, finalWidth, finalHeight, 'RGBA') ?? new Uint8Array()
+		);
 
 		// magick-wasm's AVIF/AOM build rejects the lossless settings it derives
 		// from quality 100 (chroma delta-q is left enabled). Keep the UI's
@@ -481,6 +495,9 @@ export function processImageSync(
 			}
 			result = {
 				data: outputData,
+				previewData,
+				previewWidth: finalWidth,
+				previewHeight: finalHeight,
 				width: outputWidth,
 				height: outputHeight,
 				format: settings.imageFormat

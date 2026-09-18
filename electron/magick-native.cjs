@@ -64,6 +64,8 @@ const RAW_EXTENSIONS = new Set([
 	'x3f'
 ]);
 
+let cachedSource = null;
+
 function platformSlug() {
 	const plat =
 		process.platform === 'win32' ? 'win' : process.platform === 'darwin' ? 'mac' : 'linux';
@@ -491,8 +493,14 @@ async function identifyOrientation(magickBin, filePath) {
  * }
  */
 async function processNative(payload) {
-	if (!payload || !(payload.inputData instanceof Uint8Array) || !Array.isArray(payload.args)) {
+	if (!payload || !Array.isArray(payload.args)) {
 		throw new Error('Invalid native process request');
+	}
+	const canUseCache = Number.isFinite(payload.sourceRevision);
+	const hasCachedSource =
+		canUseCache && cachedSource && cachedSource.revision === payload.sourceRevision;
+	if (!(payload.inputData instanceof Uint8Array) && !hasCachedSource) {
+		throw new Error('Native source image is unavailable');
 	}
 	for (const arg of payload.args) {
 		if (typeof arg !== 'string' || arg.length > 4096) {
@@ -514,7 +522,12 @@ async function processNative(payload) {
 
 	const tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'wasmagick-'));
 	const inputPath = path.join(tmpDir, `input.${inputExtensionFor(payload.inputName)}`);
+	await fs.promises.writeFile(inputPath, hasCachedSource ? cachedSource.data : payload.inputData);
+	if (canUseCache && payload.inputData instanceof Uint8Array) {
+		cachedSource = { revision: payload.sourceRevision, data: payload.inputData };
+	}
 	const outputPath = path.join(tmpDir, `output.${sanitizeExtension(payload.outputExtension)}`);
+	const previewPath = path.join(tmpDir, 'preview.rgba');
 	const clutPath = path.join(tmpDir, 'clut.png');
 	const fontPath = path.join(
 		tmpDir,
@@ -523,7 +536,6 @@ async function processNative(payload) {
 	);
 
 	try {
-		await fs.promises.writeFile(inputPath, payload.inputData);
 		if (payload.clutData instanceof Uint8Array) {
 			await fs.promises.writeFile(clutPath, payload.clutData);
 		}
@@ -555,6 +567,8 @@ async function processNative(payload) {
 			...substituted,
 			...(hasOutput ? [] : [outputSpecifier])
 		];
+		const outputIndex = finalArgs.lastIndexOf(outputSpecifier);
+		finalArgs.splice(outputIndex, 0, '-write', `rgba:${previewPath}`);
 
 		// Some coders leave the source EXIF orientation unavailable to
 		// ImageMagick even though the renderer's metadata parser found it.
@@ -581,8 +595,19 @@ async function processNative(payload) {
 
 		const data = new Uint8Array(await fs.promises.readFile(outputPath));
 		const { width, height } = await identifyDimensions(magickBin, outputPath);
+		const rawPreviewData = new Uint8Array(await fs.promises.readFile(previewPath));
+		const firstFrameBytes = width * height * 4;
+		if (rawPreviewData.length < firstFrameBytes) {
+			throw new Error('Native preview data is shorter than the reported image dimensions');
+		}
+		// The renderer currently displays one bitmap. Keep the first frame when
+		// ImageMagick writes a multi-frame image to the raw RGBA stream.
+		const previewData = rawPreviewData.slice(0, firstFrameBytes);
 		return {
 			data,
+			previewData,
+			previewWidth: width,
+			previewHeight: height,
 			width,
 			height,
 			format: String(payload.outputFormat || 'png')
