@@ -6,11 +6,13 @@
  * blob URLs (cloned from magick's) so magick's lifecycle (which revokes its
  * own URLs on the next process) never invalidates history entries.
  *
- * Cap is 40 entries; oldest is evicted (FIFO) with URL revoke.
+ * Cap defaults to 40 entries (configurable in settings); oldest is evicted
+ * (FIFO) with URL revoke.
  */
 
 import type { MagickState } from '$lib/useMagick.svelte';
 import { outputExtensionForFormat } from '$lib/export-formats';
+import { buildOutputFilename, getHistoryLimit } from '$lib/settings';
 import type { MagickSettings } from '$lib/types';
 
 export interface SettingsDiffItem {
@@ -166,8 +168,6 @@ export interface HistoryEntry {
 	statsMessage: string;
 }
 
-const MAX_ENTRIES = 40;
-
 async function cloneBlobUrl(url: string): Promise<string> {
 	const blob = await fetch(url).then((r) => r.blob());
 	return URL.createObjectURL(blob);
@@ -304,8 +304,9 @@ export class HistoryState {
 		}
 		this.entries = [...this.entries, entry];
 
-		// Enforce cap (evict oldest, but never the entry we just pushed).
-		while (this.entries.length > MAX_ENTRIES) {
+		// Enforce the cap from settings (evict oldest, but never the entry we just pushed).
+		const maxEntries = getHistoryLimit();
+		while (this.entries.length > maxEntries) {
 			const evicted = this.entries.shift()!;
 			if (evicted.blobUrl !== entry.blobUrl) this._urlsToRevoke.add(evicted.blobUrl);
 			this.pointer = Math.max(0, this.pointer - 1);
@@ -363,7 +364,13 @@ export class HistoryState {
 			magick.processedImageUrl = await cloneBlobUrl(entry.blobUrl);
 			magick.processedImageFormat = entry.format;
 			const base = magick.originalName.replace(/\.[^.]+$/, '');
-			magick.processedImageName = `${base}-edited.${outputExtensionForFormat(entry.format)}`;
+			magick.processedImageName = buildOutputFilename({
+				name: base,
+				ext: outputExtensionForFormat(entry.format),
+				format: entry.format.toLowerCase(),
+				width: entry.width,
+				height: entry.height
+			});
 			magick.processedWidth = entry.width;
 			magick.processedHeight = entry.height;
 		}

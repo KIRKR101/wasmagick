@@ -20,12 +20,11 @@
 		guard,
 		debugMode,
 		isElectron = false,
-		isDarkMode,
 		activeSection = $bindable('geometry'),
 		viewport = $bindable(null),
 		onToggleDebug,
-		onToggleTheme,
 		onToggleShortcuts,
+		onOpenSettings,
 		onProcess,
 		onReset,
 		onDownload,
@@ -44,12 +43,11 @@
 		guard: ReplaceGuardState;
 		debugMode: boolean;
 		isElectron?: boolean;
-		isDarkMode: boolean;
 		activeSection?: EditorSection;
 		viewport?: ReturnType<typeof CanvasViewport> | null;
 		onToggleDebug: () => void;
-		onToggleTheme: () => void;
 		onToggleShortcuts: () => void;
+		onOpenSettings: () => void;
 		onProcess: () => void;
 		onReset: () => void;
 		onDownload: () => void;
@@ -168,15 +166,14 @@
 			{history}
 			{debugMode}
 			{isElectron}
-			{isDarkMode}
 			{activeSection}
 			onSectionChange={setSection}
 			onUploadClick={openFilePicker}
 			onReset={onResetRequest}
 			onClose={onCloseRequest}
 			onToggleDebug={handleDebugClick}
-			{onToggleTheme}
 			{onToggleShortcuts}
+			{onOpenSettings}
 			{onUndo}
 			{onRedo}
 		/>

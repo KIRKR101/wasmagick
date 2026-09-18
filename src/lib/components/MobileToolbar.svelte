@@ -5,6 +5,7 @@
 		Columns2,
 		Images,
 		Download,
+		Settings,
 		SlidersHorizontal,
 		Maximize,
 		Loader2,
@@ -31,7 +32,8 @@
 		onToggleSplitCompare,
 		splitMode = false,
 		onReset,
-		onClose
+		onClose,
+		onOpenSettings
 	}: {
 		magick: MagickState;
 		history: HistoryState;
@@ -49,6 +51,7 @@
 		splitMode?: boolean;
 		onReset: () => void;
 		onClose: () => void;
+		onOpenSettings: () => void;
 	} = $props();
 
 	let canDownload = $derived(!!magick.processedImageUrl);
@@ -108,6 +111,9 @@
 				aria-pressed={splitMode}
 			>
 				<Columns2 class="size-4" />
+			</button>
+			<button onclick={onOpenSettings} class="mobile-btn-sm" aria-label="App settings">
+				<Settings class="size-4" />
 			</button>
 		</div>
 	</div>

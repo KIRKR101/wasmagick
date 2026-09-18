@@ -222,6 +222,46 @@ export class PresetsState {
 		this.persist();
 	}
 
+	/**
+	 * Import user presets from an external source (e.g. a JSON backup from
+	 * the settings panel). Entries are validated, re-identified to avoid id
+	 * collisions, and appended. Returns the number of presets imported.
+	 */
+	importUsers(candidates: unknown): number {
+		if (!Array.isArray(candidates)) return 0;
+		const imported: UserPreset[] = [];
+		for (const candidate of candidates) {
+			if (
+				typeof candidate !== 'object' ||
+				candidate === null ||
+				typeof (candidate as UserPreset).name !== 'string' ||
+				typeof (candidate as UserPreset).settings !== 'object' ||
+				(candidate as UserPreset).settings === null
+			) {
+				continue;
+			}
+			const source = candidate as UserPreset;
+			imported.push({
+				id: `user-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+				name: source.name.trim() || 'Untitled Preset',
+				settings: snapSettings(source.settings),
+				createdAt:
+					typeof source.createdAt === 'number' && Number.isFinite(source.createdAt)
+						? source.createdAt
+						: Date.now()
+			});
+		}
+		if (imported.length === 0) return 0;
+		this.userPresets = [...this.userPresets, ...imported];
+		this.persist();
+		return imported.length;
+	}
+
+	clearUsers(): void {
+		this.userPresets = [];
+		this.persist();
+	}
+
 	renameUser(id: string, name: string): void {
 		this.userPresets = this.userPresets.map((p) =>
 			p.id === id ? { ...p, name: name.trim() || p.name } : p

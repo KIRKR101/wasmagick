@@ -26,6 +26,7 @@
 		onRedo,
 		onReplace,
 		onClose,
+		onOpenSettings,
 		onHistoryNavigate,
 		annotationPlacementActive = false,
 		onAnnotationPlacementChange = () => {},
@@ -44,6 +45,7 @@
 		onRedo: () => void;
 		onReplace: (file: File) => Promise<void>;
 		onClose: () => void;
+		onOpenSettings: () => void;
 		onHistoryNavigate?: (message: string) => void;
 		annotationPlacementActive?: boolean;
 		onAnnotationPlacementChange?: (active: boolean) => void;
@@ -229,6 +231,7 @@
 				{splitMode}
 				onReset={onResetRequest}
 				onClose={onCloseRequest}
+				{onOpenSettings}
 			/>
 		</div>
 	{/if}

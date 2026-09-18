@@ -3,6 +3,7 @@
 	import AppShell from '$lib/components/AppShell.svelte';
 	import MobileAppShell from '$lib/components/MobileAppShell.svelte';
 	import KeyboardShortcuts from '$lib/components/KeyboardShortcuts.svelte';
+	import SettingsOverlay from '$lib/components/SettingsOverlay.svelte';
 	import { useMagick } from '$lib/useMagick.svelte';
 	import { useHistory } from '$lib/hooks/useHistory.svelte';
 	import { usePresets } from '$lib/hooks/usePresets.svelte';
@@ -10,7 +11,7 @@
 	import { MOBILE_BREAKPOINT } from '$lib/constants.js';
 	import { getClutPresets, getInterpolationOptions } from '$lib/luts';
 	import { takePendingFile } from '$lib/pending-drop';
-	import { applyTheme, resolveInitialTheme } from '$lib/theme';
+	import { resolveInitialTheme } from '$lib/theme';
 	import type { EditorSection } from '$lib/editor-types';
 	import type { AnnotationPlacement } from '$lib/annotation-utils';
 
@@ -20,9 +21,9 @@
 	const guard = useReplaceGuard();
 
 	let debugMode = $state(false);
-	let isDarkMode = $state(false);
 	let globalDragging = $state(false);
 	let showShortcuts = $state(false);
+	let settingsOpen = $state(false);
 	let activeSection = $state<EditorSection>('geometry');
 	let isMobile = $state(false);
 	let actionNotice = $state('');
@@ -166,11 +167,6 @@
 		return parts.length ? parts.join(' · ') : 'Processed';
 	}
 
-	function toggleDarkMode() {
-		isDarkMode = !isDarkMode;
-		applyTheme(isDarkMode);
-	}
-
 	async function handleUndo(): Promise<void> {
 		const target = history.undoTargetLabel;
 		if (!target) return;
@@ -246,6 +242,9 @@
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
+		// While the settings overlay is open the editor behind it stays
+		// mounted but must not react to shortcuts (the overlay handles Escape).
+		if (settingsOpen) return;
 		const cmdOrCtrl = e.ctrlKey || e.metaKey;
 
 		if (cmdOrCtrl && e.key === 'Enter') {
@@ -348,7 +347,7 @@
 	}
 
 	onMount(async () => {
-		isDarkMode = resolveInitialTheme();
+		resolveInitialTheme();
 
 		presets.load();
 		guard.install(magick, history);
@@ -454,6 +453,7 @@
 		onHistoryNavigate={(message) => showNotice(message)}
 		onReplace={replaceImage}
 		onClose={closeCurrent}
+		onOpenSettings={() => (settingsOpen = true)}
 	/>
 {:else}
 	<AppShell
@@ -463,14 +463,12 @@
 		{guard}
 		{debugMode}
 		{isElectron}
-		{isDarkMode}
 		bind:activeSection
 		bind:viewport
 		{annotationPlacementActive}
 		onAnnotationPlacementChange={(active) => (annotationPlacementActive = active)}
 		onAnnotationPlace={handleAnnotationPlace}
 		onToggleDebug={() => (debugMode = !debugMode)}
-		onToggleTheme={toggleDarkMode}
 		onToggleShortcuts={() => (showShortcuts = !showShortcuts)}
 		onProcess={processCurrent}
 		onReset={() => magick.resetSettings()}
@@ -480,10 +478,13 @@
 		onHistoryNavigate={(message) => showNotice(message)}
 		onReplace={replaceImage}
 		onClose={closeCurrent}
+		onOpenSettings={() => (settingsOpen = true)}
 	/>
 {/if}
 
 <KeyboardShortcuts bind:open={showShortcuts} />
+
+<SettingsOverlay bind:open={settingsOpen} />
 
 {#if actionNotice}
 	<div

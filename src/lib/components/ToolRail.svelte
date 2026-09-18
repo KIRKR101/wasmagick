@@ -22,13 +22,12 @@
 		history,
 		debugMode = false,
 		isElectron = false,
-		isDarkMode = false,
 		onUploadClick,
 		onReset,
 		onClose,
 		onToggleDebug,
-		onToggleTheme,
 		onToggleShortcuts,
+		onOpenSettings,
 		onUndo,
 		onRedo
 	}: {
@@ -38,13 +37,12 @@
 		history: HistoryState;
 		debugMode?: boolean;
 		isElectron?: boolean;
-		isDarkMode?: boolean;
 		onUploadClick: () => void;
 		onReset: () => void;
 		onClose: () => void;
 		onToggleDebug?: () => void;
-		onToggleTheme?: () => void;
 		onToggleShortcuts?: () => void;
+		onOpenSettings: () => void;
 		onUndo?: () => void;
 		onRedo?: () => void;
 	} = $props();
@@ -476,19 +474,6 @@
 				</button>
 			</HoverTooltip>
 
-			<HoverTooltip label="Toggle theme" triggerClass="w-full">
-				<button
-					onclick={onToggleTheme}
-					aria-label="Toggle theme"
-					class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-				>
-					<span class="truncate"
-						><span>[{isDarkMode ? '~' : 'O'}]</span>
-						<span class="hover:underline">THEME</span></span
-					>
-				</button>
-			</HoverTooltip>
-
 			<HoverTooltip label="Keyboard shortcuts (Ctrl+Shift+?)" triggerClass="w-full">
 				<button
 					onclick={onToggleShortcuts}
@@ -497,6 +482,18 @@
 				>
 					<span class="truncate"
 						><span>[?]</span> <span class="hover:underline">SHORTCUTS</span></span
+					>
+				</button>
+			</HoverTooltip>
+
+			<HoverTooltip label="App settings" triggerClass="w-full">
+				<button
+					onclick={onOpenSettings}
+					aria-label="App settings"
+					class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+				>
+					<span class="truncate"
+						><span>[=]</span> <span class="hover:underline">SETTINGS</span></span
 					>
 				</button>
 			</HoverTooltip>

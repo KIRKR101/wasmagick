@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { Copy, Minus, Square, X } from 'lucide-svelte';
 	import { pwaInstall } from '$lib/stores/pwa.svelte';
-	import { hasCustomTitleBar } from '$lib/theme';
+	import { hasCustomTitleBar, resolveInitialTheme, watchSystemTheme } from '$lib/theme';
 	import './layout.css';
 
 	let { children } = $props();
@@ -13,12 +13,17 @@
 
 	onMount(() => {
 		pwaInstall.register();
+		// Apply the stored theme mode (including `auto`) on every page, and
+		// follow the OS color scheme while the mode is `auto`.
+		resolveInitialTheme();
+		const stopWatchingTheme = watchSystemTheme();
 		showTitleBar = hasCustomTitleBar();
 		if (window.wasmagick) {
 			isLinux = window.wasmagick.platform === 'linux';
 			window.wasmagick.onMaximizeChange((maximized) => (isMaximized = maximized));
 			void window.wasmagick.isMaximized().then((maximized) => (isMaximized = maximized));
 		}
+		return () => stopWatchingTheme();
 	});
 
 	const controls = {

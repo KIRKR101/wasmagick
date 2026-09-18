@@ -51,6 +51,7 @@ import {
 	outputExtensionForFormat,
 	type ExportFormat
 } from './export-formats';
+import { buildOutputFilename } from './settings';
 
 const AUTO_PROCESS_DELAY = 300;
 const EXIF_UNSUPPORTED_MESSAGE = 'Format probably not supported';
@@ -105,7 +106,7 @@ const ARRAY_KEYS = new Set([
 	'annotateStrokeWidth'
 ]);
 
-const PERSISTED_KEYS = new Set(['imageFormat', 'quality']);
+const PERSISTED_KEYS = new Set(['imageFormat', 'quality', 'stripMeta']);
 
 function loadPersistedSettings(): Partial<MagickSettings> {
 	try {
@@ -1991,7 +1992,13 @@ export class MagickState {
 		const nameParts = this.originalName.split('.');
 		if (nameParts.length > 1) nameParts.pop();
 		const baseName = nameParts.join('.') || this.originalName;
-		this.processedImageName = `${baseName}-edited.${outputExtension}`;
+		this.processedImageName = buildOutputFilename({
+			name: baseName,
+			ext: outputExtension,
+			format: format.toLowerCase(),
+			width: newWidth,
+			height: newHeight
+		});
 
 		this.isLoading = false;
 		this.currentProcessingStep = null;

@@ -25,11 +25,17 @@
 		<meta name="msapplication-TileColor" content="#18181b" />
 		<meta name="msapplication-TileImage" content="/icons/icon-192.png" />
 		<script>
-			if (
-				localStorage.getItem('theme') === 'dark' ||
-				(!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
-			) {
-				document.documentElement.classList.add('dark');
+			try {
+				var storedTheme = localStorage.getItem('theme');
+				if (
+					storedTheme === 'dark' ||
+					((storedTheme === null || storedTheme === 'auto') &&
+						window.matchMedia('(prefers-color-scheme: dark)').matches)
+				) {
+					document.documentElement.classList.add('dark');
+				}
+			} catch (e) {
+				// ignore private mode
 			}
 		</script>
 

@@ -388,6 +388,16 @@ input[type='number'] {
 	box-shadow: none;
 	border: 1px solid var(--foreground);
 }
+
+/* Text/number inputs in the settings overlay. Same treatment as the editor
+   panels: without the explicit box-shadow kill, the Tailwind Forms plugin
+   paints its default blue focus ring. */
+.settings-page input[type='number']:focus,
+.settings-page input[type='text']:focus {
+	outline: none;
+	box-shadow: none;
+	border: 1px solid var(--foreground);
+}
 .properties-panel-inner select option {
 	background-color: var(--background);
 	color: var(--foreground);
