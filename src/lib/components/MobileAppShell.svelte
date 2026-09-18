@@ -181,6 +181,9 @@
 			bind:this={viewport}
 			originalImageUrl={magick.originalImageUrl}
 			processedImageUrl={magick.processedImageUrl}
+			processedPreviewData={magick.processedPreviewData}
+			processedPreviewWidth={magick.processedPreviewWidth}
+			processedPreviewHeight={magick.processedPreviewHeight}
 			originalPreviewFailed={magick.originalPreviewFailed}
 			isLoading={magick.isLoading}
 			wasmLoaded={magick.wasmLoaded}

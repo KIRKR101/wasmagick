@@ -54,8 +54,13 @@ function verifyRawBundle(source: string): void {
 	const libDir = join(source, 'lib');
 	const coderDir = join(libDir, 'ImageMagick', 'modules-Q16HDRI', 'coders');
 	const hasLibraw =
-		existsSync(libDir) && readdirSync(libDir).some((entry) => /^libraw(?:_r)?[.]/i.test(entry));
-	const hasRawCoders = ['dng.so', 'raw.so'].every((name) => existsSync(join(coderDir, name)));
+		existsSync(libDir) &&
+		readdirSync(libDir).some((entry) =>
+			/^libraw(?:_r)?(?:[-.][\w-]+)*\.(?:dll|dylib|so(?:\.\d+)*)$/i.test(entry)
+		);
+	const hasRawCoders = ['dng', 'raw'].every((name) =>
+		['.so', '.dll'].some((suffix) => existsSync(join(coderDir, `${name}${suffix}`)))
+	);
 	const delegatesPath = join(source, 'etc', 'ImageMagick-7', 'delegates.xml');
 	const delegates = existsSync(delegatesPath) ? readFileSync(delegatesPath, 'utf8') : '';
 

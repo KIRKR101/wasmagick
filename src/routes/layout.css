@@ -155,9 +155,18 @@
 	}
 	body {
 		@apply bg-background text-foreground;
+		height: 100%;
+		width: 100%;
+		margin: 0;
+		overflow: hidden !important;
+		overscroll-behavior: none;
 	}
 	html {
 		@apply font-sans;
+		height: 100%;
+		width: 100%;
+		overflow: hidden !important;
+		overscroll-behavior: none;
 	}
 }
 
@@ -222,8 +231,8 @@
 /* Desktop title bar (Electron, custom window chrome) */
 .titlebar {
 	-webkit-app-region: drag;
-	position: sticky;
-	top: 0;
+	position: fixed;
+	inset: 0 0 auto;
 	z-index: 40;
 	display: flex;
 	height: var(--titlebar-h);
@@ -231,6 +240,7 @@
 	padding: 0 12px;
 	background: #f7f7f4;
 	color: var(--muted-foreground);
+	transition: background-color 0.15s, color 0.15s;
 	font-family: var(--font-mono);
 	font-size: 11px;
 	letter-spacing: 0.12em;
@@ -240,7 +250,7 @@
 }
 
 .dark .titlebar {
-	background: #18181b;
+	background: #0a0a0a;
 }
 
 /* Window controls (Linux only; Windows uses the native title bar overlay) */
@@ -263,6 +273,7 @@
 	border: none;
 	background: transparent;
 	color: var(--muted-foreground);
+	transition: background-color 0.15s, color 0.15s;
 	cursor: default;
 }
 
@@ -284,11 +295,16 @@
 
 /* App frame: pages fill exactly the window minus the title bar */
 .app-frame {
-	height: 100dvh;
+	position: fixed;
+	inset: 0;
+	height: auto;
+	min-height: 0;
+	overflow: hidden;
 }
 
 .app-frame.has-titlebar {
-	height: calc(100dvh - var(--titlebar-h));
+	top: var(--titlebar-h);
+	min-height: 0;
 	border-top: 1px solid color-mix(in oklch, var(--foreground) 30%, transparent);
 }
 

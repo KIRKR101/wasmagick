@@ -18,6 +18,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Build LibRaw-enabled ImageMagick
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libraw-dev libjpeg-dev libpng-dev libtiff-dev libwebp-dev libxml2-dev libfontconfig1-dev libfreetype6-dev libltdl-dev liblcms2-dev libopenjp2-7-dev libheif-dev libzstd-dev liblzma-dev
+          rm -rf /tmp/ImageMagick
+          curl -fsSL "https://github.com/ImageMagick/ImageMagick/archive/refs/tags/7.1.2-30.tar.gz" -o /tmp/imagemagick.tar.gz
+          tar -xzf /tmp/imagemagick.tar.gz -C /tmp
+          cd /tmp/ImageMagick-7.1.2-30
+          ./configure --prefix="$GITHUB_WORKSPACE/tooling/imagemagick/linux-x64" --with-quantum-depth=16 --with-modules --with-raw=yes --without-perl --without-x
+          make -j"$(nproc)"
+          make install
+          cp -L /usr/lib/x86_64-linux-gnu/libraw*.so* "$GITHUB_WORKSPACE/tooling/imagemagick/linux-x64/lib/"
+          if [ -d "$GITHUB_WORKSPACE/tooling/imagemagick/linux-x64/lib/ImageMagick-7.1.2" ]; then
+            mv "$GITHUB_WORKSPACE/tooling/imagemagick/linux-x64/lib/ImageMagick-7.1.2" "$GITHUB_WORKSPACE/tooling/imagemagick/linux-x64/lib/ImageMagick"
+          fi
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -49,6 +64,24 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            mingw-w64-ucrt-x86_64-imagemagick
+            p7zip
+      - name: Stage LibRaw-enabled ImageMagick
+        shell: msys2 {0}
+        run: |
+          rm -rf "$GITHUB_WORKSPACE/tooling/imagemagick/win-x64"
+          mkdir -p "$GITHUB_WORKSPACE/tooling/imagemagick/win-x64"
+          cp -a /ucrt64/bin/. "$GITHUB_WORKSPACE/tooling/imagemagick/win-x64/"
+          cp -a /ucrt64/lib "$GITHUB_WORKSPACE/tooling/imagemagick/win-x64/"
+          cp -a /ucrt64/etc "$GITHUB_WORKSPACE/tooling/imagemagick/win-x64/"
+          cp -a /ucrt64/bin/libraw*.dll "$GITHUB_WORKSPACE/tooling/imagemagick/win-x64/lib/"
+          module_dir=$(find "$GITHUB_WORKSPACE/tooling/imagemagick/win-x64/lib" -maxdepth 1 -type d -name 'ImageMagick-*' | head -n 1)
+          mv "$module_dir" "$GITHUB_WORKSPACE/tooling/imagemagick/win-x64/lib/ImageMagick"
       - uses: actions/setup-node@v4
         with:
           node-version: 22

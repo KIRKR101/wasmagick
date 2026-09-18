@@ -87,7 +87,9 @@ export function hasRawDelegate(configureOutput: string): boolean {
  * `--with-libraw=yes`, used by some builds).
  */
 export function hasRawConfigureFlag(configureOutput: string): boolean {
-	return /--with-(lib)?raw=yes/i.test(String(configureOutput ?? ''));
+	const output = String(configureOutput ?? '');
+	if (/--with-(lib)?raw=no/i.test(output)) return false;
+	return /--with-(lib)?raw=yes/i.test(output) || hasRawDelegate(output);
 }
 
 /**

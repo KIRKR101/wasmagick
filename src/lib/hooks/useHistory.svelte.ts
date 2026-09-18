@@ -348,12 +348,18 @@ export class HistoryState {
 		// Give magick its own disposable URL (history keeps its own).
 		if (magick.processedImageUrl) URL.revokeObjectURL(magick.processedImageUrl);
 		if (entry.isOriginal) {
+			magick.processedPreviewData = null;
+			magick.processedPreviewWidth = 0;
+			magick.processedPreviewHeight = 0;
 			magick.processedImageUrl = null;
 			magick.processedImageFormat = null;
 			magick.processedImageName = null;
 			magick.processedWidth = 0;
 			magick.processedHeight = 0;
 		} else {
+			magick.processedPreviewData = null;
+			magick.processedPreviewWidth = 0;
+			magick.processedPreviewHeight = 0;
 			magick.processedImageUrl = await cloneBlobUrl(entry.blobUrl);
 			magick.processedImageFormat = entry.format;
 			const base = magick.originalName.replace(/\.[^.]+$/, '');

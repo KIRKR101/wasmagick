@@ -64,6 +64,8 @@ const RAW_EXTENSIONS = new Set([
 	'x3f'
 ]);
 
+let cachedSource = null;
+
 function platformSlug() {
 	const plat =
 		process.platform === 'win32' ? 'win' : process.platform === 'darwin' ? 'mac' : 'linux';
@@ -133,19 +135,40 @@ function isNativeAvailable() {
 	return resolveMagickBin() !== null;
 }
 
+function getNativeVersion() {
+	const magickBin = resolveMagickBin();
+	if (!magickBin) return null;
+	const result = spawnSync(magickBin, ['-version'], {
+		cwd: path.dirname(magickBin),
+		env: spawnEnv(magickBin),
+		encoding: 'utf8',
+		timeout: 5000
+	});
+	if (result.error || result.status !== 0) return null;
+	return String(result.stdout || '').match(/^Version:\s*ImageMagick\s+([^\s]+)/m)?.[1] ?? null;
+}
+
 /** Parse the writable rows from `magick -list format`. */
 function parseNativeFormatList(output) {
 	const formats = [];
 	for (const line of String(output || '').split('\n')) {
 		const parts = line.trim().split(/\s+/);
-		if (parts.length < 4) continue;
+		if (parts.length < 3) continue;
 		const format = parts[0].replace(/[*!+]+$/, '').toUpperCase();
-		const moduleFormat = parts[1].replace(/[*!+]+$/, '').toUpperCase();
-		const permissions = parts[2];
+		const permissionIndex = parts.findIndex(
+			(part, index) => index > 0 && /^[rw-][rw-][+!-]$/.test(part)
+		);
+		const moduleFormat = (permissionIndex === 2 ? parts[1] : format)
+			.replace(/[*!+]+$/, '')
+			.toUpperCase();
+		const permissions = permissionIndex >= 0 ? parts[permissionIndex] : '';
+		const description = parts.slice(permissionIndex + 1).join(' ');
 		if (
 			!format ||
 			!/^[A-Z0-9][A-Z0-9_-]*$/.test(format) ||
-			!/^[rw-][rw-][+!-]$/.test(permissions)
+			permissionIndex < 1 ||
+			permissionIndex > 2 ||
+			!description
 		) {
 			continue;
 		}
@@ -154,7 +177,7 @@ function parseNativeFormatList(output) {
 			format,
 			moduleFormat,
 			supportsWriting: true,
-			description: parts.slice(3).join(' ')
+			description
 		});
 	}
 	return formats;
@@ -204,26 +227,35 @@ function isNativeRawAvailable() {
 	const configure = run(['-list', 'configure']);
 	const formats = run(['-list', 'format']);
 	if (!configure || !formats) return false;
-	if (!/--with-(?:lib)?raw=yes/i.test(configure)) return false;
-	if (!/(^|\s)raw(\s|$)/im.test(configure)) return false;
+	if (/--with-(?:lib)?raw=no/i.test(configure)) return false;
 	const binDir = path.dirname(magickBin);
 	const root = path.basename(binDir).toLowerCase() === 'bin' ? path.dirname(binDir) : binDir;
 	const libDir = path.join(root, 'lib');
 	const coderDir = path.join(libDir, 'ImageMagick', 'modules-Q16HDRI', 'coders');
 	let hasLibraw;
 	try {
-		hasLibraw = fs.readdirSync(libDir).some((name) => /^libraw(?:_r)?[.]/i.test(name));
+		hasLibraw = fs
+			.readdirSync(libDir)
+			.some((name) => /^libraw(?:_r)?(?:[-.][\w-]+)*\.(?:dll|dylib|so(?:\.\d+)*)$/i.test(name));
 	} catch {
 		hasLibraw = false;
 	}
+	const rawModuleSuffix = process.platform === 'win32' ? '.dll' : '.so';
 	if (
 		!hasLibraw ||
-		!['dng.so', 'raw.so'].every((name) => fs.existsSync(path.join(coderDir, name)))
+		!['dng', 'raw'].every((name) => fs.existsSync(path.join(coderDir, `${name}${rawModuleSuffix}`)))
+	) {
+		return false;
+	}
+	if (
+		!/--with-(?:lib)?raw=yes/i.test(configure) &&
+		!/(^|\s)raw(\s|$)/im.test(configure) &&
+		!/\(\d+\.\d+.*\)/.test(formats)
 	) {
 		return false;
 	}
 	return ['CR2', 'CR3', 'NEF', 'ARW', 'DNG', 'RW2', 'ORF', 'RAF'].every((format) =>
-		new RegExp(`^\\s*${format}\\s+.*\\br--(?:\\s|$)`, 'im').test(formats)
+		new RegExp(`^\\s*${format}[*!+]?\\s+.*\\br--(?:\\s|$)`, 'im').test(formats)
 	);
 }
 
@@ -470,8 +502,14 @@ async function identifyOrientation(magickBin, filePath) {
  * }
  */
 async function processNative(payload) {
-	if (!payload || !(payload.inputData instanceof Uint8Array) || !Array.isArray(payload.args)) {
+	if (!payload || !Array.isArray(payload.args)) {
 		throw new Error('Invalid native process request');
+	}
+	const canUseCache = Number.isFinite(payload.sourceRevision);
+	const hasCachedSource =
+		canUseCache && cachedSource && cachedSource.revision === payload.sourceRevision;
+	if (!(payload.inputData instanceof Uint8Array) && !hasCachedSource) {
+		throw new Error('Native source image is unavailable');
 	}
 	for (const arg of payload.args) {
 		if (typeof arg !== 'string' || arg.length > 4096) {
@@ -493,7 +531,12 @@ async function processNative(payload) {
 
 	const tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'wasmagick-'));
 	const inputPath = path.join(tmpDir, `input.${inputExtensionFor(payload.inputName)}`);
+	await fs.promises.writeFile(inputPath, hasCachedSource ? cachedSource.data : payload.inputData);
+	if (canUseCache && payload.inputData instanceof Uint8Array) {
+		cachedSource = { revision: payload.sourceRevision, data: payload.inputData };
+	}
 	const outputPath = path.join(tmpDir, `output.${sanitizeExtension(payload.outputExtension)}`);
+	const previewPath = path.join(tmpDir, 'preview.rgba');
 	const clutPath = path.join(tmpDir, 'clut.png');
 	const fontPath = path.join(
 		tmpDir,
@@ -502,7 +545,6 @@ async function processNative(payload) {
 	);
 
 	try {
-		await fs.promises.writeFile(inputPath, payload.inputData);
 		if (payload.clutData instanceof Uint8Array) {
 			await fs.promises.writeFile(clutPath, payload.clutData);
 		}
@@ -534,6 +576,17 @@ async function processNative(payload) {
 			...substituted,
 			...(hasOutput ? [] : [outputSpecifier])
 		];
+		const outputIndex = finalArgs.lastIndexOf(outputSpecifier);
+		finalArgs.splice(
+			outputIndex,
+			0,
+			'-depth',
+			'8',
+			'-write',
+			`rgba:${previewPath}`,
+			'-depth',
+			'16'
+		);
 
 		// Some coders leave the source EXIF orientation unavailable to
 		// ImageMagick even though the renderer's metadata parser found it.
@@ -560,8 +613,19 @@ async function processNative(payload) {
 
 		const data = new Uint8Array(await fs.promises.readFile(outputPath));
 		const { width, height } = await identifyDimensions(magickBin, outputPath);
+		const rawPreviewData = new Uint8Array(await fs.promises.readFile(previewPath));
+		const firstFrameBytes = width * height * 4;
+		if (rawPreviewData.length < firstFrameBytes) {
+			throw new Error('Native preview data is shorter than the reported image dimensions');
+		}
+		// The renderer currently displays one bitmap. Keep the first frame when
+		// ImageMagick writes a multi-frame image to the raw RGBA stream.
+		const previewData = rawPreviewData.slice(0, firstFrameBytes);
 		return {
 			data,
+			previewData,
+			previewWidth: width,
+			previewHeight: height,
 			width,
 			height,
 			format: String(payload.outputFormat || 'png')
@@ -670,6 +734,7 @@ async function getNativeFontMetrics(payload) {
 
 function registerMagickNative(ipcMain) {
 	ipcMain.handle('magick:native-available', () => isNativeAvailable());
+	ipcMain.handle('magick:native-version', () => getNativeVersion());
 	ipcMain.handle('magick:native-raw-available', () => isNativeRawAvailable());
 	ipcMain.handle('magick:native-formats', () => listNativeFormats());
 	ipcMain.handle('magick:process-native', async (_event, payload) => processNative(payload));
@@ -681,6 +746,7 @@ module.exports = {
 	resolveMagickBin,
 	resolveWebpTool,
 	isNativeAvailable,
+	getNativeVersion,
 	isNativeRawAvailable,
 	parseNativeFormatList,
 	listNativeFormats,
