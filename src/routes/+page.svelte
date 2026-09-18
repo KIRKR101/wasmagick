@@ -5,9 +5,15 @@
 	import { applyTheme, resolveInitialTheme } from '$lib/theme';
 
 	let isDarkMode = $state(false);
+	let isDragging = $state(false);
+
+	function hasFiles(e: DragEvent): boolean {
+		return e.dataTransfer?.types.includes('Files') ?? false;
+	}
 
 	function handleDrop(e: DragEvent) {
 		e.preventDefault();
+		isDragging = false;
 		const files = e.dataTransfer?.files;
 		if (files && files.length > 0) {
 			stashPendingFile(files[0]);
@@ -23,9 +29,27 @@
 <svelte:window
 	ondragover={(e) => {
 		e.preventDefault();
+		if (hasFiles(e)) isDragging = true;
 	}}
+		ondragleave={(e) => {
+		if (hasFiles(e) && !e.relatedTarget) isDragging = false;
+		}}
 	ondrop={handleDrop}
 />
+
+{#if isDragging}
+	<div
+		class="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-background/70 p-6 backdrop-blur-sm"
+		role="status"
+		aria-live="polite"
+	>
+		<div
+			class="flex h-full w-full items-center justify-center border-2 border-dashed border-foreground/50 font-mono text-sm tracking-wider text-foreground uppercase"
+		>
+			Drop image to begin
+		</div>
+	</div>
+{/if}
 
 <div
 	class="flex min-h-full flex-col items-center justify-center bg-[#f7f7f4] px-4 font-mono dark:bg-background"
