@@ -289,34 +289,48 @@ function snapSettings(settings: MagickSettings): MagickSettings {
 	return JSON.parse(JSON.stringify(settings));
 }
 
-/**
- * Probe whether the browser's native image pipeline can render the given
- * bytes. This is a per-file decode check rather than a format heuristic:
- * whatever the browser's decoder rejects (e.g. DNG) is exactly what cannot
- * be previewed, independent of extension or MIME type.
- */
-function browserImageInfo(
-	bytes: Uint8Array
-): Promise<{ rendered: boolean; width: number; height: number }> {
-	return new Promise((resolve) => {
-		let url: string;
-		try {
-			url = URL.createObjectURL(new Blob([bytes as BlobPart]));
-		} catch {
-			resolve({ rendered: false, width: 0, height: 0 });
-			return;
-		}
-		const img = new Image();
-		img.onload = () => {
-			URL.revokeObjectURL(url);
-			resolve({ rendered: true, width: img.width, height: img.height });
-		};
-		img.onerror = () => {
-			URL.revokeObjectURL(url);
-			resolve({ rendered: false, width: 0, height: 0 });
-		};
-		img.src = url;
-	});
+const PREVIEW_MAX_EDGE = 2048;
+const WEB_FULL_PREVIEW_MAX_EDGE = 4096;
+
+async function browserPreview(
+	bytes: Uint8Array,
+	dimensions: { width: number; height: number } | null,
+	maxEdge = PREVIEW_MAX_EDGE
+): Promise<{ data: Uint8Array; width: number; height: number } | null> {
+	let bitmap: ImageBitmap;
+	try {
+		const blob = new Blob([bytes as BlobPart]);
+		const target = dimensions
+			? Math.min(1, maxEdge / Math.max(dimensions.width, dimensions.height))
+			: 1;
+		bitmap = await createImageBitmap(
+			blob,
+			target < 1
+				? {
+						resizeWidth: Math.max(1, Math.round(dimensions!.width * target)),
+						resizeHeight: Math.max(1, Math.round(dimensions!.height * target)),
+						resizeQuality: 'high'
+					}
+				: undefined
+		);
+	} catch {
+		return null;
+	}
+
+	try {
+		const target = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
+		const width = Math.max(1, Math.round(bitmap.width * target));
+		const height = Math.max(1, Math.round(bitmap.height * target));
+		const canvas = document.createElement('canvas');
+		canvas.width = width;
+		canvas.height = height;
+		const context = canvas.getContext('2d');
+		if (!context) return null;
+		context.drawImage(bitmap, 0, 0, width, height);
+		return { data: new Uint8Array(context.getImageData(0, 0, width, height).data), width, height };
+	} finally {
+		bitmap.close();
+	}
 }
 
 function readUint16BE(bytes: Uint8Array, offset: number): number {
@@ -441,6 +455,11 @@ export class MagickState {
 	originalName = $state('image');
 	originalImageSize = $state(0);
 	originalImageUrl = $state<string | null>(null);
+	originalPreviewData = $state<Uint8Array | null>(null);
+	originalPreviewWidth = $state(0);
+	originalPreviewHeight = $state(0);
+	originalPreviewFull = $state(false);
+	originalPreviewLoading = $state(false);
 	originalImageFormat = $state<string | null>(null);
 	processedImageUrl = $state<string | null>(null);
 	processedPreviewData = $state<Uint8Array | null>(null);
@@ -471,6 +490,7 @@ export class MagickState {
 	 * wasm; only the in-browser preview is unavailable until then.
 	 */
 	originalPreviewFailed = $state(false);
+	private _wasmInitPromise: Promise<void> | null = null;
 	settings = $state<MagickSettings>({
 		...DEFAULT_SETTINGS,
 		levelBlackpoint: {
@@ -702,6 +722,18 @@ export class MagickState {
 	}
 
 	async initWasm(debugMode = false): Promise<void> {
+		if (this.wasmLoaded) return;
+		if (this._wasmInitPromise) return this._wasmInitPromise;
+		const promise = this.initializeWasm(debugMode);
+		this._wasmInitPromise = promise;
+		try {
+			await promise;
+		} finally {
+			if (this._wasmInitPromise === promise) this._wasmInitPromise = null;
+		}
+	}
+
+	private async initializeWasm(debugMode = false): Promise<void> {
 		try {
 			this.currentProcessingStep = 'Downloading WASM binary...';
 			const response = await fetch('/magick.wasm');
@@ -718,6 +750,7 @@ export class MagickState {
 			this.ensureSelectedExportFormat();
 			this.wasmLoaded = true;
 			this.currentProcessingStep = null;
+			await this.renderOriginalPreview();
 
 			if (debugMode) {
 				console.log('ImageMagick WASM loaded, Version:', Magick.imageMagickVersion);
@@ -1031,6 +1064,8 @@ export class MagickState {
 			const buffer = await file.arrayBuffer();
 			this.sourceBytes = new Uint8Array(buffer);
 			this._sourceRevision++;
+			const source = this.sourceBytes;
+			const sourceRevision = this._sourceRevision;
 			this._nativeSourceRevision = null;
 			this.originalImageSize = this.sourceBytes.length;
 
@@ -1038,18 +1073,18 @@ export class MagickState {
 			if (fastDims) {
 				this.originalWidth = fastDims.width;
 				this.originalHeight = fastDims.height;
-				this.originalPreviewFailed = !(await browserImageInfo(this.sourceBytes)).rendered;
-			} else {
-				const info = await browserImageInfo(this.sourceBytes);
-				this.originalPreviewFailed = !info.rendered;
-				this.originalWidth = info.width;
-				this.originalHeight = info.height;
 			}
 
 			this.revokeImageUrls();
 			this.originalImageUrl = URL.createObjectURL(
 				new Blob([this.sourceBytes as unknown as BlobPart])
 			);
+			this.originalPreviewData = null;
+			this.originalPreviewWidth = 0;
+			this.originalPreviewHeight = 0;
+			this.originalPreviewFull = false;
+			this.originalPreviewLoading = false;
+			this.originalPreviewFailed = false;
 			this.clearPreviewSnapshot();
 
 			this.processedImageFormat = null;
@@ -1067,6 +1102,7 @@ export class MagickState {
 
 			this.statsMessage = 'Ready';
 			this.hasUnsavedEdits = false;
+			void this.prepareOriginalPreview(source, sourceRevision, fastDims);
 			return true;
 		} catch (error) {
 			const message = error instanceof Error ? error.message : 'Failed to read file';
@@ -1084,6 +1120,11 @@ export class MagickState {
 		this.originalName = 'image';
 		this.originalImageSize = 0;
 		this.originalImageUrl = null;
+		this.originalPreviewData = null;
+		this.originalPreviewWidth = 0;
+		this.originalPreviewHeight = 0;
+		this.originalPreviewFull = false;
+		this.originalPreviewLoading = false;
 		this.originalImageFormat = null;
 		this.originalWidth = 0;
 		this.originalHeight = 0;
@@ -1104,6 +1145,115 @@ export class MagickState {
 		this.exifError = null;
 		this.exifChecked = false;
 		this.originalPreviewFailed = false;
+	}
+
+	private async prepareOriginalPreview(
+		source: Uint8Array,
+		sourceRevision: number,
+		dimensions: { width: number; height: number } | null
+	): Promise<void> {
+		this.originalPreviewLoading = true;
+		try {
+			const preview = await browserPreview(source, dimensions);
+			if (this.sourceBytes !== source || this._sourceRevision !== sourceRevision) return;
+			if (preview) {
+				this.originalPreviewData = preview.data;
+				this.originalPreviewWidth = preview.width;
+				this.originalPreviewHeight = preview.height;
+				this.originalPreviewFailed = false;
+				if (!dimensions) {
+					this.originalWidth = preview.width;
+					this.originalHeight = preview.height;
+				}
+				return;
+			}
+
+			this.originalPreviewFailed = true;
+			if (this.nativeAvailable && (await this.renderNativeOriginalPreview(source, false))) return;
+			if (this.wasmLoaded) await this.renderOriginalPreview();
+			else await this.initWasm();
+		} finally {
+			if (this.sourceBytes === source && this._sourceRevision === sourceRevision) {
+				this.originalPreviewLoading = false;
+			}
+		}
+	}
+
+	async renderOriginalPreview(fullResolution = false): Promise<void> {
+		const source = this.sourceBytes;
+		if (!source || (this.originalPreviewData && (!fullResolution || this.originalPreviewFull))) return;
+		this.originalPreviewLoading = true;
+		try {
+		if (fullResolution && this.nativeAvailable && (await this.renderNativeOriginalPreview(source, true))) return;
+		if (fullResolution) {
+			const preview = await browserPreview(
+				source,
+				this.originalWidth && this.originalHeight
+					? { width: this.originalWidth, height: this.originalHeight }
+					: null,
+				WEB_FULL_PREVIEW_MAX_EDGE
+			);
+			if (this.sourceBytes !== source) return;
+			if (preview) {
+				this.originalPreviewData = preview.data;
+				this.originalPreviewWidth = preview.width;
+				this.originalPreviewHeight = preview.height;
+				this.originalPreviewFailed = false;
+				this.originalPreviewFull = true;
+				return;
+			}
+		}
+		try {
+			readImageWithFilename(source, this.originalName, (image) => {
+				if (this.settings.autoOrient) image.autoOrient();
+				const maxEdge = fullResolution ? WEB_FULL_PREVIEW_MAX_EDGE : PREVIEW_MAX_EDGE;
+				{
+					const scale = Math.min(1, maxEdge / Math.max(image.width, image.height));
+					if (scale < 1) image.resize(Math.max(1, Math.round(image.width * scale)), Math.max(1, Math.round(image.height * scale)));
+				}
+				const width = image.width;
+				const height = image.height;
+				const data = image.getPixels(
+					(pixels) => pixels.toByteArray(0, 0, width, height, 'RGBA') ?? new Uint8Array()
+				);
+				if (this.sourceBytes === source && data.length === width * height * 4) {
+					this.originalPreviewData = data;
+					this.originalPreviewWidth = width;
+					this.originalPreviewHeight = height;
+					this.originalPreviewFailed = false;
+					this.originalPreviewFull = fullResolution;
+				}
+			});
+		} catch (error) {
+			if (await this.renderNativeOriginalPreview(source, fullResolution)) return;
+			console.warn('Could not render imported image preview:', error);
+		}
+		} finally {
+			if (this.sourceBytes === source) this.originalPreviewLoading = false;
+		}
+	}
+
+	private async renderNativeOriginalPreview(source: Uint8Array, fullResolution: boolean): Promise<boolean> {
+		if (!window.wasmagick?.processNativeImage) return false;
+		try {
+			const result = await window.wasmagick.processNativeImage({
+				inputName: this.originalName,
+				inputData: source,
+				sourceRevision: this._sourceRevision,
+				args: fullResolution ? ['-auto-orient'] : ['-auto-orient', '-resize', '2048x2048>'],
+				outputExtension: 'png',
+				outputFormat: 'PNG'
+			});
+			if (this.sourceBytes !== source || !result.previewData?.length) return false;
+			this.originalPreviewData = result.previewData;
+			this.originalPreviewWidth = result.previewWidth ?? result.width;
+			this.originalPreviewHeight = result.previewHeight ?? result.height;
+			this.originalPreviewFailed = false;
+			this.originalPreviewFull = fullResolution;
+			return true;
+		} catch {
+			return false;
+		}
 	}
 
 	/**

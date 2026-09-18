@@ -15,6 +15,11 @@
 
 	let {
 		originalImageUrl = null,
+		originalPreviewData = null,
+		originalPreviewWidth = 0,
+		originalPreviewHeight = 0,
+		originalPreviewLoading = false,
+		originalPreviewFull = false,
 		processedImageUrl = null,
 		processedPreviewData = null,
 		processedPreviewWidth = 0,
@@ -37,9 +42,15 @@
 		onCropConfirm = () => {},
 		onCropCancel = () => {},
 		onCropChange = () => {},
-		onCropAspectRatioChange = () => {}
+		onCropAspectRatioChange = () => {},
+		onRequestOriginalFullPreview = () => {}
 	}: {
 		originalImageUrl?: string | null;
+		originalPreviewData?: Uint8Array | null;
+		originalPreviewWidth?: number;
+		originalPreviewHeight?: number;
+		originalPreviewLoading?: boolean;
+		originalPreviewFull?: boolean;
 		processedImageUrl?: string | null;
 		processedPreviewData?: Uint8Array | null;
 		processedPreviewWidth?: number;
@@ -75,6 +86,7 @@
 		onCropCancel?: () => void;
 		onCropChange?: (crop: CropRect | null) => void;
 		onCropAspectRatioChange?: (preset: string) => void;
+		onRequestOriginalFullPreview?: () => void;
 	} = $props();
 
 	let showPlaceholder = $derived(!originalImageUrl);
@@ -106,22 +118,86 @@
 	let displayedWidth = $state(0);
 	let displayedHeight = $state(0);
 	let annotationFontReady = $state(0);
+	let displayedPreviewData = $derived(
+		compareActive
+			? originalPreviewData?.length
+				? originalPreviewData
+				: null
+			: processedPreviewData?.length
+				? processedPreviewData
+				: originalPreviewData
+	);
+	let displayedPreviewWidth = $derived(
+		compareActive
+			? originalPreviewWidth
+			: processedPreviewData?.length
+				? processedPreviewWidth
+				: originalPreviewWidth
+	);
+	let displayedPreviewHeight = $derived(
+		compareActive
+			? originalPreviewHeight
+			: processedPreviewData?.length
+				? processedPreviewHeight
+				: originalPreviewHeight
+	);
+	let previewUnavailable = $derived(!displayedPreviewData);
+	let lastFittedPreview: Uint8Array | null = null;
+	let lastSourceUrl: string | null = null;
+	let fullPreviewTimer: ReturnType<typeof setTimeout> | null = null;
+
+	$effect(() => {
+		if (originalImageUrl === lastSourceUrl) return;
+		lastSourceUrl = originalImageUrl;
+		currentZoom = 100;
+		imageX = 0;
+		imageY = 0;
+		lastFittedPreview = null;
+		if (fullPreviewTimer) {
+			clearTimeout(fullPreviewTimer);
+			fullPreviewTimer = null;
+		}
+	});
+
+	$effect(() => {
+		const preview = displayedPreviewData;
+		if (!preview || preview === lastFittedPreview) return;
+		lastFittedPreview = preview;
+		if (
+			(originalPreviewFull && preview === originalPreviewData) ||
+			(currentZoom === 100 && imageX === 0 && imageY === 0)
+		) {
+			let attempts = 0;
+			const fitWhenReady = () => {
+				if (preview !== displayedPreviewData) return;
+				if (viewportRef?.clientWidth && viewportRef.clientHeight) {
+					fitImageToScreen();
+					return;
+				}
+				if (attempts++ < 10) requestAnimationFrame(fitWhenReady);
+			};
+			requestAnimationFrame(fitWhenReady);
+		}
+	});
 
 	$effect(() => {
 		if (
 			!previewCanvasRef ||
-			!processedPreviewData ||
-			!processedPreviewWidth ||
-			!processedPreviewHeight
+			!displayedPreviewData
 		)
 			return;
+		const usingProcessedPreview = !compareActive && !!processedPreviewData?.length;
+		const data = displayedPreviewData;
+		const width = usingProcessedPreview ? processedPreviewWidth : originalPreviewWidth;
+		const height = usingProcessedPreview ? processedPreviewHeight : originalPreviewHeight;
+		if (!data || !width || !height) return;
 		const canvas = previewCanvasRef;
-		canvas.width = processedPreviewWidth;
-		canvas.height = processedPreviewHeight;
+		canvas.width = width;
+		canvas.height = height;
 		const context = canvas.getContext('2d');
 		if (context) {
 			context.putImageData(
-				new ImageData(new Uint8ClampedArray(processedPreviewData), canvas.width, canvas.height),
+				new ImageData(new Uint8ClampedArray(data), canvas.width, canvas.height),
 				0,
 				0
 			);
@@ -262,7 +338,7 @@
 		top: 50%;
 		left: 50%;
 		transform: translate(calc(-50% + ${imageX}px), calc(-50% + ${imageY}px)) scale(${currentZoom / 100});
-		display: ${showPlaceholder ? 'none' : 'block'};
+		display: ${showPlaceholder || previewUnavailable ? 'none' : 'block'};
 		cursor: ${
 			annotationPlacementActive && annotationMenuActive
 				? 'crosshair'
@@ -279,11 +355,11 @@
 	// Warn exactly while the original (which the browser cannot render) is the
 	// image on screen — before processing, and in compare/split views.
 	let imageFailed = $derived(
-		!!originalPreviewFailed && displayedImage === originalImageUrl && !!originalImageUrl
+		!!originalPreviewFailed && !originalPreviewData && displayedImage === originalImageUrl && !!originalImageUrl
 	);
 
 	let canSplit = $derived(
-		!!processedImageUrl && !!originalImageUrl && processedImageUrl !== originalImageUrl
+		!!processedImageUrl && !!originalImageUrl && !originalPreviewFailed && processedImageUrl !== originalImageUrl
 	);
 
 	// Report state (zoom) to parent for the status bar.
@@ -292,10 +368,23 @@
 	});
 
 	function zoomAt(clientX: number, clientY: number, targetZoom: number) {
+		if (previewUnavailable) return;
+		if (fullPreviewTimer) {
+			clearTimeout(fullPreviewTimer);
+			fullPreviewTimer = null;
+		}
 		const oldZoom = currentZoom;
 		const newZoom = Math.max(10, Math.min(5000, targetZoom));
 		if (newZoom === oldZoom) return;
 		if (!viewportRef) return;
+		if (newZoom > 115 && displayedImage === originalImageUrl && !originalPreviewLoading) {
+			fullPreviewTimer = setTimeout(() => {
+				fullPreviewTimer = null;
+				if (currentZoom > 115 && displayedImage === originalImageUrl && !originalPreviewLoading) {
+					onRequestOriginalFullPreview();
+				}
+			}, 2000);
+		}
 		const rect = viewportRef.getBoundingClientRect();
 		const cx = rect.left + rect.width / 2;
 		const cy = rect.top + rect.height / 2;
@@ -308,25 +397,27 @@
 	}
 
 	function getFitZoom(): number {
-		if (!previewImageRef || !viewportRef) return 100;
-		const img = previewImageRef;
+		if (!viewportRef) return 100;
 		const container = viewportRef;
-		if (!img.naturalWidth || !img.naturalHeight) return 100;
+		const iw = displayedPreviewWidth || previewImageRef?.naturalWidth || 0;
+		const ih = displayedPreviewHeight || previewImageRef?.naturalHeight || 0;
+		if (!iw || !ih) return 100;
 		const padding = 12;
 		const cw = container.clientWidth - padding;
 		const ch = container.clientHeight - padding;
-		const iw = img.naturalWidth;
-		const ih = img.naturalHeight;
 		const scale = Math.min(cw / iw, ch / ih);
 		return Math.max(10, Math.min(5000, scale * 100));
 	}
 
 	export function fitImageToScreen() {
+		if (previewUnavailable) return;
 		if (isComparing) return;
-		if (!previewImageRef || !viewportRef) return;
+		if (!viewportRef) return;
 		imageX = 0;
 		imageY = 0;
-		if (!previewImageRef.naturalWidth || !previewImageRef.naturalHeight) return;
+		displayedWidth = displayedPreviewWidth || previewImageRef?.naturalWidth || 0;
+		displayedHeight = displayedPreviewHeight || previewImageRef?.naturalHeight || 0;
+		if (!displayedWidth || !displayedHeight) return;
 		currentZoom = getFitZoom();
 	}
 
@@ -422,17 +513,17 @@
 	});
 
 	function handleResize() {
-		if (!showPlaceholder) fitImageToScreen();
+		if (!showPlaceholder && !previewUnavailable) fitImageToScreen();
 	}
 
 	function onWheel(e: WheelEvent) {
-		if (showPlaceholder || cropActive) return;
+		if (showPlaceholder || previewUnavailable || cropActive) return;
 		e.preventDefault();
 		zoomAt(e.clientX, e.clientY, currentZoom * Math.exp(-e.deltaY * 0.001));
 	}
 
 	function onPointerDown(e: PointerEvent) {
-		if (showPlaceholder || e.button !== 0 || cropActive) return;
+		if (showPlaceholder || previewUnavailable || e.button !== 0 || cropActive) return;
 		if (annotationPlacementActive && annotationMenuActive) {
 			e.preventDefault();
 			e.stopPropagation();
@@ -479,7 +570,7 @@
 	let lastTouchDistance = $state<number | null>(null);
 
 	function onTouchStart(e: TouchEvent) {
-		if (showPlaceholder || cropActive) return;
+		if (showPlaceholder || previewUnavailable || cropActive) return;
 		if (annotationPlacementActive && annotationMenuActive) {
 			e.preventDefault();
 			const touch = e.touches[0];
@@ -503,7 +594,7 @@
 	}
 
 	function onTouchMove(e: TouchEvent) {
-		if (showPlaceholder) return;
+		if (showPlaceholder || previewUnavailable) return;
 		if (touchMode === 'pan' && e.touches.length >= 1) {
 			e.preventDefault();
 			imageX = touchPanInitialImageX + (e.touches[0].clientX - touchPanStartX);
@@ -538,7 +629,7 @@
 	}
 
 	function onDblClick(e: MouseEvent) {
-		if (showPlaceholder || (annotationPlacementActive && annotationMenuActive)) return;
+		if (showPlaceholder || previewUnavailable || (annotationPlacementActive && annotationMenuActive)) return;
 		e.preventDefault();
 		if (Math.abs(currentZoom - getFitZoom()) < 1) {
 			zoomAt(e.clientX, e.clientY, 100);
@@ -553,7 +644,7 @@
 			onAnnotationPlacementChange(false);
 			return;
 		}
-		if (showPlaceholder || !processedImageUrl) return;
+		if (showPlaceholder || previewUnavailable || !processedImageUrl) return;
 		if (
 			e.target instanceof HTMLInputElement ||
 			e.target instanceof HTMLTextAreaElement ||
@@ -613,7 +704,7 @@
 		ontouchmove={onTouchMove}
 		ontouchend={onTouchEnd}
 		ontouchcancel={onTouchEnd}
-		class="viewport relative flex h-full min-h-0 w-full flex-grow items-center justify-center overflow-hidden select-none {!showPlaceholder
+		class="viewport relative flex h-full min-h-0 w-full flex-grow items-center justify-center overflow-hidden select-none {!showPlaceholder && !previewUnavailable
 			? 'touch-none'
 			: ''}"
 	>
@@ -632,6 +723,16 @@
 			</div>
 		{:else if showPlaceholder}
 			<FileDropzone {onBrowse} {onSelectSample} />
+		{:else if previewUnavailable}
+			<div class="text-center text-muted-foreground" role="status" aria-live="polite">
+				<div class="mx-auto mb-4 flex size-16 items-center justify-center">
+					<div class="relative size-12">
+						<div class="absolute inset-0 rounded-full border-2 border-muted/30"></div>
+						<div class="absolute inset-0 animate-spin rounded-full border-2 border-t-primary"></div>
+					</div>
+				</div>
+				<p class="font-mono text-xs">Preparing preview…</p>
+			</div>
 		{:else if splitMode && canSplit}
 			<SplitCompare
 				originalUrl={originalImageUrl!}
@@ -649,7 +750,7 @@
 				alt=""
 				aria-hidden="true"
 			/>
-		{:else if imageFailed}
+		{:else if imageFailed && !originalPreviewData}
 			<div
 				class="checkerboard flex items-center justify-center p-36 text-xl font-medium text-foreground lg:p-64"
 				style={imageStyle}
@@ -667,17 +768,25 @@
 				class="checkerboard max-h-none max-w-none origin-center object-contain {processedImageUrl ||
 				originalImageUrl
 					? 'opacity-100'
-					: 'opacity-0'} {processedPreviewData && !compareActive ? 'invisible' : ''} {isLoading
+					: 'opacity-0'} {displayedPreviewData ? 'invisible' : ''} {isLoading
 					? 'animate-opacity-pulse'
 					: ''}"
 			/>
-			{#if processedPreviewData && !compareActive}
+			{#if displayedPreviewData}
 				<canvas
 					bind:this={previewCanvasRef}
 					style={imageStyle}
 					class="checkerboard max-h-none max-w-none origin-center object-contain"
 					aria-label="Processed image preview"
 				></canvas>
+			{/if}
+			{#if originalPreviewLoading && displayedPreviewData}
+				<div class="pointer-events-none absolute inset-0 z-40 flex items-center justify-center">
+					<div class="flex items-center gap-2 border border-foreground/20 bg-background/85 px-3 py-2 font-mono text-xs text-muted-foreground backdrop-blur-sm" role="status">
+						<span class="size-3 animate-spin rounded-full border border-muted-foreground/30 border-t-primary"></span>
+						Loading higher-resolution preview…
+					</div>
+				</div>
 			{/if}
 			{#if annotationMenuActive && annotationPoint && (annotationPlacementActive || magickSettings?.annotateText?.trim()) && !compareActive}
 				<div
@@ -729,7 +838,7 @@
 			{/if}
 		{/if}
 
-		{#if imageFailed}
+		{#if imageFailed && !originalPreviewData}
 			<div
 				class="pointer-events-none absolute top-3 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1.5 border border-amber-600/40 bg-amber-50/90 px-2 py-1 font-mono text-[11px] text-amber-700 backdrop-blur-sm dark:bg-amber-950/80 dark:text-amber-400"
 				role="status"
@@ -781,14 +890,14 @@
 					</button>
 				</HoverTooltip>
 				<HoverTooltip
-					label={imageFailed ? 'Fit unavailable (preview failed)' : 'Fit to screen (Ctrl+0)'}
+					label={imageFailed && !originalPreviewData ? 'Fit unavailable (preview failed)' : 'Fit to screen (Ctrl+0)'}
 					side="top"
 				>
 					<button
 						onclick={resetView}
-						disabled={imageFailed}
+						 disabled={imageFailed && !originalPreviewData}
 						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40"
-						aria-label={imageFailed ? 'Fit unavailable (preview failed)' : 'Fit to screen (Ctrl+0)'}
+						aria-label={imageFailed && !originalPreviewData ? 'Fit unavailable (preview failed)' : 'Fit to screen (Ctrl+0)'}
 					>
 						<Maximize class="size-3.5" />
 					</button>

@@ -197,6 +197,11 @@
 			<CanvasViewport
 				bind:this={viewport}
 				originalImageUrl={magick.originalImageUrl}
+				originalPreviewData={magick.originalPreviewData}
+				originalPreviewWidth={magick.originalPreviewWidth}
+				originalPreviewHeight={magick.originalPreviewHeight}
+				originalPreviewLoading={magick.originalPreviewLoading}
+				originalPreviewFull={magick.originalPreviewFull}
 				processedImageUrl={magick.processedImageUrl}
 				processedPreviewData={magick.processedPreviewData}
 				processedPreviewWidth={magick.processedPreviewWidth}
@@ -213,6 +218,7 @@
 				cropAspectRatio={magick.cropAspectRatio}
 				initialCrop={magick.cropSelection ?? cropInitialRect}
 				onBrowse={openFilePicker}
+				onRequestOriginalFullPreview={() => magick.renderOriginalPreview(true)}
 				{onSelectSample}
 				{onAnnotationPlace}
 				{onAnnotationPlacementChange}
