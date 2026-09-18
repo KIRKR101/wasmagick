@@ -87,16 +87,13 @@ export class ReplaceGuardState {
 
 /**
  * Installs a global paste listener that routes pasted images through the
- * replace guard. Returns a cleanup function.
+ * replace guard for the component lifetime.
  */
 export function installClipboardPaste(
 	guard: ReplaceGuardState,
 	onReplace: (file: File) => Promise<void>
-): () => void {
-	let active = true;
-
+): void {
 	async function onPaste(e: ClipboardEvent) {
-		if (!active) return;
 		const items = e.clipboardData?.items;
 		if (!items) return;
 		for (const item of items) {
@@ -114,15 +111,9 @@ export function installClipboardPaste(
 	onMount(() => {
 		window.addEventListener('paste', onPaste);
 		return () => {
-			active = false;
 			window.removeEventListener('paste', onPaste);
 		};
 	});
-
-	return () => {
-		active = false;
-		window.removeEventListener('paste', onPaste);
-	};
 }
 
 export function useReplaceGuard(): ReplaceGuardState {

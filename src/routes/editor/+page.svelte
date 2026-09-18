@@ -31,6 +31,7 @@
 	let toastCanReveal = $state(false);
 	let annotationPlacementActive = $state(false);
 	let isElectron = $state(false);
+	installClipboardPaste(guard, replaceImage);
 
 	$effect(() => {
 		if (activeSection !== 'annotate') annotationPlacementActive = false;
@@ -351,7 +352,6 @@
 
 		presets.load();
 		guard.install(magick, history);
-		installClipboardPaste(guard, replaceImage);
 
 		// Native ImageMagick handles ordinary images. RAW falls back to WASM on
 		// bundles built without LibRaw (notably the stock Linux/Windows builds).
