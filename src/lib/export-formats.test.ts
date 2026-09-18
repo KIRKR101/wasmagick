@@ -176,7 +176,7 @@ describe('export format catalog', () => {
 			info('MNG')
 		]);
 
-		expect(formats.map((format) => format.value)).toEqual(['EPDF', 'MNG', 'PDF', 'PDFA']);
+		expect(formats.map((format) => format.value)).toEqual(['PDF', 'EPDF', 'MNG', 'PDFA']);
 	});
 
 	it('removes duplicate rows while retaining distinct ImageMagick aliases', () => {
@@ -272,7 +272,15 @@ describe('export format catalog', () => {
 			'AVIF',
 			'JXL',
 			'TIFF',
-			'GIF'
+			'GIF',
+			'ICO',
+			'BMP',
+			'PSD',
+			'PDF',
+			'EXR',
+			'DDS',
+			'TGA',
+			'QOI'
 		]);
 	});
 
