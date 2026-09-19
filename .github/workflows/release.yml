@@ -87,6 +87,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Verify and sanitize native ImageMagick
+        run: npm run setup:imagemagick
       - name: Set release version
         env:
           RELEASE_TAG: ${{ github.ref_name }}
