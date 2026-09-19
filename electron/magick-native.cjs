@@ -809,7 +809,7 @@ async function processNativeMagick(payload) {
 				case TOKENS.CLUT:
 					return clutPath;
 				case TOKENS.FONT:
-					return fontPath;
+					return fontPath.replaceAll('\\', '/');
 				case TOKENS.INPUT:
 					return inputPath;
 				case TOKENS.OUTPUT:
@@ -965,7 +965,14 @@ async function getNativeFontMetrics(payload) {
 
 	try {
 		await fs.promises.writeFile(fontPath, payload.fontData);
-		const baseArgs = ['-font', fontPath, '-pointsize', String(payload.fontSize), '-fill', 'white'];
+		const baseArgs = [
+			'-font',
+			fontPath.replaceAll('\\', '/'),
+			'-pointsize',
+			String(payload.fontSize),
+			'-fill',
+			'white'
+		];
 		const metricRun = await runBinary(magickBin, [
 			'-size',
 			'1x1',

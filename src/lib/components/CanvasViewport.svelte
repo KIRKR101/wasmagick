@@ -24,6 +24,8 @@
 		originalPreviewFull = false,
 		processedImageUrl = null,
 		processedPreviewUrl = null,
+		processedWidth = 0,
+		processedHeight = 0,
 		processedPreviewData = null,
 		processedPreviewWidth = 0,
 		processedPreviewHeight = 0,
@@ -58,6 +60,8 @@
 		originalPreviewFull?: boolean;
 		processedImageUrl?: string | null;
 		processedPreviewUrl?: string | null;
+		processedWidth?: number;
+		processedHeight?: number;
 		processedPreviewData?: Uint8Array | null;
 		processedPreviewWidth?: number;
 		processedPreviewHeight?: number;
@@ -332,6 +336,12 @@
 	let annotationTextMetrics = $derived(
 		annotationMetrics ?? measureAnnotationText(annotationFontReady)
 	);
+	let annotationCoordinateWidth = $derived(
+		(processedImageUrl ? processedWidth : originalWidth) || displayedWidth
+	);
+	let annotationCoordinateHeight = $derived(
+		(processedImageUrl ? processedHeight : originalHeight) || displayedHeight
+	);
 
 	$effect(() => {
 		if (splitMode && annotationPlacementActive) onAnnotationPlacementChange(false);
@@ -340,8 +350,8 @@
 	let annotationPoint = $derived.by(() => {
 		if (
 			!magickSettings?.annotateGravity ||
-			!displayedWidth ||
-			!displayedHeight ||
+			!annotationCoordinateWidth ||
+			!annotationCoordinateHeight ||
 			magickSettings.annotateOffsetX == null ||
 			magickSettings.annotateOffsetY == null
 		) {
@@ -353,8 +363,8 @@
 				offsetX: magickSettings.annotateOffsetX,
 				offsetY: magickSettings.annotateOffsetY
 			},
-			displayedWidth,
-			displayedHeight,
+			annotationCoordinateWidth,
+			annotationCoordinateHeight,
 			annotationTextMetrics
 		);
 	});
@@ -362,8 +372,12 @@
 	let annotationMarkerStyle = $derived.by(() => {
 		if (!annotationPoint || !viewportRef) return '';
 		const scale = currentZoom / 100;
-		const x = imageX + (annotationPoint.x - displayedWidth / 2) * scale;
-		const y = imageY + (annotationPoint.y - displayedHeight / 2) * scale;
+		const x =
+			imageX +
+			(annotationPoint.x * (displayedWidth / annotationCoordinateWidth) - displayedWidth / 2) * scale;
+		const y =
+			imageY +
+			(annotationPoint.y * (displayedHeight / annotationCoordinateHeight) - displayedHeight / 2) * scale;
 		return `left: calc(50% + ${x}px); top: calc(50% + ${y}px);`;
 	});
 
@@ -734,16 +748,23 @@
 	}
 
 	function placeAnnotationAt(clientX: number, clientY: number): void {
-		if (!previewImageRef || !displayedWidth || !displayedHeight) return;
-		const rect = previewImageRef.getBoundingClientRect();
+		if (!displayedWidth || !displayedHeight) return;
+		const preview = displayedPreviewData ? previewCanvasRef : previewImageRef;
+		if (!preview) return;
+		const rect = preview.getBoundingClientRect();
 		if (!rect.width || !rect.height) return;
 		if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom)
 			return;
 
-		const x = ((clientX - rect.left) / rect.width) * displayedWidth;
-		const y = ((clientY - rect.top) / rect.height) * displayedHeight;
+		const x = ((clientX - rect.left) / rect.width) * annotationCoordinateWidth;
+		const y = ((clientY - rect.top) / rect.height) * annotationCoordinateHeight;
 		onAnnotationPlace(
-			annotationPlacementFromPoint({ x, y }, displayedWidth, displayedHeight, annotationTextMetrics)
+			annotationPlacementFromPoint(
+				{ x, y },
+				annotationCoordinateWidth,
+				annotationCoordinateHeight,
+				annotationTextMetrics
+			)
 		);
 	}
 </script>
