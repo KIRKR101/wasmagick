@@ -292,12 +292,35 @@ function snapSettings(settings: MagickSettings): MagickSettings {
 
 const PREVIEW_MAX_EDGE = 2048;
 const WEB_FULL_PREVIEW_MAX_EDGE = 4096;
+const WEB_DIRECT_MAX_EDGE = 8192;
+const WEB_DIRECT_MAX_PIXELS = 40_000_000;
+const DESKTOP_DIRECT_MAX_EDGE = 16384;
+const DESKTOP_DIRECT_MAX_PIXELS = 80_000_000;
+
+function needsInteractivePreview(
+	dimensions: { width: number; height: number } | null,
+	desktop: boolean
+): boolean {
+	const maxEdge = desktop ? DESKTOP_DIRECT_MAX_EDGE : WEB_DIRECT_MAX_EDGE;
+	const maxPixels = desktop ? DESKTOP_DIRECT_MAX_PIXELS : WEB_DIRECT_MAX_PIXELS;
+	return (
+		!!dimensions &&
+		(Math.max(dimensions.width, dimensions.height) > maxEdge ||
+			dimensions.width * dimensions.height > maxPixels)
+	);
+}
 
 async function browserPreview(
 	bytes: Uint8Array,
 	dimensions: { width: number; height: number } | null,
 	maxEdge = PREVIEW_MAX_EDGE
-): Promise<{ data: Uint8Array; width: number; height: number } | null> {
+): Promise<{
+	data: Uint8Array;
+	width: number;
+	height: number;
+	sourceWidth: number;
+	sourceHeight: number;
+} | null> {
 	let bitmap: ImageBitmap;
 	try {
 		const blob = new Blob([bytes as BlobPart]);
@@ -319,6 +342,8 @@ async function browserPreview(
 	}
 
 	try {
+		const sourceWidth = dimensions?.width ?? bitmap.width;
+		const sourceHeight = dimensions?.height ?? bitmap.height;
 		const target = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
 		const width = Math.max(1, Math.round(bitmap.width * target));
 		const height = Math.max(1, Math.round(bitmap.height * target));
@@ -328,7 +353,13 @@ async function browserPreview(
 		const context = canvas.getContext('2d');
 		if (!context) return null;
 		context.drawImage(bitmap, 0, 0, width, height);
-		return { data: new Uint8Array(context.getImageData(0, 0, width, height).data), width, height };
+		return {
+			data: new Uint8Array(context.getImageData(0, 0, width, height).data),
+			width,
+			height,
+			sourceWidth,
+			sourceHeight
+		};
 	} finally {
 		bitmap.close();
 	}
@@ -1160,7 +1191,19 @@ export class MagickState {
 		const previewRequestId = this._previewRequestId;
 		this.originalPreviewLoading = true;
 		try {
-			const preview = await browserPreview(source, dimensions);
+			const format = this.originalImageFormat?.toUpperCase();
+			const browserRenderable = !!format && BROWSER_RENDERABLE_FORMATS.has(format);
+			const oversized = needsInteractivePreview(dimensions, this.nativeAvailable);
+			if (browserRenderable && !oversized) {
+				this.originalPreviewFailed = false;
+				return;
+			}
+			if (
+				this.nativeAvailable &&
+				(await this.renderNativeOriginalPreview(source, false, previewRequestId))
+			)
+				return;
+			const preview = browserRenderable ? await browserPreview(source, dimensions) : null;
 			if (
 				this.sourceBytes !== source ||
 				this._sourceRevision !== sourceRevision ||
@@ -1173,8 +1216,8 @@ export class MagickState {
 				this.originalPreviewHeight = preview.height;
 				this.originalPreviewFailed = false;
 				if (!dimensions) {
-					this.originalWidth = preview.width;
-					this.originalHeight = preview.height;
+					this.originalWidth = preview.sourceWidth;
+					this.originalHeight = preview.sourceHeight;
 				}
 				return;
 			}
@@ -1229,6 +1272,8 @@ export class MagickState {
 			try {
 				readImageWithFilename(source, this.originalName, (image) => {
 					if (this.settings.autoOrient) image.autoOrient();
+					const sourceWidth = image.width;
+					const sourceHeight = image.height;
 					const maxEdge = fullResolution ? WEB_FULL_PREVIEW_MAX_EDGE : PREVIEW_MAX_EDGE;
 					{
 						const scale = Math.min(1, maxEdge / Math.max(image.width, image.height));
@@ -1248,6 +1293,8 @@ export class MagickState {
 						this._previewRequestId === previewRequestId &&
 						data.length === width * height * 4
 					) {
+						this.originalWidth = sourceWidth;
+						this.originalHeight = sourceHeight;
 						this.originalPreviewData = data;
 						this.originalPreviewWidth = width;
 						this.originalPreviewHeight = height;
@@ -1263,6 +1310,12 @@ export class MagickState {
 		} finally {
 			if (this.sourceBytes === source) this.originalPreviewLoading = false;
 		}
+	}
+
+	handleOriginalImageError(): void {
+		if (this.originalPreviewData || this.originalPreviewLoading) return;
+		this.originalPreviewFailed = true;
+		void this.renderOriginalPreview();
 	}
 
 	private async renderNativeOriginalPreview(
@@ -1291,6 +1344,8 @@ export class MagickState {
 			this.originalPreviewData = result.previewData;
 			this.originalPreviewWidth = result.previewWidth ?? result.width;
 			this.originalPreviewHeight = result.previewHeight ?? result.height;
+			this.originalWidth = result.logicalWidth ?? result.width;
+			this.originalHeight = result.logicalHeight ?? result.height;
 			this.originalPreviewFailed = false;
 			this.originalPreviewFull = fullResolution;
 			return true;
@@ -2099,7 +2154,8 @@ export class MagickState {
 								const previewData = needsPreview
 									? image.getPixels(
 											(pixels) =>
-												pixels.toByteArray(0, 0, finalWidth, finalHeight, 'RGBA') ?? new Uint8Array()
+												pixels.toByteArray(0, 0, finalWidth, finalHeight, 'RGBA') ??
+												new Uint8Array()
 										)
 									: new Uint8Array();
 
@@ -2120,9 +2176,9 @@ export class MagickState {
 										finalWidth,
 										finalHeight,
 										appliedOptions,
-											previewData,
-											needsPreview ? finalWidth : 0,
-											needsPreview ? finalHeight : 0
+										previewData,
+										needsPreview ? finalWidth : 0,
+										needsPreview ? finalHeight : 0
 									);
 
 									if (onComplete) onComplete();

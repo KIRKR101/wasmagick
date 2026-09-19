@@ -67,6 +67,8 @@ declare global {
 		previewImageFormat?: string;
 		width: number;
 		height: number;
+		logicalWidth?: number;
+		logicalHeight?: number;
 		format: string;
 		backend?: 'vips' | 'magick';
 	}

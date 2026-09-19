@@ -13,6 +13,11 @@
 		originalPreviewHeight = 0,
 		processedUrl,
 		processedPreviewUrl = null,
+		originalWidth = 0,
+		originalHeight = 0,
+		processedWidth = 0,
+		processedHeight = 0,
+		onOriginalImageError = () => {},
 		imageStyle,
 		originalLabel = '',
 		processedLabel = ''
@@ -23,37 +28,49 @@
 		originalPreviewHeight?: number;
 		processedUrl: string;
 		processedPreviewUrl?: string | null;
+		originalWidth?: number;
+		originalHeight?: number;
+		processedWidth?: number;
+		processedHeight?: number;
+		onOriginalImageError?: () => void;
 		imageStyle: string;
 		originalLabel?: string;
 		processedLabel?: string;
 	} = $props();
 
 	let originalCanvasRef = $state<HTMLCanvasElement | null>(null);
-	let processedImageRef = $state<HTMLImageElement | null>(null);
-	let processedDisplayWidth = $state(0);
-	let processedDisplayHeight = $state(0);
-	let canvasStyle = $derived(
-		processedDisplayWidth && processedDisplayHeight
-			? `${imageStyle} width: ${processedDisplayWidth}px; height: ${processedDisplayHeight}px;`
+	let originalStyle = $derived(
+		originalWidth && originalHeight
+			? `${imageStyle} width: ${originalWidth}px; height: ${originalHeight}px;`
+			: imageStyle
+	);
+	let processedStyle = $derived(
+		processedWidth && processedHeight
+			? `${imageStyle} width: ${processedWidth}px; height: ${processedHeight}px;`
 			: imageStyle
 	);
 
-	function syncProcessedSize() {
-		if (!processedImageRef) return;
-		processedDisplayWidth = processedImageRef.naturalWidth;
-		processedDisplayHeight = processedImageRef.naturalHeight;
-	}
-
 	$effect(() => {
-		if (!originalCanvasRef || !originalPreviewData?.length || !originalPreviewWidth || !originalPreviewHeight)
+		if (
+			!originalCanvasRef ||
+			!originalPreviewData?.length ||
+			!originalPreviewWidth ||
+			!originalPreviewHeight
+		)
 			return;
 		originalCanvasRef.width = originalPreviewWidth;
 		originalCanvasRef.height = originalPreviewHeight;
-		originalCanvasRef.getContext('2d')?.putImageData(
-			new ImageData(new Uint8ClampedArray(originalPreviewData), originalPreviewWidth, originalPreviewHeight),
-			0,
-			0
-		);
+		originalCanvasRef
+			.getContext('2d')
+			?.putImageData(
+				new ImageData(
+					new Uint8ClampedArray(originalPreviewData),
+					originalPreviewWidth,
+					originalPreviewHeight
+				),
+				0,
+				0
+			);
 	});
 
 	let handlePct = $state(50);
@@ -89,10 +106,8 @@
 <div bind:this={containerRef} class="pointer-events-none absolute inset-0 z-10 overflow-hidden">
 	<!-- Bottom: processed -->
 	<img
-		bind:this={processedImageRef}
 		src={processedPreviewUrl || processedUrl}
-		style={imageStyle}
-		onload={syncProcessedSize}
+		style={processedStyle}
 		alt={processedLabel}
 		draggable="false"
 		class="checkerboard max-h-none max-w-none origin-center object-contain will-change-transform"
@@ -102,14 +117,15 @@
 		{#if originalPreviewData?.length}
 			<canvas
 				bind:this={originalCanvasRef}
-				style={canvasStyle}
+				style={originalStyle}
 				aria-label={originalLabel}
 				class="checkerboard max-h-none max-w-none origin-center object-contain will-change-transform"
 			></canvas>
 		{:else}
 			<img
 				src={originalUrl}
-				style={imageStyle}
+				style={originalStyle}
+				onerror={onOriginalImageError}
 				alt={originalLabel}
 				draggable="false"
 				class="checkerboard max-h-none max-w-none origin-center object-contain will-change-transform"

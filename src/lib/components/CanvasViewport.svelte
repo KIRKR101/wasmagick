@@ -48,7 +48,8 @@
 		onCropCancel = () => {},
 		onCropChange = () => {},
 		onCropAspectRatioChange = () => {},
-		onRequestOriginalFullPreview = () => {}
+		onRequestOriginalFullPreview = () => {},
+		onOriginalImageError = () => {}
 	}: {
 		originalImageUrl?: string | null;
 		originalPreviewData?: Uint8Array | null;
@@ -97,6 +98,7 @@
 		onCropChange?: (crop: CropRect | null) => void;
 		onCropAspectRatioChange?: (preset: string) => void;
 		onRequestOriginalFullPreview?: () => void;
+		onOriginalImageError?: () => void;
 	} = $props();
 
 	let showPlaceholder = $derived(!originalImageUrl);
@@ -153,18 +155,26 @@
 			? originalPreviewWidth
 			: processedImageUrl && processedPreviewNaturalWidth
 				? processedPreviewNaturalWidth
-			: processedPreviewData?.length
-				? processedPreviewWidth
-				: originalPreviewWidth
+				: processedPreviewData?.length
+					? processedPreviewWidth
+					: originalPreviewWidth
 	);
 	let displayedPreviewHeight = $derived(
 		compareActive
 			? originalPreviewHeight
 			: processedImageUrl && processedPreviewNaturalHeight
 				? processedPreviewNaturalHeight
-			: processedPreviewData?.length
-				? processedPreviewHeight
-				: originalPreviewHeight
+				: processedPreviewData?.length
+					? processedPreviewHeight
+					: originalPreviewHeight
+	);
+	let displayedLogicalWidth = $derived(
+		(compareActive ? originalWidth : processedImageUrl ? processedWidth : originalWidth) ||
+			displayedPreviewWidth
+	);
+	let displayedLogicalHeight = $derived(
+		(compareActive ? originalHeight : processedImageUrl ? processedHeight : originalHeight) ||
+			displayedPreviewHeight
 	);
 	let previewUnavailable = $derived(
 		!displayedPreviewData && !originalImageUrl && !processedImageUrl
@@ -374,10 +384,12 @@
 		const scale = currentZoom / 100;
 		const x =
 			imageX +
-			(annotationPoint.x * (displayedWidth / annotationCoordinateWidth) - displayedWidth / 2) * scale;
+			(annotationPoint.x * (displayedWidth / annotationCoordinateWidth) - displayedWidth / 2) *
+				scale;
 		const y =
 			imageY +
-			(annotationPoint.y * (displayedHeight / annotationCoordinateHeight) - displayedHeight / 2) * scale;
+			(annotationPoint.y * (displayedHeight / annotationCoordinateHeight) - displayedHeight / 2) *
+				scale;
 		return `left: calc(50% + ${x}px); top: calc(50% + ${y}px);`;
 	});
 
@@ -386,6 +398,8 @@
 		top: 50%;
 		left: 50%;
 		transform: translate(calc(-50% + ${imageX}px), calc(-50% + ${imageY}px)) scale(${currentZoom / 100});
+		width: ${displayedLogicalWidth ? `${displayedLogicalWidth}px` : 'auto'};
+		height: ${displayedLogicalHeight ? `${displayedLogicalHeight}px` : 'auto'};
 		display: ${showPlaceholder || previewUnavailable ? 'none' : 'block'};
 		cursor: ${
 			annotationPlacementActive && annotationMenuActive
@@ -408,6 +422,12 @@
 	// image on screen — before processing, and in compare/split views.
 	let imageFailed = $derived(
 		!!originalPreviewFailed &&
+			!originalPreviewData &&
+			displayedImage === originalImageUrl &&
+			!!originalImageUrl
+	);
+	let originalPreviewPending = $derived(
+		originalPreviewLoading &&
 			!originalPreviewData &&
 			displayedImage === originalImageUrl &&
 			!!originalImageUrl
@@ -462,8 +482,8 @@
 	function getFitZoom(): number {
 		if (!viewportRef) return 100;
 		const container = viewportRef;
-		const iw = displayedPreviewWidth || previewImageRef?.naturalWidth || 0;
-		const ih = displayedPreviewHeight || previewImageRef?.naturalHeight || 0;
+		const iw = displayedLogicalWidth || previewImageRef?.naturalWidth || 0;
+		const ih = displayedLogicalHeight || previewImageRef?.naturalHeight || 0;
 		if (!iw || !ih) return 100;
 		const padding = 12;
 		const cw = container.clientWidth - padding;
@@ -478,8 +498,8 @@
 		if (!viewportRef) return;
 		imageX = 0;
 		imageY = 0;
-		displayedWidth = displayedPreviewWidth || previewImageRef?.naturalWidth || 0;
-		displayedHeight = displayedPreviewHeight || previewImageRef?.naturalHeight || 0;
+		displayedWidth = displayedLogicalWidth || previewImageRef?.naturalWidth || 0;
+		displayedHeight = displayedLogicalHeight || previewImageRef?.naturalHeight || 0;
 		if (!displayedWidth || !displayedHeight) return;
 		currentZoom = getFitZoom();
 	}
@@ -546,8 +566,8 @@
 		const preservingZoomedFullImage =
 			!!processedPreviewUrl && displayedImage === processedImageUrl && currentZoom >= 110;
 		if (previewImageRef) {
-			displayedWidth = previewImageRef.naturalWidth;
-			displayedHeight = previewImageRef.naturalHeight;
+			displayedWidth = displayedLogicalWidth || previewImageRef.naturalWidth;
+			displayedHeight = displayedLogicalHeight || previewImageRef.naturalHeight;
 		}
 		if (skipNextFit) {
 			skipNextFit = false;
@@ -557,6 +577,10 @@
 		loadedOriginalUrl = processedImageUrl;
 		if (preservingZoomedFullImage) return;
 		fitImageToScreen();
+	}
+
+	function handleImageError(): void {
+		if (displayedImage === originalImageUrl && !originalPreviewData) onOriginalImageError();
 	}
 
 	// Re-fit when the processed image changes (history navigation can swap
@@ -819,11 +843,16 @@
 		{:else if splitMode && canSplit}
 			<SplitCompare
 				originalUrl={originalImageUrl!}
-				originalPreviewData={originalPreviewData}
-				originalPreviewWidth={originalPreviewWidth}
-				originalPreviewHeight={originalPreviewHeight}
+				{originalPreviewData}
+				{originalPreviewWidth}
+				{originalPreviewHeight}
 				processedUrl={processedImageUrl!}
-				processedPreviewUrl={processedPreviewUrl}
+				{processedPreviewUrl}
+				{originalWidth}
+				{originalHeight}
+				{processedWidth}
+				{processedHeight}
+				{onOriginalImageError}
 				{imageStyle}
 				originalLabel="Original"
 				processedLabel="Processed"
@@ -833,11 +862,12 @@
 				bind:this={previewImageRef}
 				src={displayedImage ?? ''}
 				onload={handleImageLoad}
+				onerror={handleImageError}
 				style="display:none"
 				alt=""
 				aria-hidden="true"
 			/>
-		{:else if imageFailed && !originalPreviewData}
+		{:else if originalPreviewPending || (imageFailed && !originalPreviewData)}
 			<div class="text-center text-muted-foreground" role="status" aria-live="polite">
 				<div class="mx-auto mb-4 flex size-16 items-center justify-center">
 					<div class="relative size-12">
@@ -852,6 +882,7 @@
 				bind:this={previewImageRef}
 				src={displayedImage ?? ''}
 				onload={handleImageLoad}
+				onerror={handleImageError}
 				style={imageStyle}
 				alt={compareActive ? 'Original image before processing' : 'Processed image preview'}
 				draggable="false"

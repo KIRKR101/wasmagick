@@ -25,6 +25,7 @@ const MAX_STDERR_BYTES = 64 * 1024;
 const MAX_PREVIEW_EDGE = 2048;
 const MAX_INTERACTIVE_PREVIEW_EDGE = 8192;
 const MAX_GPU_IMAGE_EDGE = 16384;
+const MAX_GPU_IMAGE_PIXELS = 80_000_000;
 const BROWSER_RENDERABLE_FORMATS = new Set([
 	'AVIF',
 	'BMP',
@@ -684,7 +685,9 @@ async function processNativeVips(payload) {
 		BROWSER_RENDERABLE_FORMATS.has(
 			String(payload.plan.output.format || payload.outputFormat || '').toUpperCase()
 		) &&
-		(pipelineInfo.width > MAX_GPU_IMAGE_EDGE || pipelineInfo.height > MAX_GPU_IMAGE_EDGE);
+		(pipelineInfo.width > MAX_GPU_IMAGE_EDGE ||
+			pipelineInfo.height > MAX_GPU_IMAGE_EDGE ||
+			pipelineInfo.width * pipelineInfo.height > MAX_GPU_IMAGE_PIXELS);
 	let previewPipeline = pipeline.clone();
 	if (format === 'jpeg') previewPipeline = previewPipeline.flatten({ background: '#ffffff' });
 	const [{ data, info }, previewResult] = await Promise.all([
@@ -699,21 +702,22 @@ async function processNativeVips(payload) {
 					})
 					.toFormat('webp', { quality: 90 })
 					.toBuffer()
-					.then((/** @type {Buffer} */ data) => ({ data, info: { width: 0, height: 0, channels: 0 } }))
+					.then((/** @type {Buffer} */ data) => ({
+						data,
+						info: { width: 0, height: 0, channels: 0 }
+					}))
 			: needsPreview
-			? pipeline
-					.clone()
-					.resize({ width: MAX_PREVIEW_EDGE, height: MAX_PREVIEW_EDGE, fit: 'inside' })
-					.toColourspace('srgb')
-					.ensureAlpha()
-					.raw()
-					.toBuffer({ resolveWithObject: true })
-			: Promise.resolve({ data: Buffer.alloc(0), info: { width: 0, height: 0, channels: 4 } })
+				? pipeline
+						.clone()
+						.resize({ width: MAX_PREVIEW_EDGE, height: MAX_PREVIEW_EDGE, fit: 'inside' })
+						.toColourspace('srgb')
+						.ensureAlpha()
+						.raw()
+						.toBuffer({ resolveWithObject: true })
+				: Promise.resolve({ data: Buffer.alloc(0), info: { width: 0, height: 0, channels: 4 } })
 	]);
 	const { data: rawPreview, info: previewInfo } = previewResult;
-	const previewImageData = needsInteractivePreview
-		? new Uint8Array(rawPreview)
-		: new Uint8Array();
+	const previewImageData = needsInteractivePreview ? new Uint8Array(rawPreview) : new Uint8Array();
 	let previewData = needsInteractivePreview ? new Uint8Array() : new Uint8Array(rawPreview);
 	if (!needsInteractivePreview && previewInfo.channels !== 4) {
 		const rgba = new Uint8Array(previewInfo.width * previewInfo.height * 4);
@@ -827,9 +831,9 @@ async function processNativeMagick(payload) {
 			...substituted,
 			...(hasOutput ? [] : [outputSpecifier])
 		];
-		const needsPreview = payload.previewOnly || !BROWSER_RENDERABLE_FORMATS.has(
-			String(payload.outputFormat || '').toUpperCase()
-		);
+		const needsPreview =
+			payload.previewOnly ||
+			!BROWSER_RENDERABLE_FORMATS.has(String(payload.outputFormat || '').toUpperCase());
 		const previewMaxEdge = Math.max(1, Number(payload.previewMaxEdge) || MAX_PREVIEW_EDGE);
 
 		// Some coders leave the source EXIF orientation unavailable to
@@ -850,6 +854,38 @@ async function processNativeMagick(payload) {
 			if (orientationName && (!nativeOrientation || /^undefined$/i.test(nativeOrientation))) {
 				const autoOrientIndex = finalArgs.indexOf('-auto-orient');
 				finalArgs.splice(autoOrientIndex, 1, '-orient', orientationName, '-auto-orient');
+			}
+		}
+		if (isRawInputName(payload.inputName)) {
+			const inputIndex = hasInput ? finalArgs.indexOf(inputPath) : 0;
+			finalArgs.splice(
+				inputIndex + 1,
+				0,
+				'-bordercolor',
+				'none',
+				'-border',
+				'1x1',
+				'-trim',
+				'+repage'
+			);
+		}
+		let logicalDimensions = null;
+		if (payload.previewOnly && !hasOutput) {
+			const dimensionArgs = finalArgs.slice(0, -1);
+			const resizeIndex = dimensionArgs.indexOf('-resize');
+			if (resizeIndex >= 0) dimensionArgs.splice(resizeIndex, 2);
+			const { stdout } = await runBinary(
+				magickBin,
+				[...dimensionArgs, '-format', '%w %h', 'info:'],
+				{ inputName: payload.inputName }
+			);
+			const [logicalWidth, logicalHeight] = stdout
+				.toString('utf-8')
+				.trim()
+				.split(/\s+/)
+				.map(Number);
+			if (logicalWidth > 0 && logicalHeight > 0) {
+				logicalDimensions = { width: logicalWidth, height: logicalHeight };
 			}
 		}
 
@@ -883,11 +919,22 @@ async function processNativeMagick(payload) {
 				throw new Error('Native preview data is shorter than the reported preview dimensions');
 			}
 			previewData = rawPreviewData.slice(0, previewBytes);
-		} else if (width > MAX_GPU_IMAGE_EDGE || height > MAX_GPU_IMAGE_EDGE) {
+		} else if (
+			width > MAX_GPU_IMAGE_EDGE ||
+			height > MAX_GPU_IMAGE_EDGE ||
+			width * height > MAX_GPU_IMAGE_PIXELS
+		) {
 			const previewImagePath = path.join(tmpDir, 'preview.webp');
 			await runBinary(
 				magickBin,
-				[outputPath, '-resize', `${MAX_INTERACTIVE_PREVIEW_EDGE}x${MAX_INTERACTIVE_PREVIEW_EDGE}>`, '-quality', '90', `webp:${previewImagePath}`],
+				[
+					outputPath,
+					'-resize',
+					`${MAX_INTERACTIVE_PREVIEW_EDGE}x${MAX_INTERACTIVE_PREVIEW_EDGE}>`,
+					'-quality',
+					'90',
+					`webp:${previewImagePath}`
+				],
 				{ inputName: payload.inputName }
 			);
 			previewImageData = new Uint8Array(await fs.promises.readFile(previewImagePath));
@@ -901,6 +948,8 @@ async function processNativeMagick(payload) {
 			previewImageFormat: previewImageData.length ? 'WEBP' : undefined,
 			width,
 			height,
+			logicalWidth: logicalDimensions?.width ?? width,
+			logicalHeight: logicalDimensions?.height ?? height,
 			format: String(payload.outputFormat || 'png'),
 			backend: 'magick'
 		};

@@ -209,6 +209,7 @@
 			initialCrop={magick.cropSelection ?? cropInitialRect}
 			onBrowse={openFilePicker}
 			onRequestOriginalFullPreview={() => magick.renderOriginalPreview(true)}
+			onOriginalImageError={() => magick.handleOriginalImageError()}
 			{onSelectSample}
 			{onAnnotationPlace}
 			{onAnnotationPlacementChange}
