@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Native ImageMagick runner for the Electron main process.
  *
