@@ -133,8 +133,8 @@
 	let processedPreviewNaturalHeight = $state(0);
 
 	$effect(() => {
-		processedPreviewUrl;
-		processedImageUrl;
+		void processedPreviewUrl;
+		void processedImageUrl;
 		processedPreviewNaturalWidth = 0;
 		processedPreviewNaturalHeight = 0;
 	});
