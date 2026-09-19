@@ -82,7 +82,7 @@
 					parts.push(`Deskew ${s.deskewThreshold[0]}%`);
 					parts.push(s.deskewAutoCrop ? 'Auto Crop' : 'No AutoCrop');
 				}
-				if (s.autoOrient) parts.push('Auto-Orient');
+				if (!s.autoOrient) parts.push('Auto-Orient Off');
 				return parts.join(' · ');
 			}
 			case 'color': {

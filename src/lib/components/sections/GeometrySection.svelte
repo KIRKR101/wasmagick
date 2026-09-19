@@ -91,7 +91,7 @@
 		dirty={magick.settings.rotate !== '0' ||
 			magick.settings.flip ||
 			magick.settings.flop ||
-			magick.settings.autoOrient}
+			magick.settings.autoOrient !== true}
 	>
 		<div class="space-y-3">
 			<div class="grid grid-cols-2 gap-3">

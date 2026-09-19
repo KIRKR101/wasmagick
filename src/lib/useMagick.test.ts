@@ -604,7 +604,7 @@ describe('MagickSettings type', () => {
 			contrast: [0],
 			normalizeImage: false,
 			autoLevel: false,
-			autoOrient: false,
+			autoOrient: true,
 			levelBlackpoint: { All: [0], Red: [0], Green: [0], Blue: [0] },
 			levelWhitepoint: { All: [100], Red: [100], Green: [100], Blue: [100] },
 			levelGamma: { All: [1.0], Red: [1.0], Green: [1.0], Blue: [1.0] },

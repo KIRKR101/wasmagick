@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { formatDimensions } from './utils';
+import { DEFAULT_SETTINGS } from './useMagick.svelte';
+import { formatDimensions, isGeoDirty } from './utils';
+
+describe('isGeoDirty', () => {
+	it('treats the enabled auto-orient default as clean', () => {
+		expect(isGeoDirty(DEFAULT_SETTINGS)).toBe(false);
+	});
+});
 
 describe('formatDimensions', () => {
 	it('formats valid dimensions', () => {
