@@ -38,7 +38,8 @@
 			<span class="text-amber-500">Unprocessed changes</span>
 		{:else if magick.processedImageUrl}
 			<span class="text-foreground/80 tabular-nums"
-				>Processed in {magick.processedImageTime} ms</span
+				>Processed in {magick.processedImageTime} ms{#if magick.processedBy}
+					by {magick.processedBy}{/if}</span
 			>
 		{:else if !magick.originalImageUrl}
 			<span class="text-muted-foreground/50">No image</span>

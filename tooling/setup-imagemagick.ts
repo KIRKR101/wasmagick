@@ -424,9 +424,7 @@ function cachedVersionMatches(bin: string): boolean {
 /** Drop a stale cache whose binary no longer matches `IM_VERSION`. */
 function dropStaleCache(slugDir: string, bin: string): void {
 	if (!existsSync(bin) || cachedVersionMatches(bin)) return;
-	console.log(
-		`Cached ImageMagick at ${slugDir} is not ${IM_VERSION}; re-downloading...`
-	);
+	console.log(`Cached ImageMagick at ${slugDir} is not ${IM_VERSION}; re-downloading...`);
 	rmSync(slugDir, { recursive: true, force: true });
 }
 

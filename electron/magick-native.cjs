@@ -65,6 +65,12 @@ const RAW_EXTENSIONS = new Set([
 ]);
 
 let cachedSource = null;
+let sharpModule = null;
+
+function getSharp() {
+	if (!sharpModule) sharpModule = require('sharp');
+	return sharpModule;
+}
 
 function platformSlug() {
 	const plat =
@@ -501,7 +507,200 @@ async function identifyOrientation(magickBin, filePath) {
  *   fontFileName?: string | null
  * }
  */
-async function processNative(payload) {
+async function processNativeVips(payload) {
+	const canUseCache = Number.isFinite(payload.sourceRevision);
+	const hasCachedSource =
+		canUseCache && cachedSource && cachedSource.revision === payload.sourceRevision;
+	const sourceData = hasCachedSource ? cachedSource.data : payload.inputData;
+	if (!(sourceData instanceof Uint8Array)) {
+		throw new Error('Native source image is unavailable');
+	}
+	if (!payload.plan || payload.plan.backend !== 'vips') {
+		throw new Error('Invalid VIPS processing plan');
+	}
+
+	if (canUseCache && payload.inputData instanceof Uint8Array) {
+		cachedSource = { revision: payload.sourceRevision, data: payload.inputData };
+	}
+
+	const sharp = getSharp();
+	let pipeline = sharp(Buffer.from(sourceData), { animated: true });
+	let width;
+	let height;
+	const gravityOffset = (space, gravity, axis) => {
+		gravity ||= 'Center';
+		if (gravity.includes(axis === 'x' ? 'East' : 'South')) return space;
+		if (gravity === 'Center' || gravity === 'centre') return Math.floor(space / 2);
+		if (gravity.includes(axis === 'x' ? 'West' : 'North')) return 0;
+		return Math.floor(space / 2);
+	};
+	const updateDimensions = async (operation) => {
+		if (width == null || height == null) {
+			const metadata = await pipeline.metadata();
+			width = metadata.width;
+			height = metadata.height;
+		}
+		if (operation.type === 'resize') {
+			const scale = Math.min(
+				operation.width ? operation.width / width : Infinity,
+				operation.height ? operation.height / height : Infinity
+			);
+			if (Number.isFinite(scale)) {
+				width = Math.round(width * scale);
+				height = Math.round(height * scale);
+			}
+		} else if (operation.type === 'autoOrient') {
+			const metadata = await pipeline.metadata();
+			width = metadata.autoOrient?.width ?? width;
+			height = metadata.autoOrient?.height ?? height;
+		} else if (operation.type === 'rotate' && Math.abs(operation.angle) === 90) {
+			[width, height] = [height, width];
+		}
+	};
+	for (const operation of payload.plan.operations || []) {
+		await updateDimensions(operation);
+		switch (operation.type) {
+			case 'autoOrient':
+				pipeline = pipeline.rotate();
+				break;
+			case 'resize':
+				pipeline = pipeline.resize({
+					width: operation.width ?? null,
+					height: operation.height ?? null,
+					fit: 'inside'
+				});
+				break;
+			case 'crop':
+				{
+					const requestedWidth = Math.max(1, Math.min(operation.width ?? width, width));
+					const requestedHeight = Math.max(1, Math.min(operation.height ?? height, height));
+					const left =
+						operation.left ?? gravityOffset(width - requestedWidth, operation.gravity, 'x');
+					const top =
+						operation.top ?? gravityOffset(height - requestedHeight, operation.gravity, 'y');
+					const cropWidth = Math.max(1, Math.min(operation.width ?? width - left, width - left));
+					const cropHeight = Math.max(1, Math.min(operation.height ?? height - top, height - top));
+					if (left >= width || top >= height) break;
+					pipeline = pipeline.extract({
+						left,
+						top,
+						width: cropWidth,
+						height: cropHeight
+					});
+					width = cropWidth;
+					height = cropHeight;
+				}
+				break;
+			case 'rotate':
+				pipeline = pipeline.rotate(operation.angle);
+				break;
+			case 'flip':
+				pipeline = pipeline.flip();
+				break;
+			case 'flop':
+				pipeline = pipeline.flop();
+				break;
+			case 'modulate':
+				pipeline = pipeline.modulate({
+					brightness: operation.brightness,
+					saturation: operation.saturation,
+					hue: operation.hue
+				});
+				break;
+			case 'contrast':
+				{
+					const factor = 1 + operation.value / 100;
+					pipeline = pipeline.linear(factor, 128 * (1 - factor));
+				}
+				break;
+			case 'normalize':
+				pipeline = pipeline.normalise();
+				break;
+			case 'gamma':
+				pipeline = pipeline.gamma(operation.value);
+				break;
+			case 'blur':
+				pipeline = pipeline.blur(operation.sigma);
+				break;
+			case 'sharpen':
+				pipeline = pipeline.sharpen({ sigma: operation.sigma });
+				break;
+			case 'grayscale':
+				pipeline = pipeline.grayscale();
+				break;
+			case 'negate':
+				pipeline = pipeline.negate({ alpha: false });
+				break;
+			case 'threshold':
+				pipeline = pipeline.threshold(operation.value);
+				break;
+			case 'trim':
+				pipeline = pipeline.trim();
+				break;
+			case 'border':
+				pipeline = pipeline.extend({
+					top: operation.size,
+					bottom: operation.size,
+					left: operation.size,
+					right: operation.size,
+					background: operation.color
+				});
+				break;
+			default:
+				throw new Error(`Unsupported VIPS operation: ${operation.type}`);
+		}
+	}
+
+	const format = String(payload.plan.output.format || payload.outputFormat || 'PNG').toLowerCase();
+	const quality = Math.max(1, Math.min(100, Number(payload.plan.output.quality) || 85));
+	const outputOptions = { quality };
+	let outputPipeline = pipeline.clone();
+	if (format === 'jpeg') outputPipeline = outputPipeline.flatten({ background: '#ffffff' });
+	if (!payload.plan.output.stripMeta) outputPipeline = outputPipeline.withMetadata();
+	outputPipeline = outputPipeline.toFormat(format, outputOptions);
+
+	const [{ data, info }, previewResult] = await Promise.all([
+		outputPipeline.toBuffer({ resolveWithObject: true }),
+		pipeline.clone().toColourspace('srgb').ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+	]);
+	const { data: rawPreview, info: previewInfo } = previewResult;
+	let previewData = new Uint8Array(rawPreview);
+	if (previewInfo.channels !== 4) {
+		const rgba = new Uint8Array(previewInfo.width * previewInfo.height * 4);
+		for (
+			let source = 0, target = 0;
+			target < rgba.length;
+			source += previewInfo.channels, target += 4
+		) {
+			const gray = rawPreview[source] ?? 0;
+			rgba[target] = rawPreview[source] ?? gray;
+			rgba[target + 1] =
+				previewInfo.channels === 1 || previewInfo.channels === 2
+					? gray
+					: (rawPreview[source + 1] ?? 0);
+			rgba[target + 2] =
+				previewInfo.channels === 1 || previewInfo.channels === 2
+					? gray
+					: (rawPreview[source + 2] ?? 0);
+			rgba[target + 3] = previewInfo.channels === 2 ? (rawPreview[source + 1] ?? 255) : 255;
+		}
+		previewData = rgba;
+	}
+
+	return {
+		data: new Uint8Array(data),
+		previewData: new Uint8Array(previewData),
+		previewWidth: previewInfo.width,
+		previewHeight: previewInfo.height,
+		width: info.width,
+		height: info.height,
+		format: String(payload.outputFormat || format).toUpperCase(),
+		backend: 'vips'
+	};
+}
+
+/** Execute the existing ImageMagick native process request. */
+async function processNativeMagick(payload) {
 	if (!payload || !Array.isArray(payload.args)) {
 		throw new Error('Invalid native process request');
 	}
@@ -628,11 +827,27 @@ async function processNative(payload) {
 			previewHeight: height,
 			width,
 			height,
-			format: String(payload.outputFormat || 'png')
+			format: String(payload.outputFormat || 'png'),
+			backend: 'magick'
 		};
 	} finally {
 		await fs.promises.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
 	}
+}
+
+async function processNative(payload) {
+	if (!payload || !Array.isArray(payload.args)) {
+		throw new Error('Invalid native process request');
+	}
+	if (payload.plan?.backend === 'vips') {
+		try {
+			return await processNativeVips(payload);
+		} catch (error) {
+			console.warn('Native VIPS processing failed; falling back to ImageMagick:', error);
+			return processNativeMagick(payload);
+		}
+	}
+	return processNativeMagick(payload);
 }
 
 function parseMetricGeometry(output) {

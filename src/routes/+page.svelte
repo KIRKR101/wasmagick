@@ -31,9 +31,9 @@
 		e.preventDefault();
 		if (hasFiles(e)) isDragging = true;
 	}}
-		ondragleave={(e) => {
+	ondragleave={(e) => {
 		if (hasFiles(e) && !e.relatedTarget) isDragging = false;
-		}}
+	}}
 	ondrop={handleDrop}
 />
 

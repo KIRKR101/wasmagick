@@ -460,7 +460,10 @@
 				</HoverTooltip>
 			</div>
 
-			<HoverTooltip label={isElectron ? 'Show build details' : 'Toggle debug panel'} triggerClass="w-full">
+			<HoverTooltip
+				label={isElectron ? 'Show build details' : 'Toggle debug panel'}
+				triggerClass="w-full"
+			>
 				<button
 					onclick={onToggleDebug}
 					aria-label={isElectron ? 'Show build details' : 'Toggle debug panel'}
@@ -469,7 +472,8 @@
 						: ''}"
 				>
 					<span class="truncate"
-						><span>[{isElectron ? 'i' : debugMode ? '⚠' : 'B'}]</span> <span class="hover:underline">{isElectron ? 'BUILD' : 'DEBUG'}</span></span
+						><span>[{isElectron ? 'i' : debugMode ? '⚠' : 'B'}]</span>
+						<span class="hover:underline">{isElectron ? 'BUILD' : 'DEBUG'}</span></span
 					>
 				</button>
 			</HoverTooltip>

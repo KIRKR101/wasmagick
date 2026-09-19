@@ -181,11 +181,7 @@
 	});
 
 	$effect(() => {
-		if (
-			!previewCanvasRef ||
-			!displayedPreviewData
-		)
-			return;
+		if (!previewCanvasRef || !displayedPreviewData) return;
 		const usingProcessedPreview = !compareActive && !!processedPreviewData?.length;
 		const data = displayedPreviewData;
 		const width = usingProcessedPreview ? processedPreviewWidth : originalPreviewWidth;
@@ -355,11 +351,17 @@
 	// Warn exactly while the original (which the browser cannot render) is the
 	// image on screen — before processing, and in compare/split views.
 	let imageFailed = $derived(
-		!!originalPreviewFailed && !originalPreviewData && displayedImage === originalImageUrl && !!originalImageUrl
+		!!originalPreviewFailed &&
+			!originalPreviewData &&
+			displayedImage === originalImageUrl &&
+			!!originalImageUrl
 	);
 
 	let canSplit = $derived(
-		!!processedImageUrl && !!originalImageUrl && !originalPreviewFailed && processedImageUrl !== originalImageUrl
+		!!processedImageUrl &&
+			!!originalImageUrl &&
+			!originalPreviewFailed &&
+			processedImageUrl !== originalImageUrl
 	);
 
 	// Report state (zoom) to parent for the status bar.
@@ -629,7 +631,12 @@
 	}
 
 	function onDblClick(e: MouseEvent) {
-		if (showPlaceholder || previewUnavailable || (annotationPlacementActive && annotationMenuActive)) return;
+		if (
+			showPlaceholder ||
+			previewUnavailable ||
+			(annotationPlacementActive && annotationMenuActive)
+		)
+			return;
 		e.preventDefault();
 		if (Math.abs(currentZoom - getFitZoom()) < 1) {
 			zoomAt(e.clientX, e.clientY, 100);
@@ -704,7 +711,8 @@
 		ontouchmove={onTouchMove}
 		ontouchend={onTouchEnd}
 		ontouchcancel={onTouchEnd}
-		class="viewport relative flex h-full min-h-0 w-full flex-grow items-center justify-center overflow-hidden select-none {!showPlaceholder && !previewUnavailable
+		class="viewport relative flex h-full min-h-0 w-full flex-grow items-center justify-center overflow-hidden select-none {!showPlaceholder &&
+		!previewUnavailable
 			? 'touch-none'
 			: ''}"
 	>
@@ -782,8 +790,13 @@
 			{/if}
 			{#if originalPreviewLoading && displayedPreviewData}
 				<div class="pointer-events-none absolute inset-0 z-40 flex items-center justify-center">
-					<div class="flex items-center gap-2 border border-foreground/20 bg-background/85 px-3 py-2 font-mono text-xs text-muted-foreground backdrop-blur-sm" role="status">
-						<span class="size-3 animate-spin rounded-full border border-muted-foreground/30 border-t-primary"></span>
+					<div
+						class="flex items-center gap-2 border border-foreground/20 bg-background/85 px-3 py-2 font-mono text-xs text-muted-foreground backdrop-blur-sm"
+						role="status"
+					>
+						<span
+							class="size-3 animate-spin rounded-full border border-muted-foreground/30 border-t-primary"
+						></span>
 						Loading higher-resolution preview…
 					</div>
 				</div>
@@ -890,14 +903,18 @@
 					</button>
 				</HoverTooltip>
 				<HoverTooltip
-					label={imageFailed && !originalPreviewData ? 'Fit unavailable (preview failed)' : 'Fit to screen (Ctrl+0)'}
+					label={imageFailed && !originalPreviewData
+						? 'Fit unavailable (preview failed)'
+						: 'Fit to screen (Ctrl+0)'}
 					side="top"
 				>
 					<button
 						onclick={resetView}
-						 disabled={imageFailed && !originalPreviewData}
+						disabled={imageFailed && !originalPreviewData}
 						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40"
-						aria-label={imageFailed && !originalPreviewData ? 'Fit unavailable (preview failed)' : 'Fit to screen (Ctrl+0)'}
+						aria-label={imageFailed && !originalPreviewData
+							? 'Fit unavailable (preview failed)'
+							: 'Fit to screen (Ctrl+0)'}
 					>
 						<Maximize class="size-3.5" />
 					</button>

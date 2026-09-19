@@ -9,11 +9,7 @@
 	} from '$lib/components/ui/select/index.js';
 	import { Slider } from '$lib/components/ui/slider/index.js';
 	import ToggleRow from '$lib/components/controls/ToggleRow.svelte';
-	import {
-		applyThemeMode,
-		getThemeMode,
-		type ThemeMode
-	} from '$lib/theme';
+	import { applyThemeMode, getThemeMode, type ThemeMode } from '$lib/theme';
 	import {
 		APP_VERSION,
 		DEFAULT_FILENAME_TEMPLATE,
@@ -35,11 +31,7 @@
 		type ExportDefaults,
 		type StorageEntry
 	} from '$lib/settings';
-	import {
-		PresetsState,
-		BUILTIN_PRESETS,
-		type UserPreset
-	} from '$lib/hooks/usePresets.svelte';
+	import { PresetsState, BUILTIN_PRESETS, type UserPreset } from '$lib/hooks/usePresets.svelte';
 	import { formatBytes } from '$lib/utils';
 	import { buildGeneralIssueBody, buildIssueUrl } from '$lib/issue-report';
 	import { FALLBACK_EXPORT_FORMATS } from '$lib/export-formats';
@@ -49,7 +41,11 @@
 	const presets = new PresetsState();
 
 	let themeMode = $state<ThemeMode>('auto');
-	let exportDefaults = $state<ExportDefaults>({ imageFormat: 'WebP', quality: [85], stripMeta: false });
+	let exportDefaults = $state<ExportDefaults>({
+		imageFormat: 'WebP',
+		quality: [85],
+		stripMeta: false
+	});
 	let filenameTemplate = $state(DEFAULT_FILENAME_TEMPLATE);
 	let historyLimit = $state(DEFAULT_HISTORY_LIMIT);
 	let storage = $state<StorageEntry[]>([]);
@@ -220,8 +216,8 @@
 		</button>
 	</div>
 	<p class="mb-6 max-w-md text-xs text-muted-foreground/60">
-		Changes save automatically and apply right away. The editor behind this panel is
-		untouched — no reloads, nothing discarded.
+		Changes save automatically and apply right away. The editor behind this panel is untouched — no
+		reloads, nothing discarded.
 	</p>
 
 	<!-- Appearance -->
@@ -261,10 +257,7 @@
 		<div class="grid grid-cols-2 gap-3">
 			<div class="flex flex-col gap-2">
 				<span class="text-[11px] tracking-wide text-muted-foreground uppercase">Format</span>
-				<Select
-					type="single"
-					bind:value={exportDefaults.imageFormat}
-				>
+				<Select type="single" bind:value={exportDefaults.imageFormat}>
 					<SelectTrigger class="h-9 w-full font-mono text-xs uppercase">
 						{exportDefaults.imageFormat}
 					</SelectTrigger>
@@ -285,13 +278,7 @@
 					>
 				</div>
 				<div class="flex h-9 items-center">
-					<Slider
-						type="multiple"
-						bind:value={exportDefaults.quality}
-						min={1}
-						max={100}
-						step={1}
-					/>
+					<Slider type="multiple" bind:value={exportDefaults.quality} min={1} max={100} step={1} />
 				</div>
 			</div>
 		</div>
@@ -316,7 +303,8 @@
 			/OUTPUT FILENAME
 		</h3>
 		<p class="mb-3 text-[11px] text-muted-foreground/60">
-			Tokens: <span class="text-foreground/80">{'{name} {ext} {format} {date} {time} {w} {h}'}</span>
+			Tokens: <span class="text-foreground/80">{'{name} {ext} {format} {date} {time} {w} {h}'}</span
+			>
 		</p>
 		<input
 			type="text"
@@ -348,19 +336,19 @@
 		</h3>
 		<p class="mb-3 text-[11px] text-muted-foreground/60">
 			{BUILTIN_PRESETS.length} built-in &middot; {presets.userPresets.length} saved
-			{#if presetsBytes > 0}({formatBytes(presetsBytes)} locally){/if}. Manage your saved
-			presets here — the editor's Presets panel stays for applying them mid-edit.
+			{#if presetsBytes > 0}({formatBytes(presetsBytes)} locally){/if}. Manage your saved presets
+			here — the editor's Presets panel stays for applying them mid-edit.
 		</p>
 		{#if presets.userPresets.length === 0}
-			<p class="border border-dashed border-foreground/20 px-3 py-6 text-center text-[11px] text-muted-foreground/60">
+			<p
+				class="border border-dashed border-foreground/20 px-3 py-6 text-center text-[11px] text-muted-foreground/60"
+			>
 				No saved presets yet — save one from the editor's Presets panel, or import a backup below.
 			</p>
 		{:else}
 			<ul class="space-y-1.5">
 				{#each presets.userPresets as preset (preset.id)}
-					<li
-						class="flex items-center gap-2 border border-foreground/30 px-3 py-2"
-					>
+					<li class="flex items-center gap-2 border border-foreground/30 px-3 py-2">
 						{#if renameId === preset.id}
 							<input
 								type="text"
@@ -426,7 +414,9 @@
 					? 'border-destructive text-destructive'
 					: 'text-muted-foreground'}"
 			>
-				[x] <span class="group-hover:underline">{armedAction === 'clear-presets' ? 'CONFIRM DELETE' : 'DELETE ALL'}</span>
+				[x] <span class="group-hover:underline"
+					>{armedAction === 'clear-presets' ? 'CONFIRM DELETE' : 'DELETE ALL'}</span
+				>
 			</button>
 			<input
 				bind:this={importInput}
@@ -448,8 +438,8 @@
 			/HISTORY &amp; STORAGE
 		</h3>
 		<p class="mb-3 text-[11px] text-muted-foreground/60">
-			Undo history lives in memory per editor session and clears on reload — this
-			controls how many states each session keeps.
+			Undo history lives in memory per editor session and clears on reload — this controls how many
+			states each session keeps.
 		</p>
 		<div class="mb-3 flex items-center justify-between gap-3">
 			<label for="history-limit" class="text-[11px] tracking-wide text-muted-foreground uppercase">
@@ -490,7 +480,9 @@
 					? 'border-destructive text-destructive'
 					: 'text-muted-foreground'}"
 			>
-				[x] <span class="group-hover:underline">{armedAction === 'reset-all' ? 'CONFIRM RESET' : 'RESET ALL SETTINGS'}</span>
+				[x] <span class="group-hover:underline"
+					>{armedAction === 'reset-all' ? 'CONFIRM RESET' : 'RESET ALL SETTINGS'}</span
+				>
 			</button>
 		</div>
 	</section>
@@ -501,18 +493,24 @@
 			/ABOUT
 		</h3>
 		<p class="mb-3 text-[11px] leading-relaxed text-muted-foreground/80">
-			WASMagick v{APP_VERSION} — client-side image editor. All processing happens
-			locally in your browser or desktop app; images never leave your device.
+			WASMagick v{APP_VERSION} — client-side image editor. All processing happens locally in your browser
+			or desktop app; images never leave your device.
 		</p>
 		<ul class="mb-3 space-y-1 font-mono text-[11px] text-muted-foreground">
 			<li class="flex justify-between gap-3">
-				<span>UI</span><span class="text-right text-foreground">SvelteKit + Svelte 5 + Tailwind CSS</span>
+				<span>UI</span><span class="text-right text-foreground"
+					>SvelteKit + Svelte 5 + Tailwind CSS</span
+				>
 			</li>
 			<li class="flex justify-between gap-3">
-				<span>Engine</span><span class="text-right text-foreground">ImageMagick via magick-wasm</span>
+				<span>Engine</span><span class="text-right text-foreground"
+					>ImageMagick via magick-wasm</span
+				>
 			</li>
 			<li class="flex justify-between gap-3">
-				<span>Desktop</span><span class="text-right text-foreground">Electron + native ImageMagick bundle</span>
+				<span>Desktop</span><span class="text-right text-foreground"
+					>Electron + native ImageMagick bundle</span
+				>
 			</li>
 			<li class="flex justify-between gap-3">
 				<span>Offline</span><span class="text-right text-foreground">PWA with service worker</span>

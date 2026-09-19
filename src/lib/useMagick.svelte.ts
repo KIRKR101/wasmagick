@@ -38,6 +38,7 @@ import {
 import { generateClutImage } from './luts';
 import { renderClutPngBytes } from './clut-data';
 import { buildNativeMagickArgs } from './magick-args';
+import { buildNativeProcessingPlan } from './native-plan';
 import { applyCrop, readImageWithFilename, resolveNoiseAttenuate } from './magick-process';
 import { extractExif, parseExifOrientation, type ExifData } from './exif';
 import { computeCropStepOffset, type CropRect } from './crop-utils';
@@ -467,6 +468,7 @@ export class MagickState {
 	processedPreviewHeight = $state(0);
 	processedImageFormat = $state<string | null>(null);
 	processedImageName = $state<string | null>(null);
+	processedBy = $state<string | null>(null);
 	processedImageTime = $state(0);
 	processedImageDelta = $state('N/A');
 	/**
@@ -1181,59 +1183,72 @@ export class MagickState {
 
 	async renderOriginalPreview(fullResolution = false): Promise<void> {
 		const source = this.sourceBytes;
-		if (!source || (this.originalPreviewData && (!fullResolution || this.originalPreviewFull))) return;
+		if (!source || (this.originalPreviewData && (!fullResolution || this.originalPreviewFull)))
+			return;
 		this.originalPreviewLoading = true;
 		try {
-		if (fullResolution && this.nativeAvailable && (await this.renderNativeOriginalPreview(source, true))) return;
-		if (fullResolution) {
-			const preview = await browserPreview(
-				source,
-				this.originalWidth && this.originalHeight
-					? { width: this.originalWidth, height: this.originalHeight }
-					: null,
-				WEB_FULL_PREVIEW_MAX_EDGE
-			);
-			if (this.sourceBytes !== source) return;
-			if (preview) {
-				this.originalPreviewData = preview.data;
-				this.originalPreviewWidth = preview.width;
-				this.originalPreviewHeight = preview.height;
-				this.originalPreviewFailed = false;
-				this.originalPreviewFull = true;
+			if (
+				fullResolution &&
+				this.nativeAvailable &&
+				(await this.renderNativeOriginalPreview(source, true))
+			)
 				return;
-			}
-		}
-		try {
-			readImageWithFilename(source, this.originalName, (image) => {
-				if (this.settings.autoOrient) image.autoOrient();
-				const maxEdge = fullResolution ? WEB_FULL_PREVIEW_MAX_EDGE : PREVIEW_MAX_EDGE;
-				{
-					const scale = Math.min(1, maxEdge / Math.max(image.width, image.height));
-					if (scale < 1) image.resize(Math.max(1, Math.round(image.width * scale)), Math.max(1, Math.round(image.height * scale)));
-				}
-				const width = image.width;
-				const height = image.height;
-				const data = image.getPixels(
-					(pixels) => pixels.toByteArray(0, 0, width, height, 'RGBA') ?? new Uint8Array()
+			if (fullResolution) {
+				const preview = await browserPreview(
+					source,
+					this.originalWidth && this.originalHeight
+						? { width: this.originalWidth, height: this.originalHeight }
+						: null,
+					WEB_FULL_PREVIEW_MAX_EDGE
 				);
-				if (this.sourceBytes === source && data.length === width * height * 4) {
-					this.originalPreviewData = data;
-					this.originalPreviewWidth = width;
-					this.originalPreviewHeight = height;
+				if (this.sourceBytes !== source) return;
+				if (preview) {
+					this.originalPreviewData = preview.data;
+					this.originalPreviewWidth = preview.width;
+					this.originalPreviewHeight = preview.height;
 					this.originalPreviewFailed = false;
-					this.originalPreviewFull = fullResolution;
+					this.originalPreviewFull = true;
+					return;
 				}
-			});
-		} catch (error) {
-			if (await this.renderNativeOriginalPreview(source, fullResolution)) return;
-			console.warn('Could not render imported image preview:', error);
-		}
+			}
+			try {
+				readImageWithFilename(source, this.originalName, (image) => {
+					if (this.settings.autoOrient) image.autoOrient();
+					const maxEdge = fullResolution ? WEB_FULL_PREVIEW_MAX_EDGE : PREVIEW_MAX_EDGE;
+					{
+						const scale = Math.min(1, maxEdge / Math.max(image.width, image.height));
+						if (scale < 1)
+							image.resize(
+								Math.max(1, Math.round(image.width * scale)),
+								Math.max(1, Math.round(image.height * scale))
+							);
+					}
+					const width = image.width;
+					const height = image.height;
+					const data = image.getPixels(
+						(pixels) => pixels.toByteArray(0, 0, width, height, 'RGBA') ?? new Uint8Array()
+					);
+					if (this.sourceBytes === source && data.length === width * height * 4) {
+						this.originalPreviewData = data;
+						this.originalPreviewWidth = width;
+						this.originalPreviewHeight = height;
+						this.originalPreviewFailed = false;
+						this.originalPreviewFull = fullResolution;
+					}
+				});
+			} catch (error) {
+				if (await this.renderNativeOriginalPreview(source, fullResolution)) return;
+				console.warn('Could not render imported image preview:', error);
+			}
 		} finally {
 			if (this.sourceBytes === source) this.originalPreviewLoading = false;
 		}
 	}
 
-	private async renderNativeOriginalPreview(source: Uint8Array, fullResolution: boolean): Promise<boolean> {
+	private async renderNativeOriginalPreview(
+		source: Uint8Array,
+		fullResolution: boolean
+	): Promise<boolean> {
 		if (!window.wasmagick?.processNativeImage) return false;
 		try {
 			const result = await window.wasmagick.processNativeImage({
@@ -1352,14 +1367,18 @@ export class MagickState {
 		this.hasError = false;
 		this.errorMessage = null;
 		this.isLoading = true;
-		this.currentProcessingStep = 'Processing with native ImageMagick...';
+		this.currentProcessingStep = 'Processing with native engine...';
 		const startTime = performance.now();
 
 		try {
-			const orientation = snapSettings(this.settings).autoOrient
-				? await this.sourceExifOrientation()
-				: null;
-			const built = buildNativeMagickArgs(snapSettings(this.settings), {
+			const settings = snapSettings(this.settings);
+			const plan = buildNativeProcessingPlan(settings, this.originalName);
+			this.currentProcessingStep =
+				plan.backend === 'vips'
+					? 'Processing with native VIPS...'
+					: 'Processing with native ImageMagick...';
+			const orientation = settings.autoOrient ? await this.sourceExifOrientation() : null;
+			const built = buildNativeMagickArgs(settings, {
 				width: this.originalWidth,
 				height: this.originalHeight,
 				orientation
@@ -1385,7 +1404,8 @@ export class MagickState {
 			}
 
 			if (debugMode) {
-				console.log('NativeImageMagick', { args, format: this.settings.imageFormat });
+				console.log('NativeProcessingPlan', plan);
+				console.log('NativeImageMagick', { args, format: settings.imageFormat });
 			}
 
 			const result = await window.wasmagick!.processNativeImage({
@@ -1395,7 +1415,8 @@ export class MagickState {
 				sourceRevision: this._sourceRevision,
 				args,
 				outputExtension: built.outputExtension,
-				outputFormat: this.settings.imageFormat,
+				outputFormat: settings.imageFormat,
+				plan,
 				orientation,
 				clutData,
 				fontData,
@@ -1421,7 +1442,8 @@ export class MagickState {
 				appliedOptions,
 				result.previewData,
 				result.previewWidth,
-				result.previewHeight
+				result.previewHeight,
+				result.backend
 			);
 			if (onComplete) onComplete();
 		} catch (err: unknown) {
@@ -2116,7 +2138,8 @@ export class MagickState {
 		_appliedOptions: AppliedOptions,
 		previewData?: Uint8Array,
 		previewWidth?: number,
-		previewHeight?: number
+		previewHeight?: number,
+		processedBy = 'wasm'
 	): void {
 		const formatInfo = this.exportFormats.find(
 			(candidate) => candidate.value.toUpperCase() === format.toUpperCase()
@@ -2149,6 +2172,7 @@ export class MagickState {
 			width: newWidth,
 			height: newHeight
 		});
+		this.processedBy = processedBy;
 
 		this.isLoading = false;
 		this.currentProcessingStep = null;

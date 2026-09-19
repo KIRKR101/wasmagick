@@ -1,5 +1,7 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
+import type { NativeProcessingPlan } from '$lib/native-plan';
+
 declare global {
 	namespace App {
 		// interface Error {}
@@ -50,6 +52,7 @@ declare global {
 		clutData?: Uint8Array | null;
 		fontData?: Uint8Array | null;
 		fontFileName?: string | null;
+		plan?: NativeProcessingPlan;
 	}
 
 	interface WasmagickNativeProcessResult {
@@ -60,6 +63,7 @@ declare global {
 		width: number;
 		height: number;
 		format: string;
+		backend?: 'vips' | 'magick';
 	}
 
 	interface WasmagickNativeFormatInfo {
