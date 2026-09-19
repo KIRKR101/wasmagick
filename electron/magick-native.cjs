@@ -22,6 +22,19 @@ const TOKENS = {
 
 const PROCESS_TIMEOUT_MS = 120000;
 const MAX_STDERR_BYTES = 64 * 1024;
+const MAX_PREVIEW_EDGE = 2048;
+const MAX_INTERACTIVE_PREVIEW_EDGE = 8192;
+const MAX_GPU_IMAGE_EDGE = 16384;
+const BROWSER_RENDERABLE_FORMATS = new Set([
+	'AVIF',
+	'BMP',
+	'GIF',
+	'JPEG',
+	'JPG',
+	'PNG',
+	'SVG',
+	'WEBP'
+]);
 const EXIF_ORIENTATION_NAMES = {
 	1: 'TopLeft',
 	2: 'TopRight',
@@ -663,13 +676,46 @@ async function processNativeVips(payload) {
 	if (!payload.plan.output.stripMeta) outputPipeline = outputPipeline.withMetadata();
 	outputPipeline = outputPipeline.toFormat(format, outputOptions);
 
+	const needsPreview = !BROWSER_RENDERABLE_FORMATS.has(
+		String(payload.plan.output.format || payload.outputFormat || '').toUpperCase()
+	);
+	const pipelineInfo = await pipeline.metadata();
+	const needsInteractivePreview =
+		BROWSER_RENDERABLE_FORMATS.has(
+			String(payload.plan.output.format || payload.outputFormat || '').toUpperCase()
+		) &&
+		(pipelineInfo.width > MAX_GPU_IMAGE_EDGE || pipelineInfo.height > MAX_GPU_IMAGE_EDGE);
+	let previewPipeline = pipeline.clone();
+	if (format === 'jpeg') previewPipeline = previewPipeline.flatten({ background: '#ffffff' });
 	const [{ data, info }, previewResult] = await Promise.all([
 		outputPipeline.toBuffer({ resolveWithObject: true }),
-		pipeline.clone().toColourspace('srgb').ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+		needsInteractivePreview
+			? previewPipeline
+					.clone()
+					.resize({
+						width: MAX_INTERACTIVE_PREVIEW_EDGE,
+						height: MAX_INTERACTIVE_PREVIEW_EDGE,
+						fit: 'inside'
+					})
+					.toFormat('webp', { quality: 90 })
+					.toBuffer()
+					.then((/** @type {Buffer} */ data) => ({ data, info: { width: 0, height: 0, channels: 0 } }))
+			: needsPreview
+			? pipeline
+					.clone()
+					.resize({ width: MAX_PREVIEW_EDGE, height: MAX_PREVIEW_EDGE, fit: 'inside' })
+					.toColourspace('srgb')
+					.ensureAlpha()
+					.raw()
+					.toBuffer({ resolveWithObject: true })
+			: Promise.resolve({ data: Buffer.alloc(0), info: { width: 0, height: 0, channels: 4 } })
 	]);
 	const { data: rawPreview, info: previewInfo } = previewResult;
-	let previewData = new Uint8Array(rawPreview);
-	if (previewInfo.channels !== 4) {
+	const previewImageData = needsInteractivePreview
+		? new Uint8Array(rawPreview)
+		: new Uint8Array();
+	let previewData = needsInteractivePreview ? new Uint8Array() : new Uint8Array(rawPreview);
+	if (!needsInteractivePreview && previewInfo.channels !== 4) {
 		const rgba = new Uint8Array(previewInfo.width * previewInfo.height * 4);
 		for (
 			let source = 0, target = 0;
@@ -693,9 +739,11 @@ async function processNativeVips(payload) {
 
 	return {
 		data: new Uint8Array(data),
-		previewData: new Uint8Array(previewData),
-		previewWidth: previewInfo.width,
-		previewHeight: previewInfo.height,
+		previewData: needsPreview ? new Uint8Array(previewData) : new Uint8Array(),
+		previewWidth: needsInteractivePreview ? 0 : previewInfo.width,
+		previewHeight: needsInteractivePreview ? 0 : previewInfo.height,
+		previewImageData,
+		previewImageFormat: needsInteractivePreview ? 'WEBP' : undefined,
 		width: info.width,
 		height: info.height,
 		format: String(payload.outputFormat || format).toUpperCase(),
@@ -779,17 +827,10 @@ async function processNativeMagick(payload) {
 			...substituted,
 			...(hasOutput ? [] : [outputSpecifier])
 		];
-		const outputIndex = finalArgs.lastIndexOf(outputSpecifier);
-		finalArgs.splice(
-			outputIndex,
-			0,
-			'-depth',
-			'8',
-			'-write',
-			`rgba:${previewPath}`,
-			'-depth',
-			'16'
+		const needsPreview = payload.previewOnly || !BROWSER_RENDERABLE_FORMATS.has(
+			String(payload.outputFormat || '').toUpperCase()
 		);
+		const previewMaxEdge = Math.max(1, Number(payload.previewMaxEdge) || MAX_PREVIEW_EDGE);
 
 		// Some coders leave the source EXIF orientation unavailable to
 		// ImageMagick even though the renderer's metadata parser found it.
@@ -816,19 +857,48 @@ async function processNativeMagick(payload) {
 
 		const data = new Uint8Array(await fs.promises.readFile(outputPath));
 		const { width, height } = await identifyDimensions(magickBin, outputPath);
-		const rawPreviewData = new Uint8Array(await fs.promises.readFile(previewPath));
-		const firstFrameBytes = width * height * 4;
-		if (rawPreviewData.length < firstFrameBytes) {
-			throw new Error('Native preview data is shorter than the reported image dimensions');
+		let previewData = new Uint8Array();
+		let previewWidth = 0;
+		let previewHeight = 0;
+		let previewImageData = new Uint8Array();
+		if (needsPreview) {
+			const scale = Math.min(1, previewMaxEdge / Math.max(width, height));
+			previewWidth = Math.max(1, Math.round(width * scale));
+			previewHeight = Math.max(1, Math.round(height * scale));
+			await runBinary(
+				magickBin,
+				[
+					outputPath,
+					'-resize',
+					`${previewMaxEdge}x${previewMaxEdge}>`,
+					'-depth',
+					'8',
+					`rgba:${previewPath}`
+				],
+				{ inputName: payload.inputName }
+			);
+			const rawPreviewData = new Uint8Array(await fs.promises.readFile(previewPath));
+			const previewBytes = previewWidth * previewHeight * 4;
+			if (rawPreviewData.length < previewBytes) {
+				throw new Error('Native preview data is shorter than the reported preview dimensions');
+			}
+			previewData = rawPreviewData.slice(0, previewBytes);
+		} else if (width > MAX_GPU_IMAGE_EDGE || height > MAX_GPU_IMAGE_EDGE) {
+			const previewImagePath = path.join(tmpDir, 'preview.webp');
+			await runBinary(
+				magickBin,
+				[outputPath, '-resize', `${MAX_INTERACTIVE_PREVIEW_EDGE}x${MAX_INTERACTIVE_PREVIEW_EDGE}>`, '-quality', '90', `webp:${previewImagePath}`],
+				{ inputName: payload.inputName }
+			);
+			previewImageData = new Uint8Array(await fs.promises.readFile(previewImagePath));
 		}
-		// The renderer currently displays one bitmap. Keep the first frame when
-		// ImageMagick writes a multi-frame image to the raw RGBA stream.
-		const previewData = rawPreviewData.slice(0, firstFrameBytes);
 		return {
 			data,
 			previewData,
-			previewWidth: width,
-			previewHeight: height,
+			previewWidth,
+			previewHeight,
+			previewImageData,
+			previewImageFormat: previewImageData.length ? 'WEBP' : undefined,
 			width,
 			height,
 			format: String(payload.outputFormat || 'png'),

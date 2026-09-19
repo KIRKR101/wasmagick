@@ -53,10 +53,10 @@ import {
 	type ExportFormat
 } from './export-formats';
 import { buildOutputFilename } from './settings';
+import { BROWSER_RENDERABLE_FORMATS } from './image-capabilities';
 
 const AUTO_PROCESS_DELAY = 300;
 const EXIF_UNSUPPORTED_MESSAGE = 'Format probably not supported';
-
 const STORAGE_KEY = 'wasmagick-settings';
 
 const ARRAY_KEYS = new Set([
@@ -463,6 +463,7 @@ export class MagickState {
 	originalPreviewLoading = $state(false);
 	originalImageFormat = $state<string | null>(null);
 	processedImageUrl = $state<string | null>(null);
+	processedPreviewUrl = $state<string | null>(null);
 	processedPreviewData = $state<Uint8Array | null>(null);
 	processedPreviewWidth = $state(0);
 	processedPreviewHeight = $state(0);
@@ -576,6 +577,7 @@ export class MagickState {
 	private _nativeSourceRevision: number | null = null;
 	private _nativeRequestId = 0;
 	private _sourceRevision = 0;
+	private _previewRequestId = 0;
 	private _requestId = 0;
 	private _latestWorkerRequestId = 0;
 	cropMode = $state(false);
@@ -1066,6 +1068,7 @@ export class MagickState {
 			const buffer = await file.arrayBuffer();
 			this.sourceBytes = new Uint8Array(buffer);
 			this._sourceRevision++;
+			this._previewRequestId++;
 			const source = this.sourceBytes;
 			const sourceRevision = this._sourceRevision;
 			this._nativeSourceRevision = null;
@@ -1154,10 +1157,16 @@ export class MagickState {
 		sourceRevision: number,
 		dimensions: { width: number; height: number } | null
 	): Promise<void> {
+		const previewRequestId = this._previewRequestId;
 		this.originalPreviewLoading = true;
 		try {
 			const preview = await browserPreview(source, dimensions);
-			if (this.sourceBytes !== source || this._sourceRevision !== sourceRevision) return;
+			if (
+				this.sourceBytes !== source ||
+				this._sourceRevision !== sourceRevision ||
+				this._previewRequestId !== previewRequestId
+			)
+				return;
 			if (preview) {
 				this.originalPreviewData = preview.data;
 				this.originalPreviewWidth = preview.width;
@@ -1171,7 +1180,11 @@ export class MagickState {
 			}
 
 			this.originalPreviewFailed = true;
-			if (this.nativeAvailable && (await this.renderNativeOriginalPreview(source, false))) return;
+			if (
+				this.nativeAvailable &&
+				(await this.renderNativeOriginalPreview(source, false, previewRequestId))
+			)
+				return;
 			if (this.wasmLoaded) await this.renderOriginalPreview();
 			else await this.initWasm();
 		} finally {
@@ -1183,6 +1196,8 @@ export class MagickState {
 
 	async renderOriginalPreview(fullResolution = false): Promise<void> {
 		const source = this.sourceBytes;
+		const previewRequestId = this._previewRequestId;
+		if (this.isLoading) return;
 		if (!source || (this.originalPreviewData && (!fullResolution || this.originalPreviewFull)))
 			return;
 		this.originalPreviewLoading = true;
@@ -1190,7 +1205,7 @@ export class MagickState {
 			if (
 				fullResolution &&
 				this.nativeAvailable &&
-				(await this.renderNativeOriginalPreview(source, true))
+				(await this.renderNativeOriginalPreview(source, true, previewRequestId))
 			)
 				return;
 			if (fullResolution) {
@@ -1201,7 +1216,7 @@ export class MagickState {
 						: null,
 					WEB_FULL_PREVIEW_MAX_EDGE
 				);
-				if (this.sourceBytes !== source) return;
+				if (this.sourceBytes !== source || this._previewRequestId !== previewRequestId) return;
 				if (preview) {
 					this.originalPreviewData = preview.data;
 					this.originalPreviewWidth = preview.width;
@@ -1228,7 +1243,11 @@ export class MagickState {
 					const data = image.getPixels(
 						(pixels) => pixels.toByteArray(0, 0, width, height, 'RGBA') ?? new Uint8Array()
 					);
-					if (this.sourceBytes === source && data.length === width * height * 4) {
+					if (
+						this.sourceBytes === source &&
+						this._previewRequestId === previewRequestId &&
+						data.length === width * height * 4
+					) {
 						this.originalPreviewData = data;
 						this.originalPreviewWidth = width;
 						this.originalPreviewHeight = height;
@@ -1237,7 +1256,8 @@ export class MagickState {
 					}
 				});
 			} catch (error) {
-				if (await this.renderNativeOriginalPreview(source, fullResolution)) return;
+				if (await this.renderNativeOriginalPreview(source, fullResolution, previewRequestId))
+					return;
 				console.warn('Could not render imported image preview:', error);
 			}
 		} finally {
@@ -1247,7 +1267,8 @@ export class MagickState {
 
 	private async renderNativeOriginalPreview(
 		source: Uint8Array,
-		fullResolution: boolean
+		fullResolution: boolean,
+		previewRequestId = this._previewRequestId
 	): Promise<boolean> {
 		if (!window.wasmagick?.processNativeImage) return false;
 		try {
@@ -1257,9 +1278,16 @@ export class MagickState {
 				sourceRevision: this._sourceRevision,
 				args: fullResolution ? ['-auto-orient'] : ['-auto-orient', '-resize', '2048x2048>'],
 				outputExtension: 'png',
-				outputFormat: 'PNG'
+				outputFormat: 'PNG',
+				previewOnly: true,
+				previewMaxEdge: fullResolution ? WEB_FULL_PREVIEW_MAX_EDGE : PREVIEW_MAX_EDGE
 			});
-			if (this.sourceBytes !== source || !result.previewData?.length) return false;
+			if (
+				this.sourceBytes !== source ||
+				this._previewRequestId !== previewRequestId ||
+				!result.previewData?.length
+			)
+				return false;
 			this.originalPreviewData = result.previewData;
 			this.originalPreviewWidth = result.previewWidth ?? result.width;
 			this.originalPreviewHeight = result.previewHeight ?? result.height;
@@ -1316,6 +1344,10 @@ export class MagickState {
 		if (this.processedImageUrl) {
 			URL.revokeObjectURL(this.processedImageUrl);
 			this.processedImageUrl = null;
+		}
+		if (this.processedPreviewUrl) {
+			URL.revokeObjectURL(this.processedPreviewUrl);
+			this.processedPreviewUrl = null;
 		}
 	}
 
@@ -1374,9 +1406,9 @@ export class MagickState {
 			const settings = snapSettings(this.settings);
 			const plan = buildNativeProcessingPlan(settings, this.originalName);
 			this.currentProcessingStep =
-				plan.backend === 'vips'
-					? 'Processing with native VIPS...'
-					: 'Processing with native ImageMagick...';
+				plan.backend === 'magick'
+					? 'Processing with native ImageMagick...'
+					: 'Processing with native engine...';
 			const orientation = settings.autoOrient ? await this.sourceExifOrientation() : null;
 			const built = buildNativeMagickArgs(settings, {
 				width: this.originalWidth,
@@ -1443,6 +1475,8 @@ export class MagickState {
 				result.previewData,
 				result.previewWidth,
 				result.previewHeight,
+				result.previewImageData,
+				result.previewImageFormat,
 				result.backend
 			);
 			if (onComplete) onComplete();
@@ -2059,10 +2093,15 @@ export class MagickState {
 
 								const finalWidth = image.width;
 								const finalHeight = image.height;
-								const previewData = image.getPixels(
-									(pixels) =>
-										pixels.toByteArray(0, 0, finalWidth, finalHeight, 'RGBA') ?? new Uint8Array()
+								const needsPreview = !BROWSER_RENDERABLE_FORMATS.has(
+									this.settings.imageFormat.toUpperCase()
 								);
+								const previewData = needsPreview
+									? image.getPixels(
+											(pixels) =>
+												pixels.toByteArray(0, 0, finalWidth, finalHeight, 'RGBA') ?? new Uint8Array()
+										)
+									: new Uint8Array();
 
 								image.write(magf, (data) => {
 									const endTime = performance.now();
@@ -2081,9 +2120,9 @@ export class MagickState {
 										finalWidth,
 										finalHeight,
 										appliedOptions,
-										previewData,
-										finalWidth,
-										finalHeight
+											previewData,
+											needsPreview ? finalWidth : 0,
+											needsPreview ? finalHeight : 0
 									);
 
 									if (onComplete) onComplete();
@@ -2139,6 +2178,8 @@ export class MagickState {
 		previewData?: Uint8Array,
 		previewWidth?: number,
 		previewHeight?: number,
+		previewImageData?: Uint8Array,
+		previewImageFormat?: string,
 		processedBy = 'wasm'
 	): void {
 		const formatInfo = this.exportFormats.find(
@@ -2151,8 +2192,16 @@ export class MagickState {
 		if (this.processedImageUrl) {
 			URL.revokeObjectURL(this.processedImageUrl);
 		}
+		if (this.processedPreviewUrl) URL.revokeObjectURL(this.processedPreviewUrl);
 
 		this.processedImageUrl = URL.createObjectURL(blob);
+		this.processedPreviewUrl = previewImageData?.length
+			? URL.createObjectURL(
+					new Blob([previewImageData as unknown as BlobPart], {
+						type: mimeTypeForFormat(previewImageFormat ?? 'JPEG', 'jpg')
+					})
+				)
+			: null;
 		this.processedPreviewData = previewData ?? null;
 		this.processedPreviewWidth = previewWidth ?? newWidth;
 		this.processedPreviewHeight = previewHeight ?? newHeight;

@@ -6,7 +6,7 @@ import { buildNativeProcessingPlan } from '../src/lib/native-plan';
 import { DEFAULT_SETTINGS } from '../src/lib/useMagick.svelte';
 
 describe('native VIPS backend', () => {
-	it('runs a supported geometry plan and returns output plus RGBA preview', async () => {
+	it('runs a supported geometry plan without a duplicate browser preview', async () => {
 		const source = new Uint8Array(
 			fs.readFileSync(path.resolve('test/fixtures/source/source-100x100.png'))
 		);
@@ -31,9 +31,9 @@ describe('native VIPS backend', () => {
 		expect(plan.backend).toBe('vips');
 		expect(result.width).toBe(50);
 		expect(result.height).toBe(50);
-		expect(result.previewWidth).toBe(50);
-		expect(result.previewHeight).toBe(50);
-		expect(result.previewData).toHaveLength(50 * 50 * 4);
+		expect(result.previewWidth).toBe(0);
+		expect(result.previewHeight).toBe(0);
+		expect(result.previewData).toHaveLength(0);
 		expect(result.data.byteLength).toBeGreaterThan(0);
 	});
 
@@ -170,8 +170,6 @@ describe('native VIPS backend', () => {
 			outputFormat: 'PNG',
 			plan
 		});
-		for (let index = 3; index < result.previewData.length; index += 4) {
-			expect(result.previewData[index]).toBe(255);
-		}
+		expect(result.previewData).toHaveLength(0);
 	});
 });

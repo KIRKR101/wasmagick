@@ -47,6 +47,9 @@ declare global {
 		args: string[];
 		outputExtension: string;
 		outputFormat: string;
+		/** Return a raw RGBA preview even when outputFormat is browser-renderable. */
+		previewOnly?: boolean;
+		previewMaxEdge?: number;
 		/** ExifTool orientation used only if native ImageMagick reports Undefined. */
 		orientation?: number | null;
 		clutData?: Uint8Array | null;
@@ -60,6 +63,8 @@ declare global {
 		previewData?: Uint8Array;
 		previewWidth?: number;
 		previewHeight?: number;
+		previewImageData?: Uint8Array;
+		previewImageFormat?: string;
 		width: number;
 		height: number;
 		format: string;

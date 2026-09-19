@@ -8,17 +8,53 @@
 
 	let {
 		originalUrl,
+		originalPreviewData = null,
+		originalPreviewWidth = 0,
+		originalPreviewHeight = 0,
 		processedUrl,
+		processedPreviewUrl = null,
 		imageStyle,
 		originalLabel = '',
 		processedLabel = ''
 	}: {
 		originalUrl: string;
+		originalPreviewData?: Uint8Array | null;
+		originalPreviewWidth?: number;
+		originalPreviewHeight?: number;
 		processedUrl: string;
+		processedPreviewUrl?: string | null;
 		imageStyle: string;
 		originalLabel?: string;
 		processedLabel?: string;
 	} = $props();
+
+	let originalCanvasRef = $state<HTMLCanvasElement | null>(null);
+	let processedImageRef = $state<HTMLImageElement | null>(null);
+	let processedDisplayWidth = $state(0);
+	let processedDisplayHeight = $state(0);
+	let canvasStyle = $derived(
+		processedDisplayWidth && processedDisplayHeight
+			? `${imageStyle} width: ${processedDisplayWidth}px; height: ${processedDisplayHeight}px;`
+			: imageStyle
+	);
+
+	function syncProcessedSize() {
+		if (!processedImageRef) return;
+		processedDisplayWidth = processedImageRef.naturalWidth;
+		processedDisplayHeight = processedImageRef.naturalHeight;
+	}
+
+	$effect(() => {
+		if (!originalCanvasRef || !originalPreviewData?.length || !originalPreviewWidth || !originalPreviewHeight)
+			return;
+		originalCanvasRef.width = originalPreviewWidth;
+		originalCanvasRef.height = originalPreviewHeight;
+		originalCanvasRef.getContext('2d')?.putImageData(
+			new ImageData(new Uint8ClampedArray(originalPreviewData), originalPreviewWidth, originalPreviewHeight),
+			0,
+			0
+		);
+	});
 
 	let handlePct = $state(50);
 	let dragging = $state(false);
@@ -53,21 +89,32 @@
 <div bind:this={containerRef} class="pointer-events-none absolute inset-0 z-10 overflow-hidden">
 	<!-- Bottom: processed -->
 	<img
-		src={processedUrl}
+		bind:this={processedImageRef}
+		src={processedPreviewUrl || processedUrl}
 		style={imageStyle}
+		onload={syncProcessedSize}
 		alt={processedLabel}
 		draggable="false"
 		class="checkerboard max-h-none max-w-none origin-center object-contain will-change-transform"
 	/>
 	<!-- Top: original, clipped to left of handle -->
 	<div class="absolute inset-0" style="clip-path: inset(0 {100 - handlePct}% 0 0)">
-		<img
-			src={originalUrl}
-			style={imageStyle}
-			alt={originalLabel}
-			draggable="false"
-			class="checkerboard max-h-none max-w-none origin-center object-contain will-change-transform"
-		/>
+		{#if originalPreviewData?.length}
+			<canvas
+				bind:this={originalCanvasRef}
+				style={canvasStyle}
+				aria-label={originalLabel}
+				class="checkerboard max-h-none max-w-none origin-center object-contain will-change-transform"
+			></canvas>
+		{:else}
+			<img
+				src={originalUrl}
+				style={imageStyle}
+				alt={originalLabel}
+				draggable="false"
+				class="checkerboard max-h-none max-w-none origin-center object-contain will-change-transform"
+			/>
+		{/if}
 	</div>
 </div>
 

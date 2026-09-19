@@ -18,6 +18,7 @@ import type { MagickSettings, LevelChannel } from './types';
 import type { IMagickImage } from '@imagemagick/magick-wasm';
 import { generateClutImage } from './luts';
 import { magickFormatForName } from './export-formats';
+import { BROWSER_RENDERABLE_FORMATS } from './image-capabilities';
 
 /**
  * Camera RAW extensions need an explicit format when read from a byte array.
@@ -480,9 +481,12 @@ export function processImageSync(
 
 		const finalWidth = image.width;
 		const finalHeight = image.height;
-		const previewData = image.getPixels(
-			(pixels) => pixels.toByteArray(0, 0, finalWidth, finalHeight, 'RGBA') ?? new Uint8Array()
-		);
+		const needsPreview = !BROWSER_RENDERABLE_FORMATS.has(settings.imageFormat.toUpperCase());
+		const previewData = needsPreview
+			? image.getPixels(
+					(pixels) => pixels.toByteArray(0, 0, finalWidth, finalHeight, 'RGBA') ?? new Uint8Array()
+				)
+			: new Uint8Array();
 
 		// magick-wasm's AVIF/AOM build rejects the lossless settings it derives
 		// from quality 100 (chroma delta-q is left enabled). Keep the UI's
@@ -514,8 +518,8 @@ export function processImageSync(
 			result = {
 				data: outputData,
 				previewData,
-				previewWidth: finalWidth,
-				previewHeight: finalHeight,
+				previewWidth: needsPreview ? finalWidth : 0,
+				previewHeight: needsPreview ? finalHeight : 0,
 				width: outputWidth,
 				height: outputHeight,
 				format: settings.imageFormat

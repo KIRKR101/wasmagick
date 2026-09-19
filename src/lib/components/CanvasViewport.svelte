@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { AlertTriangle, Columns2, Images, Maximize, ZoomIn, ZoomOut } from 'lucide-svelte';
+	import { Columns2, Images, Maximize, ZoomIn, ZoomOut } from 'lucide-svelte';
 	import FileDropzone from './FileDropzone.svelte';
 	import HoverTooltip from './controls/HoverTooltip.svelte';
 	import SplitCompare from './SplitCompare.svelte';
@@ -23,6 +23,7 @@
 		originalPreviewLoading = false,
 		originalPreviewFull = false,
 		processedImageUrl = null,
+		processedPreviewUrl = null,
 		processedPreviewData = null,
 		processedPreviewWidth = 0,
 		processedPreviewHeight = 0,
@@ -56,6 +57,7 @@
 		originalPreviewLoading?: boolean;
 		originalPreviewFull?: boolean;
 		processedImageUrl?: string | null;
+		processedPreviewUrl?: string | null;
 		processedPreviewData?: Uint8Array | null;
 		processedPreviewWidth?: number;
 		processedPreviewHeight?: number;
@@ -121,6 +123,15 @@
 	let loadedOriginalUrl: string | null | undefined = null;
 	let displayedWidth = $state(0);
 	let displayedHeight = $state(0);
+	let processedPreviewNaturalWidth = $state(0);
+	let processedPreviewNaturalHeight = $state(0);
+
+	$effect(() => {
+		processedPreviewUrl;
+		processedImageUrl;
+		processedPreviewNaturalWidth = 0;
+		processedPreviewNaturalHeight = 0;
+	});
 	let annotationFontReady = $state(0);
 	let displayedPreviewData = $derived(
 		compareActive
@@ -129,11 +140,15 @@
 				: null
 			: processedPreviewData?.length
 				? processedPreviewData
-				: originalPreviewData
+				: processedImageUrl
+					? null
+					: originalPreviewData
 	);
 	let displayedPreviewWidth = $derived(
 		compareActive
 			? originalPreviewWidth
+			: processedImageUrl && processedPreviewNaturalWidth
+				? processedPreviewNaturalWidth
 			: processedPreviewData?.length
 				? processedPreviewWidth
 				: originalPreviewWidth
@@ -141,11 +156,15 @@
 	let displayedPreviewHeight = $derived(
 		compareActive
 			? originalPreviewHeight
+			: processedImageUrl && processedPreviewNaturalHeight
+				? processedPreviewNaturalHeight
 			: processedPreviewData?.length
 				? processedPreviewHeight
 				: originalPreviewHeight
 	);
-	let previewUnavailable = $derived(!displayedPreviewData);
+	let previewUnavailable = $derived(
+		!displayedPreviewData && !originalImageUrl && !processedImageUrl
+	);
 
 	function confirmCropFromPreview(crop: CropRect): void {
 		const width = displayedWidth || 0;
@@ -364,7 +383,11 @@
 	`);
 
 	let displayedImage = $derived(
-		compareActive ? originalImageUrl : processedImageUrl || originalImageUrl
+		compareActive
+			? originalImageUrl
+			: processedPreviewUrl
+				? processedPreviewUrl
+				: processedImageUrl || originalImageUrl
 	);
 
 	// Warn exactly while the original (which the browser cannot render) is the
@@ -398,7 +421,12 @@
 		const newZoom = Math.max(10, Math.min(5000, targetZoom));
 		if (newZoom === oldZoom) return;
 		if (!viewportRef) return;
-		if (newZoom > 115 && displayedImage === originalImageUrl && !originalPreviewLoading) {
+		if (
+			newZoom > 115 &&
+			displayedImage === originalImageUrl &&
+			displayedPreviewData &&
+			!originalPreviewLoading
+		) {
 			fullPreviewTimer = setTimeout(() => {
 				fullPreviewTimer = null;
 				if (currentZoom > 115 && displayedImage === originalImageUrl && !originalPreviewLoading) {
@@ -497,6 +525,12 @@
 
 	function handleImageLoad() {
 		if (isComparing) return;
+		if (previewImageRef && processedImageUrl && displayedImage !== originalImageUrl) {
+			processedPreviewNaturalWidth = previewImageRef.naturalWidth;
+			processedPreviewNaturalHeight = previewImageRef.naturalHeight;
+		}
+		const preservingZoomedFullImage =
+			!!processedPreviewUrl && displayedImage === processedImageUrl && currentZoom >= 110;
 		if (previewImageRef) {
 			displayedWidth = previewImageRef.naturalWidth;
 			displayedHeight = previewImageRef.naturalHeight;
@@ -507,6 +541,7 @@
 			return;
 		}
 		loadedOriginalUrl = processedImageUrl;
+		if (preservingZoomedFullImage) return;
 		fitImageToScreen();
 	}
 
@@ -763,7 +798,11 @@
 		{:else if splitMode && canSplit}
 			<SplitCompare
 				originalUrl={originalImageUrl!}
+				originalPreviewData={originalPreviewData}
+				originalPreviewWidth={originalPreviewWidth}
+				originalPreviewHeight={originalPreviewHeight}
 				processedUrl={processedImageUrl!}
+				processedPreviewUrl={processedPreviewUrl}
 				{imageStyle}
 				originalLabel="Original"
 				processedLabel="Processed"
@@ -778,11 +817,14 @@
 				aria-hidden="true"
 			/>
 		{:else if imageFailed && !originalPreviewData}
-			<div
-				class="checkerboard flex items-center justify-center p-36 text-xl font-medium text-foreground lg:p-64"
-				style={imageStyle}
-			>
-				PLACEHOLDER
+			<div class="text-center text-muted-foreground" role="status" aria-live="polite">
+				<div class="mx-auto mb-4 flex size-16 items-center justify-center">
+					<div class="relative size-12">
+						<div class="absolute inset-0 rounded-full border-2 border-muted/30"></div>
+						<div class="absolute inset-0 animate-spin rounded-full border-2 border-t-primary"></div>
+					</div>
+				</div>
+				<p class="font-mono text-xs">Loading preview…</p>
 			</div>
 		{:else}
 			<img
@@ -808,9 +850,11 @@
 				></canvas>
 			{/if}
 			{#if originalPreviewLoading && displayedPreviewData}
-				<div class="pointer-events-none absolute inset-0 z-40 flex items-center justify-center">
+				<div
+					class="pointer-events-none fixed right-3 bottom-12 z-50 max-w-[calc(100%-1.5rem)] sm:right-4"
+				>
 					<div
-						class="flex items-center gap-2 border border-foreground/20 bg-background/85 px-3 py-2 font-mono text-xs text-muted-foreground backdrop-blur-sm"
+						class="flex items-center gap-2 border border-foreground/30 bg-background px-3 py-2 font-mono text-xs text-foreground shadow-sm"
 						role="status"
 					>
 						<span
@@ -870,18 +914,6 @@
 					onAspectRatioChange={onCropAspectRatioChange}
 				/>
 			{/if}
-		{/if}
-
-		{#if imageFailed && !originalPreviewData}
-			<div
-				class="pointer-events-none absolute top-3 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1.5 border border-amber-600/40 bg-amber-50/90 px-2 py-1 font-mono text-[11px] text-amber-700 backdrop-blur-sm dark:bg-amber-950/80 dark:text-amber-400"
-				role="status"
-			>
-				<AlertTriangle class="size-3 shrink-0" />
-				<span class="pl-2"
-					>Original not renderable in this browser - it will appear after processing</span
-				>
-			</div>
 		{/if}
 
 		<!-- Floating zoom/compare toolbar -->

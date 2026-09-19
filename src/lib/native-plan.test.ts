@@ -77,6 +77,12 @@ describe('native processing plans', () => {
 		expect(gravityCropPlan.unsupported).toEqual([]);
 	});
 
+	it('lets VIPS probe input formats instead of maintaining an extension denylist', () => {
+		const plan = buildNativeProcessingPlan(DEFAULT_SETTINGS, 'photo.jxl');
+		expect(plan.backend).toBe('vips');
+		expect(plan.unsupported).toEqual([]);
+	});
+
 	it('supports partial coordinate and dimension crops', () => {
 		const plan = buildNativeProcessingPlan({ ...DEFAULT_SETTINGS, cropX: 10 }, 'photo.jpg');
 		expect(plan.backend).toBe('vips');

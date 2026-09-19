@@ -190,6 +190,7 @@
 			originalPreviewLoading={magick.originalPreviewLoading}
 			originalPreviewFull={magick.originalPreviewFull}
 			processedImageUrl={magick.processedImageUrl}
+			processedPreviewUrl={magick.processedPreviewUrl}
 			processedPreviewData={magick.processedPreviewData}
 			processedPreviewWidth={magick.processedPreviewWidth}
 			processedPreviewHeight={magick.processedPreviewHeight}
