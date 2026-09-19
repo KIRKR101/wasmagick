@@ -198,6 +198,8 @@
 				bind:this={viewport}
 				originalImageUrl={magick.originalImageUrl}
 				originalPreviewData={magick.originalPreviewData}
+				originalWidth={magick.originalWidth}
+				originalHeight={magick.originalHeight}
 				originalPreviewWidth={magick.originalPreviewWidth}
 				originalPreviewHeight={magick.originalPreviewHeight}
 				originalPreviewLoading={magick.originalPreviewLoading}

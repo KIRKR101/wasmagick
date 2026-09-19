@@ -575,9 +575,13 @@ async function processNativeVips(payload) {
 					const requestedWidth = Math.max(1, Math.min(operation.width ?? width, width));
 					const requestedHeight = Math.max(1, Math.min(operation.height ?? height, height));
 					const left =
-						operation.left ?? gravityOffset(width - requestedWidth, operation.gravity, 'x');
+						operation.left == null
+							? gravityOffset(width - requestedWidth, operation.gravity, 'x')
+							: operation.left;
 					const top =
-						operation.top ?? gravityOffset(height - requestedHeight, operation.gravity, 'y');
+						operation.top == null
+							? gravityOffset(height - requestedHeight, operation.gravity, 'y')
+							: operation.top;
 					const cropWidth = Math.max(1, Math.min(operation.width ?? width - left, width - left));
 					const cropHeight = Math.max(1, Math.min(operation.height ?? height - top, height - top));
 					if (left >= width || top >= height) break;

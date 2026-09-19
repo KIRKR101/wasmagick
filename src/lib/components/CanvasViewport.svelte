@@ -16,6 +16,8 @@
 	let {
 		originalImageUrl = null,
 		originalPreviewData = null,
+		originalWidth = 0,
+		originalHeight = 0,
 		originalPreviewWidth = 0,
 		originalPreviewHeight = 0,
 		originalPreviewLoading = false,
@@ -47,6 +49,8 @@
 	}: {
 		originalImageUrl?: string | null;
 		originalPreviewData?: Uint8Array | null;
+		originalWidth?: number;
+		originalHeight?: number;
 		originalPreviewWidth?: number;
 		originalPreviewHeight?: number;
 		originalPreviewLoading?: boolean;
@@ -142,6 +146,21 @@
 				: originalPreviewHeight
 	);
 	let previewUnavailable = $derived(!displayedPreviewData);
+
+	function confirmCropFromPreview(crop: CropRect): void {
+		const width = displayedWidth || 0;
+		const height = displayedHeight || 0;
+		if (!width || !height || !originalWidth || !originalHeight) {
+			onCropConfirm(crop);
+			return;
+		}
+		onCropConfirm({
+			x: (crop.x * originalWidth) / width,
+			y: (crop.y * originalHeight) / height,
+			w: (crop.w * originalWidth) / width,
+			h: (crop.h * originalHeight) / height
+		});
+	}
 	let lastFittedPreview: Uint8Array | null = null;
 	let lastSourceUrl: string | null = null;
 	let fullPreviewTimer: ReturnType<typeof setTimeout> | null = null;
@@ -840,10 +859,12 @@
 					{imageX}
 					{imageY}
 					{viewportRef}
+					fullResolutionScaleX={originalWidth / Math.max(1, displayedWidth)}
+					fullResolutionScaleY={originalHeight / Math.max(1, displayedHeight)}
 					aspectRatio={cropAspectRatio}
 					{initialCrop}
 					resetKey={displayedImage}
-					onConfirm={onCropConfirm}
+					onConfirm={confirmCropFromPreview}
 					onCancel={onCropCancel}
 					onChange={onCropChange}
 					onAspectRatioChange={onCropAspectRatioChange}

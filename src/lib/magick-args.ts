@@ -109,6 +109,8 @@ export function buildNativeMagickArgs(
 		orientation <= 8;
 	const imageWidth = swapsDimensions ? opts.height : opts.width;
 	const imageHeight = swapsDimensions ? opts.width : opts.height;
+	const resizeW = settings.resizeW ?? 0;
+	const resizeH = settings.resizeH ?? 0;
 
 	// Normalize EXIF orientation immediately after reading the input. The
 	// native runner adds a fallback only after probing the native decoder, so
@@ -116,25 +118,12 @@ export function buildNativeMagickArgs(
 	if (settings.autoOrient) args.push('-auto-orient');
 
 	// -- Geometry --
-	const resizeW = settings.resizeW ?? 0;
-	const resizeH = settings.resizeH ?? 0;
-	if (resizeW > 0 || resizeH > 0) {
-		args.push('-resize', `${resizeW > 0 ? resizeW : ''}x${resizeH > 0 ? resizeH : ''}`);
-	}
-
-	if (parseInt(settings.rotate) !== 0) {
-		args.push('-rotate', String(parseInt(settings.rotate)));
-	}
-
-	if (settings.flop) args.push('-flop');
-	if (settings.flip) args.push('-flip');
-
 	const hasVisualCrop = settings.cropX != null || settings.cropY != null;
 	if (hasVisualCrop) {
-		const w = Math.max(1, settings.cropW ?? 0);
-		const h = Math.max(1, settings.cropH ?? 0);
-		const x = Math.max(0, settings.cropX ?? 0);
-		const y = Math.max(0, settings.cropY ?? 0);
+		const w = Math.max(1, Math.round(settings.cropW ?? (imageWidth ?? 1) - (settings.cropX ?? 0)));
+		const h = Math.max(1, Math.round(settings.cropH ?? (imageHeight ?? 1) - (settings.cropY ?? 0)));
+		const x = Math.max(0, Math.round(settings.cropX ?? 0));
+		const y = Math.max(0, Math.round(settings.cropY ?? 0));
 		args.push('-crop', `${w}x${h}+${x}+${y}`, '+repage');
 	} else {
 		const rawW = settings.cropW;
@@ -142,11 +131,19 @@ export function buildNativeMagickArgs(
 		if ((rawW != null && rawW > 0) || (rawH != null && rawH > 0)) {
 			const imgW = imageWidth ?? 0;
 			const imgH = imageHeight ?? 0;
-			const cw = rawW != null && rawW > 0 ? rawW : imgW > 0 ? imgW : (rawH ?? 0);
-			const ch = rawH != null && rawH > 0 ? rawH : imgH > 0 ? imgH : (rawW ?? 0);
+			const cw = rawW != null && rawW > 0 ? Math.round(rawW) : imgW;
+			const ch = rawH != null && rawH > 0 ? Math.round(rawH) : imgH;
 			args.push('-gravity', settings.cropGravity, '-crop', `${cw}x${ch}+0+0`, '+repage');
 		}
 	}
+
+	if (resizeW > 0 || resizeH > 0) {
+		args.push('-resize', `${resizeW > 0 ? resizeW : ''}x${resizeH > 0 ? resizeH : ''}`);
+	}
+
+	if (parseInt(settings.rotate) !== 0) args.push('-rotate', String(parseInt(settings.rotate)));
+	if (settings.flop) args.push('-flop');
+	if (settings.flip) args.push('-flip');
 
 	if (settings.trimEdges) args.push('-trim', '+repage');
 

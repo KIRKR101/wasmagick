@@ -146,6 +146,14 @@ describe('buildNativeMagickArgs', () => {
 		expect(args.indexOf('-auto-orient')).toBeLessThan(args.indexOf('-resize'));
 	});
 
+	it('uses the resized dimensions for partial crops', () => {
+		const args = build(
+			{ resizeW: 50, resizeH: null, cropW: 30, cropH: null },
+			{ width: 100, height: 50 }
+		).args;
+		expect(args).toContain('30x50+0+0');
+	});
+
 	it('uses post-orientation dimensions for inferred geometry sizes', () => {
 		const crop = build(
 			{ autoOrient: true, cropW: 40, cropH: null },

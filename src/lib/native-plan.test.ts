@@ -20,10 +20,10 @@ describe('native processing plans', () => {
 		expect(plan.backend).toBe('vips');
 		expect(plan.unsupported).toEqual([]);
 		expect(plan.operations.map((operation) => operation.type)).toEqual([
+			'crop',
 			'resize',
 			'rotate',
-			'flip',
-			'crop'
+			'flip'
 		]);
 	});
 

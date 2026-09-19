@@ -104,16 +104,28 @@ export function resolveNoiseAttenuate(type: string, attenuate: number): number {
 	return type === 'Poisson' ? 1 / Math.max(attenuate, 0.01) : attenuate;
 }
 
-export function applyCrop(image: IMagickImage, settings: MagickSettings): boolean {
+export function applyCrop(image: IMagickImage, settings: MagickSettings, scale = 1): boolean {
 	const hasVisualCrop = settings.cropX != null || settings.cropY != null;
 
 	if (hasVisualCrop) {
-		const cx = Math.max(0, settings.cropX ?? 0);
-		const cy = Math.max(0, settings.cropY ?? 0);
+		const cx = Math.max(0, Math.round((settings.cropX ?? 0) * scale));
+		const cy = Math.max(0, Math.round((settings.cropY ?? 0) * scale));
 		// The crop region must lie at least partially inside the image.
 		if (cx >= image.width || cy >= image.height) return false;
-		const cw = Math.max(1, Math.min(settings.cropW ?? image.width - cx, image.width - cx));
-		const ch = Math.max(1, Math.min(settings.cropH ?? image.height - cy, image.height - cy));
+		const cw = Math.max(
+			1,
+			Math.min(
+				Math.round((settings.cropW ?? image.width / scale - (settings.cropX ?? 0)) * scale),
+				image.width - cx
+			)
+		);
+		const ch = Math.max(
+			1,
+			Math.min(
+				Math.round((settings.cropH ?? image.height / scale - (settings.cropY ?? 0)) * scale),
+				image.height - cy
+			)
+		);
 		image.crop(new MagickGeometry(cx, cy, cw, ch));
 		// Match the CLI golden fixtures, which all use `-crop ... +repage`:
 		// drop the virtual-canvas offset the geometry crop records.
@@ -128,8 +140,14 @@ export function applyCrop(image: IMagickImage, settings: MagickSettings): boolea
 		return false;
 	}
 
-	const cropW = Math.max(1, Math.min(rawW ?? image.width, image.width));
-	const cropH = Math.max(1, Math.min(rawH ?? image.height, image.height));
+	const cropW = Math.max(
+		1,
+		Math.min(rawW == null ? image.width : Math.round(rawW * scale), image.width)
+	);
+	const cropH = Math.max(
+		1,
+		Math.min(rawH == null ? image.height : Math.round(rawH * scale), image.height)
+	);
 	const gravityKey = settings.cropGravity as keyof typeof Gravity;
 	image.crop(cropW, cropH, Gravity[gravityKey]);
 	return true;
@@ -169,6 +187,8 @@ export function processImageSync(
 		const resizeW = settings.resizeW ?? 0;
 		const resizeH = settings.resizeH ?? 0;
 
+		applyCrop(image, settings);
+
 		if (resizeW > 0 || resizeH > 0) {
 			image.resize(resizeW, resizeH);
 		}
@@ -179,8 +199,6 @@ export function processImageSync(
 
 		if (settings.flop) image.flop();
 		if (settings.flip) image.flip();
-
-		applyCrop(image, settings);
 
 		if (settings.trimEdges) image.trim();
 

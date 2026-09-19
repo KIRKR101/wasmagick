@@ -94,6 +94,21 @@ export function buildNativeProcessingPlan(
 	if (!VIPS_OUTPUT_FORMATS.has(format)) unsupported.push(`output format ${format}`);
 
 	if (settings.autoOrient) operations.push({ type: 'autoOrient' });
+	const hasCrop =
+		settings.cropX != null ||
+		settings.cropY != null ||
+		hasPositive(settings.cropW) ||
+		hasPositive(settings.cropH);
+	if (hasCrop) {
+		operations.push({
+			type: 'crop',
+			left: settings.cropX == null ? null : Math.max(0, Math.round(settings.cropX)),
+			top: settings.cropY == null ? null : Math.max(0, Math.round(settings.cropY)),
+			width: hasPositive(settings.cropW) ? Math.round(settings.cropW) : null,
+			height: hasPositive(settings.cropH) ? Math.round(settings.cropH) : null,
+			gravity: settings.cropGravity
+		});
+	}
 	if (settings.resizeW != null || settings.resizeH != null) {
 		if (hasPositive(settings.resizeW) || hasPositive(settings.resizeH)) {
 			operations.push({ type: 'resize', width: settings.resizeW, height: settings.resizeH });
@@ -110,22 +125,6 @@ export function buildNativeProcessingPlan(
 	}
 	if (settings.flip) operations.push({ type: 'flip' });
 	if (settings.flop) operations.push({ type: 'flop' });
-
-	const hasCrop =
-		settings.cropX != null ||
-		settings.cropY != null ||
-		hasPositive(settings.cropW) ||
-		hasPositive(settings.cropH);
-	if (hasCrop) {
-		operations.push({
-			type: 'crop',
-			left: settings.cropX == null ? null : Math.max(0, Math.round(settings.cropX)),
-			top: settings.cropY == null ? null : Math.max(0, Math.round(settings.cropY)),
-			width: hasPositive(settings.cropW) ? Math.round(settings.cropW) : null,
-			height: hasPositive(settings.cropH) ? Math.round(settings.cropH) : null,
-			gravity: settings.cropGravity
-		});
-	}
 
 	if (settings.shaveX != null || settings.shaveY != null) unsupported.push('shave');
 	if (settings.trimEdges) operations.push({ type: 'trim' });

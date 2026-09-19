@@ -63,6 +63,34 @@ describe('native VIPS backend', () => {
 		}
 	});
 
+	it('translates source crop coordinates through resize', async () => {
+		const source = new Uint8Array(
+			fs.readFileSync(path.resolve('test/fixtures/source/source-100x100.png'))
+		);
+		const settings = {
+			...DEFAULT_SETTINGS,
+			resizeW: 50,
+			resizeH: 50,
+			cropX: 20,
+			cropY: 10,
+			cropW: 40,
+			cropH: 60,
+			imageFormat: 'PNG'
+		};
+		const result = await processNative({
+			inputName: 'source.png',
+			inputData: source,
+			sourceRevision: Date.now(),
+			args: [],
+			outputExtension: 'png',
+			outputFormat: 'PNG',
+			plan: buildNativeProcessingPlan(settings, 'source.png')
+		});
+
+		expect(result.width).toBe(33);
+		expect(result.height).toBe(50);
+	});
+
 	it('runs supported color and filter operations through VIPS', async () => {
 		const source = new Uint8Array(
 			fs.readFileSync(path.resolve('test/fixtures/source/source-100x100.png'))
