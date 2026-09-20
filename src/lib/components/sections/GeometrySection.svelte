@@ -188,13 +188,14 @@
 			</div>
 
 			<!-- Mode tabs -->
-			<div class="flex border border-foreground/20">
+			<div class="flex h-8 border border-foreground/30" role="group" aria-label="Crop mode">
 				<button
 					type="button"
-					class="flex-1 cursor-pointer py-1 font-mono text-[11px] uppercase transition-colors {cropInputMode ===
+					aria-pressed={cropInputMode === 'visual'}
+					class="h-full flex-1 cursor-pointer px-2.5 py-0 font-mono text-[11px] whitespace-nowrap uppercase transition-colors duration-75 outline-none select-none focus-visible:ring-1 focus-visible:ring-ring/50 dark:hover:bg-muted/50 {cropInputMode ===
 					'visual'
-						? 'bg-muted font-bold text-foreground'
-						: 'text-muted-foreground hover:bg-muted/50'}"
+						? 'bg-muted/50 font-medium text-foreground'
+						: 'bg-transparent text-muted-foreground'}"
 					onclick={() => {
 						if (cropInputMode !== 'visual') {
 							cropInputMode = 'visual';
@@ -208,13 +209,14 @@
 				>
 					Select Region
 				</button>
-				<div class="w-px bg-foreground/20"></div>
+				<div class="w-px bg-foreground/30"></div>
 				<button
 					type="button"
-					class="flex-1 cursor-pointer py-1 font-mono text-[11px] uppercase transition-colors {cropInputMode ===
+					aria-pressed={cropInputMode === 'manual'}
+					class="h-full flex-1 cursor-pointer px-2.5 py-0 font-mono text-[11px] whitespace-nowrap uppercase transition-colors duration-75 outline-none select-none focus-visible:ring-1 focus-visible:ring-ring/50 dark:hover:bg-muted/50 {cropInputMode ===
 					'manual'
-						? 'bg-muted font-bold text-foreground'
-						: 'text-muted-foreground hover:bg-muted/50'}"
+						? 'bg-muted/50 font-medium text-foreground'
+						: 'bg-transparent text-muted-foreground'}"
 					onclick={() => {
 						if (cropInputMode !== 'manual') {
 							cropInputMode = 'manual';
@@ -232,9 +234,9 @@
 				<!-- Visual mode: Select Region + Ratio + Position bar -->
 				<button
 					type="button"
-					class="flex w-full cursor-pointer items-center justify-center gap-2 border py-2 font-mono text-[11px] uppercase transition-all focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {magick.cropMode
-						? 'border-foreground bg-foreground text-background shadow-sm'
-						: 'border-foreground/30 bg-transparent text-muted-foreground hover:border-foreground/60 hover:bg-muted hover:text-foreground'}"
+					class="flex h-8 w-full cursor-pointer items-center justify-center gap-1.5 rounded-none border border-foreground/30 px-2.5 py-0 font-mono text-[11px] whitespace-nowrap uppercase transition-colors duration-75 outline-none select-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 dark:hover:bg-muted/50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 {magick.cropMode
+						? 'bg-muted/50 font-medium text-foreground'
+						: 'bg-transparent text-muted-foreground dark:bg-transparent'}"
 					onclick={() => magick.toggleCropMode()}
 				>
 					<Crop class="size-3.5" />
