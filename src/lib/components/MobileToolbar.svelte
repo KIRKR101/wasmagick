@@ -90,6 +90,7 @@
 					e.preventDefault();
 					onCompareEnd();
 				}}
+				onpointercancel={onCompareEnd}
 				onpointerleave={() => onCompareEnd()}
 				disabled={!magick.processedImageUrl}
 				class="mobile-btn-sm {isComparing ? 'bg-muted text-foreground' : ''}"
