@@ -17,19 +17,18 @@
 	import HoverTooltip from './controls/HoverTooltip.svelte';
 	import UndoRedoButtons from './controls/UndoRedoButtons.svelte';
 	import { shortcutModifier } from '$lib/shortcuts';
-	import { Bug, Info, Keyboard, RotateCcw, Settings, Upload, X } from 'lucide-svelte';
+	import { Info, Keyboard, RotateCcw, Settings, Upload, X } from 'lucide-svelte';
 
 	let {
 		activeSection,
 		onSectionChange,
 		magick,
 		history,
-		debugMode = false,
 		isElectron = false,
 		onUploadClick,
 		onReset,
 		onClose,
-		onToggleDebug,
+		onShowBuildDetails,
 		onToggleShortcuts,
 		onOpenSettings,
 		onUndo,
@@ -39,12 +38,11 @@
 		onSectionChange: (section: EditorSection) => void;
 		magick: MagickState;
 		history: HistoryState;
-		debugMode?: boolean;
 		isElectron?: boolean;
 		onUploadClick: () => void;
 		onReset: () => void;
 		onClose: () => void;
-		onToggleDebug?: () => void;
+		onShowBuildDetails?: () => void;
 		onToggleShortcuts?: () => void;
 		onOpenSettings: () => void;
 		onUndo: () => void;
@@ -470,27 +468,22 @@
 				redoLabel={redoTip}
 			/>
 
-			<HoverTooltip
-				label={isElectron ? 'Show build details' : 'Toggle debug panel'}
-				triggerClass="w-full"
-			>
-				<button
-					onclick={onToggleDebug}
-					aria-label={isElectron ? 'Show build details' : 'Toggle debug panel'}
-					class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {debugMode
-						? 'text-foreground'
-						: ''}"
-				>
-					<span class="inline-flex items-center gap-1.5 truncate"
-						><span class="inline-flex w-[3ch] items-center justify-center"
-							>{#if isElectron}<Info class="size-[1em]" />{:else}<Bug
-									class="size-[1em]"
-								/>{/if}</span
-						>
-						<span class="hover:underline">{isElectron ? 'BUILD' : 'DEBUG'}</span></span
+			{#if isElectron}
+				<HoverTooltip label="Show build details" triggerClass="w-full">
+					<button
+						onclick={onShowBuildDetails}
+						aria-label="Show build details"
+						class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 					>
-				</button>
-			</HoverTooltip>
+						<span class="inline-flex items-center gap-1.5 truncate"
+							><span class="inline-flex w-[3ch] items-center justify-center"
+								><Info class="size-[1em]" /></span
+							>
+							<span class="hover:underline">BUILD</span></span
+						>
+					</button>
+				</HoverTooltip>
+			{/if}
 
 			<HoverTooltip
 				label={`Keyboard shortcuts (${shortcutModifier}+Shift+?)`}

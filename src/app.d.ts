@@ -22,6 +22,7 @@ declare global {
 	interface Window {
 		queryLocalFonts?(options?: { postscriptNames?: string[] }): Promise<FontData[]>;
 		wasmagick?: WasmagickElectronApi;
+		wasmagickSetDebug?(enabled?: boolean): boolean;
 	}
 
 	interface WasmagickFilePayload {

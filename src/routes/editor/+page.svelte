@@ -65,11 +65,17 @@
 
 	onMount(() => {
 		isElectron = Boolean(window.wasmagick);
+		if (!isElectron) {
+			window.wasmagickSetDebug = (enabled = true) => (debugMode = enabled);
+		}
 		const mql = window.matchMedia(MOBILE_BREAKPOINT);
 		isMobile = mql.matches;
 		const handler = (e: MediaQueryListEvent) => (isMobile = e.matches);
 		mql.addEventListener('change', handler);
-		return () => mql.removeEventListener('change', handler);
+		return () => {
+			mql.removeEventListener('change', handler);
+			delete window.wasmagickSetDebug;
+		};
 	});
 
 	let viewport: import('$lib/components/CanvasViewport.svelte').default | null = $state(null);
@@ -462,14 +468,12 @@
 		{history}
 		{presets}
 		{guard}
-		{debugMode}
 		{isElectron}
 		bind:activeSection
 		bind:viewport
 		{annotationPlacementActive}
 		onAnnotationPlacementChange={(active) => (annotationPlacementActive = active)}
 		onAnnotationPlace={handleAnnotationPlace}
-		onToggleDebug={() => (debugMode = !debugMode)}
 		onToggleShortcuts={() => (showShortcuts = !showShortcuts)}
 		onProcess={processCurrent}
 		onReset={() => magick.resetSettings()}

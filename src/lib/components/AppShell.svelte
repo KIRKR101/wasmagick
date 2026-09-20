@@ -18,11 +18,9 @@
 		history,
 		presets,
 		guard,
-		debugMode,
 		isElectron = false,
 		activeSection = $bindable('geometry'),
 		viewport = $bindable(null),
-		onToggleDebug,
 		onToggleShortcuts,
 		onOpenSettings,
 		onProcess,
@@ -41,11 +39,9 @@
 		history: HistoryState;
 		presets: PresetsState;
 		guard: ReplaceGuardState;
-		debugMode: boolean;
 		isElectron?: boolean;
 		activeSection?: EditorSection;
 		viewport?: ReturnType<typeof CanvasViewport> | null;
-		onToggleDebug: () => void;
 		onToggleShortcuts: () => void;
 		onOpenSettings: () => void;
 		onProcess: () => void;
@@ -119,8 +115,7 @@
 	let buildDetailsOpen = $state(false);
 
 	function handleDebugClick() {
-		if (isElectron) buildDetailsOpen = true;
-		else onToggleDebug();
+		buildDetailsOpen = true;
 	}
 
 	function onClearHistoryRequest() {
@@ -164,14 +159,13 @@
 		<ToolRail
 			{magick}
 			{history}
-			{debugMode}
 			{isElectron}
 			{activeSection}
 			onSectionChange={setSection}
 			onUploadClick={openFilePicker}
 			onReset={onResetRequest}
 			onClose={onCloseRequest}
-			onToggleDebug={handleDebugClick}
+			onShowBuildDetails={handleDebugClick}
 			{onToggleShortcuts}
 			{onOpenSettings}
 			{onUndo}
