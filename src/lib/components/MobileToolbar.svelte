@@ -116,9 +116,9 @@
 	<!-- Actions -->
 	<div class="flex items-center justify-around px-2 py-1.5">
 		<!-- File operations -->
-		<button onclick={onDownload} disabled={!canDownload} class="mobile-btn" aria-label="Download">
+		<button onclick={onDownload} disabled={!canDownload} class="mobile-btn" aria-label="Export image">
 			<Download class="size-4.5" />
-			<span class="text-[9px]">SAVE</span>
+			<span class="text-[9px]">EXPORT</span>
 		</button>
 		<button
 			onclick={onClose}
