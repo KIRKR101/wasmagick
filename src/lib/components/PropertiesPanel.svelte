@@ -19,6 +19,7 @@
 	import PresetsSection from './sections/PresetsSection.svelte';
 	import HistoryPanel from './sections/HistoryPanel.svelte';
 	import HoverTooltip from './controls/HoverTooltip.svelte';
+	import { shortcutModifier } from '$lib/shortcuts';
 
 	let {
 		activeSection,
@@ -90,11 +91,11 @@
 			: !magick.wasmLoaded
 				? 'Process — engine loading…'
 				: magick.isStale
-					? 'Settings changed — process to update preview (Ctrl+Enter)'
-					: 'Process image (Ctrl+Enter)'
+					? `Settings changed — process to update preview (${shortcutModifier}+Enter)`
+					: `Process image (${shortcutModifier}+Enter)`
 	);
 	let exportTip = $derived(
-		!canDownload ? 'Export — process image first' : 'Export result (Ctrl+S)'
+		!canDownload ? 'Export — process image first' : `Export result (${shortcutModifier}+S)`
 	);
 
 	let bodyEl = $state<HTMLElement | null>(null);
@@ -176,7 +177,7 @@
 							>{magick.isLoading ? ' ~' : ''}</span
 						></span
 					>
-					<span class="text-[11px] opacity-70">CTRL+<span class="text-sm">↵</span></span>
+					<span class="text-[11px] opacity-70">{shortcutModifier.toUpperCase()}+<span class="text-sm">↵</span></span>
 				</button>
 			</HoverTooltip>
 			<HoverTooltip label={exportTip} side="top" triggerClass="w-full">
@@ -187,7 +188,7 @@
 					class="group flex h-8 w-full shrink-0 cursor-pointer items-center justify-between border border-foreground/30 bg-transparent px-2 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 				>
 					<span class="group-hover:underline">EXPORT</span>
-					<span class="text-[11px] opacity-70">CTRL+S</span>
+					<span class="text-[11px] opacity-70">{shortcutModifier.toUpperCase()}+S</span>
 				</button>
 			</HoverTooltip>
 		</div>

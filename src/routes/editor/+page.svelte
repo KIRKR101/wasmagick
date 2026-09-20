@@ -12,6 +12,7 @@
 	import { getClutPresets, getInterpolationOptions } from '$lib/luts';
 	import { takePendingFile } from '$lib/pending-drop';
 	import { resolveInitialTheme } from '$lib/theme';
+	import { usesShortcutModifier } from '$lib/shortcuts';
 	import type { EditorSection } from '$lib/editor-types';
 	import type { AnnotationPlacement } from '$lib/annotation-utils';
 
@@ -246,7 +247,7 @@
 		// While the settings overlay is open the editor behind it stays
 		// mounted but must not react to shortcuts (the overlay handles Escape).
 		if (settingsOpen) return;
-		const cmdOrCtrl = e.ctrlKey || e.metaKey;
+		const cmdOrCtrl = usesShortcutModifier(e);
 
 		if (cmdOrCtrl && e.key === 'Enter') {
 			e.preventDefault();

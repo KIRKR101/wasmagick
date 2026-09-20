@@ -2,6 +2,7 @@
 	import { Columns2, Images, Maximize, ZoomIn, ZoomOut } from 'lucide-svelte';
 	import FileDropzone from './FileDropzone.svelte';
 	import HoverTooltip from './controls/HoverTooltip.svelte';
+	import { shortcutModifier } from '$lib/shortcuts';
 	import SplitCompare from './SplitCompare.svelte';
 	import CropOverlay from './CropOverlay.svelte';
 	import type { SampleImage } from '$lib/editor-types';
@@ -980,11 +981,11 @@
 				onpointerleave={(e) => e.stopPropagation()}
 				class="pointer-events-auto absolute bottom-3 left-1/2 z-20 hidden -translate-x-1/2 animate-in items-center gap-0 border border-foreground/30 bg-[#f7f7f4]/85 px-1 font-mono text-[11px] backdrop-blur-sm duration-200 fade-in slide-in-from-bottom-2 md:flex dark:bg-background/85"
 			>
-				<HoverTooltip label="Zoom out (Ctrl+-)" side="top">
+				<HoverTooltip label={`Zoom out (${shortcutModifier}+-)`} side="top">
 					<button
 						onclick={zoomOut}
 						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-						aria-label="Zoom out (Ctrl+-)"
+						aria-label={`Zoom out (${shortcutModifier}+-)`}
 					>
 						<ZoomOut class="size-3.5" />
 					</button>
@@ -998,11 +999,11 @@
 						<span class="tabular-nums">{Math.round(currentZoom)}%</span>
 					</button>
 				</HoverTooltip>
-				<HoverTooltip label="Zoom in (Ctrl+=)" side="top">
+				<HoverTooltip label={`Zoom in (${shortcutModifier}+=)`} side="top">
 					<button
 						onclick={zoomIn}
 						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-						aria-label="Zoom in (Ctrl+=)"
+						aria-label={`Zoom in (${shortcutModifier}+=)`}
 					>
 						<ZoomIn class="size-3.5" />
 					</button>
@@ -1010,7 +1011,7 @@
 				<HoverTooltip
 					label={imageFailed && !originalPreviewData
 						? 'Fit unavailable (preview failed)'
-						: 'Fit to screen (Ctrl+0)'}
+						: `Fit to screen (${shortcutModifier}+0)`}
 					side="top"
 				>
 					<button
@@ -1019,7 +1020,7 @@
 						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40"
 						aria-label={imageFailed && !originalPreviewData
 							? 'Fit unavailable (preview failed)'
-							: 'Fit to screen (Ctrl+0)'}
+							: `Fit to screen (${shortcutModifier}+0)`}
 					>
 						<Maximize class="size-3.5" />
 					</button>
