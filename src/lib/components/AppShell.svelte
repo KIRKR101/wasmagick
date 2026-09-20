@@ -223,6 +223,7 @@
 				cropAspectRatio={magick.cropAspectRatio}
 				initialCrop={magick.cropSelection ?? cropInitialRect}
 				onBrowse={openFilePicker}
+				onPaste={(file) => guard.requestReplace(file, onReplace)}
 				onRequestOriginalFullPreview={() => magick.renderOriginalPreview(true)}
 				onOriginalImageError={() => magick.handleOriginalImageError()}
 				{onSelectSample}

@@ -5,11 +5,14 @@
 
 	let {
 		onBrowse,
+		onPaste,
 		onSelectSample
 	}: {
 		onBrowse: () => void;
+		onPaste: (file: File) => void;
 		onSelectSample: (s: SampleImage) => void;
 	} = $props();
+	let pasteError = $state('');
 
 	const samples: SampleImage[] = [
 		{ name: 'Circle Packing', url: '/samples/circle packing.png' },
@@ -21,6 +24,23 @@
 	function pickRandom() {
 		const s = samples[Math.floor(Math.random() * samples.length)];
 		onSelectSample(s);
+	}
+
+	async function pasteImage() {
+		pasteError = '';
+		try {
+			const items = await navigator.clipboard.read();
+			for (const item of items) {
+				const type = item.types.find((candidate) => candidate.startsWith('image/'));
+				if (!type) continue;
+				const blob = await item.getType(type);
+				onPaste(new File([blob], `clipboard.${type.split('/')[1] || 'png'}`, { type }));
+				return;
+			}
+			pasteError = 'No image found on the clipboard.';
+		} catch {
+			pasteError = 'Clipboard access was unavailable.';
+		}
 	}
 </script>
 
@@ -40,12 +60,13 @@
 		<Button variant="terminal" size="lg" onclick={onBrowse} class="uppercase">
 			[<span class="hover:underline"> Browse files </span>]
 		</Button>
-		<span
-			class="border border-foreground/30 px-3 py-1.5 font-mono text-[11px] text-muted-foreground"
-		>
-			{shortcutModifier}+V to paste
-		</span>
+		<Button variant="terminal" size="lg" onclick={pasteImage} class="uppercase">
+			[<span class="hover:underline">{shortcutModifier}+V Paste</span>]
+		</Button>
 	</div>
+	{#if pasteError}<p class="-mt-4 font-mono text-[11px] text-destructive" role="status">
+			{pasteError}
+		</p>{/if}
 
 	<div class="w-full border-t border-foreground/30 pt-5">
 		<Button variant="terminal" size="lg" onclick={pickRandom} class="w-full uppercase">

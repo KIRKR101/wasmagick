@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { AlertCircle, Circle, Loader2 } from 'lucide-svelte';
+	import { AlertCircle, Loader2 } from 'lucide-svelte';
 	import type { MagickState } from '$lib/useMagick.svelte';
 	import ErrorDialog from './ErrorDialog.svelte';
 	import { shortcutModifier } from '$lib/shortcuts';
@@ -53,7 +53,7 @@
 				class="flex items-center gap-1 text-foreground/70"
 				title={`Unsaved edits — press ${shortcutModifier}+S to export`}
 			>
-				<Circle class="size-2 fill-current text-amber-500" aria-hidden="true" />
+				<span class="font-mono text-xs text-amber-500" aria-hidden="true">[*]</span>
 				<span>Unsaved</span>
 			</span>
 		{/if}

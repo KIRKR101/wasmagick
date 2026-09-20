@@ -15,19 +15,9 @@
 	} from '$lib/utils';
 	import { DEFAULT_SETTINGS } from '$lib/useMagick.svelte';
 	import HoverTooltip from './controls/HoverTooltip.svelte';
+	import UndoRedoButtons from './controls/UndoRedoButtons.svelte';
 	import { shortcutModifier } from '$lib/shortcuts';
-	import {
-		Bug,
-		Circle,
-		Info,
-		Keyboard,
-		Redo2,
-		RotateCcw,
-		Settings,
-		Undo2,
-		Upload,
-		X
-	} from 'lucide-svelte';
+	import { Bug, Info, Keyboard, RotateCcw, Settings, Upload, X } from 'lucide-svelte';
 
 	let {
 		activeSection,
@@ -57,8 +47,8 @@
 		onToggleDebug?: () => void;
 		onToggleShortcuts?: () => void;
 		onOpenSettings: () => void;
-		onUndo?: () => void;
-		onRedo?: () => void;
+		onUndo: () => void;
+		onRedo: () => void;
 	} = $props();
 
 	let originalDimensions = $derived(formatDimensions(magick.originalWidth, magick.originalHeight));
@@ -306,15 +296,15 @@
 				aria-pressed={activeSection === item.id}
 			>
 				<span class="inline-flex items-center gap-1.5 truncate"
-					><Circle
-						class="size-3 fill-current {activeSection === item.id ? '' : 'opacity-20'}"
-					/><span class="hover:underline">{item.label}</span></span
+					><span>[{activeSection === item.id ? '*' : ' '}]</span><span class="hover:underline"
+						>{item.label}</span
+					></span
 				>
 				<div class="flex shrink-0 items-center gap-1">
-					{#if item.dirty}<Circle
-							class="size-2 fill-current text-amber-500"
-							aria-label="Modified"
-						/>{/if}
+					<span
+						class="w-3 text-center text-xs text-muted-foreground/60 {item.dirty ? '' : 'invisible'}"
+						aria-label={item.dirty ? 'Modified' : undefined}>^</span
+					>
 					{#if sectionSummary(item.id)}
 						{@const lines = sectionSummary(item.id).split(' · ')}
 						<span class="group/tip relative">
@@ -347,7 +337,8 @@
 				class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 			>
 				<span class="inline-flex items-center gap-1.5 truncate"
-					><Upload class="size-3.5" /> <span class="hover:underline">UPLOAD</span></span
+					><span class="inline-flex items-center">[<Upload class="size-3.5" />]</span>
+					<span class="hover:underline">UPLOAD</span></span
 				>
 			</button>
 		</HoverTooltip>
@@ -363,7 +354,8 @@
 				class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 			>
 				<span class="inline-flex items-center gap-1.5 truncate"
-					><RotateCcw class="size-3.5" /> <span class="hover:underline">RESET ALL</span></span
+					><span class="inline-flex items-center">[<RotateCcw class="size-3.5" />]</span>
+					<span class="hover:underline">RESET ALL</span></span
 				>
 			</button>
 		</HoverTooltip>
@@ -383,7 +375,8 @@
 				class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 			>
 				<span class="inline-flex items-center gap-1.5 truncate"
-					><X class="size-3.5" /> <span class="hover:underline">CLOSE</span></span
+					><span class="inline-flex items-center">[<X class="size-3.5" />]</span>
+					<span class="hover:underline">CLOSE</span></span
 				>
 			</button>
 		</HoverTooltip>
@@ -461,30 +454,15 @@
 
 		<div class="mb-3 text-muted-foreground">/NAV</div>
 		<div class="flex flex-col gap-1.5">
-			<div class="mb-2 flex border border-foreground/30">
-				<HoverTooltip label={undoTip} triggerClass="flex-1">
-					<button
-						onclick={onUndo}
-						disabled={!history.canUndo}
-						aria-label={undoTip}
-						class="group flex-1 cursor-pointer px-2 py-1 text-center font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-					>
-						<Undo2 class="mr-1 inline size-3.5" /> <span class="group-hover:underline">UNDO</span>
-					</button>
-				</HoverTooltip>
-				<div class="w-px self-stretch bg-foreground/30"></div>
-				<HoverTooltip label={redoTip} triggerClass="flex-1">
-					<button
-						onclick={onRedo}
-						disabled={!history.canRedo}
-						aria-label={redoTip}
-						class="group flex-1 cursor-pointer px-2 py-1 text-center font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-					>
-						<span class="group-hover:underline">REDO</span>
-						<Redo2 class="ml-1 inline size-3.5" />
-					</button>
-				</HoverTooltip>
-			</div>
+			<UndoRedoButtons
+				class="mb-2"
+				canUndo={history.canUndo}
+				canRedo={history.canRedo}
+				{onUndo}
+				{onRedo}
+				undoLabel={undoTip}
+				redoLabel={redoTip}
+			/>
 
 			<HoverTooltip
 				label={isElectron ? 'Show build details' : 'Toggle debug panel'}
@@ -498,7 +476,9 @@
 						: ''}"
 				>
 					<span class="inline-flex items-center gap-1.5 truncate"
-						>{#if isElectron}<Info class="size-3.5" />{:else}<Bug class="size-3.5" />{/if}
+						><span class="inline-flex items-center"
+							>[{#if isElectron}<Info class="size-3.5" />{:else}<Bug class="size-3.5" />{/if}]</span
+						>
 						<span class="hover:underline">{isElectron ? 'BUILD' : 'DEBUG'}</span></span
 					>
 				</button>
@@ -514,7 +494,8 @@
 					class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 				>
 					<span class="inline-flex items-center gap-1.5 truncate"
-						><Keyboard class="size-3.5" /> <span class="hover:underline">SHORTCUTS</span></span
+						><span class="inline-flex items-center">[<Keyboard class="size-3.5" />]</span>
+						<span class="hover:underline">SHORTCUTS</span></span
 					>
 				</button>
 			</HoverTooltip>
@@ -526,7 +507,8 @@
 					class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 				>
 					<span class="inline-flex items-center gap-1.5 truncate"
-						><Settings class="size-3.5" /> <span class="hover:underline">SETTINGS</span></span
+						><span class="inline-flex items-center">[<Settings class="size-3.5" />]</span>
+						<span class="hover:underline">SETTINGS</span></span
 					>
 				</button>
 			</HoverTooltip>

@@ -2,6 +2,7 @@
 	import type { MagickState } from '$lib/useMagick.svelte';
 	import type { HistoryState, SettingsDiffItem } from '$lib/hooks/useHistory.svelte';
 	import { formatBytes, formatDimensions } from '$lib/utils';
+	import UndoRedoButtons from '../controls/UndoRedoButtons.svelte';
 
 	let {
 		magick,
@@ -45,22 +46,15 @@
 <div class="flex h-full flex-col">
 	<!-- Undo/redo controls -->
 	<div class="flex shrink-0 gap-1.5 border-b border-foreground/30 pb-3">
-		<button
-			onclick={undo}
-			disabled={!history.canUndo}
-			aria-label={history.undoTargetLabel ? `Undo ${history.undoTargetLabel}` : 'Undo'}
-			class="flex-1 cursor-pointer border border-foreground/30 px-2 py-1.5 font-mono text-[11px] uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-		>
-			[&lt;] <span class="hover:underline">UNDO</span>
-		</button>
-		<button
-			onclick={redo}
-			disabled={!history.canRedo}
-			aria-label={history.redoTargetLabel ? `Redo ${history.redoTargetLabel}` : 'Redo'}
-			class="flex-1 cursor-pointer border border-foreground/30 px-2 py-1.5 font-mono text-[11px] uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-		>
-			<span class="hover:underline">REDO</span> [&gt;]
-		</button>
+		<UndoRedoButtons
+			class="min-w-0 flex-1"
+			canUndo={history.canUndo}
+			canRedo={history.canRedo}
+			onUndo={undo}
+			onRedo={redo}
+			undoLabel={history.undoTargetLabel ? `Undo ${history.undoTargetLabel}` : 'Undo'}
+			redoLabel={history.redoTargetLabel ? `Redo ${history.redoTargetLabel}` : 'Redo'}
+		/>
 		<button
 			onclick={() => onClearRequest?.()}
 			disabled={history.count === 0}

@@ -41,6 +41,7 @@
 		cropAspectRatio = 'free',
 		initialCrop = null,
 		onBrowse = () => {},
+		onPaste = () => {},
 		onSelectSample = () => {},
 		onStateChange = () => {},
 		onAnnotationPlace = () => {},
@@ -90,6 +91,7 @@
 		cropAspectRatio?: string;
 		initialCrop?: { x: number; y: number; w: number; h: number } | null;
 		onBrowse?: () => void;
+		onPaste?: (file: File) => void;
 		onSelectSample?: (s: SampleImage) => void;
 		onStateChange?: (s: { zoom: number }) => void;
 		onAnnotationPlace?: (placement: AnnotationPlacement) => void;
@@ -830,7 +832,7 @@
 				<p class="font-mono text-[11px]">Loading ImageMagick…</p>
 			</div>
 		{:else if showPlaceholder}
-			<FileDropzone {onBrowse} {onSelectSample} />
+			<FileDropzone {onBrowse} {onPaste} {onSelectSample} />
 		{:else if previewUnavailable}
 			<div class="text-center text-muted-foreground" role="status" aria-live="polite">
 				<div class="mx-auto mb-4 flex size-16 items-center justify-center">
