@@ -85,6 +85,7 @@
 		"@imagemagick/magick-wasm": "^0.0.43",
 		"@uswriting/exiftool": "^1.0.9",
 		"lucide-svelte": "^1.0.1",
+		"phosphor-svelte": "^3.1.0",
 		"sharp": "^0.35.4"
 	},
 	"build": {

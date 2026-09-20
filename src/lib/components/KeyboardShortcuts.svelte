@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { shortcutModifier } from '$lib/shortcuts';
-	import { X } from 'lucide-svelte';
+	import { X } from 'phosphor-svelte';
 
 	let { open = $bindable(false) } = $props<{ open?: boolean }>();
 
@@ -147,7 +147,7 @@
 			</div>
 
 			<button
-				class="absolute top-3 right-3 flex size-6 cursor-pointer items-center justify-center font-mono text-[11px] text-muted-foreground/40 focus:outline-none"
+				class="absolute top-3 right-3 flex size-6 cursor-pointer items-center justify-center font-mono text-[11px] text-muted-foreground/40 transition-colors duration-75 hover:text-foreground focus:outline-none"
 				onclick={() => (open = false)}
 				aria-label="Close shortcuts dialog"
 			>
