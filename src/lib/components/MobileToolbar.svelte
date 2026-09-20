@@ -14,7 +14,7 @@
 	} from 'lucide-svelte';
 	import type { MagickState } from '$lib/useMagick.svelte';
 	import type { HistoryState } from '$lib/hooks/useHistory.svelte';
-	import { isGeoDirty, isColorDirty, isFiltersDirty, isExportDirty } from '$lib/utils';
+	import { isSettingsDirty } from '$lib/utils';
 
 	let {
 		magick,
@@ -55,12 +55,7 @@
 	} = $props();
 
 	let canDownload = $derived(!!magick.processedImageUrl);
-	let anyDirty = $derived(
-		isGeoDirty(magick.settings) ||
-			isColorDirty(magick.settings) ||
-			isFiltersDirty(magick.settings) ||
-			isExportDirty(magick.settings)
-	);
+	let anyDirty = $derived(isSettingsDirty(magick.settings));
 </script>
 
 <div class="mobile-toolbar">

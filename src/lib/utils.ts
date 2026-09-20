@@ -121,3 +121,13 @@ export function isAnnotateDirty(s: MagickSettings): boolean {
 		s.annotateStrokeWidth[0] !== 1
 	);
 }
+
+export function isSettingsDirty(s: MagickSettings): boolean {
+	return (
+		isGeoDirty(s) ||
+		isColorDirty(s) ||
+		isFiltersDirty(s) ||
+		isAnnotateDirty(s) ||
+		isExportDirty(s)
+	);
+}

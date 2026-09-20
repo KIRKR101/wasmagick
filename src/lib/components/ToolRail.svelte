@@ -9,6 +9,7 @@
 		isFiltersDirty,
 		isExportDirty,
 		isAnnotateDirty,
+		isSettingsDirty,
 		formatBytes,
 		formatDimensions
 	} from '$lib/utils';
@@ -249,7 +250,7 @@
 		{ id: 'history', label: 'HISTORY', shortcut: '7' }
 	]);
 
-	let anyDirty = $derived(items.some((item) => item.dirty));
+	let anyDirty = $derived(isSettingsDirty(magick.settings));
 
 	function sizeDelta() {
 		if (!magick.processedImageUrl || magick.originalImageSize <= 0) return null;
