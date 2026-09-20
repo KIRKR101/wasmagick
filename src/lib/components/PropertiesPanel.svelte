@@ -20,6 +20,7 @@
 	import HistoryPanel from './sections/HistoryPanel.svelte';
 	import HoverTooltip from './controls/HoverTooltip.svelte';
 	import { shortcutModifier } from '$lib/shortcuts';
+	import { Button } from '$lib/components/ui/button';
 
 	let {
 		activeSection,
@@ -163,11 +164,12 @@
 		</div>
 		<div class="flex flex-col gap-1.5">
 			<HoverTooltip label={processTip} side="top" triggerClass="w-full">
-				<button
+				<Button
+					variant="terminal"
 					onclick={onProcess}
 					disabled={!magick.wasmLoaded || !magick.sourceBytes}
 					aria-label={processTip}
-					class="group flex h-8 w-full shrink-0 cursor-pointer items-center justify-between border border-foreground/30 bg-transparent px-2 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+					class="group flex w-full justify-between text-[11px] uppercase"
 				>
 					<span class="inline-flex items-center"
 						><span class="group-hover:underline">PROCESS</span>{#if magick.isStale}<span
@@ -177,19 +179,22 @@
 							>{magick.isLoading ? ' ~' : ''}</span
 						></span
 					>
-					<span class="text-[11px] opacity-70">{shortcutModifier.toUpperCase()}+<span class="text-sm">↵</span></span>
-				</button>
+					<span class="text-[11px] opacity-70"
+						>{shortcutModifier.toUpperCase()}+<span class="text-sm">↵</span></span
+					>
+				</Button>
 			</HoverTooltip>
 			<HoverTooltip label={exportTip} side="top" triggerClass="w-full">
-				<button
+				<Button
+					variant="terminal"
 					onclick={onDownload}
 					disabled={!canDownload}
 					aria-label={exportTip}
-					class="group flex h-8 w-full shrink-0 cursor-pointer items-center justify-between border border-foreground/30 bg-transparent px-2 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+					class="group flex w-full justify-between text-[11px] uppercase"
 				>
 					<span class="group-hover:underline">EXPORT</span>
 					<span class="text-[11px] opacity-70">{shortcutModifier.toUpperCase()}+S</span>
-				</button>
+				</Button>
 			</HoverTooltip>
 		</div>
 	</div>
