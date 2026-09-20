@@ -73,6 +73,7 @@
 
 	// Drag state
 	let sheetRef = $state<HTMLDivElement | null>(null);
+	let returnFocusTo: HTMLElement | null = null;
 	let isDragging = $state(false);
 	let dragStartY = 0;
 	let dragStartTranslate = 0;
@@ -83,10 +84,15 @@
 	// Animate sheet in when opened
 	$effect(() => {
 		if (open) {
+			returnFocusTo = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 			const rafId = requestAnimationFrame(() => {
 				currentTranslate = window.innerHeight * 0.55;
+				sheetRef?.focus();
 			});
-			return () => cancelAnimationFrame(rafId);
+			return () => {
+				cancelAnimationFrame(rafId);
+				returnFocusTo?.focus();
+			};
 		} else {
 			currentTranslate = 0;
 		}
@@ -144,6 +150,26 @@
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape' && open) {
 			onClose();
+		} else if (e.key === 'Tab' && open && sheetRef) {
+			const focusable = Array.from(
+				sheetRef.querySelectorAll<HTMLElement>(
+					'button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'
+				)
+			);
+			if (focusable.length === 0) {
+				e.preventDefault();
+				sheetRef.focus();
+				return;
+			}
+			const first = focusable[0];
+			const last = focusable[focusable.length - 1];
+			if (e.shiftKey && document.activeElement === first) {
+				e.preventDefault();
+				last.focus();
+			} else if (!e.shiftKey && document.activeElement === last) {
+				e.preventDefault();
+				first.focus();
+			}
 		}
 	}
 
@@ -170,16 +196,23 @@
 	></button>
 
 	<!-- Sheet -->
-	<div bind:this={sheetRef} class="mobile-sheet" style="height: {currentTranslate}px">
+	<div
+		bind:this={sheetRef}
+		class="mobile-sheet"
+		style="height: {currentTranslate}px"
+		role="dialog"
+		aria-modal="true"
+		aria-labelledby="mobile-tools-title"
+		tabindex="-1"
+	>
+		<h2 id="mobile-tools-title" class="sr-only">Image editing tools</h2>
 		<!-- Drag handle -->
 		<div
 			class="flex cursor-grab touch-none items-center justify-center pt-2.5 pb-1.5 active:cursor-grabbing"
 			onpointerdown={onDragStart}
 			onpointermove={onDragMove}
 			onpointerup={onDragEnd}
-			role="button"
-			tabindex="-1"
-			aria-label="Drag to resize"
+			aria-hidden="true"
 		>
 			<div class="h-1 w-10 rounded-full bg-foreground/20"></div>
 		</div>
