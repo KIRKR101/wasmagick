@@ -38,19 +38,6 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Set release version
-        env:
-          RELEASE_TAG: ${{ github.ref_name }}
-        run: |
-          node - <<'NODE'
-          const fs = require('node:fs');
-          const version = process.env.RELEASE_TAG.replace(/^v/, '');
-          for (const file of ['package.json', 'package-lock.json']) {
-            const json = JSON.parse(fs.readFileSync(file, 'utf8'));
-            json.version = version;
-            fs.writeFileSync(file, JSON.stringify(json, null, 2) + '\n');
-          }
-          NODE
       - run: npm run build:electron -- --linux AppImage deb --publish never
       - uses: actions/upload-artifact@v4
         with:
@@ -89,11 +76,6 @@ jobs:
       - run: npm ci
       - name: Verify and sanitize native ImageMagick
         run: npm run setup:imagemagick
-      - name: Set release version
-        env:
-          RELEASE_TAG: ${{ github.ref_name }}
-        run: |
-          node -e "const fs=require('node:fs'); const v=process.env.RELEASE_TAG.replace(/^v/,''); for (const f of ['package.json','package-lock.json']) { const p=JSON.parse(fs.readFileSync(f,'utf8')); p.version=v; fs.writeFileSync(f, JSON.stringify(p,null,2)+'\n'); }"
       - run: npm run build:electron -- --win nsis --publish never
       - uses: actions/upload-artifact@v4
         with:
@@ -112,11 +94,6 @@ jobs:
       - name: Install ImageMagick for bundling
         run: brew install imagemagick-full
       - run: npm ci
-      - name: Set release version
-        env:
-          RELEASE_TAG: ${{ github.ref_name }}
-        run: |
-          node -e "const fs=require('node:fs'); const v=process.env.RELEASE_TAG.replace(/^v/,''); for (const f of ['package.json','package-lock.json']) { const p=JSON.parse(fs.readFileSync(f,'utf8')); p.version=v; fs.writeFileSync(f, JSON.stringify(p,null,2)+'\n'); }"
       - run: npm run build:electron -- --mac dmg --publish never
       - uses: actions/upload-artifact@v4
         with:
@@ -135,11 +112,6 @@ jobs:
       - name: Install ImageMagick for bundling
         run: brew install imagemagick-full
       - run: npm ci
-      - name: Set release version
-        env:
-          RELEASE_TAG: ${{ github.ref_name }}
-        run: |
-          node -e "const fs=require('node:fs'); const v=process.env.RELEASE_TAG.replace(/^v/,''); for (const f of ['package.json','package-lock.json']) { const p=JSON.parse(fs.readFileSync(f,'utf8')); p.version=v; fs.writeFileSync(f, JSON.stringify(p,null,2)+'\n'); }"
       - run: npm run build:electron -- --mac dmg --publish never
       - uses: actions/upload-artifact@v4
         with:
