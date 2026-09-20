@@ -28,8 +28,8 @@
 		title={undoLabel}
 		class="group flex flex-1 cursor-pointer items-center justify-center gap-1.5 px-2 py-1 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 	>
-		<span class="inline-flex w-[3ch] items-center justify-between" aria-hidden="true"
-			>[<Undo2 class="size-[1em]" />]</span
+		<span class="inline-flex w-[3ch] items-center justify-center" aria-hidden="true"
+			><Undo2 class="size-[1em]" /></span
 		>
 		<span class="group-hover:underline">UNDO</span>
 	</button>
@@ -42,8 +42,8 @@
 		class="group flex flex-1 cursor-pointer items-center justify-center gap-1.5 px-2 py-1 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 	>
 		<span class="group-hover:underline">REDO</span>
-		<span class="inline-flex w-[3ch] items-center justify-between" aria-hidden="true"
-			>[<Redo2 class="size-[1em]" />]</span
+		<span class="inline-flex w-[3ch] items-center justify-center" aria-hidden="true"
+			><Redo2 class="size-[1em]" /></span
 		>
 	</button>
 </div>

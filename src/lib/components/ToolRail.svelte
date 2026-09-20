@@ -337,8 +337,8 @@
 				class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 			>
 				<span class="inline-flex items-center gap-1.5 truncate"
-					><span class="inline-flex w-[3ch] items-center justify-between"
-						>[<Upload class="size-[1em]" />]</span
+					><span class="inline-flex w-[3ch] items-center justify-center"
+						><Upload class="size-[1em]" /></span
 					>
 					<span class="hover:underline">UPLOAD</span></span
 				>
@@ -356,8 +356,8 @@
 				class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 			>
 				<span class="inline-flex items-center gap-1.5 truncate"
-					><span class="inline-flex w-[3ch] items-center justify-between"
-						>[<RotateCcw class="size-[1em]" />]</span
+					><span class="inline-flex w-[3ch] items-center justify-center"
+						><RotateCcw class="size-[1em]" /></span
 					>
 					<span class="hover:underline">RESET ALL</span></span
 				>
@@ -379,8 +379,8 @@
 				class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 			>
 				<span class="inline-flex items-center gap-1.5 truncate"
-					><span class="inline-flex w-[3ch] items-center justify-between"
-						>[<X class="size-[1em]" />]</span
+					><span class="inline-flex w-[3ch] items-center justify-center"
+						><X class="size-[1em]" /></span
 					>
 					<span class="hover:underline">CLOSE</span></span
 				>
@@ -482,10 +482,10 @@
 						: ''}"
 				>
 					<span class="inline-flex items-center gap-1.5 truncate"
-						><span class="inline-flex w-[3ch] items-center justify-between"
-							>[{#if isElectron}<Info class="size-[1em]" />{:else}<Bug
+						><span class="inline-flex w-[3ch] items-center justify-center"
+							>{#if isElectron}<Info class="size-[1em]" />{:else}<Bug
 									class="size-[1em]"
-								/>{/if}]</span
+								/>{/if}</span
 						>
 						<span class="hover:underline">{isElectron ? 'BUILD' : 'DEBUG'}</span></span
 					>
@@ -502,8 +502,8 @@
 					class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 				>
 					<span class="inline-flex items-center gap-1.5 truncate"
-						><span class="inline-flex w-[3ch] items-center justify-between"
-							>[<Keyboard class="size-[1em]" />]</span
+						><span class="inline-flex w-[3ch] items-center justify-center"
+							><Keyboard class="size-[1em]" /></span
 						>
 						<span class="hover:underline">SHORTCUTS</span></span
 					>
@@ -517,8 +517,8 @@
 					class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 				>
 					<span class="inline-flex items-center gap-1.5 truncate"
-						><span class="inline-flex w-[3ch] items-center justify-between"
-							>[<Settings class="size-[1em]" />]</span
+						><span class="inline-flex w-[3ch] items-center justify-center"
+							><Settings class="size-[1em]" /></span
 						>
 						<span class="hover:underline">SETTINGS</span></span
 					>
