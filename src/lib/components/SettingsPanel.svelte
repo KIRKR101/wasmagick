@@ -9,7 +9,17 @@
 	} from '$lib/components/ui/select/index.js';
 	import { Slider } from '$lib/components/ui/slider/index.js';
 	import ToggleRow from '$lib/components/controls/ToggleRow.svelte';
-	import { X } from 'phosphor-svelte';
+	import {
+		ArrowCounterClockwise,
+		Desktop,
+		DownloadSimple,
+		Moon,
+		PencilSimple,
+		Sun,
+		TrashSimple,
+		UploadSimple,
+		X
+	} from 'phosphor-svelte';
 	import { applyThemeMode, getThemeMode, type ThemeMode } from '$lib/theme';
 	import {
 		APP_VERSION,
@@ -55,6 +65,11 @@
 	let importInput = $state<HTMLInputElement | null>(null);
 	let armedAction = $state<string | null>(null);
 	let armedTimer: ReturnType<typeof setTimeout> | null = null;
+	const themeOptions = [
+		{ id: 'light', label: 'LIGHT', icon: Sun },
+		{ id: 'dark', label: 'DARK', icon: Moon },
+		{ id: 'auto', label: 'AUTO', icon: Desktop }
+	] as const;
 
 	function refreshStorage(): void {
 		storage = getStorageUsage();
@@ -218,7 +233,7 @@
 			aria-label="Close settings"
 			class="flex size-6 shrink-0 cursor-pointer items-center justify-center text-muted-foreground/40 transition-colors duration-75 hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 		>
-			<X class="size-4" />
+			<X class="size-3.5" />
 		</button>
 	</div>
 
@@ -231,17 +246,17 @@
 			Auto follows your operating system's color scheme.
 		</p>
 		<div class="grid grid-cols-3 gap-1.5" role="group" aria-label="Theme">
-			{#each [{ id: 'light', label: 'LIGHT', glyph: 'O' }, { id: 'dark', label: 'DARK', glyph: '~' }, { id: 'auto', label: 'AUTO', glyph: '*' }] as option (option.id)}
+			{#each themeOptions as option (option.id)}
 				<button
 					type="button"
 					aria-pressed={themeMode === option.id}
 					onclick={() => onThemeChange(option.id as ThemeMode)}
-					class="cursor-pointer border px-2 py-2 text-xs transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {themeMode ===
+					class="flex cursor-pointer items-center justify-center gap-1.5 border px-2 py-2 text-xs transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {themeMode ===
 					option.id
 						? 'border-foreground bg-muted/50 text-foreground'
 						: 'border-foreground/30 text-muted-foreground hover:border-foreground/60'}"
 				>
-					[{option.glyph}]
+					<option.icon class="size-3.5" />
 					<span class={themeMode === option.id ? 'underline' : ''}>{option.label}</span>
 				</button>
 			{/each}
@@ -289,13 +304,15 @@
 			label="Strip Metadata"
 			description="Remove EXIF / profiles by default"
 			bind:checked={exportDefaults.stripMeta}
+			class="mt-3"
 		/>
 		<button
 			type="button"
 			onclick={resetExportDefaults}
-			class="group mt-2 cursor-pointer border border-foreground/30 px-3 py-1.5 font-mono text-xs text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+			class="group mt-2 flex cursor-pointer items-center gap-1.5 border border-foreground/30 px-3 py-1.5 font-mono text-xs text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 		>
-			[&olarr;] <span class="group-hover:underline">RESET EXPORT DEFAULTS</span>
+			<ArrowCounterClockwise class="size-3.5" />
+			<span class="group-hover:underline">RESET EXPORT DEFAULTS</span>
 		</button>
 	</section>
 
@@ -324,9 +341,10 @@
 			<button
 				type="button"
 				onclick={resetFilename}
-				class="group shrink-0 cursor-pointer text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+				class="group flex shrink-0 cursor-pointer items-center gap-1.5 text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 			>
-				[&olarr;] <span class="group-hover:underline">RESET</span>
+				<ArrowCounterClockwise class="size-3.5" />
+				<span class="group-hover:underline">RESET</span>
 			</button>
 		</div>
 	</section>
@@ -374,17 +392,18 @@
 								type="button"
 								onclick={() => startRename(preset)}
 								aria-label="Rename preset {preset.name}"
-								class="group shrink-0 cursor-pointer px-1 font-mono text-xs text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+								class="group flex shrink-0 cursor-pointer items-center gap-1.5 px-1 font-mono text-xs text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 							>
-								[<span class="group-hover:underline">RENAME</span>]
+								<PencilSimple class="size-3.5" />
+								<span class="group-hover:underline">RENAME</span>
 							</button>
 							<button
 								type="button"
 								onclick={() => deletePreset(preset.id)}
 								aria-label="Delete preset {preset.name}"
-								class="shrink-0 cursor-pointer px-1 font-mono text-xs text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+								class="flex size-6 shrink-0 cursor-pointer items-center justify-center text-muted-foreground transition-colors duration-75 hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 							>
-								[x]
+								<TrashSimple class="size-3.5" />
 							</button>
 						{/if}
 					</li>
@@ -396,27 +415,30 @@
 				type="button"
 				onclick={exportPresets}
 				disabled={presets.userPresets.length === 0}
-				class="group cursor-pointer border border-foreground/30 px-3 py-1.5 font-mono text-xs text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+				class="group flex cursor-pointer items-center gap-1.5 border border-foreground/30 px-3 py-1.5 font-mono text-xs text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 			>
-				[&darr;] <span class="group-hover:underline">EXPORT JSON</span>
+				<DownloadSimple class="size-3.5" />
+				<span class="group-hover:underline">EXPORT JSON</span>
 			</button>
 			<button
 				type="button"
 				onclick={() => importInput?.click()}
-				class="group cursor-pointer border border-foreground/30 px-3 py-1.5 font-mono text-xs text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+				class="group flex cursor-pointer items-center gap-1.5 border border-foreground/30 px-3 py-1.5 font-mono text-xs text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 			>
-				[&uarr;] <span class="group-hover:underline">IMPORT JSON</span>
+				<UploadSimple class="size-3.5" />
+				<span class="group-hover:underline">IMPORT JSON</span>
 			</button>
 			<button
 				type="button"
 				onclick={() => armOrRun('clear-presets', clearPresets)}
 				disabled={presets.userPresets.length === 0}
-				class="group cursor-pointer border border-foreground/30 px-3 py-1.5 font-mono text-xs transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 {armedAction ===
+				class="group flex cursor-pointer items-center gap-1.5 border border-foreground/30 px-3 py-1.5 font-mono text-xs transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 {armedAction ===
 				'clear-presets'
 					? 'border-destructive text-destructive'
 					: 'text-muted-foreground'}"
 			>
-				[x] <span class="group-hover:underline"
+				<TrashSimple class="size-3.5" />
+				<span class="group-hover:underline"
 					>{armedAction === 'clear-presets' ? 'CONFIRM DELETE' : 'DELETE ALL'}</span
 				>
 			</button>
@@ -477,12 +499,13 @@
 			<button
 				type="button"
 				onclick={() => armOrRun('reset-all', resetAllSettings)}
-				class="group cursor-pointer border border-foreground/30 px-3 py-1.5 font-mono text-xs transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {armedAction ===
+				class="group flex cursor-pointer items-center gap-1.5 border border-foreground/30 px-3 py-1.5 font-mono text-xs transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {armedAction ===
 				'reset-all'
 					? 'border-destructive text-destructive'
 					: 'text-muted-foreground'}"
 			>
-				[x] <span class="group-hover:underline"
+				<ArrowCounterClockwise class="size-3.5" />
+				<span class="group-hover:underline"
 					>{armedAction === 'reset-all' ? 'CONFIRM RESET' : 'RESET ALL SETTINGS'}</span
 				>
 			</button>
