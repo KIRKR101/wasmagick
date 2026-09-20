@@ -114,6 +114,7 @@
 }
 
 @theme inline {
+	--default-transition-duration: 75ms;
 	--font-sans: 'Geist Variable', sans-serif;
 	--font-heading: 'Geist Variable', sans-serif;
 	--font-mono: 'JetBrains Mono Variable', monospace;
@@ -252,8 +253,8 @@
 	background: var(--chrome);
 	color: var(--muted-foreground);
 	transition:
-		background-color 0.15s,
-		color 0.15s;
+		background-color var(--default-transition-duration),
+		color var(--default-transition-duration);
 	font-family: var(--font-mono);
 	font-size: 11px;
 	letter-spacing: 0.12em;
@@ -287,8 +288,8 @@
 	background: transparent;
 	color: var(--muted-foreground);
 	transition:
-		background-color 0.15s,
-		color 0.15s;
+		background-color var(--default-transition-duration),
+		color var(--default-transition-duration);
 	cursor: default;
 }
 
@@ -499,8 +500,8 @@ input[type='number'] {
 	border: none;
 	cursor: pointer;
 	transition:
-		color 0.15s,
-		background 0.15s;
+		color var(--default-transition-duration),
+		background var(--default-transition-duration);
 	-webkit-tap-highlight-color: transparent;
 	touch-action: manipulation;
 	font-family: var(--font-mono);
@@ -534,7 +535,7 @@ input[type='number'] {
 	background: transparent;
 	border: none;
 	cursor: pointer;
-	transition: color 0.15s;
+	transition: color var(--default-transition-duration);
 	-webkit-tap-highlight-color: transparent;
 	touch-action: manipulation;
 	border-radius: 0;
@@ -624,7 +625,7 @@ input[type='number'] {
 	border: none;
 	cursor: pointer;
 	white-space: nowrap;
-	transition: color 0.15s;
+	transition: color var(--default-transition-duration);
 	-webkit-tap-highlight-color: transparent;
 	touch-action: manipulation;
 	border-bottom: 2px solid transparent;
@@ -669,8 +670,8 @@ input[type='number'] {
 	letter-spacing: 0.05em;
 	cursor: pointer;
 	transition:
-		background 0.15s,
-		opacity 0.15s;
+		background var(--default-transition-duration),
+		opacity var(--default-transition-duration);
 	-webkit-tap-highlight-color: transparent;
 	touch-action: manipulation;
 	border: 1px solid color-mix(in oklch, var(--foreground) 30%, transparent);
