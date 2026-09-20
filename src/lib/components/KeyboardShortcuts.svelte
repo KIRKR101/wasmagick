@@ -102,7 +102,7 @@
 	>
 		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 		<div
-			class="relative w-full max-w-lg animate-in border border-foreground/30 bg-[#f7f7f4] p-4 fade-in-0 zoom-in-95 dark:bg-background"
+			class="relative w-full max-w-lg animate-in border border-divider bg-chrome p-4 fade-in-0 zoom-in-95"
 			tabindex="-1"
 		>
 			<div class="mb-6 flex items-center gap-2 border-b border-foreground/30 pb-3">

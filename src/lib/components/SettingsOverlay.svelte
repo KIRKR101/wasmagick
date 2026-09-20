@@ -36,7 +36,7 @@
 			role="dialog"
 			aria-modal="true"
 			aria-label="App settings"
-			class="relative z-10 flex max-h-[80vh] w-full max-w-2xl flex-col overflow-hidden border border-foreground/30 bg-[#f7f7f4] dark:bg-background"
+			class="relative z-10 flex max-h-[80vh] w-full max-w-2xl flex-col overflow-hidden border border-divider bg-chrome"
 		>
 			<div class="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
 				<SettingsPanel onClose={close} />

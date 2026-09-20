@@ -51,9 +51,7 @@
 	</div>
 {/if}
 
-<div
-	class="flex min-h-full flex-col items-center justify-center bg-[#f7f7f4] px-4 font-mono dark:bg-background"
->
+<div class="flex min-h-full flex-col items-center justify-center bg-chrome px-4 font-mono">
 	<div class="mb-8 text-center">
 		<span class="inline-flex items-center text-[48px] leading-none text-muted-foreground/20">
 			[

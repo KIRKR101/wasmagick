@@ -545,7 +545,7 @@
 	role="toolbar"
 	aria-label="Crop aspect ratio"
 	tabindex="-1"
-	class="pointer-events-auto absolute top-3 left-1/2 z-40 flex -translate-x-1/2 items-center gap-0 border border-foreground/30 bg-[#f7f7f4]/90 px-1 font-mono text-[11px] backdrop-blur-sm dark:bg-background/90"
+	class="pointer-events-auto absolute top-3 left-1/2 z-40 flex -translate-x-1/2 items-center gap-0 border border-divider bg-chrome/90 px-1 font-mono text-[11px] backdrop-blur-sm"
 	onpointerdown={(e) => e.stopPropagation()}
 >
 	<span class="px-1.5 text-[11px] text-muted-foreground uppercase">Ratio</span>
@@ -569,7 +569,7 @@
 	role="toolbar"
 	aria-label="Crop actions"
 	tabindex="-1"
-	class="pointer-events-auto absolute bottom-3 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2 border border-foreground/30 bg-[#f7f7f4]/90 px-2 py-1.5 font-mono text-[11px] backdrop-blur-sm dark:bg-background/90"
+	class="pointer-events-auto absolute bottom-3 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2 border border-divider bg-chrome/90 px-2 py-1.5 font-mono text-[11px] backdrop-blur-sm"
 	onpointerdown={(e) => e.stopPropagation()}
 >
 	<button

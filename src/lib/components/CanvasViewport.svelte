@@ -929,7 +929,7 @@
 			{/if}
 			{#if annotationMenuActive && annotationPlacementActive && !compareActive}
 				<div
-					class="pointer-events-none absolute top-3 left-1/2 z-30 -translate-x-1/2 border border-foreground/30 bg-[#f7f7f4]/90 px-2 py-1 font-mono text-[11px] text-foreground backdrop-blur-sm dark:bg-background/90"
+					class="pointer-events-none absolute top-3 left-1/2 z-30 -translate-x-1/2 border border-divider bg-chrome/90 px-2 py-1 font-mono text-[11px] text-foreground backdrop-blur-sm"
 					role="status"
 				>
 					CLICK TO PLACE · ESC TO EXIT
@@ -937,7 +937,7 @@
 			{/if}
 			{#if compareActive}
 				<div
-					class="pointer-events-none absolute top-3 z-30 border border-foreground/30 bg-[#f7f7f4] px-2 py-1 font-mono text-[11px] text-muted-foreground dark:bg-background"
+					class="pointer-events-none absolute top-3 z-30 border border-divider bg-chrome px-2 py-1 font-mono text-[11px] text-muted-foreground"
 					style="left: 12px"
 				>
 					[ Before ]
@@ -979,7 +979,7 @@
 				onpointerdown={(e) => e.stopPropagation()}
 				onpointerup={(e) => e.stopPropagation()}
 				onpointerleave={(e) => e.stopPropagation()}
-				class="pointer-events-auto absolute bottom-3 left-1/2 z-20 hidden -translate-x-1/2 animate-in items-center gap-0 border border-foreground/30 bg-[#f7f7f4]/85 px-1 font-mono text-[11px] backdrop-blur-sm duration-200 fade-in slide-in-from-bottom-2 md:flex dark:bg-background/85"
+				class="pointer-events-auto absolute bottom-3 left-1/2 z-20 hidden -translate-x-1/2 animate-in items-center gap-0 border border-divider bg-chrome/85 px-1 font-mono text-[11px] backdrop-blur-sm duration-200 fade-in slide-in-from-bottom-2 md:flex"
 			>
 				<HoverTooltip label={`Zoom out (${shortcutModifier}+-)`} side="top">
 					<button

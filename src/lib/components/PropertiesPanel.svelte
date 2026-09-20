@@ -111,12 +111,10 @@
 	});
 </script>
 
-<aside
-	class="flex h-full w-full flex-col border-r border-foreground/30 bg-[#f7f7f4] font-mono text-sm dark:border-border dark:bg-background"
->
+<aside class="flex h-full w-full flex-col border-r border-divider bg-chrome font-mono text-sm">
 	<!-- Header for current section -->
 	<div
-		class="flex items-center justify-between border-b border-foreground/30 px-4 py-3 text-xs tracking-wider text-muted-foreground uppercase dark:border-border"
+		class="flex items-center justify-between border-b border-divider px-4 py-3 text-xs tracking-wider text-muted-foreground uppercase"
 	>
 		<span>{meta.title}</span>
 		{#if meta.reset && meta.dirty}
@@ -153,9 +151,7 @@
 	</div>
 
 	<!-- Bottom Action Bar -->
-	<div
-		class="mt-auto border-t border-foreground/30 bg-[#f7f7f4] p-4 dark:border-border dark:bg-background"
-	>
+	<div class="mt-auto border-t border-divider bg-chrome p-4">
 		<div class="mb-3 flex items-center justify-between text-xs text-muted-foreground uppercase">
 			<span>Output format</span>
 			<span class="underline underline-offset-2"

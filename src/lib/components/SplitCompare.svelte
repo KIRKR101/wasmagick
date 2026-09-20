@@ -154,7 +154,7 @@
 	}}
 >
 	<div
-		class="absolute top-1/2 left-1/2 flex size-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center border-2 border-foreground bg-[#f7f7f4] shadow-lg hover:border-foreground/80 dark:bg-background"
+		class="absolute top-1/2 left-1/2 flex size-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center border-2 border-foreground bg-chrome shadow-lg hover:border-foreground/80"
 	>
 		<svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2">
 			<path d="M8 7l-4 5 4 5M16 7l4 5-4 5" stroke-linecap="round" stroke-linejoin="round" />
@@ -164,13 +164,13 @@
 
 <!-- Labels -->
 <div
-	class="pointer-events-none absolute top-3 z-30 border border-foreground/30 bg-[#f7f7f4] px-2 py-1 font-mono text-[11px] text-muted-foreground dark:bg-background"
+	class="pointer-events-none absolute top-3 z-30 border border-divider bg-chrome px-2 py-1 font-mono text-[11px] text-muted-foreground"
 	style="left: 12px"
 >
 	[ Before ]
 </div>
 <div
-	class="pointer-events-none absolute top-3 z-30 border border-foreground/30 bg-[#f7f7f4] px-2 py-1 font-mono text-[11px] text-muted-foreground dark:bg-background"
+	class="pointer-events-none absolute top-3 z-30 border border-divider bg-chrome px-2 py-1 font-mono text-[11px] text-muted-foreground"
 	style="right: 12px"
 >
 	[ After ]
