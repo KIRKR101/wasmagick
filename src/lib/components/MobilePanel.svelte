@@ -239,21 +239,23 @@
 
 		<!-- Section content -->
 		<div bind:this={contentRef} class="mobile-sheet-content @container">
-			{#if activeSection === 'geometry'}
-				<GeometrySection {magick} />
-			{:else if activeSection === 'color'}
-				<ColorSection {magick} />
-			{:else if activeSection === 'filters'}
-				<FiltersSection {magick} />
-			{:else if activeSection === 'annotate'}
-				<AnnotateSection {magick} {annotationPlacementActive} {onAnnotationPlacementChange} />
-			{:else if activeSection === 'export'}
-				<ExportSection {magick} />
-			{:else if activeSection === 'presets'}
-				<PresetsSection {magick} {presets} />
-			{:else if activeSection === 'history'}
-				<HistoryPanel {magick} {history} {onClearRequest} {onNavigate} />
-			{/if}
+			{#key activeSection}
+				{#if activeSection === 'geometry'}
+					<GeometrySection {magick} />
+				{:else if activeSection === 'color'}
+					<ColorSection {magick} />
+				{:else if activeSection === 'filters'}
+					<FiltersSection {magick} />
+				{:else if activeSection === 'annotate'}
+					<AnnotateSection {magick} {annotationPlacementActive} {onAnnotationPlacementChange} />
+				{:else if activeSection === 'export'}
+					<ExportSection {magick} />
+				{:else if activeSection === 'presets'}
+					<PresetsSection {magick} {presets} />
+				{:else if activeSection === 'history'}
+					<HistoryPanel {magick} {history} {onClearRequest} {onNavigate} />
+				{/if}
+			{/key}
 		</div>
 
 		<!-- Bottom action bar -->
