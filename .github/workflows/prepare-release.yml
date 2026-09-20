@@ -23,6 +23,8 @@ jobs:
         with:
           ref: ${{ github.event.repository.default_branch }}
           fetch-depth: 0
+          token: ${{ secrets.RELEASE_PAT }}
+          persist-credentials: true
 
       - name: Set release version
         env:
@@ -33,8 +35,13 @@ jobs:
         env:
           VERSION: ${{ inputs.version }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          RELEASE_PAT: ${{ secrets.RELEASE_PAT }}
         run: |
           set -euo pipefail
+          if [ -z "$RELEASE_PAT" ]; then
+            echo "RELEASE_PAT secret is required so the tag push triggers the Release workflow (GITHUB_TOKEN pushes do not trigger other workflows)" >&2
+            exit 1
+          fi
           tag="v$VERSION"
           if git rev-parse --verify --quiet "refs/tags/$tag"; then
             echo "Tag $tag already exists" >&2
@@ -42,6 +49,7 @@ jobs:
           fi
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git remote set-url origin "https://x-access-token:${RELEASE_PAT}@github.com/${GITHUB_REPOSITORY}.git"
           git add package.json package-lock.json
           git commit -m "chore: release $tag"
           git push origin "HEAD:$DEFAULT_BRANCH"

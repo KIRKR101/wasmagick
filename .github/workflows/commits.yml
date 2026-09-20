@@ -1,0 +1,64 @@
+name: Commits
+
+on:
+  push:
+    branches: [main, new-ui]
+  pull_request:
+    branches: [main, new-ui]
+
+permissions:
+  contents: read
+
+jobs:
+  conventional:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check conventional commits
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.event.after }}
+        run: |
+          set -euo pipefail
+          pattern='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([A-Za-z0-9_/-]+\))?(!)?: .+'
+          fail=0
+          check_subject() {
+            subject="$1"
+            if [[ "$subject" =~ ^Merge\ (branch|pull\ request|remote) ]]; then
+              return 0
+            fi
+            if [[ "$subject" =~ $pattern ]]; then
+              return 0
+            fi
+            echo "Non-conventional commit: $subject" >&2
+            echo 'Expected: <type>(<scope>)?: <description> (for example, fix(ui): align icons)' >&2
+            return 1
+          }
+          if [[ "$EVENT" == "pull_request" ]]; then
+            if ! check_subject "$PR_TITLE"; then
+              echo "PR title must be a conventional commit message" >&2
+              exit 1
+            fi
+            range="$BASE_SHA..$HEAD_SHA"
+            subjects="$(git log --no-merges --format=%s "$range")"
+          elif [[ "$BEFORE" == "0000000000000000000000000000000000000000" ]]; then
+            subjects="$(git show -s --no-merges --format=%s "$AFTER")"
+          else
+            subjects="$(git log --no-merges --format=%s "$BEFORE..$AFTER")"
+          fi
+          if [[ -z "${subjects:-}" ]]; then
+            echo "No new commits to check."
+            exit 0
+          fi
+          while IFS= read -r subject; do
+            [[ -z "$subject" ]] && continue
+            check_subject "$subject" || fail=1
+          done <<< "$subjects"
+          exit "$fail"
