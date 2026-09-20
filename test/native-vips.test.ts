@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import sharp from 'sharp';
 import { processNative } from '../electron/magick-native.cjs';
 import { buildNativeProcessingPlan } from '../src/lib/native-plan';
 import { DEFAULT_SETTINGS } from '../src/lib/useMagick.svelte';
@@ -34,7 +35,12 @@ describe('native VIPS backend', () => {
 		expect(result.previewWidth).toBe(0);
 		expect(result.previewHeight).toBe(0);
 		expect(result.previewData).toHaveLength(0);
-		expect(result.data.byteLength).toBeGreaterThan(0);
+		expect([...result.data.slice(0, 8)]).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
+		expect(await sharp(result.data).metadata()).toMatchObject({
+			format: 'png',
+			width: 50,
+			height: 50
+		});
 	});
 
 	it('applies coordinate, gravity, and partial crops through VIPS', async () => {
@@ -119,7 +125,7 @@ describe('native VIPS backend', () => {
 
 		expect(plan.backend).toBe('vips');
 		expect(result.backend).toBe('vips');
-		expect(result.data.byteLength).toBeGreaterThan(0);
+		expect(await sharp(result.data).stats()).not.toEqual(await sharp(source).stats());
 		expect(result.previewData).toHaveLength(result.previewWidth! * result.previewHeight! * 4);
 	});
 
@@ -149,8 +155,11 @@ describe('native VIPS backend', () => {
 
 		expect(plan.backend).toBe('vips');
 		expect(result.backend).toBe('vips');
-		expect(result.width).toBeGreaterThan(0);
-		expect(result.height).toBeGreaterThan(0);
+		expect(await sharp(result.data).metadata()).toMatchObject({
+			format: 'png',
+			width: result.width,
+			height: result.height
+		});
 	});
 
 	it('preserves alpha when VIPS negates RGB', async () => {
@@ -170,6 +179,12 @@ describe('native VIPS backend', () => {
 			outputFormat: 'PNG',
 			plan
 		});
+		const sourceRaw = await sharp(source).ensureAlpha().raw().toBuffer();
+		const resultRaw = await sharp(result.data).ensureAlpha().raw().toBuffer();
 		expect(result.previewData).toHaveLength(0);
+		expect(Array.from(resultRaw).filter((_, index) => index % 4 === 3)).toEqual(
+			Array.from(sourceRaw).filter((_, index) => index % 4 === 3)
+		);
+		expect(resultRaw).not.toEqual(sourceRaw);
 	});
 });

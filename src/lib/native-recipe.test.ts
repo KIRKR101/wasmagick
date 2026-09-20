@@ -9,10 +9,11 @@ describe('native recipe planning', () => {
 		const document = buildNativeDocument(plan, 'photo.jpg', 7);
 
 		expect(document.source).toEqual({ name: 'photo.jpg', revision: 7 });
-		expect(document.ops[0]).toEqual({
+		expect(document.ops).toContainEqual({
 			kind: 'native',
 			operation: { type: 'resize', width: 400, height: null }
 		});
+		expect(document.output).toEqual(plan.output);
 	});
 
 	it('exposes a render segment without changing backend selection', () => {
@@ -24,5 +25,22 @@ describe('native recipe planning', () => {
 
 		expect(segments).toEqual([{ backend: 'magick', ops: [], reasons: ['filter operation'] }]);
 		expect(plan.segments).toEqual(segments);
+	});
+
+	it('keeps supported operations and fallback reasons in their respective recipe entries', () => {
+		const plan = buildNativeProcessingPlan(
+			{ ...DEFAULT_SETTINGS, resizeW: 400, annotateText: 'hello' },
+			'photo.jpg'
+		);
+		const document = buildNativeDocument(plan, 'photo.jpg');
+
+		expect(document.ops).toContainEqual({
+			kind: 'native',
+			operation: { type: 'resize', width: 400, height: null }
+		});
+		expect(document.ops).toContainEqual({ kind: 'unsupported', reason: 'annotation' });
+		expect(buildNativeSegments(plan)).toEqual([
+			{ backend: 'magick', ops: [], reasons: ['annotation'] }
+		]);
 	});
 });

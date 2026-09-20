@@ -6,6 +6,9 @@ import {
 	hasRawDelegate,
 	isRawCapable,
 	isRawFilename,
+	missingRawFormats,
+	RAW_FORMATS,
+	REQUIRED_RAW_FORMATS,
 	rawFormatLines
 } from '../tooling/raw-support';
 import { rawReadFormatForFilename } from '../src/lib/magick-process';
@@ -16,7 +19,7 @@ CONFIGURE ./configure '--with-raw=yes' '--with-modules'
 DELEGATES bzlib jpeg png raw tiff webp xml zlib
 `;
 
-const RAW_FORMATS = `
+const RAW_FORMAT_OUTPUT = `
       CR2* DNG r-- Canon Digital Camera Raw Format (0.22.2-Release)
       CR3* DNG r-- Canon Digital Camera Raw Format (0.22.2-Release)
       DNG* DNG rw+ Digital Negative (0.22.2-Release)
@@ -38,9 +41,9 @@ describe('RAW ImageMagick capability parsing', () => {
 	it('recognizes RAW-capable configure and format output', () => {
 		expect(hasRawConfigureFlag(RAW_CONFIGURE)).toBe(true);
 		expect(hasRawDelegate(RAW_CONFIGURE)).toBe(true);
-		expect(rawFormatLines(RAW_FORMATS)).toHaveLength(8);
-		expect(hasLibrawFormatAnnotation(RAW_FORMATS)).toBe(true);
-		expect(isRawCapable(describeRawCapability(RAW_CONFIGURE, RAW_FORMATS))).toBe(true);
+		expect(rawFormatLines(RAW_FORMAT_OUTPUT)).toHaveLength(8);
+		expect(hasLibrawFormatAnnotation(RAW_FORMAT_OUTPUT)).toBe(true);
+		expect(isRawCapable(describeRawCapability(RAW_CONFIGURE, RAW_FORMAT_OUTPUT))).toBe(true);
 	});
 
 	it('rejects a build whose formats are delegated externally', () => {
@@ -58,6 +61,15 @@ describe('RAW ImageMagick capability parsing', () => {
 		expect(isRawFilename('capture.dng')).toBe(true);
 		expect(isRawFilename('photo.jpeg')).toBe(false);
 		expect(isRawFilename('raw')).toBe(false);
+	});
+
+	it('recognizes every declared RAW extension and reports required omissions', () => {
+		for (const format of RAW_FORMATS) expect(isRawFilename(`photo.${format}`), format).toBe(true);
+		const completeFormatList = RAW_FORMATS.map((format) => `${format} DNG r-- RAW`).join('\n');
+		expect(missingRawFormats(completeFormatList)).toEqual([]);
+		expect(missingRawFormats('CR2 DNG r-- RAW')).toEqual(
+			REQUIRED_RAW_FORMATS.filter((format) => format !== 'CR2')
+		);
 	});
 
 	it('normalizes common ExifTool orientation labels', () => {

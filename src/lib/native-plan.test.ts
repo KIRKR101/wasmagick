@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_SETTINGS } from './useMagick.svelte';
 import { buildNativeProcessingPlan } from './native-plan';
+import type { MagickSettings } from './types';
 
 describe('native processing plans', () => {
 	it('routes the basic geometry pipeline to VIPS', () => {
@@ -20,6 +21,7 @@ describe('native processing plans', () => {
 		expect(plan.backend).toBe('vips');
 		expect(plan.unsupported).toEqual([]);
 		expect(plan.operations.map((operation) => operation.type)).toEqual([
+			'autoOrient',
 			'crop',
 			'resize',
 			'rotate',
@@ -55,6 +57,7 @@ describe('native processing plans', () => {
 		expect(plan.backend).toBe('vips');
 		expect(plan.unsupported).toEqual([]);
 		expect(plan.operations.map((operation) => operation.type)).toEqual([
+			'autoOrient',
 			'modulate',
 			'contrast',
 			'normalize',
@@ -99,5 +102,34 @@ describe('native processing plans', () => {
 
 		expect(plan.backend).toBe('magick');
 		expect(plan.unsupported).toContain('gamma below VIPS range');
+	});
+
+	it.each([
+		['unsupported output', { imageFormat: 'JXL' }, 'output format JXL'],
+		['arbitrary rotation', { rotate: '45' }, 'arbitrary rotation'],
+		['canvas extent', { extentW: 200 }, 'canvas extent'],
+		['annotation', { annotateText: 'hello' }, 'annotation']
+	])('routes %s through ImageMagick', (_name, patch, reason) => {
+		const plan = buildNativeProcessingPlan(
+			{ ...DEFAULT_SETTINGS, ...patch } as MagickSettings,
+			'photo.jpg'
+		);
+		expect(plan.backend).toBe('magick');
+		expect(plan.unsupported).toContain(reason);
+	});
+
+	it('normalizes crop coordinates and dimensions in the execution plan', () => {
+		const plan = buildNativeProcessingPlan(
+			{ ...DEFAULT_SETTINGS, cropX: -4.6, cropY: 7.6, cropW: 20.4, cropH: 30.6 },
+			'photo.jpg'
+		);
+		expect(plan.operations).toContainEqual({
+			type: 'crop',
+			left: 0,
+			top: 8,
+			width: 20,
+			height: 31,
+			gravity: 'Center'
+		});
 	});
 });
