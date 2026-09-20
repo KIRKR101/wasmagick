@@ -9,6 +9,7 @@
         "@imagemagick/magick-wasm": "^0.0.43",
         "@uswriting/exiftool": "^1.0.9",
         "lucide-svelte": "^1.0.1",
+        "phosphor-svelte": "^3.1.0",
         "sharp": "^0.35.4",
       },
       "devDependencies": {
@@ -1311,6 +1312,8 @@
     "pathe": ["pathe@2.0.3", "", {}, ""],
 
     "pe-library": ["pe-library@0.4.1", "", {}, "sha512-eRWB5LBz7PpDu4PUlwT0PhnQfTQJlDDdPa35urV4Osrm0t0AqQFGn+UIkU3klZvwJ8KPO3VbBFsXquA6p6kqZw=="],
+
+    "phosphor-svelte": ["phosphor-svelte@3.1.0", "", { "dependencies": { "estree-walker": "^3.0.3", "magic-string": "^0.30.13" }, "peerDependencies": { "svelte": "^5.0.0 || ^5.0.0-next.96", "vite": ">=5" }, "optionalPeers": ["vite"] }, "sha512-nldtxx+XCgNREvrb7O5xgDsefytXpSkPTx8Rnu3f2qQCUZLDV1rLxYSd2Jcwckuo9lZB1qKMqGR17P4UDC0PrA=="],
 
     "picocolors": ["picocolors@1.1.1", "", {}, ""],
 
