@@ -84,7 +84,8 @@
 		"@fontsource-variable/jetbrains-mono": "^5.2.8",
 		"@imagemagick/magick-wasm": "^0.0.43",
 		"@uswriting/exiftool": "^1.0.9",
-		"lucide-svelte": "^1.0.1"
+		"lucide-svelte": "^1.0.1",
+		"sharp": "^0.35.4"
 	},
 	"build": {
 		"appId": "com.wasmagick.app",
@@ -97,7 +98,9 @@
 			"electron/**"
 		],
 		"asarUnpack": [
-			"build/icons/**"
+			"build/icons/**",
+			"node_modules/sharp/**/*",
+			"node_modules/@img/**/*"
 		],
 		"extraResources": [
 			{

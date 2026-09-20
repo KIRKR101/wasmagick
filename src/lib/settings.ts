@@ -121,7 +121,8 @@ export function formatOutputFilename(template: string, vars: FilenameVars): stri
 		/\{(name|ext|format|date|time|w|h)\}/g,
 		(match, key: string) => tokens[key] ?? match
 	);
-	const withExt = raw.includes(vars.ext) ? raw : `${raw}.${vars.ext}`;
+	const suffix = `.${vars.ext.toLowerCase()}`;
+	const withExt = raw.toLowerCase().endsWith(suffix) ? raw : `${raw}.${vars.ext}`;
 	return sanitizeFilename(withExt);
 }
 

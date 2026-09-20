@@ -14,6 +14,7 @@
 	} from '$lib/utils';
 	import { DEFAULT_SETTINGS } from '$lib/useMagick.svelte';
 	import HoverTooltip from './controls/HoverTooltip.svelte';
+	import { shortcutModifier } from '$lib/shortcuts';
 
 	let {
 		activeSection,
@@ -82,7 +83,7 @@
 					parts.push(`Deskew ${s.deskewThreshold[0]}%`);
 					parts.push(s.deskewAutoCrop ? 'Auto Crop' : 'No AutoCrop');
 				}
-				if (s.autoOrient) parts.push('Auto-Orient');
+				if (!s.autoOrient) parts.push('Auto-Orient Off');
 				return parts.join(' · ');
 			}
 			case 'color': {
@@ -261,12 +262,14 @@
 
 	let delta = $derived(sizeDelta());
 	let undoTip = $derived(
-		history.undoTargetLabel ? `Undo ${history.undoTargetLabel} (Ctrl+Z)` : 'Undo (Ctrl+Z)'
+		history.undoTargetLabel
+			? `Undo ${history.undoTargetLabel} (${shortcutModifier}+Z)`
+			: `Undo (${shortcutModifier}+Z)`
 	);
 	let redoTip = $derived(
 		history.redoTargetLabel
-			? `Redo ${history.redoTargetLabel} (Ctrl+Shift+Z / Ctrl+Y)`
-			: 'Redo (Ctrl+Shift+Z / Ctrl+Y)'
+			? `Redo ${history.redoTargetLabel} (${shortcutModifier}+Shift+Z / ${shortcutModifier}+Y)`
+			: `Redo (${shortcutModifier}+Shift+Z / ${shortcutModifier}+Y)`
 	);
 </script>
 
@@ -350,13 +353,13 @@
 		</HoverTooltip>
 
 		<HoverTooltip
-			label={magick.originalImageUrl ? 'Close image (Ctrl+W)' : 'Close (no image open)'}
+			label={magick.originalImageUrl ? `Close image (${shortcutModifier}+W)` : 'Close (no image open)'}
 			triggerClass="w-full"
 		>
 			<button
 				onclick={onClose}
 				disabled={!magick.originalImageUrl}
-				aria-label={magick.originalImageUrl ? 'Close image (Ctrl+W)' : 'Close (no image open)'}
+				aria-label={magick.originalImageUrl ? `Close image (${shortcutModifier}+W)` : 'Close (no image open)'}
 				class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 			>
 				<span class="truncate"><span>[ ]</span> <span class="hover:underline">CLOSE</span></span>
@@ -460,7 +463,10 @@
 				</HoverTooltip>
 			</div>
 
-			<HoverTooltip label={isElectron ? 'Show build details' : 'Toggle debug panel'} triggerClass="w-full">
+			<HoverTooltip
+				label={isElectron ? 'Show build details' : 'Toggle debug panel'}
+				triggerClass="w-full"
+			>
 				<button
 					onclick={onToggleDebug}
 					aria-label={isElectron ? 'Show build details' : 'Toggle debug panel'}
@@ -469,15 +475,16 @@
 						: ''}"
 				>
 					<span class="truncate"
-						><span>[{isElectron ? 'i' : debugMode ? '⚠' : 'B'}]</span> <span class="hover:underline">{isElectron ? 'BUILD' : 'DEBUG'}</span></span
+						><span>[{isElectron ? 'i' : debugMode ? '⚠' : 'B'}]</span>
+						<span class="hover:underline">{isElectron ? 'BUILD' : 'DEBUG'}</span></span
 					>
 				</button>
 			</HoverTooltip>
 
-			<HoverTooltip label="Keyboard shortcuts (Ctrl+Shift+?)" triggerClass="w-full">
+			<HoverTooltip label={`Keyboard shortcuts (${shortcutModifier}+Shift+?)`} triggerClass="w-full">
 				<button
 					onclick={onToggleShortcuts}
-					aria-label="Keyboard shortcuts (Ctrl+Shift+?)"
+					aria-label={`Keyboard shortcuts (${shortcutModifier}+Shift+?)`}
 					class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 				>
 					<span class="truncate"

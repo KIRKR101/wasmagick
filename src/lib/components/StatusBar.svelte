@@ -2,6 +2,7 @@
 	import { AlertCircle, Loader2 } from 'lucide-svelte';
 	import type { MagickState } from '$lib/useMagick.svelte';
 	import ErrorDialog from './ErrorDialog.svelte';
+	import { shortcutModifier } from '$lib/shortcuts';
 
 	let {
 		magick,
@@ -38,7 +39,8 @@
 			<span class="text-amber-500">Unprocessed changes</span>
 		{:else if magick.processedImageUrl}
 			<span class="text-foreground/80 tabular-nums"
-				>Processed in {magick.processedImageTime} ms</span
+				>Processed in {magick.processedImageTime} ms {#if magick.processedBy}
+					by {magick.processedBy}{/if}</span
 			>
 		{:else if !magick.originalImageUrl}
 			<span class="text-muted-foreground/50">No image</span>
@@ -49,7 +51,7 @@
 		{#if isDirty}
 			<span
 				class="flex items-center gap-1 text-foreground/70"
-				title="Unsaved edits — press Ctrl+S to export"
+				title={`Unsaved edits — press ${shortcutModifier}+S to export`}
 			>
 				<span class="font-mono text-xs text-amber-500">[*]</span>
 				<span>Unsaved</span>

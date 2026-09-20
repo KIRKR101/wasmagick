@@ -511,7 +511,6 @@ function createWindow() {
 		mainWindow.show();
 		mainWindow.focus();
 	});
-
 	if (isDev) {
 		mainWindow.loadURL(`${DEV_URL}/editor`);
 	} else {

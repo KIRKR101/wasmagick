@@ -225,7 +225,7 @@ export const FALLBACK_EXPORT_FORMATS: readonly ExportFormat[] = POPULAR_EXPORT_F
 		value: POPULAR_LABELS[format],
 		label: POPULAR_LABELS[format],
 		extension: outputExtensionForFormat(format),
-		mimeType: `image/${format.toLowerCase()}`,
+		mimeType: mimeTypeForFormat(format),
 		description: ''
 	})
 );

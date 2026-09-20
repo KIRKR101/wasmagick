@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { AlertTriangle, Columns2, Images, Maximize, ZoomIn, ZoomOut } from 'lucide-svelte';
+	import { Columns2, Images, Maximize, ZoomIn, ZoomOut } from 'lucide-svelte';
 	import FileDropzone from './FileDropzone.svelte';
 	import HoverTooltip from './controls/HoverTooltip.svelte';
+	import { shortcutModifier } from '$lib/shortcuts';
 	import SplitCompare from './SplitCompare.svelte';
 	import CropOverlay from './CropOverlay.svelte';
 	import type { SampleImage } from '$lib/editor-types';
@@ -16,11 +17,16 @@
 	let {
 		originalImageUrl = null,
 		originalPreviewData = null,
+		originalWidth = 0,
+		originalHeight = 0,
 		originalPreviewWidth = 0,
 		originalPreviewHeight = 0,
 		originalPreviewLoading = false,
 		originalPreviewFull = false,
 		processedImageUrl = null,
+		processedPreviewUrl = null,
+		processedWidth = 0,
+		processedHeight = 0,
 		processedPreviewData = null,
 		processedPreviewWidth = 0,
 		processedPreviewHeight = 0,
@@ -43,15 +49,21 @@
 		onCropCancel = () => {},
 		onCropChange = () => {},
 		onCropAspectRatioChange = () => {},
-		onRequestOriginalFullPreview = () => {}
+		onRequestOriginalFullPreview = () => {},
+		onOriginalImageError = () => {}
 	}: {
 		originalImageUrl?: string | null;
 		originalPreviewData?: Uint8Array | null;
+		originalWidth?: number;
+		originalHeight?: number;
 		originalPreviewWidth?: number;
 		originalPreviewHeight?: number;
 		originalPreviewLoading?: boolean;
 		originalPreviewFull?: boolean;
 		processedImageUrl?: string | null;
+		processedPreviewUrl?: string | null;
+		processedWidth?: number;
+		processedHeight?: number;
 		processedPreviewData?: Uint8Array | null;
 		processedPreviewWidth?: number;
 		processedPreviewHeight?: number;
@@ -87,6 +99,7 @@
 		onCropChange?: (crop: CropRect | null) => void;
 		onCropAspectRatioChange?: (preset: string) => void;
 		onRequestOriginalFullPreview?: () => void;
+		onOriginalImageError?: () => void;
 	} = $props();
 
 	let showPlaceholder = $derived(!originalImageUrl);
@@ -117,6 +130,15 @@
 	let loadedOriginalUrl: string | null | undefined = null;
 	let displayedWidth = $state(0);
 	let displayedHeight = $state(0);
+	let processedPreviewNaturalWidth = $state(0);
+	let processedPreviewNaturalHeight = $state(0);
+
+	$effect(() => {
+		void processedPreviewUrl;
+		void processedImageUrl;
+		processedPreviewNaturalWidth = 0;
+		processedPreviewNaturalHeight = 0;
+	});
 	let annotationFontReady = $state(0);
 	let displayedPreviewData = $derived(
 		compareActive
@@ -125,23 +147,54 @@
 				: null
 			: processedPreviewData?.length
 				? processedPreviewData
-				: originalPreviewData
+				: processedImageUrl
+					? null
+					: originalPreviewData
 	);
 	let displayedPreviewWidth = $derived(
 		compareActive
 			? originalPreviewWidth
-			: processedPreviewData?.length
-				? processedPreviewWidth
-				: originalPreviewWidth
+			: processedImageUrl && processedPreviewNaturalWidth
+				? processedPreviewNaturalWidth
+				: processedPreviewData?.length
+					? processedPreviewWidth
+					: originalPreviewWidth
 	);
 	let displayedPreviewHeight = $derived(
 		compareActive
 			? originalPreviewHeight
-			: processedPreviewData?.length
-				? processedPreviewHeight
-				: originalPreviewHeight
+			: processedImageUrl && processedPreviewNaturalHeight
+				? processedPreviewNaturalHeight
+				: processedPreviewData?.length
+					? processedPreviewHeight
+					: originalPreviewHeight
 	);
-	let previewUnavailable = $derived(!displayedPreviewData);
+	let displayedLogicalWidth = $derived(
+		(compareActive ? originalWidth : processedImageUrl ? processedWidth : originalWidth) ||
+			displayedPreviewWidth
+	);
+	let displayedLogicalHeight = $derived(
+		(compareActive ? originalHeight : processedImageUrl ? processedHeight : originalHeight) ||
+			displayedPreviewHeight
+	);
+	let previewUnavailable = $derived(
+		!displayedPreviewData && !originalImageUrl && !processedImageUrl
+	);
+
+	function confirmCropFromPreview(crop: CropRect): void {
+		const width = displayedWidth || 0;
+		const height = displayedHeight || 0;
+		if (!width || !height || !originalWidth || !originalHeight) {
+			onCropConfirm(crop);
+			return;
+		}
+		onCropConfirm({
+			x: (crop.x * originalWidth) / width,
+			y: (crop.y * originalHeight) / height,
+			w: (crop.w * originalWidth) / width,
+			h: (crop.h * originalHeight) / height
+		});
+	}
 	let lastFittedPreview: Uint8Array | null = null;
 	let lastSourceUrl: string | null = null;
 	let fullPreviewTimer: ReturnType<typeof setTimeout> | null = null;
@@ -181,11 +234,7 @@
 	});
 
 	$effect(() => {
-		if (
-			!previewCanvasRef ||
-			!displayedPreviewData
-		)
-			return;
+		if (!previewCanvasRef || !displayedPreviewData) return;
 		const usingProcessedPreview = !compareActive && !!processedPreviewData?.length;
 		const data = displayedPreviewData;
 		const width = usingProcessedPreview ? processedPreviewWidth : originalPreviewWidth;
@@ -298,6 +347,12 @@
 	let annotationTextMetrics = $derived(
 		annotationMetrics ?? measureAnnotationText(annotationFontReady)
 	);
+	let annotationCoordinateWidth = $derived(
+		(processedImageUrl ? processedWidth : originalWidth) || displayedWidth
+	);
+	let annotationCoordinateHeight = $derived(
+		(processedImageUrl ? processedHeight : originalHeight) || displayedHeight
+	);
 
 	$effect(() => {
 		if (splitMode && annotationPlacementActive) onAnnotationPlacementChange(false);
@@ -306,8 +361,8 @@
 	let annotationPoint = $derived.by(() => {
 		if (
 			!magickSettings?.annotateGravity ||
-			!displayedWidth ||
-			!displayedHeight ||
+			!annotationCoordinateWidth ||
+			!annotationCoordinateHeight ||
 			magickSettings.annotateOffsetX == null ||
 			magickSettings.annotateOffsetY == null
 		) {
@@ -319,8 +374,8 @@
 				offsetX: magickSettings.annotateOffsetX,
 				offsetY: magickSettings.annotateOffsetY
 			},
-			displayedWidth,
-			displayedHeight,
+			annotationCoordinateWidth,
+			annotationCoordinateHeight,
 			annotationTextMetrics
 		);
 	});
@@ -328,8 +383,14 @@
 	let annotationMarkerStyle = $derived.by(() => {
 		if (!annotationPoint || !viewportRef) return '';
 		const scale = currentZoom / 100;
-		const x = imageX + (annotationPoint.x - displayedWidth / 2) * scale;
-		const y = imageY + (annotationPoint.y - displayedHeight / 2) * scale;
+		const x =
+			imageX +
+			(annotationPoint.x * (displayedWidth / annotationCoordinateWidth) - displayedWidth / 2) *
+				scale;
+		const y =
+			imageY +
+			(annotationPoint.y * (displayedHeight / annotationCoordinateHeight) - displayedHeight / 2) *
+				scale;
 		return `left: calc(50% + ${x}px); top: calc(50% + ${y}px);`;
 	});
 
@@ -338,6 +399,8 @@
 		top: 50%;
 		left: 50%;
 		transform: translate(calc(-50% + ${imageX}px), calc(-50% + ${imageY}px)) scale(${currentZoom / 100});
+		width: ${displayedLogicalWidth ? `${displayedLogicalWidth}px` : 'auto'};
+		height: ${displayedLogicalHeight ? `${displayedLogicalHeight}px` : 'auto'};
 		display: ${showPlaceholder || previewUnavailable ? 'none' : 'block'};
 		cursor: ${
 			annotationPlacementActive && annotationMenuActive
@@ -349,17 +412,33 @@
 	`);
 
 	let displayedImage = $derived(
-		compareActive ? originalImageUrl : processedImageUrl || originalImageUrl
+		compareActive
+			? originalImageUrl
+			: processedPreviewUrl
+				? processedPreviewUrl
+				: processedImageUrl || originalImageUrl
 	);
 
 	// Warn exactly while the original (which the browser cannot render) is the
 	// image on screen — before processing, and in compare/split views.
 	let imageFailed = $derived(
-		!!originalPreviewFailed && !originalPreviewData && displayedImage === originalImageUrl && !!originalImageUrl
+		!!originalPreviewFailed &&
+			!originalPreviewData &&
+			displayedImage === originalImageUrl &&
+			!!originalImageUrl
+	);
+	let originalPreviewPending = $derived(
+		originalPreviewLoading &&
+			!originalPreviewData &&
+			displayedImage === originalImageUrl &&
+			!!originalImageUrl
 	);
 
 	let canSplit = $derived(
-		!!processedImageUrl && !!originalImageUrl && !originalPreviewFailed && processedImageUrl !== originalImageUrl
+		!!processedImageUrl &&
+			!!originalImageUrl &&
+			!originalPreviewFailed &&
+			processedImageUrl !== originalImageUrl
 	);
 
 	// Report state (zoom) to parent for the status bar.
@@ -377,7 +456,12 @@
 		const newZoom = Math.max(10, Math.min(5000, targetZoom));
 		if (newZoom === oldZoom) return;
 		if (!viewportRef) return;
-		if (newZoom > 115 && displayedImage === originalImageUrl && !originalPreviewLoading) {
+		if (
+			newZoom > 115 &&
+			displayedImage === originalImageUrl &&
+			displayedPreviewData &&
+			!originalPreviewLoading
+		) {
 			fullPreviewTimer = setTimeout(() => {
 				fullPreviewTimer = null;
 				if (currentZoom > 115 && displayedImage === originalImageUrl && !originalPreviewLoading) {
@@ -399,8 +483,8 @@
 	function getFitZoom(): number {
 		if (!viewportRef) return 100;
 		const container = viewportRef;
-		const iw = displayedPreviewWidth || previewImageRef?.naturalWidth || 0;
-		const ih = displayedPreviewHeight || previewImageRef?.naturalHeight || 0;
+		const iw = displayedLogicalWidth || previewImageRef?.naturalWidth || 0;
+		const ih = displayedLogicalHeight || previewImageRef?.naturalHeight || 0;
 		if (!iw || !ih) return 100;
 		const padding = 12;
 		const cw = container.clientWidth - padding;
@@ -415,8 +499,8 @@
 		if (!viewportRef) return;
 		imageX = 0;
 		imageY = 0;
-		displayedWidth = displayedPreviewWidth || previewImageRef?.naturalWidth || 0;
-		displayedHeight = displayedPreviewHeight || previewImageRef?.naturalHeight || 0;
+		displayedWidth = displayedLogicalWidth || previewImageRef?.naturalWidth || 0;
+		displayedHeight = displayedLogicalHeight || previewImageRef?.naturalHeight || 0;
 		if (!displayedWidth || !displayedHeight) return;
 		currentZoom = getFitZoom();
 	}
@@ -476,9 +560,15 @@
 
 	function handleImageLoad() {
 		if (isComparing) return;
+		if (previewImageRef && processedImageUrl && displayedImage !== originalImageUrl) {
+			processedPreviewNaturalWidth = previewImageRef.naturalWidth;
+			processedPreviewNaturalHeight = previewImageRef.naturalHeight;
+		}
+		const preservingZoomedFullImage =
+			!!processedPreviewUrl && displayedImage === processedImageUrl && currentZoom >= 110;
 		if (previewImageRef) {
-			displayedWidth = previewImageRef.naturalWidth;
-			displayedHeight = previewImageRef.naturalHeight;
+			displayedWidth = displayedLogicalWidth || previewImageRef.naturalWidth;
+			displayedHeight = displayedLogicalHeight || previewImageRef.naturalHeight;
 		}
 		if (skipNextFit) {
 			skipNextFit = false;
@@ -486,7 +576,12 @@
 			return;
 		}
 		loadedOriginalUrl = processedImageUrl;
+		if (preservingZoomedFullImage) return;
 		fitImageToScreen();
+	}
+
+	function handleImageError(): void {
+		if (displayedImage === originalImageUrl && !originalPreviewData) onOriginalImageError();
 	}
 
 	// Re-fit when the processed image changes (history navigation can swap
@@ -629,7 +724,12 @@
 	}
 
 	function onDblClick(e: MouseEvent) {
-		if (showPlaceholder || previewUnavailable || (annotationPlacementActive && annotationMenuActive)) return;
+		if (
+			showPlaceholder ||
+			previewUnavailable ||
+			(annotationPlacementActive && annotationMenuActive)
+		)
+			return;
 		e.preventDefault();
 		if (Math.abs(currentZoom - getFitZoom()) < 1) {
 			zoomAt(e.clientX, e.clientY, 100);
@@ -673,16 +773,23 @@
 	}
 
 	function placeAnnotationAt(clientX: number, clientY: number): void {
-		if (!previewImageRef || !displayedWidth || !displayedHeight) return;
-		const rect = previewImageRef.getBoundingClientRect();
+		if (!displayedWidth || !displayedHeight) return;
+		const preview = displayedPreviewData ? previewCanvasRef : previewImageRef;
+		if (!preview) return;
+		const rect = preview.getBoundingClientRect();
 		if (!rect.width || !rect.height) return;
 		if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom)
 			return;
 
-		const x = ((clientX - rect.left) / rect.width) * displayedWidth;
-		const y = ((clientY - rect.top) / rect.height) * displayedHeight;
+		const x = ((clientX - rect.left) / rect.width) * annotationCoordinateWidth;
+		const y = ((clientY - rect.top) / rect.height) * annotationCoordinateHeight;
 		onAnnotationPlace(
-			annotationPlacementFromPoint({ x, y }, displayedWidth, displayedHeight, annotationTextMetrics)
+			annotationPlacementFromPoint(
+				{ x, y },
+				annotationCoordinateWidth,
+				annotationCoordinateHeight,
+				annotationTextMetrics
+			)
 		);
 	}
 </script>
@@ -704,7 +811,8 @@
 		ontouchmove={onTouchMove}
 		ontouchend={onTouchEnd}
 		ontouchcancel={onTouchEnd}
-		class="viewport relative flex h-full min-h-0 w-full flex-grow items-center justify-center overflow-hidden select-none {!showPlaceholder && !previewUnavailable
+		class="viewport relative flex h-full min-h-0 w-full flex-grow items-center justify-center overflow-hidden select-none {!showPlaceholder &&
+		!previewUnavailable
 			? 'touch-none'
 			: ''}"
 	>
@@ -736,7 +844,16 @@
 		{:else if splitMode && canSplit}
 			<SplitCompare
 				originalUrl={originalImageUrl!}
+				{originalPreviewData}
+				{originalPreviewWidth}
+				{originalPreviewHeight}
 				processedUrl={processedImageUrl!}
+				{processedPreviewUrl}
+				{originalWidth}
+				{originalHeight}
+				{processedWidth}
+				{processedHeight}
+				{onOriginalImageError}
 				{imageStyle}
 				originalLabel="Original"
 				processedLabel="Processed"
@@ -746,22 +863,27 @@
 				bind:this={previewImageRef}
 				src={displayedImage ?? ''}
 				onload={handleImageLoad}
+				onerror={handleImageError}
 				style="display:none"
 				alt=""
 				aria-hidden="true"
 			/>
-		{:else if imageFailed && !originalPreviewData}
-			<div
-				class="checkerboard flex items-center justify-center p-36 text-xl font-medium text-foreground lg:p-64"
-				style={imageStyle}
-			>
-				PLACEHOLDER
+		{:else if originalPreviewPending || (imageFailed && !originalPreviewData)}
+			<div class="text-center text-muted-foreground" role="status" aria-live="polite">
+				<div class="mx-auto mb-4 flex size-16 items-center justify-center">
+					<div class="relative size-12">
+						<div class="absolute inset-0 rounded-full border-2 border-muted/30"></div>
+						<div class="absolute inset-0 animate-spin rounded-full border-2 border-t-primary"></div>
+					</div>
+				</div>
+				<p class="font-mono text-xs">Loading preview…</p>
 			</div>
 		{:else}
 			<img
 				bind:this={previewImageRef}
 				src={displayedImage ?? ''}
 				onload={handleImageLoad}
+				onerror={handleImageError}
 				style={imageStyle}
 				alt={compareActive ? 'Original image before processing' : 'Processed image preview'}
 				draggable="false"
@@ -781,9 +903,16 @@
 				></canvas>
 			{/if}
 			{#if originalPreviewLoading && displayedPreviewData}
-				<div class="pointer-events-none absolute inset-0 z-40 flex items-center justify-center">
-					<div class="flex items-center gap-2 border border-foreground/20 bg-background/85 px-3 py-2 font-mono text-xs text-muted-foreground backdrop-blur-sm" role="status">
-						<span class="size-3 animate-spin rounded-full border border-muted-foreground/30 border-t-primary"></span>
+				<div
+					class="pointer-events-none fixed right-3 bottom-12 z-50 max-w-[calc(100%-1.5rem)] sm:right-4"
+				>
+					<div
+						class="flex items-center gap-2 border border-foreground/30 bg-background px-3 py-2 font-mono text-xs text-foreground shadow-sm"
+						role="status"
+					>
+						<span
+							class="size-3 animate-spin rounded-full border border-muted-foreground/30 border-t-primary"
+						></span>
 						Loading higher-resolution preview…
 					</div>
 				</div>
@@ -827,27 +956,17 @@
 					{imageX}
 					{imageY}
 					{viewportRef}
+					fullResolutionScaleX={originalWidth / Math.max(1, displayedWidth)}
+					fullResolutionScaleY={originalHeight / Math.max(1, displayedHeight)}
 					aspectRatio={cropAspectRatio}
 					{initialCrop}
 					resetKey={displayedImage}
-					onConfirm={onCropConfirm}
+					onConfirm={confirmCropFromPreview}
 					onCancel={onCropCancel}
 					onChange={onCropChange}
 					onAspectRatioChange={onCropAspectRatioChange}
 				/>
 			{/if}
-		{/if}
-
-		{#if imageFailed && !originalPreviewData}
-			<div
-				class="pointer-events-none absolute top-3 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1.5 border border-amber-600/40 bg-amber-50/90 px-2 py-1 font-mono text-[11px] text-amber-700 backdrop-blur-sm dark:bg-amber-950/80 dark:text-amber-400"
-				role="status"
-			>
-				<AlertTriangle class="size-3 shrink-0" />
-				<span class="pl-2"
-					>Original not renderable in this browser - it will appear after processing</span
-				>
-			</div>
 		{/if}
 
 		<!-- Floating zoom/compare toolbar -->
@@ -862,11 +981,11 @@
 				onpointerleave={(e) => e.stopPropagation()}
 				class="pointer-events-auto absolute bottom-3 left-1/2 z-20 hidden -translate-x-1/2 animate-in items-center gap-0 border border-foreground/30 bg-[#f7f7f4]/85 px-1 font-mono text-[11px] backdrop-blur-sm duration-200 fade-in slide-in-from-bottom-2 md:flex dark:bg-background/85"
 			>
-				<HoverTooltip label="Zoom out (Ctrl+-)" side="top">
+				<HoverTooltip label={`Zoom out (${shortcutModifier}+-)`} side="top">
 					<button
 						onclick={zoomOut}
 						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-						aria-label="Zoom out (Ctrl+-)"
+						aria-label={`Zoom out (${shortcutModifier}+-)`}
 					>
 						<ZoomOut class="size-3.5" />
 					</button>
@@ -880,24 +999,28 @@
 						<span class="tabular-nums">{Math.round(currentZoom)}%</span>
 					</button>
 				</HoverTooltip>
-				<HoverTooltip label="Zoom in (Ctrl+=)" side="top">
+				<HoverTooltip label={`Zoom in (${shortcutModifier}+=)`} side="top">
 					<button
 						onclick={zoomIn}
 						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-						aria-label="Zoom in (Ctrl+=)"
+						aria-label={`Zoom in (${shortcutModifier}+=)`}
 					>
 						<ZoomIn class="size-3.5" />
 					</button>
 				</HoverTooltip>
 				<HoverTooltip
-					label={imageFailed && !originalPreviewData ? 'Fit unavailable (preview failed)' : 'Fit to screen (Ctrl+0)'}
+					label={imageFailed && !originalPreviewData
+						? 'Fit unavailable (preview failed)'
+						: `Fit to screen (${shortcutModifier}+0)`}
 					side="top"
 				>
 					<button
 						onclick={resetView}
-						 disabled={imageFailed && !originalPreviewData}
+						disabled={imageFailed && !originalPreviewData}
 						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40"
-						aria-label={imageFailed && !originalPreviewData ? 'Fit unavailable (preview failed)' : 'Fit to screen (Ctrl+0)'}
+						aria-label={imageFailed && !originalPreviewData
+							? 'Fit unavailable (preview failed)'
+							: `Fit to screen (${shortcutModifier}+0)`}
 					>
 						<Maximize class="size-3.5" />
 					</button>

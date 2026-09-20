@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { HistoryState, type HistoryEntry } from './useHistory.svelte';
-import { DEFAULT_SETTINGS } from '$lib/useMagick.svelte';
+import { DEFAULT_SETTINGS, type MagickState } from '$lib/useMagick.svelte';
 import type { MagickSettings } from '$lib/types';
 
 function entry(id: number, settings: MagickSettings, label: string): HistoryEntry {
@@ -19,6 +19,41 @@ function entry(id: number, settings: MagickSettings, label: string): HistoryEntr
 		saved: false,
 		statsMessage: ''
 	};
+}
+
+let nextUrl = 0;
+
+beforeEach(() => {
+	nextUrl = 0;
+	vi.stubGlobal(
+		'fetch',
+		vi.fn(async () => new Response(new Blob(['image'])))
+	);
+	vi.stubGlobal('localStorage', { getItem: () => null });
+	vi.spyOn(URL, 'createObjectURL').mockImplementation(() => `blob:clone-${++nextUrl}`);
+	vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+});
+
+function magick(patch: Partial<MagickState> = {}): MagickState {
+	return {
+		settings: structuredClone(DEFAULT_SETTINGS),
+		originalImageUrl: 'blob:original',
+		originalWidth: 100,
+		originalHeight: 80,
+		originalImageFormat: 'png',
+		originalImageSize: 5,
+		originalName: 'photo.png',
+		processedImageUrl: 'blob:processed',
+		processedPreviewUrl: null,
+		processedImageFormat: 'webp',
+		processedWidth: 50,
+		processedHeight: 40,
+		processedImageTime: 12,
+		statsMessage: '50×40',
+		clearPreviewSnapshot: vi.fn(),
+		markPreviewFresh: vi.fn(),
+		...patch
+	} as unknown as MagickState;
 }
 
 describe('HistoryState target labels', () => {
@@ -65,5 +100,65 @@ describe('HistoryState target labels', () => {
 		h.pointer = 0;
 		expect(h.undoTargetLabel).toBeNull();
 		expect(h.redoTargetLabel).toBeNull();
+	});
+
+	it('resets to an independent snapshot of the original image', async () => {
+		const h = new HistoryState();
+		const state = magick();
+		await h.resetToOriginal(state);
+
+		expect(h.current).toMatchObject({
+			label: 'Original',
+			blobUrl: 'blob:clone-1',
+			width: 100,
+			height: 80,
+			isOriginal: true
+		});
+		state.settings.brightness = [120];
+		expect(h.current?.settings.brightness).toEqual([100]);
+	});
+
+	it('pushes snapshots, discards the redo branch, and revokes its URLs', async () => {
+		const h = new HistoryState();
+		const state = magick();
+		await h.resetToOriginal(state);
+		state.settings.brightness = [120];
+		await h.pushFromMagick(state, 'Bright');
+		state.settings.contrast = [10];
+		await h.pushFromMagick(state, 'Contrast');
+		await h.undo(state);
+		await h.pushFromMagick(state, 'Replacement');
+
+		expect(h.entries.map(({ label }) => label)).toEqual(['Original', 'Bright', 'Replacement']);
+		expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:clone-3');
+		expect(h.canRedo).toBe(false);
+	});
+
+	it('restores original and processed state through undo and redo', async () => {
+		const h = new HistoryState();
+		const state = magick();
+		await h.resetToOriginal(state);
+		state.settings.imageFormat = 'PNG';
+		await h.pushFromMagick(state, 'PNG');
+
+		await h.undo(state);
+		expect(state.processedImageUrl).toBeNull();
+		expect(state.clearPreviewSnapshot).toHaveBeenCalled();
+		await h.redo(state);
+		expect(state.processedImageUrl).toMatch(/^blob:clone-/);
+		expect(state.processedImageName).toBe('photo-edited.webp');
+		expect(state.markPreviewFresh).toHaveBeenCalled();
+	});
+
+	it('marks and clears entries while releasing owned URLs', () => {
+		const h = new HistoryState();
+		h.entries = [entry(1, structuredClone(DEFAULT_SETTINGS), 'Processed')];
+		h.pointer = 0;
+		h.markCurrentSaved();
+		expect(h.current?.saved).toBe(true);
+		h.clear();
+		expect(h.count).toBe(0);
+		expect(h.pointer).toBe(-1);
+		expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:x');
 	});
 });

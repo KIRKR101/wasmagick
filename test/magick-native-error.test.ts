@@ -1,4 +1,6 @@
 import { createRequire } from 'node:module';
+import { existsSync } from 'node:fs';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const require = createRequire(import.meta.url);
@@ -29,6 +31,11 @@ describe('native ImageMagick error mapping', () => {
 
 	it('returns a valid staged WebP encoder path when one is available', () => {
 		const resolved = resolveWebpTool('cwebp');
-		expect(resolved === null || /(?:^|[\\/])cwebp$/.test(resolved)).toBe(true);
+		if (resolved === null) {
+			expect(resolved).toBeNull();
+			return;
+		}
+		expect(existsSync(resolved)).toBe(true);
+		expect(path.basename(resolved).toLowerCase()).toMatch(/^cwebp(?:\.exe)?$/);
 	});
 });

@@ -282,6 +282,9 @@ describe('export format catalog', () => {
 			'TGA',
 			'QOI'
 		]);
+		expect(FALLBACK_EXPORT_FORMATS.find(({ value }) => value === 'PDF')?.mimeType).toBe(
+			'application/pdf'
+		);
 	});
 
 	it('recognizes popular formats regardless of engine casing', () => {

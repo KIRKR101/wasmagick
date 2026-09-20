@@ -30,6 +30,8 @@
 		imageX,
 		imageY,
 		viewportRef,
+		fullResolutionScaleX = 1,
+		fullResolutionScaleY = 1,
 		aspectRatio: aspectPreset = 'free',
 		initialCrop = null,
 		resetKey = null,
@@ -44,6 +46,8 @@
 		imageX: number;
 		imageY: number;
 		viewportRef: HTMLDivElement;
+		fullResolutionScaleX?: number;
+		fullResolutionScaleY?: number;
 		aspectRatio?: string;
 		initialCrop?: { x: number; y: number; w: number; h: number } | null;
 		resetKey?: string | null;
@@ -111,6 +115,16 @@
 			h: cropRect.h * scale
 		};
 	});
+	let fullResolutionCrop = $derived(
+		cropRect
+			? {
+					x: cropRect.x * fullResolutionScaleX,
+					y: cropRect.y * fullResolutionScaleY,
+					w: cropRect.w * fullResolutionScaleX,
+					h: cropRect.h * fullResolutionScaleY
+				}
+			: null
+	);
 
 	let handleSize = $derived(Math.max(6, Math.min(10, 8 * (zoom / 100))));
 	let hitRadius = $derived(handleSize + 4);
@@ -513,26 +527,17 @@
 					rx="1"
 				/>
 			{/each}
-
-			<!-- Dimension label -->
-			{#if cropRect}
-				{@const labelX = cropScreen.x + cropScreen.w / 2}
-				{@const labelY = cropScreen.y - 8}
-				{@const label = `${Math.round(cropRect.w)} × ${Math.round(cropRect.h)}`}
-				<text
-					x={labelX}
-					y={labelY > 16 ? labelY : cropScreen.y + cropScreen.h + 16}
-					text-anchor="middle"
-					fill="white"
-					font-family="monospace"
-					font-size="11"
-					class="pointer-events-none select-none"
-				>
-					{label}
-				</text>
-			{/if}
 		{/if}
 	</svg>
+	{#if fullResolutionCrop}
+		<div
+			class="pointer-events-none absolute z-40 bg-black/75 px-1.5 py-0.5 font-mono text-[10px] text-white"
+			style="left: {cropScreen?.x ?? 0}px; top: {(cropScreen?.y ?? 0) - 22}px"
+		>
+			{Math.round(fullResolutionCrop.x)},{Math.round(fullResolutionCrop.y)} ·
+			{Math.round(fullResolutionCrop.w)}×{Math.round(fullResolutionCrop.h)} px
+		</div>
+	{/if}
 </div>
 
 <!-- Aspect ratio toolbar -->

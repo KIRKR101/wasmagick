@@ -198,11 +198,16 @@
 				bind:this={viewport}
 				originalImageUrl={magick.originalImageUrl}
 				originalPreviewData={magick.originalPreviewData}
+				originalWidth={magick.originalWidth}
+				originalHeight={magick.originalHeight}
 				originalPreviewWidth={magick.originalPreviewWidth}
 				originalPreviewHeight={magick.originalPreviewHeight}
 				originalPreviewLoading={magick.originalPreviewLoading}
 				originalPreviewFull={magick.originalPreviewFull}
 				processedImageUrl={magick.processedImageUrl}
+				processedPreviewUrl={magick.processedPreviewUrl}
+				processedWidth={magick.processedWidth}
+				processedHeight={magick.processedHeight}
 				processedPreviewData={magick.processedPreviewData}
 				processedPreviewWidth={magick.processedPreviewWidth}
 				processedPreviewHeight={magick.processedPreviewHeight}
@@ -219,6 +224,7 @@
 				initialCrop={magick.cropSelection ?? cropInitialRect}
 				onBrowse={openFilePicker}
 				onRequestOriginalFullPreview={() => magick.renderOriginalPreview(true)}
+				onOriginalImageError={() => magick.handleOriginalImageError()}
 				{onSelectSample}
 				{onAnnotationPlace}
 				{onAnnotationPlacementChange}

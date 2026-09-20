@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { SampleImage } from '$lib/editor-types';
+	import { shortcutModifier } from '$lib/shortcuts';
 
 	let {
 		onBrowse,
@@ -44,7 +45,7 @@
 		<span
 			class="border border-foreground/30 px-3 py-1.5 font-mono text-[11px] text-muted-foreground"
 		>
-			Ctrl+V to paste
+			{shortcutModifier}+V to paste
 		</span>
 	</div>
 

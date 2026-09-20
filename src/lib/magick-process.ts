@@ -18,6 +18,7 @@ import type { MagickSettings, LevelChannel } from './types';
 import type { IMagickImage } from '@imagemagick/magick-wasm';
 import { generateClutImage } from './luts';
 import { magickFormatForName } from './export-formats';
+import { BROWSER_RENDERABLE_FORMATS } from './image-capabilities';
 
 /**
  * Camera RAW extensions need an explicit format when read from a byte array.
@@ -104,16 +105,28 @@ export function resolveNoiseAttenuate(type: string, attenuate: number): number {
 	return type === 'Poisson' ? 1 / Math.max(attenuate, 0.01) : attenuate;
 }
 
-export function applyCrop(image: IMagickImage, settings: MagickSettings): boolean {
+export function applyCrop(image: IMagickImage, settings: MagickSettings, scale = 1): boolean {
 	const hasVisualCrop = settings.cropX != null || settings.cropY != null;
 
 	if (hasVisualCrop) {
-		const cx = Math.max(0, settings.cropX ?? 0);
-		const cy = Math.max(0, settings.cropY ?? 0);
+		const cx = Math.max(0, Math.round((settings.cropX ?? 0) * scale));
+		const cy = Math.max(0, Math.round((settings.cropY ?? 0) * scale));
 		// The crop region must lie at least partially inside the image.
 		if (cx >= image.width || cy >= image.height) return false;
-		const cw = Math.max(1, Math.min(settings.cropW ?? image.width - cx, image.width - cx));
-		const ch = Math.max(1, Math.min(settings.cropH ?? image.height - cy, image.height - cy));
+		const cw = Math.max(
+			1,
+			Math.min(
+				Math.round((settings.cropW ?? image.width / scale - (settings.cropX ?? 0)) * scale),
+				image.width - cx
+			)
+		);
+		const ch = Math.max(
+			1,
+			Math.min(
+				Math.round((settings.cropH ?? image.height / scale - (settings.cropY ?? 0)) * scale),
+				image.height - cy
+			)
+		);
 		image.crop(new MagickGeometry(cx, cy, cw, ch));
 		// Match the CLI golden fixtures, which all use `-crop ... +repage`:
 		// drop the virtual-canvas offset the geometry crop records.
@@ -128,8 +141,14 @@ export function applyCrop(image: IMagickImage, settings: MagickSettings): boolea
 		return false;
 	}
 
-	const cropW = Math.max(1, Math.min(rawW ?? image.width, image.width));
-	const cropH = Math.max(1, Math.min(rawH ?? image.height, image.height));
+	const cropW = Math.max(
+		1,
+		Math.min(rawW == null ? image.width : Math.round(rawW * scale), image.width)
+	);
+	const cropH = Math.max(
+		1,
+		Math.min(rawH == null ? image.height : Math.round(rawH * scale), image.height)
+	);
 	const gravityKey = settings.cropGravity as keyof typeof Gravity;
 	image.crop(cropW, cropH, Gravity[gravityKey]);
 	return true;
@@ -169,6 +188,8 @@ export function processImageSync(
 		const resizeW = settings.resizeW ?? 0;
 		const resizeH = settings.resizeH ?? 0;
 
+		applyCrop(image, settings);
+
 		if (resizeW > 0 || resizeH > 0) {
 			image.resize(resizeW, resizeH);
 		}
@@ -179,8 +200,6 @@ export function processImageSync(
 
 		if (settings.flop) image.flop();
 		if (settings.flip) image.flip();
-
-		applyCrop(image, settings);
 
 		if (settings.trimEdges) image.trim();
 
@@ -462,9 +481,12 @@ export function processImageSync(
 
 		const finalWidth = image.width;
 		const finalHeight = image.height;
-		const previewData = image.getPixels(
-			(pixels) => pixels.toByteArray(0, 0, finalWidth, finalHeight, 'RGBA') ?? new Uint8Array()
-		);
+		const needsPreview = !BROWSER_RENDERABLE_FORMATS.has(settings.imageFormat.toUpperCase());
+		const previewData = needsPreview
+			? image.getPixels(
+					(pixels) => pixels.toByteArray(0, 0, finalWidth, finalHeight, 'RGBA') ?? new Uint8Array()
+				)
+			: new Uint8Array();
 
 		// magick-wasm's AVIF/AOM build rejects the lossless settings it derives
 		// from quality 100 (chroma delta-q is left enabled). Keep the UI's
@@ -496,8 +518,8 @@ export function processImageSync(
 			result = {
 				data: outputData,
 				previewData,
-				previewWidth: finalWidth,
-				previewHeight: finalHeight,
+				previewWidth: needsPreview ? finalWidth : 0,
+				previewHeight: needsPreview ? finalHeight : 0,
 				width: outputWidth,
 				height: outputHeight,
 				format: settings.imageFormat

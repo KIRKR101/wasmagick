@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Native ImageMagick runner for the Electron main process.
  *
@@ -22,6 +24,20 @@ const TOKENS = {
 
 const PROCESS_TIMEOUT_MS = 120000;
 const MAX_STDERR_BYTES = 64 * 1024;
+const MAX_PREVIEW_EDGE = 2048;
+const MAX_INTERACTIVE_PREVIEW_EDGE = 8192;
+const MAX_GPU_IMAGE_EDGE = 16384;
+const MAX_GPU_IMAGE_PIXELS = 80_000_000;
+const BROWSER_RENDERABLE_FORMATS = new Set([
+	'AVIF',
+	'BMP',
+	'GIF',
+	'JPEG',
+	'JPG',
+	'PNG',
+	'SVG',
+	'WEBP'
+]);
 const EXIF_ORIENTATION_NAMES = {
 	1: 'TopLeft',
 	2: 'TopRight',
@@ -65,6 +81,12 @@ const RAW_EXTENSIONS = new Set([
 ]);
 
 let cachedSource = null;
+let sharpModule = null;
+
+function getSharp() {
+	if (!sharpModule) sharpModule = require('sharp');
+	return sharpModule;
+}
 
 function platformSlug() {
 	const plat =
@@ -501,7 +523,242 @@ async function identifyOrientation(magickBin, filePath) {
  *   fontFileName?: string | null
  * }
  */
-async function processNative(payload) {
+async function processNativeVips(payload) {
+	const canUseCache = Number.isFinite(payload.sourceRevision);
+	const hasCachedSource =
+		canUseCache && cachedSource && cachedSource.revision === payload.sourceRevision;
+	const sourceData = hasCachedSource ? cachedSource.data : payload.inputData;
+	if (!(sourceData instanceof Uint8Array)) {
+		throw new Error('Native source image is unavailable');
+	}
+	if (!payload.plan || payload.plan.backend !== 'vips') {
+		throw new Error('Invalid VIPS processing plan');
+	}
+
+	if (canUseCache && payload.inputData instanceof Uint8Array) {
+		cachedSource = { revision: payload.sourceRevision, data: payload.inputData };
+	}
+
+	const sharp = getSharp();
+	let pipeline = sharp(Buffer.from(sourceData), { animated: true });
+	let width;
+	let height;
+	const gravityOffset = (space, gravity, axis) => {
+		gravity ||= 'Center';
+		if (gravity.includes(axis === 'x' ? 'East' : 'South')) return space;
+		if (gravity === 'Center' || gravity === 'centre') return Math.floor(space / 2);
+		if (gravity.includes(axis === 'x' ? 'West' : 'North')) return 0;
+		return Math.floor(space / 2);
+	};
+	const updateDimensions = async (operation) => {
+		if (width == null || height == null) {
+			const metadata = await pipeline.metadata();
+			width = metadata.width;
+			height = metadata.height;
+		}
+		if (operation.type === 'resize') {
+			const scale = Math.min(
+				operation.width ? operation.width / width : Infinity,
+				operation.height ? operation.height / height : Infinity
+			);
+			if (Number.isFinite(scale)) {
+				width = Math.round(width * scale);
+				height = Math.round(height * scale);
+			}
+		} else if (operation.type === 'autoOrient') {
+			const metadata = await pipeline.metadata();
+			width = metadata.autoOrient?.width ?? width;
+			height = metadata.autoOrient?.height ?? height;
+		} else if (operation.type === 'rotate' && Math.abs(operation.angle) === 90) {
+			[width, height] = [height, width];
+		}
+	};
+	for (const operation of payload.plan.operations || []) {
+		await updateDimensions(operation);
+		switch (operation.type) {
+			case 'autoOrient':
+				pipeline = pipeline.rotate();
+				break;
+			case 'resize':
+				pipeline = pipeline.resize({
+					width: operation.width ?? null,
+					height: operation.height ?? null,
+					fit: 'inside'
+				});
+				break;
+			case 'crop':
+				{
+					const requestedWidth = Math.max(1, Math.min(operation.width ?? width, width));
+					const requestedHeight = Math.max(1, Math.min(operation.height ?? height, height));
+					const left =
+						operation.left == null
+							? gravityOffset(width - requestedWidth, operation.gravity, 'x')
+							: operation.left;
+					const top =
+						operation.top == null
+							? gravityOffset(height - requestedHeight, operation.gravity, 'y')
+							: operation.top;
+					const cropWidth = Math.max(1, Math.min(operation.width ?? width - left, width - left));
+					const cropHeight = Math.max(1, Math.min(operation.height ?? height - top, height - top));
+					if (left >= width || top >= height) break;
+					pipeline = pipeline.extract({
+						left,
+						top,
+						width: cropWidth,
+						height: cropHeight
+					});
+					width = cropWidth;
+					height = cropHeight;
+				}
+				break;
+			case 'rotate':
+				pipeline = pipeline.rotate(operation.angle);
+				break;
+			case 'flip':
+				pipeline = pipeline.flip();
+				break;
+			case 'flop':
+				pipeline = pipeline.flop();
+				break;
+			case 'modulate':
+				pipeline = pipeline.modulate({
+					brightness: operation.brightness,
+					saturation: operation.saturation,
+					hue: operation.hue
+				});
+				break;
+			case 'contrast':
+				{
+					const factor = 1 + operation.value / 100;
+					pipeline = pipeline.linear(factor, 128 * (1 - factor));
+				}
+				break;
+			case 'normalize':
+				pipeline = pipeline.normalise();
+				break;
+			case 'gamma':
+				pipeline = pipeline.gamma(operation.value);
+				break;
+			case 'blur':
+				pipeline = pipeline.blur(operation.sigma);
+				break;
+			case 'sharpen':
+				pipeline = pipeline.sharpen({ sigma: operation.sigma });
+				break;
+			case 'grayscale':
+				pipeline = pipeline.grayscale();
+				break;
+			case 'negate':
+				pipeline = pipeline.negate({ alpha: false });
+				break;
+			case 'threshold':
+				pipeline = pipeline.threshold(operation.value);
+				break;
+			case 'trim':
+				pipeline = pipeline.trim();
+				break;
+			case 'border':
+				pipeline = pipeline.extend({
+					top: operation.size,
+					bottom: operation.size,
+					left: operation.size,
+					right: operation.size,
+					background: operation.color
+				});
+				break;
+			default:
+				throw new Error(`Unsupported VIPS operation: ${operation.type}`);
+		}
+	}
+
+	const format = String(payload.plan.output.format || payload.outputFormat || 'PNG').toLowerCase();
+	const quality = Math.max(1, Math.min(100, Number(payload.plan.output.quality) || 85));
+	const outputOptions = { quality };
+	let outputPipeline = pipeline.clone();
+	if (format === 'jpeg') outputPipeline = outputPipeline.flatten({ background: '#ffffff' });
+	if (!payload.plan.output.stripMeta) outputPipeline = outputPipeline.withMetadata();
+	outputPipeline = outputPipeline.toFormat(format, outputOptions);
+
+	const needsPreview = !BROWSER_RENDERABLE_FORMATS.has(
+		String(payload.plan.output.format || payload.outputFormat || '').toUpperCase()
+	);
+	const pipelineInfo = await pipeline.metadata();
+	const needsInteractivePreview =
+		BROWSER_RENDERABLE_FORMATS.has(
+			String(payload.plan.output.format || payload.outputFormat || '').toUpperCase()
+		) &&
+		(pipelineInfo.width > MAX_GPU_IMAGE_EDGE ||
+			pipelineInfo.height > MAX_GPU_IMAGE_EDGE ||
+			pipelineInfo.width * pipelineInfo.height > MAX_GPU_IMAGE_PIXELS);
+	let previewPipeline = pipeline.clone();
+	if (format === 'jpeg') previewPipeline = previewPipeline.flatten({ background: '#ffffff' });
+	const [{ data, info }, previewResult] = await Promise.all([
+		outputPipeline.toBuffer({ resolveWithObject: true }),
+		needsInteractivePreview
+			? previewPipeline
+					.clone()
+					.resize({
+						width: MAX_INTERACTIVE_PREVIEW_EDGE,
+						height: MAX_INTERACTIVE_PREVIEW_EDGE,
+						fit: 'inside'
+					})
+					.toFormat('webp', { quality: 90 })
+					.toBuffer()
+					.then((/** @type {Buffer} */ data) => ({
+						data,
+						info: { width: 0, height: 0, channels: 0 }
+					}))
+			: needsPreview
+				? pipeline
+						.clone()
+						.resize({ width: MAX_PREVIEW_EDGE, height: MAX_PREVIEW_EDGE, fit: 'inside' })
+						.toColourspace('srgb')
+						.ensureAlpha()
+						.raw()
+						.toBuffer({ resolveWithObject: true })
+				: Promise.resolve({ data: Buffer.alloc(0), info: { width: 0, height: 0, channels: 4 } })
+	]);
+	const { data: rawPreview, info: previewInfo } = previewResult;
+	const previewImageData = needsInteractivePreview ? new Uint8Array(rawPreview) : new Uint8Array();
+	let previewData = needsInteractivePreview ? new Uint8Array() : new Uint8Array(rawPreview);
+	if (!needsInteractivePreview && previewInfo.channels !== 4) {
+		const rgba = new Uint8Array(previewInfo.width * previewInfo.height * 4);
+		for (
+			let source = 0, target = 0;
+			target < rgba.length;
+			source += previewInfo.channels, target += 4
+		) {
+			const gray = rawPreview[source] ?? 0;
+			rgba[target] = rawPreview[source] ?? gray;
+			rgba[target + 1] =
+				previewInfo.channels === 1 || previewInfo.channels === 2
+					? gray
+					: (rawPreview[source + 1] ?? 0);
+			rgba[target + 2] =
+				previewInfo.channels === 1 || previewInfo.channels === 2
+					? gray
+					: (rawPreview[source + 2] ?? 0);
+			rgba[target + 3] = previewInfo.channels === 2 ? (rawPreview[source + 1] ?? 255) : 255;
+		}
+		previewData = rgba;
+	}
+
+	return {
+		data: new Uint8Array(data),
+		previewData: needsPreview ? new Uint8Array(previewData) : new Uint8Array(),
+		previewWidth: needsInteractivePreview ? 0 : previewInfo.width,
+		previewHeight: needsInteractivePreview ? 0 : previewInfo.height,
+		previewImageData,
+		previewImageFormat: needsInteractivePreview ? 'WEBP' : undefined,
+		width: info.width,
+		height: info.height,
+		format: String(payload.outputFormat || format).toUpperCase(),
+		backend: 'vips'
+	};
+}
+
+/** Execute the existing ImageMagick native process request. */
+async function processNativeMagick(payload) {
 	if (!payload || !Array.isArray(payload.args)) {
 		throw new Error('Invalid native process request');
 	}
@@ -558,7 +815,7 @@ async function processNative(payload) {
 				case TOKENS.CLUT:
 					return clutPath;
 				case TOKENS.FONT:
-					return fontPath;
+					return fontPath.replaceAll('\\', '/');
 				case TOKENS.INPUT:
 					return inputPath;
 				case TOKENS.OUTPUT:
@@ -576,17 +833,10 @@ async function processNative(payload) {
 			...substituted,
 			...(hasOutput ? [] : [outputSpecifier])
 		];
-		const outputIndex = finalArgs.lastIndexOf(outputSpecifier);
-		finalArgs.splice(
-			outputIndex,
-			0,
-			'-depth',
-			'8',
-			'-write',
-			`rgba:${previewPath}`,
-			'-depth',
-			'16'
-		);
+		const needsPreview =
+			payload.previewOnly ||
+			!BROWSER_RENDERABLE_FORMATS.has(String(payload.outputFormat || '').toUpperCase());
+		const previewMaxEdge = Math.max(1, Number(payload.previewMaxEdge) || MAX_PREVIEW_EDGE);
 
 		// Some coders leave the source EXIF orientation unavailable to
 		// ImageMagick even though the renderer's metadata parser found it.
@@ -608,31 +858,121 @@ async function processNative(payload) {
 				finalArgs.splice(autoOrientIndex, 1, '-orient', orientationName, '-auto-orient');
 			}
 		}
+		if (isRawInputName(payload.inputName)) {
+			const inputIndex = hasInput ? finalArgs.indexOf(inputPath) : 0;
+			finalArgs.splice(
+				inputIndex + 1,
+				0,
+				'-bordercolor',
+				'none',
+				'-border',
+				'1x1',
+				'-trim',
+				'+repage'
+			);
+		}
+		let logicalDimensions = null;
+		if (payload.previewOnly && !hasOutput) {
+			const dimensionArgs = finalArgs.slice(0, -1);
+			const resizeIndex = dimensionArgs.indexOf('-resize');
+			if (resizeIndex >= 0) dimensionArgs.splice(resizeIndex, 2);
+			const { stdout } = await runBinary(
+				magickBin,
+				[...dimensionArgs, '-format', '%w %h', 'info:'],
+				{ inputName: payload.inputName }
+			);
+			const [logicalWidth, logicalHeight] = stdout
+				.toString('utf-8')
+				.trim()
+				.split(/\s+/)
+				.map(Number);
+			if (logicalWidth > 0 && logicalHeight > 0) {
+				logicalDimensions = { width: logicalWidth, height: logicalHeight };
+			}
+		}
 
 		await runBinary(magickBin, finalArgs, { inputName: payload.inputName });
 
 		const data = new Uint8Array(await fs.promises.readFile(outputPath));
 		const { width, height } = await identifyDimensions(magickBin, outputPath);
-		const rawPreviewData = new Uint8Array(await fs.promises.readFile(previewPath));
-		const firstFrameBytes = width * height * 4;
-		if (rawPreviewData.length < firstFrameBytes) {
-			throw new Error('Native preview data is shorter than the reported image dimensions');
+		let previewData = new Uint8Array();
+		let previewWidth = 0;
+		let previewHeight = 0;
+		let previewImageData = new Uint8Array();
+		if (needsPreview) {
+			const scale = Math.min(1, previewMaxEdge / Math.max(width, height));
+			previewWidth = Math.max(1, Math.round(width * scale));
+			previewHeight = Math.max(1, Math.round(height * scale));
+			await runBinary(
+				magickBin,
+				[
+					outputPath,
+					'-resize',
+					`${previewMaxEdge}x${previewMaxEdge}>`,
+					'-depth',
+					'8',
+					`rgba:${previewPath}`
+				],
+				{ inputName: payload.inputName }
+			);
+			const rawPreviewData = new Uint8Array(await fs.promises.readFile(previewPath));
+			const previewBytes = previewWidth * previewHeight * 4;
+			if (rawPreviewData.length < previewBytes) {
+				throw new Error('Native preview data is shorter than the reported preview dimensions');
+			}
+			previewData = rawPreviewData.slice(0, previewBytes);
+		} else if (
+			width > MAX_GPU_IMAGE_EDGE ||
+			height > MAX_GPU_IMAGE_EDGE ||
+			width * height > MAX_GPU_IMAGE_PIXELS
+		) {
+			const previewImagePath = path.join(tmpDir, 'preview.webp');
+			await runBinary(
+				magickBin,
+				[
+					outputPath,
+					'-resize',
+					`${MAX_INTERACTIVE_PREVIEW_EDGE}x${MAX_INTERACTIVE_PREVIEW_EDGE}>`,
+					'-quality',
+					'90',
+					`webp:${previewImagePath}`
+				],
+				{ inputName: payload.inputName }
+			);
+			previewImageData = new Uint8Array(await fs.promises.readFile(previewImagePath));
 		}
-		// The renderer currently displays one bitmap. Keep the first frame when
-		// ImageMagick writes a multi-frame image to the raw RGBA stream.
-		const previewData = rawPreviewData.slice(0, firstFrameBytes);
 		return {
 			data,
 			previewData,
-			previewWidth: width,
-			previewHeight: height,
+			previewWidth,
+			previewHeight,
+			previewImageData,
+			previewImageFormat: previewImageData.length ? 'WEBP' : undefined,
 			width,
 			height,
-			format: String(payload.outputFormat || 'png')
+			logicalWidth: logicalDimensions?.width ?? width,
+			logicalHeight: logicalDimensions?.height ?? height,
+			format: String(payload.outputFormat || 'png'),
+			backend: 'magick'
 		};
 	} finally {
 		await fs.promises.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
 	}
+}
+
+async function processNative(payload) {
+	if (!payload || !Array.isArray(payload.args)) {
+		throw new Error('Invalid native process request');
+	}
+	if (payload.plan?.backend === 'vips') {
+		try {
+			return await processNativeVips(payload);
+		} catch (error) {
+			console.warn('Native VIPS processing failed; falling back to ImageMagick:', error);
+			return processNativeMagick(payload);
+		}
+	}
+	return processNativeMagick(payload);
 }
 
 function parseMetricGeometry(output) {
@@ -676,7 +1016,14 @@ async function getNativeFontMetrics(payload) {
 
 	try {
 		await fs.promises.writeFile(fontPath, payload.fontData);
-		const baseArgs = ['-font', fontPath, '-pointsize', String(payload.fontSize), '-fill', 'white'];
+		const baseArgs = [
+			'-font',
+			fontPath.replaceAll('\\', '/'),
+			'-pointsize',
+			String(payload.fontSize),
+			'-fill',
+			'white'
+		];
 		const metricRun = await runBinary(magickBin, [
 			'-size',
 			'1x1',

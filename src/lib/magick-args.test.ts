@@ -36,7 +36,7 @@ function baseSettings(): MagickSettings {
 		contrast: [0],
 		normalizeImage: false,
 		autoLevel: false,
-		autoOrient: false,
+		autoOrient: true,
 		levelBlackpoint: { All: [0], Red: [0], Green: [0], Blue: [0] },
 		levelWhitepoint: { All: [100], Red: [100], Green: [100], Blue: [100] },
 		levelGamma: { All: [1.0], Red: [1.0], Green: [1.0], Blue: [1.0] },
@@ -122,9 +122,9 @@ describe('outputExtensionForFormat', () => {
 });
 
 describe('buildNativeMagickArgs', () => {
-	it('emits nothing but quality for default settings', () => {
+	it('emits auto-orient and quality for default settings', () => {
 		const result = build({});
-		expect(result.args).toEqual(['-quality', '100']);
+		expect(result.args).toEqual(['-auto-orient', '-quality', '100']);
 		expect(result.needsClut).toBeNull();
 		expect(result.needsFont).toBeNull();
 		expect(result.outputExtension).toBe('png');
@@ -144,6 +144,14 @@ describe('buildNativeMagickArgs', () => {
 	it('applies auto-orient before geometry operations', () => {
 		const args = build({ autoOrient: true, resizeW: 80, resizeH: null }).args;
 		expect(args.indexOf('-auto-orient')).toBeLessThan(args.indexOf('-resize'));
+	});
+
+	it('uses the resized dimensions for partial crops', () => {
+		const args = build(
+			{ resizeW: 50, resizeH: null, cropW: 30, cropH: null },
+			{ width: 100, height: 50 }
+		).args;
+		expect(args).toContain('30x50+0+0');
 	});
 
 	it('uses post-orientation dimensions for inferred geometry sizes', () => {

@@ -154,6 +154,8 @@ export interface HistoryEntry {
 	settings: MagickSettings;
 	/** History-owned blob URL. Survives magick re-processing. */
 	blobUrl: string;
+	/** Optional bounded preview for outputs too large for direct browser decoding. */
+	previewBlobUrl?: string;
 	width: number;
 	height: number;
 	format: string;
@@ -272,11 +274,15 @@ export class HistoryState {
 	async pushFromMagick(magick: MagickState, label: string): Promise<void> {
 		if (!magick.processedImageUrl) return;
 		const blobUrl = await cloneBlobUrl(magick.processedImageUrl);
+		const previewBlobUrl = magick.processedPreviewUrl
+			? await cloneBlobUrl(magick.processedPreviewUrl)
+			: undefined;
 		const entry: HistoryEntry = {
 			id: nextId++,
 			label,
 			settings: snapSettings(magick.settings),
 			blobUrl,
+			previewBlobUrl,
 			width: magick.processedWidth,
 			height: magick.processedHeight,
 			format: magick.processedImageFormat ?? magick.settings.imageFormat.toLowerCase(),
@@ -299,7 +305,10 @@ export class HistoryState {
 		// Truncate redo branch.
 		if (this.pointer < this.entries.length - 1) {
 			const doomed = this.entries.slice(this.pointer + 1);
-			for (const d of doomed) this._urlsToRevoke.add(d.blobUrl);
+			for (const d of doomed) {
+				this._urlsToRevoke.add(d.blobUrl);
+				if (d.previewBlobUrl) this._urlsToRevoke.add(d.previewBlobUrl);
+			}
 			this.entries = this.entries.slice(0, this.pointer + 1);
 		}
 		this.entries = [...this.entries, entry];
@@ -309,6 +318,8 @@ export class HistoryState {
 		while (this.entries.length > maxEntries) {
 			const evicted = this.entries.shift()!;
 			if (evicted.blobUrl !== entry.blobUrl) this._urlsToRevoke.add(evicted.blobUrl);
+			if (evicted.previewBlobUrl && evicted.previewBlobUrl !== entry.previewBlobUrl)
+				this._urlsToRevoke.add(evicted.previewBlobUrl);
 			this.pointer = Math.max(0, this.pointer - 1);
 		}
 		this.pointer = this.entries.length - 1;
@@ -348,6 +359,8 @@ export class HistoryState {
 		magick.settings = snapSettings(entry.settings);
 		// Give magick its own disposable URL (history keeps its own).
 		if (magick.processedImageUrl) URL.revokeObjectURL(magick.processedImageUrl);
+		if (magick.processedPreviewUrl) URL.revokeObjectURL(magick.processedPreviewUrl);
+		magick.processedPreviewUrl = null;
 		if (entry.isOriginal) {
 			magick.processedPreviewData = null;
 			magick.processedPreviewWidth = 0;
@@ -362,6 +375,9 @@ export class HistoryState {
 			magick.processedPreviewWidth = 0;
 			magick.processedPreviewHeight = 0;
 			magick.processedImageUrl = await cloneBlobUrl(entry.blobUrl);
+			magick.processedPreviewUrl = entry.previewBlobUrl
+				? await cloneBlobUrl(entry.previewBlobUrl)
+				: null;
 			magick.processedImageFormat = entry.format;
 			const base = magick.originalName.replace(/\.[^.]+$/, '');
 			magick.processedImageName = buildOutputFilename({
@@ -395,7 +411,10 @@ export class HistoryState {
 	}
 
 	private revokeAll(): void {
-		for (const e of this.entries) this._urlsToRevoke.add(e.blobUrl);
+		for (const e of this.entries) {
+			this._urlsToRevoke.add(e.blobUrl);
+			if (e.previewBlobUrl) this._urlsToRevoke.add(e.previewBlobUrl);
+		}
 		this.flushRevoke();
 	}
 

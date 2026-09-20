@@ -377,6 +377,18 @@ export function computeCropStepOffset(settings: MagickSettings): {
 	return { offsetX: 0, offsetY: 0 };
 }
 
+export function computeResizeScale(
+	settings: MagickSettings,
+	sourceW: number,
+	sourceH: number
+): number {
+	const scale = Math.min(
+		settings.resizeW && settings.resizeW > 0 ? settings.resizeW / sourceW : Infinity,
+		settings.resizeH && settings.resizeH > 0 ? settings.resizeH / sourceH : Infinity
+	);
+	return Number.isFinite(scale) ? scale : 1;
+}
+
 /**
  * Compute the initial crop rect shown by the visual crop overlay for the
  * currently applied crop settings.
@@ -397,8 +409,11 @@ export function computeCropPreview(
 	const srcW = originalWidth || 0;
 	const srcH = originalHeight || 0;
 	const rotated = settings.rotate === '90' || settings.rotate === '-90';
-	const stepW = rotated ? (settings.resizeH ?? srcH) : (settings.resizeW ?? srcW);
-	const stepH = rotated ? (settings.resizeW ?? srcW) : (settings.resizeH ?? srcH);
+	const scale = computeResizeScale(settings, srcW, srcH);
+	const resizedW = Math.round(srcW * scale);
+	const resizedH = Math.round(srcH * scale);
+	const stepW = rotated ? resizedH : resizedW;
+	const stepH = rotated ? resizedW : resizedH;
 
 	let offsetX = 0;
 	let offsetY = 0;
@@ -414,10 +429,10 @@ export function computeCropPreview(
 		(settings.cropH ?? 0) > 0
 	) {
 		return {
-			x: settings.cropX - offsetX,
-			y: settings.cropY - offsetY,
-			w: settings.cropW!,
-			h: settings.cropH!
+			x: (settings.cropX - offsetX) * scale,
+			y: (settings.cropY - offsetY) * scale,
+			w: settings.cropW! * scale,
+			h: settings.cropH! * scale
 		};
 	}
 
@@ -427,8 +442,8 @@ export function computeCropPreview(
 		settings.cropH != null &&
 		settings.cropH > 0
 	) {
-		const cw = Math.min(settings.cropW, stepW);
-		const ch = Math.min(settings.cropH, stepH);
+		const cw = Math.min(settings.cropW * scale, stepW);
+		const ch = Math.min(settings.cropH * scale, stepH);
 		return {
 			x: gravityAxisOffset(stepW - cw, settings.cropGravity, true) - offsetX,
 			y: gravityAxisOffset(stepH - ch, settings.cropGravity, false) - offsetY,

@@ -38,6 +38,7 @@ import {
 import { generateClutImage } from './luts';
 import { renderClutPngBytes } from './clut-data';
 import { buildNativeMagickArgs } from './magick-args';
+import { buildNativeProcessingPlan } from './native-plan';
 import { applyCrop, readImageWithFilename, resolveNoiseAttenuate } from './magick-process';
 import { extractExif, parseExifOrientation, type ExifData } from './exif';
 import { computeCropStepOffset, type CropRect } from './crop-utils';
@@ -52,10 +53,10 @@ import {
 	type ExportFormat
 } from './export-formats';
 import { buildOutputFilename } from './settings';
+import { BROWSER_RENDERABLE_FORMATS } from './image-capabilities';
 
 const AUTO_PROCESS_DELAY = 300;
 const EXIF_UNSUPPORTED_MESSAGE = 'Format probably not supported';
-
 const STORAGE_KEY = 'wasmagick-settings';
 
 const ARRAY_KEYS = new Set([
@@ -178,7 +179,7 @@ export const DEFAULT_SETTINGS: MagickSettings = {
 	contrast: [0],
 	normalizeImage: false,
 	autoLevel: false,
-	autoOrient: false,
+	autoOrient: true,
 	levelBlackpoint: { All: [0], Red: [0], Green: [0], Blue: [0] },
 	levelWhitepoint: { All: [100], Red: [100], Green: [100], Blue: [100] },
 	levelGamma: { All: [1.0], Red: [1.0], Green: [1.0], Blue: [1.0] },
@@ -291,12 +292,35 @@ function snapSettings(settings: MagickSettings): MagickSettings {
 
 const PREVIEW_MAX_EDGE = 2048;
 const WEB_FULL_PREVIEW_MAX_EDGE = 4096;
+const WEB_DIRECT_MAX_EDGE = 8192;
+const WEB_DIRECT_MAX_PIXELS = 40_000_000;
+const DESKTOP_DIRECT_MAX_EDGE = 16384;
+const DESKTOP_DIRECT_MAX_PIXELS = 80_000_000;
+
+function needsInteractivePreview(
+	dimensions: { width: number; height: number } | null,
+	desktop: boolean
+): boolean {
+	const maxEdge = desktop ? DESKTOP_DIRECT_MAX_EDGE : WEB_DIRECT_MAX_EDGE;
+	const maxPixels = desktop ? DESKTOP_DIRECT_MAX_PIXELS : WEB_DIRECT_MAX_PIXELS;
+	return (
+		!!dimensions &&
+		(Math.max(dimensions.width, dimensions.height) > maxEdge ||
+			dimensions.width * dimensions.height > maxPixels)
+	);
+}
 
 async function browserPreview(
 	bytes: Uint8Array,
 	dimensions: { width: number; height: number } | null,
 	maxEdge = PREVIEW_MAX_EDGE
-): Promise<{ data: Uint8Array; width: number; height: number } | null> {
+): Promise<{
+	data: Uint8Array;
+	width: number;
+	height: number;
+	sourceWidth: number;
+	sourceHeight: number;
+} | null> {
 	let bitmap: ImageBitmap;
 	try {
 		const blob = new Blob([bytes as BlobPart]);
@@ -318,6 +342,8 @@ async function browserPreview(
 	}
 
 	try {
+		const sourceWidth = dimensions?.width ?? bitmap.width;
+		const sourceHeight = dimensions?.height ?? bitmap.height;
 		const target = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
 		const width = Math.max(1, Math.round(bitmap.width * target));
 		const height = Math.max(1, Math.round(bitmap.height * target));
@@ -327,7 +353,13 @@ async function browserPreview(
 		const context = canvas.getContext('2d');
 		if (!context) return null;
 		context.drawImage(bitmap, 0, 0, width, height);
-		return { data: new Uint8Array(context.getImageData(0, 0, width, height).data), width, height };
+		return {
+			data: new Uint8Array(context.getImageData(0, 0, width, height).data),
+			width,
+			height,
+			sourceWidth,
+			sourceHeight
+		};
 	} finally {
 		bitmap.close();
 	}
@@ -462,11 +494,13 @@ export class MagickState {
 	originalPreviewLoading = $state(false);
 	originalImageFormat = $state<string | null>(null);
 	processedImageUrl = $state<string | null>(null);
+	processedPreviewUrl = $state<string | null>(null);
 	processedPreviewData = $state<Uint8Array | null>(null);
 	processedPreviewWidth = $state(0);
 	processedPreviewHeight = $state(0);
 	processedImageFormat = $state<string | null>(null);
 	processedImageName = $state<string | null>(null);
+	processedBy = $state<string | null>(null);
 	processedImageTime = $state(0);
 	processedImageDelta = $state('N/A');
 	/**
@@ -574,6 +608,7 @@ export class MagickState {
 	private _nativeSourceRevision: number | null = null;
 	private _nativeRequestId = 0;
 	private _sourceRevision = 0;
+	private _previewRequestId = 0;
 	private _requestId = 0;
 	private _latestWorkerRequestId = 0;
 	cropMode = $state(false);
@@ -1064,6 +1099,7 @@ export class MagickState {
 			const buffer = await file.arrayBuffer();
 			this.sourceBytes = new Uint8Array(buffer);
 			this._sourceRevision++;
+			this._previewRequestId++;
 			const source = this.sourceBytes;
 			const sourceRevision = this._sourceRevision;
 			this._nativeSourceRevision = null;
@@ -1152,24 +1188,46 @@ export class MagickState {
 		sourceRevision: number,
 		dimensions: { width: number; height: number } | null
 	): Promise<void> {
+		const previewRequestId = this._previewRequestId;
 		this.originalPreviewLoading = true;
 		try {
-			const preview = await browserPreview(source, dimensions);
-			if (this.sourceBytes !== source || this._sourceRevision !== sourceRevision) return;
+			const format = this.originalImageFormat?.toUpperCase();
+			const browserRenderable = !!format && BROWSER_RENDERABLE_FORMATS.has(format);
+			const oversized = needsInteractivePreview(dimensions, this.nativeAvailable);
+			if (browserRenderable && !oversized) {
+				this.originalPreviewFailed = false;
+				return;
+			}
+			if (
+				this.nativeAvailable &&
+				(await this.renderNativeOriginalPreview(source, false, previewRequestId))
+			)
+				return;
+			const preview = browserRenderable ? await browserPreview(source, dimensions) : null;
+			if (
+				this.sourceBytes !== source ||
+				this._sourceRevision !== sourceRevision ||
+				this._previewRequestId !== previewRequestId
+			)
+				return;
 			if (preview) {
 				this.originalPreviewData = preview.data;
 				this.originalPreviewWidth = preview.width;
 				this.originalPreviewHeight = preview.height;
 				this.originalPreviewFailed = false;
 				if (!dimensions) {
-					this.originalWidth = preview.width;
-					this.originalHeight = preview.height;
+					this.originalWidth = preview.sourceWidth;
+					this.originalHeight = preview.sourceHeight;
 				}
 				return;
 			}
 
 			this.originalPreviewFailed = true;
-			if (this.nativeAvailable && (await this.renderNativeOriginalPreview(source, false))) return;
+			if (
+				this.nativeAvailable &&
+				(await this.renderNativeOriginalPreview(source, false, previewRequestId))
+			)
+				return;
 			if (this.wasmLoaded) await this.renderOriginalPreview();
 			else await this.initWasm();
 		} finally {
@@ -1181,59 +1239,90 @@ export class MagickState {
 
 	async renderOriginalPreview(fullResolution = false): Promise<void> {
 		const source = this.sourceBytes;
-		if (!source || (this.originalPreviewData && (!fullResolution || this.originalPreviewFull))) return;
+		const previewRequestId = this._previewRequestId;
+		if (this.isLoading) return;
+		if (!source || (this.originalPreviewData && (!fullResolution || this.originalPreviewFull)))
+			return;
 		this.originalPreviewLoading = true;
 		try {
-		if (fullResolution && this.nativeAvailable && (await this.renderNativeOriginalPreview(source, true))) return;
-		if (fullResolution) {
-			const preview = await browserPreview(
-				source,
-				this.originalWidth && this.originalHeight
-					? { width: this.originalWidth, height: this.originalHeight }
-					: null,
-				WEB_FULL_PREVIEW_MAX_EDGE
-			);
-			if (this.sourceBytes !== source) return;
-			if (preview) {
-				this.originalPreviewData = preview.data;
-				this.originalPreviewWidth = preview.width;
-				this.originalPreviewHeight = preview.height;
-				this.originalPreviewFailed = false;
-				this.originalPreviewFull = true;
+			if (
+				fullResolution &&
+				this.nativeAvailable &&
+				(await this.renderNativeOriginalPreview(source, true, previewRequestId))
+			)
 				return;
-			}
-		}
-		try {
-			readImageWithFilename(source, this.originalName, (image) => {
-				if (this.settings.autoOrient) image.autoOrient();
-				const maxEdge = fullResolution ? WEB_FULL_PREVIEW_MAX_EDGE : PREVIEW_MAX_EDGE;
-				{
-					const scale = Math.min(1, maxEdge / Math.max(image.width, image.height));
-					if (scale < 1) image.resize(Math.max(1, Math.round(image.width * scale)), Math.max(1, Math.round(image.height * scale)));
-				}
-				const width = image.width;
-				const height = image.height;
-				const data = image.getPixels(
-					(pixels) => pixels.toByteArray(0, 0, width, height, 'RGBA') ?? new Uint8Array()
+			if (fullResolution) {
+				const preview = await browserPreview(
+					source,
+					this.originalWidth && this.originalHeight
+						? { width: this.originalWidth, height: this.originalHeight }
+						: null,
+					WEB_FULL_PREVIEW_MAX_EDGE
 				);
-				if (this.sourceBytes === source && data.length === width * height * 4) {
-					this.originalPreviewData = data;
-					this.originalPreviewWidth = width;
-					this.originalPreviewHeight = height;
+				if (this.sourceBytes !== source || this._previewRequestId !== previewRequestId) return;
+				if (preview) {
+					this.originalPreviewData = preview.data;
+					this.originalPreviewWidth = preview.width;
+					this.originalPreviewHeight = preview.height;
 					this.originalPreviewFailed = false;
-					this.originalPreviewFull = fullResolution;
+					this.originalPreviewFull = true;
+					return;
 				}
-			});
-		} catch (error) {
-			if (await this.renderNativeOriginalPreview(source, fullResolution)) return;
-			console.warn('Could not render imported image preview:', error);
-		}
+			}
+			try {
+				readImageWithFilename(source, this.originalName, (image) => {
+					if (this.settings.autoOrient) image.autoOrient();
+					const sourceWidth = image.width;
+					const sourceHeight = image.height;
+					const maxEdge = fullResolution ? WEB_FULL_PREVIEW_MAX_EDGE : PREVIEW_MAX_EDGE;
+					{
+						const scale = Math.min(1, maxEdge / Math.max(image.width, image.height));
+						if (scale < 1)
+							image.resize(
+								Math.max(1, Math.round(image.width * scale)),
+								Math.max(1, Math.round(image.height * scale))
+							);
+					}
+					const width = image.width;
+					const height = image.height;
+					const data = image.getPixels(
+						(pixels) => pixels.toByteArray(0, 0, width, height, 'RGBA') ?? new Uint8Array()
+					);
+					if (
+						this.sourceBytes === source &&
+						this._previewRequestId === previewRequestId &&
+						data.length === width * height * 4
+					) {
+						this.originalWidth = sourceWidth;
+						this.originalHeight = sourceHeight;
+						this.originalPreviewData = data;
+						this.originalPreviewWidth = width;
+						this.originalPreviewHeight = height;
+						this.originalPreviewFailed = false;
+						this.originalPreviewFull = fullResolution;
+					}
+				});
+			} catch (error) {
+				if (await this.renderNativeOriginalPreview(source, fullResolution, previewRequestId))
+					return;
+				console.warn('Could not render imported image preview:', error);
+			}
 		} finally {
 			if (this.sourceBytes === source) this.originalPreviewLoading = false;
 		}
 	}
 
-	private async renderNativeOriginalPreview(source: Uint8Array, fullResolution: boolean): Promise<boolean> {
+	handleOriginalImageError(): void {
+		if (this.originalPreviewData || this.originalPreviewLoading) return;
+		this.originalPreviewFailed = true;
+		void this.renderOriginalPreview();
+	}
+
+	private async renderNativeOriginalPreview(
+		source: Uint8Array,
+		fullResolution: boolean,
+		previewRequestId = this._previewRequestId
+	): Promise<boolean> {
 		if (!window.wasmagick?.processNativeImage) return false;
 		try {
 			const result = await window.wasmagick.processNativeImage({
@@ -1242,12 +1331,21 @@ export class MagickState {
 				sourceRevision: this._sourceRevision,
 				args: fullResolution ? ['-auto-orient'] : ['-auto-orient', '-resize', '2048x2048>'],
 				outputExtension: 'png',
-				outputFormat: 'PNG'
+				outputFormat: 'PNG',
+				previewOnly: true,
+				previewMaxEdge: fullResolution ? WEB_FULL_PREVIEW_MAX_EDGE : PREVIEW_MAX_EDGE
 			});
-			if (this.sourceBytes !== source || !result.previewData?.length) return false;
+			if (
+				this.sourceBytes !== source ||
+				this._previewRequestId !== previewRequestId ||
+				!result.previewData?.length
+			)
+				return false;
 			this.originalPreviewData = result.previewData;
 			this.originalPreviewWidth = result.previewWidth ?? result.width;
 			this.originalPreviewHeight = result.previewHeight ?? result.height;
+			this.originalWidth = result.logicalWidth ?? result.width;
+			this.originalHeight = result.logicalHeight ?? result.height;
 			this.originalPreviewFailed = false;
 			this.originalPreviewFull = fullResolution;
 			return true;
@@ -1302,6 +1400,10 @@ export class MagickState {
 			URL.revokeObjectURL(this.processedImageUrl);
 			this.processedImageUrl = null;
 		}
+		if (this.processedPreviewUrl) {
+			URL.revokeObjectURL(this.processedPreviewUrl);
+			this.processedPreviewUrl = null;
+		}
 	}
 
 	// NOTE: Sending font data over postMessage causes OOM errors.
@@ -1352,14 +1454,18 @@ export class MagickState {
 		this.hasError = false;
 		this.errorMessage = null;
 		this.isLoading = true;
-		this.currentProcessingStep = 'Processing with native ImageMagick...';
+		this.currentProcessingStep = 'Processing with native engine...';
 		const startTime = performance.now();
 
 		try {
-			const orientation = snapSettings(this.settings).autoOrient
-				? await this.sourceExifOrientation()
-				: null;
-			const built = buildNativeMagickArgs(snapSettings(this.settings), {
+			const settings = snapSettings(this.settings);
+			const plan = buildNativeProcessingPlan(settings, this.originalName);
+			this.currentProcessingStep =
+				plan.backend === 'magick'
+					? 'Processing with native ImageMagick...'
+					: 'Processing with native engine...';
+			const orientation = settings.autoOrient ? await this.sourceExifOrientation() : null;
+			const built = buildNativeMagickArgs(settings, {
 				width: this.originalWidth,
 				height: this.originalHeight,
 				orientation
@@ -1385,7 +1491,8 @@ export class MagickState {
 			}
 
 			if (debugMode) {
-				console.log('NativeImageMagick', { args, format: this.settings.imageFormat });
+				console.log('NativeProcessingPlan', plan);
+				console.log('NativeImageMagick', { args, format: settings.imageFormat });
 			}
 
 			const result = await window.wasmagick!.processNativeImage({
@@ -1395,7 +1502,8 @@ export class MagickState {
 				sourceRevision: this._sourceRevision,
 				args,
 				outputExtension: built.outputExtension,
-				outputFormat: this.settings.imageFormat,
+				outputFormat: settings.imageFormat,
+				plan,
 				orientation,
 				clutData,
 				fontData,
@@ -1421,7 +1529,10 @@ export class MagickState {
 				appliedOptions,
 				result.previewData,
 				result.previewWidth,
-				result.previewHeight
+				result.previewHeight,
+				result.previewImageData,
+				result.previewImageFormat,
+				result.backend
 			);
 			if (onComplete) onComplete();
 		} catch (err: unknown) {
@@ -2037,10 +2148,16 @@ export class MagickState {
 
 								const finalWidth = image.width;
 								const finalHeight = image.height;
-								const previewData = image.getPixels(
-									(pixels) =>
-										pixels.toByteArray(0, 0, finalWidth, finalHeight, 'RGBA') ?? new Uint8Array()
+								const needsPreview = !BROWSER_RENDERABLE_FORMATS.has(
+									this.settings.imageFormat.toUpperCase()
 								);
+								const previewData = needsPreview
+									? image.getPixels(
+											(pixels) =>
+												pixels.toByteArray(0, 0, finalWidth, finalHeight, 'RGBA') ??
+												new Uint8Array()
+										)
+									: new Uint8Array();
 
 								image.write(magf, (data) => {
 									const endTime = performance.now();
@@ -2060,8 +2177,8 @@ export class MagickState {
 										finalHeight,
 										appliedOptions,
 										previewData,
-										finalWidth,
-										finalHeight
+										needsPreview ? finalWidth : 0,
+										needsPreview ? finalHeight : 0
 									);
 
 									if (onComplete) onComplete();
@@ -2116,7 +2233,10 @@ export class MagickState {
 		_appliedOptions: AppliedOptions,
 		previewData?: Uint8Array,
 		previewWidth?: number,
-		previewHeight?: number
+		previewHeight?: number,
+		previewImageData?: Uint8Array,
+		previewImageFormat?: string,
+		processedBy = 'wasm'
 	): void {
 		const formatInfo = this.exportFormats.find(
 			(candidate) => candidate.value.toUpperCase() === format.toUpperCase()
@@ -2128,8 +2248,16 @@ export class MagickState {
 		if (this.processedImageUrl) {
 			URL.revokeObjectURL(this.processedImageUrl);
 		}
+		if (this.processedPreviewUrl) URL.revokeObjectURL(this.processedPreviewUrl);
 
 		this.processedImageUrl = URL.createObjectURL(blob);
+		this.processedPreviewUrl = previewImageData?.length
+			? URL.createObjectURL(
+					new Blob([previewImageData as unknown as BlobPart], {
+						type: mimeTypeForFormat(previewImageFormat ?? 'JPEG', 'jpg')
+					})
+				)
+			: null;
 		this.processedPreviewData = previewData ?? null;
 		this.processedPreviewWidth = previewWidth ?? newWidth;
 		this.processedPreviewHeight = previewHeight ?? newHeight;
@@ -2149,6 +2277,7 @@ export class MagickState {
 			width: newWidth,
 			height: newHeight
 		});
+		this.processedBy = processedBy;
 
 		this.isLoading = false;
 		this.currentProcessingStep = null;

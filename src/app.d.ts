@@ -1,5 +1,7 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
+import type { NativeProcessingPlan } from '$lib/native-plan';
+
 declare global {
 	namespace App {
 		// interface Error {}
@@ -45,11 +47,15 @@ declare global {
 		args: string[];
 		outputExtension: string;
 		outputFormat: string;
+		/** Return a raw RGBA preview even when outputFormat is browser-renderable. */
+		previewOnly?: boolean;
+		previewMaxEdge?: number;
 		/** ExifTool orientation used only if native ImageMagick reports Undefined. */
 		orientation?: number | null;
 		clutData?: Uint8Array | null;
 		fontData?: Uint8Array | null;
 		fontFileName?: string | null;
+		plan?: NativeProcessingPlan;
 	}
 
 	interface WasmagickNativeProcessResult {
@@ -57,9 +63,14 @@ declare global {
 		previewData?: Uint8Array;
 		previewWidth?: number;
 		previewHeight?: number;
+		previewImageData?: Uint8Array;
+		previewImageFormat?: string;
 		width: number;
 		height: number;
+		logicalWidth?: number;
+		logicalHeight?: number;
 		format: string;
+		backend?: 'vips' | 'magick';
 	}
 
 	interface WasmagickNativeFormatInfo {

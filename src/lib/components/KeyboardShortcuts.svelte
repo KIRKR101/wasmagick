@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { shortcutModifier } from '$lib/shortcuts';
+
 	let { open = $bindable(false) } = $props<{ open?: boolean }>();
 
 	const isDesktop = typeof window !== 'undefined' && window.wasmagick != null;
@@ -7,15 +9,15 @@
 		{
 			category: 'General',
 			items: [
-				...(isDesktop ? [{ keys: ['Ctrl', 'O'], description: 'Open Image' }] : []),
-				{ keys: ['Ctrl', 'Enter'], description: 'Process Image' },
-				{ keys: ['Ctrl', 'S'], description: 'Export Result' },
-				{ keys: ['Ctrl', 'Z'], description: 'Undo' },
-				{ keys: ['Ctrl', 'Shift', 'Z'], description: 'Redo' },
-				{ keys: ['Ctrl', 'Y'], description: 'Redo (alternative)' },
-				...(isDesktop ? [{ keys: ['Ctrl', 'W'], description: 'Close Image' }] : []),
+				...(isDesktop ? [{ keys: [shortcutModifier, 'O'], description: 'Open Image' }] : []),
+				{ keys: [shortcutModifier, 'Enter'], description: 'Process Image' },
+				{ keys: [shortcutModifier, 'S'], description: 'Export Result' },
+				{ keys: [shortcutModifier, 'Z'], description: 'Undo' },
+				{ keys: [shortcutModifier, 'Shift', 'Z'], description: 'Redo' },
+				{ keys: [shortcutModifier, 'Y'], description: 'Redo (alternative)' },
+				...(isDesktop ? [{ keys: [shortcutModifier, 'W'], description: 'Close Image' }] : []),
 				{ keys: ['V'], description: 'Open File Picker (upload)' },
-				{ keys: ['Ctrl', 'Shift', '?'], description: 'Show Shortcuts' }
+				{ keys: [shortcutModifier, 'Shift', '?'], description: 'Show Shortcuts' }
 			]
 		},
 		{
@@ -33,9 +35,9 @@
 		{
 			category: 'Viewport',
 			items: [
-				{ keys: ['Ctrl', '0'], description: 'Fit to Screen' },
-				{ keys: ['Ctrl', '='], description: 'Zoom In' },
-				{ keys: ['Ctrl', '-'], description: 'Zoom Out' },
+				{ keys: [shortcutModifier, '0'], description: 'Fit to Screen' },
+				{ keys: [shortcutModifier, '='], description: 'Zoom In' },
+				{ keys: [shortcutModifier, '-'], description: 'Zoom Out' },
 				{ keys: ['Scroll'], description: 'Zoom In/Out' },
 				{ keys: ['Drag'], description: 'Pan Image' },
 				{ keys: ['Double-click'], description: 'Toggle Fit / 100%' },
@@ -45,7 +47,7 @@
 		},
 		{
 			category: 'Clipboard',
-			items: [{ keys: ['Ctrl', 'V'], description: 'Paste Image from Clipboard' }]
+			items: [{ keys: [shortcutModifier, 'V'], description: 'Paste Image from Clipboard' }]
 		}
 	];
 
