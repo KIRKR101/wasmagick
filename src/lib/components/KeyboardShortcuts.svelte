@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { shortcutModifier } from '$lib/shortcuts';
-	import { X } from 'phosphor-svelte';
+	import X from 'phosphor-svelte/lib/X';
 
 	let { open = $bindable(false) } = $props<{ open?: boolean }>();
 

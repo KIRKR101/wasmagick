@@ -7,7 +7,7 @@
 		DialogOverlay,
 		DialogContent
 	} from '$lib/components/ui/dialog/index.js';
-	import { X } from 'phosphor-svelte';
+	import X from 'phosphor-svelte/lib/X';
 
 	let { open = $bindable(false) }: { open?: boolean } = $props();
 	let nativeVersion = $state<string | null>(null);

@@ -8,7 +8,7 @@
 	import type { MagickState } from '$lib/useMagick.svelte';
 	import { Magick } from '@imagemagick/magick-wasm';
 	import { buildErrorDetailsText, buildErrorIssueBody, buildIssueUrl } from '$lib/issue-report';
-	import { X } from 'phosphor-svelte';
+	import X from 'phosphor-svelte/lib/X';
 
 	let {
 		magick,

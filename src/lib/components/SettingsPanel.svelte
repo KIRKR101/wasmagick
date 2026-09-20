@@ -9,17 +9,15 @@
 	} from '$lib/components/ui/select/index.js';
 	import { Slider } from '$lib/components/ui/slider/index.js';
 	import ToggleRow from '$lib/components/controls/ToggleRow.svelte';
-	import {
-		ArrowCounterClockwise,
-		Desktop,
-		DownloadSimple,
-		Moon,
-		PencilSimple,
-		Sun,
-		TrashSimple,
-		UploadSimple,
-		X
-	} from 'phosphor-svelte';
+	import ArrowCounterClockwise from 'phosphor-svelte/lib/ArrowCounterClockwise';
+	import Desktop from 'phosphor-svelte/lib/Desktop';
+	import DownloadSimple from 'phosphor-svelte/lib/DownloadSimple';
+	import Moon from 'phosphor-svelte/lib/Moon';
+	import PencilSimple from 'phosphor-svelte/lib/PencilSimple';
+	import Sun from 'phosphor-svelte/lib/Sun';
+	import TrashSimple from 'phosphor-svelte/lib/TrashSimple';
+	import UploadSimple from 'phosphor-svelte/lib/UploadSimple';
+	import X from 'phosphor-svelte/lib/X';
 	import { applyThemeMode, getThemeMode, type ThemeMode } from '$lib/theme';
 	import {
 		APP_VERSION,
