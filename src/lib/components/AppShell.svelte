@@ -178,7 +178,7 @@
 			{onRedo}
 		/>
 
-		<div class="hidden shrink-0 md:block" style="width: var(--panel-default);">
+		<div class="shrink-0" style="width: var(--panel-default);">
 			<PropertiesPanel
 				{magick}
 				{history}
