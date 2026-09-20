@@ -31,7 +31,10 @@ describe('native ImageMagick error mapping', () => {
 
 	it('returns a valid staged WebP encoder path when one is available', () => {
 		const resolved = resolveWebpTool('cwebp');
-		if (resolved === null) return;
+		if (resolved === null) {
+			expect(resolved).toBeNull();
+			return;
+		}
 		expect(existsSync(resolved)).toBe(true);
 		expect(path.basename(resolved).toLowerCase()).toMatch(/^cwebp(?:\.exe)?$/);
 	});
