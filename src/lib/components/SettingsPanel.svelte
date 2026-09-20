@@ -205,24 +205,25 @@
 </script>
 
 <div class="settings-page font-mono">
-	<div class="mb-1 flex items-center justify-between">
-		<h2 class="text-lg tracking-wider text-foreground uppercase">[SETTINGS]</h2>
+	<div class="mb-4 flex items-start justify-between gap-4 border-b border-divider pb-4">
+		<div>
+			<h2 class="text-xs tracking-wider text-muted-foreground uppercase">Settings</h2>
+			<p class="mt-1 max-w-md text-[11px] text-muted-foreground/60">
+				Changes save automatically and apply immediately.
+			</p>
+		</div>
 		<button
 			type="button"
 			onclick={onClose}
 			aria-label="Close settings"
-			class="cursor-pointer px-1 font-mono text-xs text-muted-foreground transition-colors duration-75 hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+			class="flex size-6 shrink-0 cursor-pointer items-center justify-center text-muted-foreground/40 transition-colors duration-75 hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 		>
 			<X class="size-4" />
 		</button>
 	</div>
-	<p class="mb-6 max-w-md text-xs text-muted-foreground/60">
-		Changes save automatically and apply right away. The editor behind this panel is untouched — no
-		reloads, nothing discarded.
-	</p>
 
 	<!-- Appearance -->
-	<section class="mb-6 border border-foreground/30 p-4">
+	<section class="mb-4 border border-divider p-4">
 		<h3 class="mb-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
 			/APPEARANCE
 		</h3>
@@ -248,7 +249,7 @@
 	</section>
 
 	<!-- Export defaults -->
-	<section class="mb-6 border border-foreground/30 p-4">
+	<section class="mb-4 border border-divider p-4">
 		<h3 class="mb-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
 			/EXPORT DEFAULTS
 		</h3>
@@ -299,7 +300,7 @@
 	</section>
 
 	<!-- Output filename -->
-	<section class="mb-6 border border-foreground/30 p-4">
+	<section class="mb-4 border border-divider p-4">
 		<h3 class="mb-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
 			/OUTPUT FILENAME
 		</h3>
@@ -331,7 +332,7 @@
 	</section>
 
 	<!-- Presets -->
-	<section class="mb-6 border border-foreground/30 p-4">
+	<section class="mb-4 border border-divider p-4">
 		<h3 class="mb-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
 			/PRESETS
 		</h3>
@@ -434,7 +435,7 @@
 	</section>
 
 	<!-- History & storage -->
-	<section class="mb-6 border border-foreground/30 p-4">
+	<section class="mb-4 border border-divider p-4">
 		<h3 class="mb-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
 			/HISTORY &amp; STORAGE
 		</h3>
@@ -489,7 +490,7 @@
 	</section>
 
 	<!-- About -->
-	<section class="border border-foreground/30 p-4">
+	<section class="border border-divider p-4">
 		<h3 class="mb-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
 			/ABOUT
 		</h3>

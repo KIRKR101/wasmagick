@@ -30,15 +30,15 @@
 			type="button"
 			aria-label="Close settings"
 			onclick={close}
-			class="absolute inset-0 cursor-default bg-black/55 backdrop-blur-md"
+			class="absolute inset-0 cursor-default bg-black/45 backdrop-blur-[2px]"
 		></button>
 		<div
 			role="dialog"
 			aria-modal="true"
 			aria-label="App settings"
-			class="relative z-10 flex max-h-[80vh] w-full max-w-2xl flex-col overflow-hidden border border-divider bg-chrome"
+			class="relative z-10 flex max-h-[min(88vh,52rem)] w-full max-w-2xl animate-in flex-col overflow-hidden border border-divider bg-chrome shadow-2xl fade-in-0 zoom-in-95"
 		>
-			<div class="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+			<div class="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
 				<SettingsPanel onClose={close} />
 			</div>
 		</div>
