@@ -9,6 +9,7 @@
 	} from '$lib/components/ui/select/index.js';
 	import { Slider } from '$lib/components/ui/slider/index.js';
 	import ToggleRow from '$lib/components/controls/ToggleRow.svelte';
+	import { X } from 'lucide-svelte';
 	import { applyThemeMode, getThemeMode, type ThemeMode } from '$lib/theme';
 	import {
 		APP_VERSION,
@@ -212,7 +213,7 @@
 			aria-label="Close settings"
 			class="group cursor-pointer px-1 font-mono text-xs text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 		>
-			[<span class="group-hover:underline">X</span>]
+			<X class="size-4 transition-colors group-hover:text-foreground" />
 		</button>
 	</div>
 	<p class="mb-6 max-w-md text-xs text-muted-foreground/60">

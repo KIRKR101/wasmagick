@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { shortcutModifier } from '$lib/shortcuts';
+	import { X } from 'lucide-svelte';
 
 	let { open = $bindable(false) } = $props<{ open?: boolean }>();
 
@@ -150,7 +151,7 @@
 				onclick={() => (open = false)}
 				aria-label="Close shortcuts dialog"
 			>
-				[X]
+				<X class="size-3.5" />
 			</button>
 		</div>
 	</div>

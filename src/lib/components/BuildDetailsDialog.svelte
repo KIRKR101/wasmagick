@@ -7,6 +7,7 @@
 		DialogOverlay,
 		DialogContent
 	} from '$lib/components/ui/dialog/index.js';
+	import { X } from 'lucide-svelte';
 
 	let { open = $bindable(false) }: { open?: boolean } = $props();
 	let nativeVersion = $state<string | null>(null);
@@ -68,7 +69,7 @@
 				class="absolute top-2 right-2 flex size-5 cursor-pointer items-center justify-center font-mono text-[11px] text-muted-foreground/40 focus:outline-none"
 				aria-label="Close build details"
 			>
-				[X]
+				<X class="size-3.5" />
 			</button>
 		</DialogContent>
 	</DialogPortal>

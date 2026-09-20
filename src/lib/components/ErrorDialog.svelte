@@ -8,6 +8,7 @@
 	import type { MagickState } from '$lib/useMagick.svelte';
 	import { Magick } from '@imagemagick/magick-wasm';
 	import { buildErrorDetailsText, buildErrorIssueBody, buildIssueUrl } from '$lib/issue-report';
+	import { X } from 'lucide-svelte';
 
 	let {
 		magick,
@@ -150,7 +151,7 @@
 				class="absolute top-2 right-2 flex size-5 cursor-pointer items-center justify-center font-mono text-[11px] text-muted-foreground/40 focus:outline-none"
 				aria-label="Close error dialog"
 			>
-				[X]
+				<X class="size-3.5" />
 			</button>
 		</DialogContent>
 	</DialogPortal>
