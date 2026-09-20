@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { SampleImage } from '$lib/editor-types';
 	import { shortcutModifier } from '$lib/shortcuts';
-	import { Button } from '$lib/components/ui/button';
 
 	let {
 		onBrowse,
@@ -57,20 +56,29 @@
 	</div>
 
 	<div class="flex flex-wrap items-center justify-center gap-2">
-		<Button variant="terminal" size="lg" onclick={onBrowse} class="uppercase">
+		<button
+			onclick={onBrowse}
+			class="cursor-pointer border border-foreground/30 px-3 py-1.5 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+		>
 			[<span class="hover:underline"> Browse files </span>]
-		</Button>
-		<Button variant="terminal" size="lg" onclick={pasteImage} class="uppercase">
+		</button>
+		<button
+			onclick={pasteImage}
+			class="cursor-pointer border border-foreground/30 px-3 py-1.5 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+		>
 			[<span class="hover:underline">{shortcutModifier}+V Paste</span>]
-		</Button>
+		</button>
 	</div>
 	{#if pasteError}<p class="-mt-4 font-mono text-[11px] text-destructive" role="status">
 			{pasteError}
 		</p>{/if}
 
 	<div class="w-full border-t border-foreground/30 pt-5">
-		<Button variant="terminal" size="lg" onclick={pickRandom} class="w-full uppercase">
+		<button
+			onclick={pickRandom}
+			class="w-full cursor-pointer border border-foreground/30 px-3 py-2 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+		>
 			[<span class="hover:underline"> Random sample </span>]
-		</Button>
+		</button>
 	</div>
 </div>
