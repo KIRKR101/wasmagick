@@ -173,7 +173,7 @@
 							class="absolute inset-0 -top-1/2 -left-1/2 h-[200%] w-[200%] cursor-pointer border-0 p-0"
 						/>
 					</div>
-					<span class="font-mono text-[10px] text-muted-foreground/50 uppercase"
+					<span class="font-mono text-[11px] text-muted-foreground uppercase"
 						>{magick.settings.annotateFontColor}</span
 					>
 				</div>
@@ -193,7 +193,7 @@
 				<div class="flex items-center justify-between gap-3">
 					<div class="min-w-0">
 						<p class="font-mono text-[11px] text-foreground">Place on canvas</p>
-						<p class="mt-0.5 font-mono text-[10px] leading-relaxed text-muted-foreground/70">
+						<p class="mt-0.5 font-mono text-[11px] leading-relaxed text-muted-foreground">
 							Click the image to set gravity and offset.
 						</p>
 					</div>
@@ -202,7 +202,7 @@
 						disabled={!magick.originalImageUrl}
 						onclick={() => onAnnotationPlacementChange(!annotationPlacementActive)}
 						aria-pressed={annotationPlacementActive}
-						class="shrink-0 cursor-pointer border border-foreground/40 px-2 py-1.5 font-mono text-[10px] tracking-wide text-muted-foreground uppercase transition-colors hover:border-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 {annotationPlacementActive
+						class="shrink-0 cursor-pointer border border-foreground/40 px-2 py-1.5 font-mono text-[11px] tracking-wide text-muted-foreground uppercase transition-colors hover:border-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 {annotationPlacementActive
 							? 'bg-foreground text-background hover:bg-foreground hover:text-background'
 							: ''}"
 					>
@@ -211,13 +211,13 @@
 				</div>
 				{#if annotationPlacementActive}
 					<p
-						class="mt-2 border-t border-dashed border-foreground/20 pt-2 font-mono text-[10px] text-muted-foreground"
+						class="mt-2 border-t border-dashed border-foreground/20 pt-2 font-mono text-[11px] text-muted-foreground"
 					>
 						Placement mode on · press Esc to exit
 					</p>
 				{/if}
 			</div>
-			<div class="flex items-center gap-2 font-mono text-[10px] text-muted-foreground/50">
+			<div class="flex items-center gap-2 font-mono text-[11px] text-muted-foreground">
 				<span class="h-px flex-1 bg-foreground/15"></span>
 				<span>or set manually</span>
 				<span class="h-px flex-1 bg-foreground/15"></span>
@@ -237,7 +237,7 @@
 				<div class="flex-1">
 					<label
 						for="annotate-offset-x"
-						class="mb-1 block font-mono text-[10px] tracking-wider text-muted-foreground/60 uppercase"
+						class="mb-1 block font-mono text-[11px] tracking-wider text-muted-foreground uppercase"
 						>Offset X (px)</label
 					>
 					<Input
@@ -259,7 +259,7 @@
 				<div class="flex-1">
 					<label
 						for="annotate-offset-y"
-						class="mb-1 block font-mono text-[10px] tracking-wider text-muted-foreground/60 uppercase"
+						class="mb-1 block font-mono text-[11px] tracking-wider text-muted-foreground uppercase"
 						>Offset Y (px)</label
 					>
 					<Input
@@ -318,7 +318,7 @@
 								class="absolute inset-0 -top-1/2 -left-1/2 h-[200%] w-[200%] cursor-pointer border-0 p-0"
 							/>
 						</div>
-						<span class="font-mono text-[10px] text-muted-foreground/50 uppercase"
+						<span class="font-mono text-[11px] text-muted-foreground uppercase"
 							>{magick.settings.annotateStrokeColor}</span
 						>
 					</div>

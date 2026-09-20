@@ -319,7 +319,7 @@
 						{@const lines = sectionSummary(item.id).split(' · ')}
 						<span class="group/tip relative">
 							<span
-								class="block max-w-24 truncate text-[10px] font-normal text-muted-foreground/60 normal-case hover:text-foreground/60"
+								class="block max-w-24 truncate text-[11px] font-normal text-muted-foreground normal-case hover:text-foreground"
 								>{sectionSummary(item.id)}</span
 							>
 							<span
@@ -403,7 +403,7 @@
 						{magick.originalName}
 					</div>
 					<div class="flex justify-between gap-2">
-						<span class="shrink-0 text-[10px] text-muted-foreground/60">DIMS</span>
+						<span class="shrink-0 text-[11px] text-muted-foreground">DIMS</span>
 						<span class="truncate text-foreground/80">
 							{#if magick.processedImageUrl && originalDimensions && processedDimensions}
 								{originalDimensions}
@@ -417,7 +417,7 @@
 						</span>
 					</div>
 					<div class="flex justify-between gap-2">
-						<span class="shrink-0 text-[10px] text-muted-foreground/60">FORMAT</span>
+						<span class="shrink-0 text-[11px] text-muted-foreground">FORMAT</span>
 						<span class="truncate text-foreground/80">
 							{#if magick.processedImageFormat}
 								{magick.originalImageFormat}
@@ -429,7 +429,7 @@
 						</span>
 					</div>
 					<div class="flex justify-between gap-2">
-						<span class="shrink-0 text-[10px] text-muted-foreground/60">SIZE</span>
+						<span class="shrink-0 text-[11px] text-muted-foreground">SIZE</span>
 						<span class="truncate text-foreground/80">
 							{#if delta}
 								<span

@@ -181,8 +181,8 @@
 	>
 		<div class="space-y-3">
 			<div class="flex items-center justify-between">
-				<span class="font-mono text-[10px] text-muted-foreground/60 uppercase">Source</span>
-				<span class="font-mono text-[10px] text-muted-foreground/40">
+				<span class="font-mono text-[11px] text-muted-foreground uppercase">Source</span>
+				<span class="font-mono text-[11px] text-muted-foreground">
 					{formatDimensions(magick.originalWidth, magick.originalHeight)}
 				</span>
 			</div>
@@ -242,7 +242,7 @@
 				</button>
 
 				<div>
-					<div class="mb-1.5 font-mono text-[10px] text-muted-foreground/50 uppercase">Ratio</div>
+					<div class="mb-1.5 font-mono text-[11px] text-muted-foreground uppercase">Ratio</div>
 					<Select type="single" bind:value={magick.cropAspectRatio}>
 						<SelectTrigger class="h-8 w-full font-mono text-[11px]">
 							{CROP_RATIO_OPTIONS.find((o) => o.value === magick.cropAspectRatio)?.label ?? 'Free'}
@@ -257,7 +257,7 @@
 
 				{#if isPositionCrop}
 					<div class="flex items-center justify-between border-t border-foreground/10 pt-3">
-						<div class="font-mono text-[10px] text-muted-foreground/70">
+						<div class="font-mono text-[11px] text-muted-foreground">
 							<span class="text-muted-foreground/50">Selection</span>
 							<span class="ml-1.5"
 								>{Math.round(magick.settings.cropW ?? 0)}×{Math.round(
@@ -270,7 +270,7 @@
 						</div>
 						<button
 							type="button"
-							class="flex h-6 cursor-pointer items-center gap-1 border border-foreground/30 px-2 font-mono text-[10px] text-muted-foreground transition-colors hover:border-foreground/50 hover:bg-muted focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+							class="flex h-7 cursor-pointer items-center gap-1 border border-foreground/30 px-2 font-mono text-[11px] text-muted-foreground transition-colors hover:border-foreground/50 hover:bg-muted focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 							onclick={() => {
 								magick.settings.cropX = null;
 								magick.settings.cropY = null;
@@ -286,7 +286,7 @@
 				<!-- Gravity mode: W/H + Gravity -->
 				<div class="space-y-3">
 					<div>
-						<div class="mb-1.5 font-mono text-[10px] text-muted-foreground/50 uppercase">
+						<div class="mb-1.5 font-mono text-[11px] text-muted-foreground uppercase">
 							Dimensions
 						</div>
 						<div class="grid grid-cols-2 gap-2">
@@ -328,9 +328,7 @@
 					</div>
 
 					<div>
-						<div class="mb-1.5 font-mono text-[10px] text-muted-foreground/50 uppercase">
-							Gravity
-						</div>
+						<div class="mb-1.5 font-mono text-[11px] text-muted-foreground uppercase">Gravity</div>
 						<Select type="single" bind:value={magick.settings.cropGravity}>
 							<SelectTrigger class="h-8 w-full font-mono text-[11px]">
 								{GRAVITY_OPTIONS.find((o) => o.value === magick.settings.cropGravity)?.label ??
@@ -440,7 +438,7 @@
 							class="absolute inset-0 -top-1/2 -left-1/2 h-[200%] w-[200%] cursor-pointer border-0 p-0"
 						/>
 					</div>
-					<span class="font-mono text-[10px] text-muted-foreground/50 uppercase"
+					<span class="font-mono text-[11px] text-muted-foreground uppercase"
 						>{magick.settings.extentBgColor}</span
 					>
 				</div>
@@ -471,7 +469,7 @@
 						class="absolute inset-0 -top-1/2 -left-1/2 h-[200%] w-[200%] cursor-pointer border-0 p-0"
 					/>
 				</div>
-				<span class="font-mono text-[10px] text-muted-foreground/50 uppercase"
+				<span class="font-mono text-[11px] text-muted-foreground uppercase"
 					>{magick.settings.borderColor}</span
 				>
 			</div>

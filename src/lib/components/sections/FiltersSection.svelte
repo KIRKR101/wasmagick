@@ -257,7 +257,7 @@
 	<SectionCard title="Add Noise" dirty={magick.settings.addNoiseType !== 'Off'}>
 		<div class="space-y-3">
 			<div class="space-y-1.5">
-				<span class="font-mono text-[10px] text-muted-foreground uppercase">Noise Type</span>
+				<span class="font-mono text-[11px] text-muted-foreground uppercase">Noise Type</span>
 				<Select type="single" bind:value={magick.settings.addNoiseType}>
 					<SelectTrigger class="h-8 w-full font-mono text-xs">
 						{magick.settings.addNoiseType}
@@ -285,7 +285,7 @@
 	<SectionCard title="Color LUT" dirty={magick.settings.clutMap !== 'identity'}>
 		<div class="space-y-3">
 			<div class="space-y-1.5">
-				<span class="font-mono text-[10px] text-muted-foreground uppercase">Color Map</span>
+				<span class="font-mono text-[11px] text-muted-foreground uppercase">Color Map</span>
 				<Select type="single" bind:value={magick.settings.clutMap}>
 					<SelectTrigger class="h-8 w-full font-mono text-xs">
 						{CLUT_PRESETS.find((p) => p.id === magick.settings.clutMap)?.label ??
@@ -296,7 +296,7 @@
 							<SelectItem value={preset.id}>
 								<div>
 									<div>{preset.label}</div>
-									<div class="text-[10px] text-muted-foreground">{preset.description}</div>
+									<div class="text-[11px] text-muted-foreground">{preset.description}</div>
 								</div>
 							</SelectItem>
 						{/each}
@@ -304,7 +304,7 @@
 				</Select>
 			</div>
 			<div class="space-y-1.5">
-				<span class="font-mono text-[10px] text-muted-foreground uppercase">Interpolation</span>
+				<span class="font-mono text-[11px] text-muted-foreground uppercase">Interpolation</span>
 				<Select type="single" bind:value={magick.settings.clutInterpolation}>
 					<SelectTrigger class="h-8 w-full font-mono text-xs">
 						{INTERPOLATION_OPTIONS.find((o) => o.value === magick.settings.clutInterpolation)
@@ -333,7 +333,7 @@
 
 			{#if magick.settings.quantizeColors[0] > 0}
 				<div class="space-y-1.5">
-					<span class="font-mono text-[10px] text-muted-foreground uppercase">Dither Method</span>
+					<span class="font-mono text-[11px] text-muted-foreground uppercase">Dither Method</span>
 					<Select type="single" bind:value={magick.settings.ditherMethod}>
 						<SelectTrigger class="h-8 w-full font-mono text-xs">
 							{DITHER_OPTIONS.find((o) => o.value === magick.settings.ditherMethod)?.label ??
@@ -344,7 +344,7 @@
 								<SelectItem value={opt.value}>
 									<div>
 										<div>{opt.label}</div>
-										<div class="text-[10px] text-muted-foreground">{opt.helper}</div>
+										<div class="text-[11px] text-muted-foreground">{opt.helper}</div>
 									</div>
 								</SelectItem>
 							{/each}
@@ -353,7 +353,7 @@
 				</div>
 
 				<div class="space-y-1.5">
-					<span class="font-mono text-[10px] text-muted-foreground uppercase">Color Space</span>
+					<span class="font-mono text-[11px] text-muted-foreground uppercase">Color Space</span>
 					<Select type="single" bind:value={magick.settings.quantizeColorSpace}>
 						<SelectTrigger class="h-8 w-full font-mono text-xs">
 							{magick.settings.quantizeColorSpace}

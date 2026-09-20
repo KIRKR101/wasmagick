@@ -38,7 +38,7 @@
 		>
 		{#if description}
 			<span
-				class="ml-2 hidden text-[10px] whitespace-nowrap text-muted-foreground uppercase @min-[20rem]:block"
+				class="ml-2 hidden text-[11px] whitespace-nowrap text-muted-foreground uppercase @min-[20rem]:block"
 				>({description})</span
 			>
 		{/if}

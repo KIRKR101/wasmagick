@@ -75,7 +75,7 @@
 		<div class="flex shrink-0 gap-1 pt-2">
 			<button
 				onclick={() => (diffMode = 'relative')}
-				class="flex-1 cursor-pointer border px-1.5 py-1 font-mono text-[10px] uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {diffMode ===
+				class="flex-1 cursor-pointer border px-1.5 py-1 font-mono text-[11px] uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {diffMode ===
 				'relative'
 					? 'border-foreground/50 bg-muted/50 text-foreground'
 					: 'border-foreground/20 text-muted-foreground/60 hover:text-muted-foreground'}"
@@ -84,7 +84,7 @@
 			</button>
 			<button
 				onclick={() => (diffMode = 'absolute')}
-				class="flex-1 cursor-pointer border px-1.5 py-1 font-mono text-[10px] uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {diffMode ===
+				class="flex-1 cursor-pointer border px-1.5 py-1 font-mono text-[11px] uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {diffMode ===
 				'absolute'
 					? 'border-foreground/50 bg-muted/50 text-foreground'
 					: 'border-foreground/20 text-muted-foreground/60 hover:text-muted-foreground'}"
@@ -134,12 +134,12 @@
 											{entry.label}
 										</span>
 										{#if entry.isOriginal}{:else if entry.time > 0}
-											<span class="font-mono text-[10px] text-muted-foreground">{entry.time}ms</span
+											<span class="font-mono text-[11px] text-muted-foreground">{entry.time}ms</span
 											>
 										{/if}
 									</div>
 									<div
-										class="flex items-center gap-1.5 font-mono text-[10px] text-muted-foreground"
+										class="flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground"
 									>
 										<span>{formatDimensions(entry.width, entry.height)}</span>
 										<span class="text-muted-foreground/40">·</span>
@@ -156,7 +156,7 @@
 									class="flex flex-wrap gap-x-2 gap-y-0.5 border-t border-foreground/10 px-2 py-1"
 								>
 									{#each diffs as d}
-										<span class="font-mono text-[10px] text-muted-foreground/70">
+										<span class="font-mono text-[11px] text-muted-foreground">
 											{d.label}: <span class="text-muted-foreground/40">{d.prev}</span> → {d.curr}
 										</span>
 									{/each}

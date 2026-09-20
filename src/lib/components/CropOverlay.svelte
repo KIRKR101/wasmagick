@@ -531,7 +531,7 @@
 	</svg>
 	{#if fullResolutionCrop}
 		<div
-			class="pointer-events-none absolute z-40 bg-black/75 px-1.5 py-0.5 font-mono text-[10px] text-white"
+			class="pointer-events-none absolute z-40 bg-black/75 px-1.5 py-0.5 font-mono text-[11px] text-white"
 			style="left: {cropScreen?.x ?? 0}px; top: {(cropScreen?.y ?? 0) - 22}px"
 		>
 			{Math.round(fullResolutionCrop.x)},{Math.round(fullResolutionCrop.y)} ·
@@ -548,7 +548,7 @@
 	class="pointer-events-auto absolute top-3 left-1/2 z-40 flex -translate-x-1/2 items-center gap-0 border border-foreground/30 bg-[#f7f7f4]/90 px-1 font-mono text-[11px] backdrop-blur-sm dark:bg-background/90"
 	onpointerdown={(e) => e.stopPropagation()}
 >
-	<span class="px-1.5 text-[10px] text-muted-foreground uppercase">Ratio</span>
+	<span class="px-1.5 text-[11px] text-muted-foreground uppercase">Ratio</span>
 	<div class="mx-0.5 h-4 w-px bg-border"></div>
 	{#each RATIO_PRESETS as preset (preset.id)}
 		<button

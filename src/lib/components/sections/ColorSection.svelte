@@ -180,11 +180,11 @@
 							class="absolute inset-0 -top-1/2 -left-1/2 h-[200%] w-[200%] cursor-pointer border-0 p-0"
 						/>
 					</div>
-					<span class="font-mono text-[10px] text-muted-foreground/50 uppercase"
+					<span class="font-mono text-[11px] text-muted-foreground uppercase"
 						>{magick.settings.levelColorsBlack}</span
 					>
 				</div>
-				<span class="font-mono text-[10px] text-muted-foreground/50">→</span>
+				<span class="font-mono text-[11px] text-muted-foreground">→</span>
 				<div class="flex items-center gap-1.5">
 					<div
 						class="relative h-7 w-7 shrink-0 overflow-hidden border border-foreground/30 transition-all hover:border-foreground"
@@ -196,7 +196,7 @@
 							class="absolute inset-0 -top-1/2 -left-1/2 h-[200%] w-[200%] cursor-pointer border-0 p-0"
 						/>
 					</div>
-					<span class="font-mono text-[10px] text-muted-foreground/50 uppercase"
+					<span class="font-mono text-[11px] text-muted-foreground uppercase"
 						>{magick.settings.levelColorsWhite}</span
 					>
 				</div>
@@ -248,7 +248,7 @@
 				class="pb-1"
 			/>
 			<div class="space-y-1.5">
-				<span class="font-mono text-[10px] text-muted-foreground uppercase">Auto Threshold</span>
+				<span class="font-mono text-[11px] text-muted-foreground uppercase">Auto Threshold</span>
 				<Select type="single" bind:value={magick.settings.autoThreshold}>
 					<SelectTrigger class="h-9 w-full font-mono text-xs">
 						{AUTO_THRESHOLD_OPTIONS.find((o) => o.value === magick.settings.autoThreshold)?.label ??
