@@ -18,6 +18,7 @@
 	import ExportSection from './sections/ExportSection.svelte';
 	import PresetsSection from './sections/PresetsSection.svelte';
 	import HistoryPanel from './sections/HistoryPanel.svelte';
+	import { Circle } from 'lucide-svelte';
 
 	let {
 		open = $bindable(false),
@@ -229,7 +230,7 @@
 				>
 					{tab.label}
 					{#if dirty}
-						<span class="w-3 text-center text-xs text-muted-foreground/60">^</span>
+						<Circle class="size-2 fill-current text-amber-500" aria-label="Modified" />
 					{/if}
 				</button>
 			{/each}

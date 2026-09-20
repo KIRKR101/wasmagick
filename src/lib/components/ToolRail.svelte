@@ -16,6 +16,18 @@
 	import { DEFAULT_SETTINGS } from '$lib/useMagick.svelte';
 	import HoverTooltip from './controls/HoverTooltip.svelte';
 	import { shortcutModifier } from '$lib/shortcuts';
+	import {
+		Bug,
+		Circle,
+		Info,
+		Keyboard,
+		Redo2,
+		RotateCcw,
+		Settings,
+		Undo2,
+		Upload,
+		X
+	} from 'lucide-svelte';
 
 	let {
 		activeSection,
@@ -294,15 +306,15 @@
 				aria-pressed={activeSection === item.id}
 			>
 				<span class="inline-flex items-center gap-1.5 truncate"
-					><span>[{activeSection === item.id ? '*' : ' '}]</span><span class="hover:underline"
-						>{item.label}</span
-					></span
+					><Circle
+						class="size-3 fill-current {activeSection === item.id ? '' : 'opacity-20'}"
+					/><span class="hover:underline">{item.label}</span></span
 				>
 				<div class="flex shrink-0 items-center gap-1">
-					<span
-						class="w-3 text-center text-xs text-muted-foreground/60 {item.dirty ? '' : 'invisible'}"
-						>^</span
-					>
+					{#if item.dirty}<Circle
+							class="size-2 fill-current text-amber-500"
+							aria-label="Modified"
+						/>{/if}
 					{#if sectionSummary(item.id)}
 						{@const lines = sectionSummary(item.id).split(' · ')}
 						<span class="group/tip relative">
@@ -334,7 +346,9 @@
 				aria-label="Upload image (V)"
 				class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 			>
-				<span class="truncate"><span>[ ]</span> <span class="hover:underline">UPLOAD</span></span>
+				<span class="inline-flex items-center gap-1.5 truncate"
+					><Upload class="size-3.5" /> <span class="hover:underline">UPLOAD</span></span
+				>
 			</button>
 		</HoverTooltip>
 
@@ -348,22 +362,29 @@
 				aria-label={anyDirty ? 'Reset all settings' : 'Reset all (no changes to reset)'}
 				class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 			>
-				<span class="truncate"><span>[ ]</span> <span class="hover:underline">RESET ALL</span></span
+				<span class="inline-flex items-center gap-1.5 truncate"
+					><RotateCcw class="size-3.5" /> <span class="hover:underline">RESET ALL</span></span
 				>
 			</button>
 		</HoverTooltip>
 
 		<HoverTooltip
-			label={magick.originalImageUrl ? `Close image (${shortcutModifier}+W)` : 'Close (no image open)'}
+			label={magick.originalImageUrl
+				? `Close image (${shortcutModifier}+W)`
+				: 'Close (no image open)'}
 			triggerClass="w-full"
 		>
 			<button
 				onclick={onClose}
 				disabled={!magick.originalImageUrl}
-				aria-label={magick.originalImageUrl ? `Close image (${shortcutModifier}+W)` : 'Close (no image open)'}
+				aria-label={magick.originalImageUrl
+					? `Close image (${shortcutModifier}+W)`
+					: 'Close (no image open)'}
 				class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 			>
-				<span class="truncate"><span>[ ]</span> <span class="hover:underline">CLOSE</span></span>
+				<span class="inline-flex items-center gap-1.5 truncate"
+					><X class="size-3.5" /> <span class="hover:underline">CLOSE</span></span
+				>
 			</button>
 		</HoverTooltip>
 	</div>
@@ -448,7 +469,7 @@
 						aria-label={undoTip}
 						class="group flex-1 cursor-pointer px-2 py-1 text-center font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 					>
-						[&lt;] <span class="group-hover:underline">UNDO</span>
+						<Undo2 class="mr-1 inline size-3.5" /> <span class="group-hover:underline">UNDO</span>
 					</button>
 				</HoverTooltip>
 				<div class="w-px self-stretch bg-foreground/30"></div>
@@ -459,7 +480,8 @@
 						aria-label={redoTip}
 						class="group flex-1 cursor-pointer px-2 py-1 text-center font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 					>
-						<span class="group-hover:underline">REDO</span> [&gt;]
+						<span class="group-hover:underline">REDO</span>
+						<Redo2 class="ml-1 inline size-3.5" />
 					</button>
 				</HoverTooltip>
 			</div>
@@ -475,21 +497,24 @@
 						? 'text-foreground'
 						: ''}"
 				>
-					<span class="truncate"
-						><span>[{isElectron ? 'i' : debugMode ? '⚠' : 'B'}]</span>
+					<span class="inline-flex items-center gap-1.5 truncate"
+						>{#if isElectron}<Info class="size-3.5" />{:else}<Bug class="size-3.5" />{/if}
 						<span class="hover:underline">{isElectron ? 'BUILD' : 'DEBUG'}</span></span
 					>
 				</button>
 			</HoverTooltip>
 
-			<HoverTooltip label={`Keyboard shortcuts (${shortcutModifier}+Shift+?)`} triggerClass="w-full">
+			<HoverTooltip
+				label={`Keyboard shortcuts (${shortcutModifier}+Shift+?)`}
+				triggerClass="w-full"
+			>
 				<button
 					onclick={onToggleShortcuts}
 					aria-label={`Keyboard shortcuts (${shortcutModifier}+Shift+?)`}
 					class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 				>
-					<span class="truncate"
-						><span>[?]</span> <span class="hover:underline">SHORTCUTS</span></span
+					<span class="inline-flex items-center gap-1.5 truncate"
+						><Keyboard class="size-3.5" /> <span class="hover:underline">SHORTCUTS</span></span
 					>
 				</button>
 			</HoverTooltip>
@@ -500,8 +525,8 @@
 					aria-label="App settings"
 					class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 				>
-					<span class="truncate"
-						><span>[=]</span> <span class="hover:underline">SETTINGS</span></span
+					<span class="inline-flex items-center gap-1.5 truncate"
+						><Settings class="size-3.5" /> <span class="hover:underline">SETTINGS</span></span
 					>
 				</button>
 			</HoverTooltip>

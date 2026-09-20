@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { cn } from '$lib/utils';
+	import { CheckSquare, ChevronRight, Square } from 'lucide-svelte';
 
 	let {
 		id,
@@ -28,7 +29,9 @@
 	onclick={() => (checked = !checked)}
 >
 	<span class="flex min-w-0 items-center gap-2">
-		<span class="shrink-0 font-mono text-sm text-foreground">[{checked ? '*' : ' '}]</span>
+		{#if checked}<CheckSquare class="size-4 shrink-0" />{:else}<Square
+				class="size-4 shrink-0"
+			/>{/if}
 		<span
 			class="block font-mono text-xs whitespace-nowrap text-foreground uppercase hover:underline"
 			>{label}</span
@@ -41,11 +44,9 @@
 		{/if}
 	</span>
 	{#if chevron}
-		<span
-			class="font-mono text-[10px] text-muted-foreground transition-transform {checked
-				? 'rotate-90'
-				: ''}"
-			aria-hidden="true">[>]</span
-		>
+		<ChevronRight
+			class="size-3.5 text-muted-foreground transition-transform {checked ? 'rotate-90' : ''}"
+			aria-hidden="true"
+		/>
 	{/if}
 </button>
