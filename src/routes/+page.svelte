@@ -1,112 +1,213 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
-	import { stashPendingFile } from '$lib/pending-drop';
-	import { applyTheme, resolveInitialTheme } from '$lib/theme';
+	import { DownloadSimple, Globe } from 'phosphor-svelte';
+	import { resolveInitialTheme } from '$lib/theme';
 
-	let isDarkMode = $state(false);
-	let isDragging = $state(false);
+	let platform = $state<'windows' | 'macos' | 'linux' | 'unknown'>('unknown');
 
-	function hasFiles(e: DragEvent): boolean {
-		return e.dataTransfer?.types.includes('Files') ?? false;
-	}
-
-	function handleDrop(e: DragEvent) {
-		e.preventDefault();
-		isDragging = false;
-		const files = e.dataTransfer?.files;
-		if (files && files.length > 0) {
-			stashPendingFile(files[0]);
-			void goto('/editor');
-		}
-	}
+	const releasesUrl = 'https://github.com/KIRKR101/wasmagick/releases/latest';
 
 	onMount(() => {
-		isDarkMode = resolveInitialTheme();
+		resolveInitialTheme();
+
+		const ua = navigator.userAgent.toLowerCase();
+
+		if (ua.includes('windows')) platform = 'windows';
+		else if (ua.includes('mac')) platform = 'macos';
+		else if (ua.includes('linux')) platform = 'linux';
 	});
+
+	const platformLabel = $derived(
+		platform === 'windows'
+			? 'Windows'
+			: platform === 'macos'
+				? 'macOS'
+				: platform === 'linux'
+					? 'Linux'
+					: 'Desktop'
+	);
 </script>
 
-<svelte:window
-	ondragover={(e) => {
-		e.preventDefault();
-		if (hasFiles(e)) isDragging = true;
-	}}
-	ondragleave={(e) => {
-		if (hasFiles(e) && !e.relatedTarget) isDragging = false;
-	}}
-	ondrop={handleDrop}
-/>
-
-{#if isDragging}
+<div class="relative h-full overflow-y-auto bg-background">
+	<div class="grid-bg" aria-hidden="true"></div>
+	<div class="grain-bg" aria-hidden="true"></div>
 	<div
-		class="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-background/70 p-6 backdrop-blur-sm"
-		role="status"
-		aria-live="polite"
+		class="pointer-events-none absolute -top-[300px] -left-[220px] h-[760px] w-[760px] rounded-full bg-[radial-gradient(circle,color-mix(in_oklch,var(--foreground)_4%,transparent),transparent_68%)]"
+		aria-hidden="true"
+	></div>
+
+	<main
+		id="main"
+		class="relative z-10 mx-auto flex min-h-full w-full max-w-3xl flex-1 flex-col justify-center px-4 py-10 text-foreground sm:px-6 sm:py-16"
 	>
-		<div
-			class="flex h-full w-full items-center justify-center border-2 border-dashed border-foreground/50 font-mono text-sm tracking-wider text-foreground uppercase"
-		>
-			Drop image to begin
-		</div>
-	</div>
-{/if}
+		<section class="relative overflow-hidden rounded-3xl border border-border">
+			<img
+				src="/images/lake.jpg"
+				alt=""
+				aria-hidden="true"
+				class="absolute inset-0 h-full w-full object-cover"
+			/>
 
-<div class="flex min-h-full flex-col items-center justify-center bg-chrome px-4 font-mono">
-	<div class="mb-8 text-center">
-		<span class="inline-flex items-center text-[48px] leading-none text-muted-foreground/20">
-			[
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				viewBox="0 0 132 88"
-				class="mx-2 h-[0.725em] w-auto text-muted-foreground"
-				shape-rendering="crispEdges"
-				aria-label="WASMagick logo"
+			<div
+				class="relative mx-auto my-6 w-full max-w-xl overflow-hidden rounded-2xl border border-border bg-card p-8 text-card-foreground sm:my-10 sm:p-10"
 			>
-				<path
-					d="M 0,0 H 16 V 72 H 41 V 56 H 66 V 72 H 116 V 0 H 132 V 88 H 66 V 72 H 41 V 88 H 0 Z"
-					fill="currentColor"
-				/>
-			</svg>
-			]
-		</span>
-	</div>
+				<div class="card-grain" aria-hidden="true"></div>
+				<div class="relative z-10">
+					<section class="pb-10 text-left sm:pb-12">
+						<p class="-ml-[0.16em] font-mono text-5xl leading-none text-muted-foreground/30">
+							[<span
+								class="font-sans text-4xl leading-none tracking-tighter text-foreground sm:text-5xl"
+							>
+								WASMagick
+							</span>]
+						</p>
 
-	<h1 class="mb-3 text-center text-lg tracking-wider text-muted-foreground uppercase">WASMAGICK</h1>
+						<p class="mt-4 max-w-prose text-base leading-relaxed text-muted-foreground">
+							Edit and convert images in your browser or on your desktop. Nothing leaves your device.
+						</p>
 
-	<p class="mb-8 max-w-md text-center text-xs text-muted-foreground/60">
-		image processing powered by <a
-			href="https://github.com/dlemstra/magick-wasm"
-			class="underline decoration-dashed underline-offset-3 transition-colors hover:text-foreground"
-			>magick-wasm</a
-		>, all processing happens locally in your browser
-	</p>
+						<div class="mt-6 flex flex-wrap items-center gap-3">
+							<a
+								href={releasesUrl}
+								class="inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-85 dark:bg-white dark:text-black"
+							>
+								<DownloadSimple size={17} weight="bold" />
+								Download for {platformLabel}
+							</a>
 
-	<div class="flex flex-col items-center gap-3">
-		<a
-			href="/editor"
-			class="group cursor-pointer border border-foreground/30 px-8 py-3 text-xs tracking-wider text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-		>
-			[<span class="group-hover:underline"> Enter editor </span>]
-		</a>
+							<a
+								href="/editor"
+								class="inline-flex h-10 items-center gap-2 rounded-md border border-border bg-white px-4 text-sm font-medium text-black backdrop-blur-sm transition-colors hover:bg-muted dark:bg-secondary dark:text-secondary-foreground dark:hover:bg-muted"
+							>
+								<Globe size={17} weight="bold" />
+								Open web app
+							</a>
+						</div>
+					</section>
 
-		<div class="flex gap-3 text-xs text-muted-foreground/40">
-			<button
-				onclick={() => {
-					isDarkMode = !isDarkMode;
-					applyTheme(isDarkMode);
-				}}
-				class="group cursor-pointer border border-foreground/30 px-2 py-1 text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-			>
-				[{isDarkMode ? '~' : 'O'}] <span class="group-hover:underline">THEME</span>
-			</button>
-			<a
-				href="https://github.com/KIRKR101/wasmagick-svelte"
-				target="_blank"
-				rel="noopener noreferrer"
-				class="group cursor-pointer border border-foreground/30 px-2 py-1 text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-			>
-				[<span class="group-hover:underline"> GitHub </span>]
-			</a>
-		</div>
-	</div>
+					<section
+						class="grid divide-y divide-border border-y border-border"
+						aria-label="WASMagick features"
+					>
+						<article class="grid gap-2 py-6 sm:grid-cols-[180px_1fr] sm:gap-8">
+							<h2 class="text-sm font-semibold tracking-tight text-foreground">Private</h2>
+
+							<p class="max-w-prose text-sm leading-relaxed text-muted-foreground">
+								Images are decoded, processed, and exported on your device and never sent to a server.
+								There are no accounts, cookies, or analytics.
+							</p>
+						</article>
+
+						<article class="grid gap-2 py-6 sm:grid-cols-[180px_1fr] sm:gap-8">
+							<h2 class="text-sm font-semibold tracking-tight text-foreground">Fast</h2>
+
+							<p class="max-w-prose text-sm leading-relaxed text-muted-foreground">
+								Common operations run on libvips, built to be fast and light on memory.
+							</p>
+						</article>
+
+						<article class="grid gap-2 py-6 sm:grid-cols-[180px_1fr] sm:gap-8">
+							<h2 class="text-sm font-semibold tracking-tight text-foreground">Any format</h2>
+
+							<p class="max-w-prose text-sm leading-relaxed text-muted-foreground">
+								Input 174
+								<button
+									type="button"
+									class="group relative inline cursor-help bg-transparent p-0 align-baseline text-inherit"
+									aria-label="Format support details"
+								>
+									<span class="underline decoration-dashed underline-offset-4">formats</span>
+									<span
+										role="tooltip"
+										class="invisible absolute bottom-full left-0 z-50 mb-2 w-64 rounded-md border border-border bg-popover p-3 text-left text-xs leading-relaxed font-normal text-popover-foreground opacity-0 shadow-lg transition group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100"
+									>
+										<strong class="mb-1 block text-[13px]">Format support</strong>
+										Reads JPEG, PNG, WebP, AVIF, JXL, HEIC, TIFF, GIF, PSD, PDF, SVG, EXR etc. plus 29 camera
+										RAW coders such as CR2, NEF, ARW and DNG. Writes 72 containers, from WebP and JPEG to
+										ICO, TGA and PDF. RAW is read-only.
+									</span>
+								</button>
+								and output 72. Convert between everyday formats like JPEG, PNG, and WebP and rarer ones
+								like PSD, HEIC, and camera RAW.
+							</p>
+						</article>
+
+						<article class="grid gap-2 py-6 sm:grid-cols-[180px_1fr] sm:gap-8">
+							<h2 class="text-sm font-semibold tracking-tight text-foreground">Web and desktop</h2>
+
+							<p class="max-w-prose text-sm leading-relaxed text-muted-foreground">
+								The web app processes through WebAssembly and works offline once loaded. The desktop
+								app uses native processing for Windows, macOS, and Linux.
+							</p>
+						</article>
+					</section>
+				</div>
+			</div>
+		</section>
+	</main>
 </div>
+
+<style>
+	.grid-bg {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		background-image:
+			linear-gradient(
+				to right,
+				color-mix(in oklch, var(--foreground) 3%, transparent) 1px,
+				transparent 1px
+			),
+			linear-gradient(
+				to bottom,
+				color-mix(in oklch, var(--foreground) 3%, transparent) 1px,
+				transparent 1px
+			);
+		background-size: 32px 32px;
+		mask-image: linear-gradient(to bottom, black 0%, black 76%, transparent 100%);
+	}
+
+	.grain-bg {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+		background-size: 180px 180px;
+		opacity: 0.35;
+		image-rendering: pixelated;
+	}
+
+	.card-grain {
+		position: absolute;
+		inset: 0;
+		z-index: 0;
+		border-radius: inherit;
+		pointer-events: none;
+		background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+		background-size: 180px 180px;
+		opacity: 0.20;
+		image-rendering: pixelated;
+	}
+
+	:global(.dark) .grid-bg {
+		background-image:
+			linear-gradient(
+				to right,
+				color-mix(in oklch, var(--foreground) 2.5%, transparent) 1px,
+				transparent 1px
+			),
+			linear-gradient(
+				to bottom,
+				color-mix(in oklch, var(--foreground) 2.5%, transparent) 1px,
+				transparent 1px
+			);
+	}
+
+	:global(.dark) .grain-bg {
+		opacity: 0.12;
+	}
+
+	:global(.dark) .card-grain {
+		opacity: 0.08;
+	}
+</style>
