@@ -4,11 +4,11 @@ import {
 	FALLBACK_EXPORT_FORMATS,
 	VECTOR_EXPORT_FORMATS,
 	isPopularExportFormat,
-	magickFormatForName,
 	mimeTypeForFormat,
 	orderExportFormats,
 	outputExtensionForFormat
 } from './export-formats';
+import { magickFormatForName } from './magick-process';
 
 const info = (format: string, supportsWriting = true) => ({ format, supportsWriting });
 

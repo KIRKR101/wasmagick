@@ -11,19 +11,66 @@ import {
 	Channels,
 	ColorSpace,
 	PixelIntensityMethod,
+	PixelInterpolateMethod,
 	QuantizeSettings,
 	DitherMethod,
 	NoiseType,
 	AutoThresholdMethod
 } from '@imagemagick/magick-wasm';
-import type { MagickSettings, LevelChannel } from './types';
+import type { MagickSettings, LevelChannel, ClutInterpolation } from './types';
 import type { IMagickImage, IMagickImageCollection } from '@imagemagick/magick-wasm';
-import { generateClutImage } from './luts';
-import {
-	magickFormatForName,
-	isSequenceOutputFormat,
-	isOpaqueOutputFormat
-} from './export-formats';
+import { getClutPresetMap } from './clut-data';
+import { isSequenceOutputFormat, isOpaqueOutputFormat } from './export-formats';
+
+/**
+ * Resolve an ImageMagick enum value for a format identifier. Kept here (rather
+ * than `export-formats.ts`) so the pure format catalog stays free of the
+ * `@imagemagick/magick-wasm` import and out of the initial editor chunk.
+ */
+export function magickFormatForName(
+	format: string
+): (typeof MagickFormat)[keyof typeof MagickFormat] | null {
+	const wanted = String(format).trim().toUpperCase();
+	return (Object.values(MagickFormat).find((value) => value === wanted) ?? null) as
+		| (typeof MagickFormat)[keyof typeof MagickFormat]
+		| null;
+}
+
+export function getPixelInterpolateMethod(
+	interpolation: ClutInterpolation
+): PixelInterpolateMethod {
+	switch (interpolation) {
+		case 'catrom':
+			return PixelInterpolateMethod.Catrom;
+		case 'bilinear':
+			return PixelInterpolateMethod.Bilinear;
+		case 'nearest':
+			return PixelInterpolateMethod.Nearest;
+		case 'spline':
+			return PixelInterpolateMethod.Spline;
+		case 'average':
+			return PixelInterpolateMethod.Average;
+	}
+}
+
+export function generateClutImage(
+	presetId: string,
+	interpolation: ClutInterpolation
+): IMagickImage {
+	const preset = getClutPresetMap(presetId);
+	const width = 256;
+	const height = 1;
+
+	const lut = MagickImage.create(new MagickColor(0, 0, 0), width, height);
+	lut.getPixels((pixels) => {
+		for (let x = 0; x < width; x++) {
+			const [r, g, b] = preset.map(x);
+			pixels.setPixel(x, 0, [r, g, b, 255]);
+		}
+	});
+	lut.interpolate = getPixelInterpolateMethod(interpolation);
+	return lut;
+}
 import { BROWSER_RENDERABLE_FORMATS } from './image-capabilities';
 
 /**

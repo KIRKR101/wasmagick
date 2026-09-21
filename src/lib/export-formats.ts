@@ -1,4 +1,9 @@
-import { Magick, MagickFormat } from '@imagemagick/magick-wasm';
+/**
+ * Pure export-format catalog (no ImageMagick dependency) so editor UI can
+ * import it without pulling `@imagemagick/magick-wasm` into the initial
+ * chunk. Engine-specific queries (`getWasmExportFormats`) load the WASM
+ * module lazily; enum resolution lives in `magick-process.ts`.
+ */
 
 export interface ExportFormatInfo {
 	format: string;
@@ -250,6 +255,12 @@ export function isSequenceOutputFormat(format: string): boolean {
 /** Output formats without alpha support; stills flatten transparency over white. */
 const OPAQUE_OUTPUT_FORMATS = new Set(['JPEG', 'JPG', 'JPE', 'PJPEG']);
 
+const LOSSLESS_OUTPUT_FORMATS = new Set(['PNG', 'GIF']);
+
+export function isLosslessExportFormat(format: string): boolean {
+	return LOSSLESS_OUTPUT_FORMATS.has(normalizeFormat(format));
+}
+
 export function isOpaqueOutputFormat(format: string): boolean {
 	return OPAQUE_OUTPUT_FORMATS.has(normalizeFormat(format));
 }
@@ -436,8 +447,13 @@ export function orderExportFormats(infos: readonly ExportFormatInfo[]): ExportFo
 	});
 }
 
-export function getWasmExportFormats(): ExportFormat[] {
+/**
+ * Build the picker list from the WASM engine's reported capabilities. Loaded
+ * lazily so the engine chunk is only fetched once image processing is needed.
+ */
+export async function getWasmExportFormats(): Promise<ExportFormat[]> {
 	try {
+		const { Magick } = await import('@imagemagick/magick-wasm');
 		return orderExportFormats(
 			Magick.supportedFormats.map((info) => ({
 				format: String(info.format),
@@ -450,14 +466,4 @@ export function getWasmExportFormats(): ExportFormat[] {
 	} catch {
 		return [...FALLBACK_EXPORT_FORMATS];
 	}
-}
-
-/** Resolve an ImageMagick enum value for a format identifier from a catalog. */
-export function magickFormatForName(
-	format: string
-): (typeof MagickFormat)[keyof typeof MagickFormat] | null {
-	const wanted = normalizeFormat(format);
-	return (Object.values(MagickFormat).find((value) => value === wanted) ?? null) as
-		| (typeof MagickFormat)[keyof typeof MagickFormat]
-		| null;
 }

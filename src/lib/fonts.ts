@@ -1,4 +1,8 @@
-import { Magick } from '@imagemagick/magick-wasm';
+/**
+ * Font registry. The `@imagemagick/magick-wasm` module is imported lazily
+ * inside the functions that need it so importing this module from editor UI
+ * does not pull the engine into the initial chunk.
+ */
 
 const FONT_URLS: Record<string, string> = {
 	'Roboto-Regular': '/fonts/Roboto-Regular.ttf',
@@ -62,6 +66,7 @@ export async function ensureFont(name: string): Promise<boolean> {
 	const bytes = await fetchFontBytes(name);
 	if (!bytes) return false;
 	try {
+		const { Magick } = await import('@imagemagick/magick-wasm');
 		Magick.addFont(name, bytes);
 		loadedFonts.add(name);
 		return true;
@@ -71,12 +76,17 @@ export async function ensureFont(name: string): Promise<boolean> {
 	}
 }
 
-export function registerLocalFont(postscriptName: string, data: Uint8Array, label: string): void {
+export async function registerLocalFont(
+	postscriptName: string,
+	data: Uint8Array,
+	label: string
+): Promise<void> {
 	if (!fontBytesCache.has(postscriptName)) fontBytesCache.set(postscriptName, data);
 	localFontLabels.set(postscriptName, label);
 	localFontSources.delete(postscriptName);
 	if (loadedFonts.has(postscriptName)) return;
 	try {
+		const { Magick } = await import('@imagemagick/magick-wasm');
 		Magick.addFont(postscriptName, data);
 		loadedFonts.add(postscriptName);
 		localFontLabels.set(postscriptName, label);

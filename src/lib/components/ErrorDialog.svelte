@@ -6,7 +6,6 @@
 		DialogContent
 	} from '$lib/components/ui/dialog/index.js';
 	import type { MagickState } from '$lib/useMagick.svelte';
-	import { Magick } from '@imagemagick/magick-wasm';
 	import { buildErrorDetailsText, buildErrorIssueBody, buildIssueUrl } from '$lib/issue-report';
 	import X from 'phosphor-svelte/lib/X';
 
@@ -30,13 +29,29 @@
 	let copyTimer: ReturnType<typeof setTimeout> | null = null;
 	let nativeVersion = $state<string | null>(null);
 
-	let wasmVersion = $derived.by(() => {
-		try {
-			const raw = Magick.imageMagickVersion;
-			return raw.match(/\bImageMagick\s+([^\s]+)/)?.[1] ?? raw;
-		} catch {
-			return null;
-		}
+	let wasmVersion = $state<string | null>(null);
+
+	// Loaded lazily on open so importing this dialog does not pull
+	// `@imagemagick/magick-wasm` into the initial chunk.
+	$effect(() => {
+		if (!open) return;
+		let cancelled = false;
+		import('@imagemagick/magick-wasm')
+			.then(({ Magick }) => {
+				if (cancelled) return;
+				try {
+					const raw = Magick.imageMagickVersion;
+					wasmVersion = raw.match(/\bImageMagick\s+([^\s]+)/)?.[1] ?? raw;
+				} catch {
+					wasmVersion = null;
+				}
+			})
+			.catch(() => {
+				if (!cancelled) wasmVersion = null;
+			});
+		return () => {
+			cancelled = true;
+		};
 	});
 
 	$effect(() => {

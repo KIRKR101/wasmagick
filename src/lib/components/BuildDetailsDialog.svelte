@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { Magick } from '@imagemagick/magick-wasm';
 	import packageJson from '../../../package.json';
 	import {
 		Dialog,
@@ -11,12 +10,29 @@
 
 	let { open = $bindable(false) }: { open?: boolean } = $props();
 	let nativeVersion = $state<string | null>(null);
-	let wasmEngineVersion = $derived.by(() => {
-		try {
-			return Magick.imageMagickVersion.match(/\bImageMagick\s+([^\s]+)/)?.[1] ?? 'Not loaded';
-		} catch {
-			return 'Not loaded';
-		}
+	// Loaded lazily on open so importing this dialog does not pull
+	// `@imagemagick/magick-wasm` into the initial chunk.
+	let wasmEngineVersion = $state('Not loaded');
+
+	$effect(() => {
+		if (!open) return;
+		let cancelled = false;
+		import('@imagemagick/magick-wasm')
+			.then(({ Magick }) => {
+				if (cancelled) return;
+				try {
+					wasmEngineVersion =
+						Magick.imageMagickVersion.match(/\bImageMagick\s+([^\s]+)/)?.[1] ?? 'Not loaded';
+				} catch {
+					wasmEngineVersion = 'Not loaded';
+				}
+			})
+			.catch(() => {
+				if (!cancelled) wasmEngineVersion = 'Not loaded';
+			});
+		return () => {
+			cancelled = true;
+		};
 	});
 
 	$effect(() => {
