@@ -478,6 +478,29 @@ function outputSpecifierFor(format, outputPath) {
 	return `${cleanFormat || 'PNG'}:${outputPath}`;
 }
 
+/**
+ * Resolve the file ImageMagick actually wrote. Multi-image sequences saved
+ * to a single-image format land as numbered siblings (`output-0.jpg`, ...)
+ * instead of `outputPath`; the first sibling holds frame 0. Falls back to
+ * `outputPath` itself so callers still surface the original ENOENT.
+ */
+async function resolveOutputFile(outputPath) {
+	try {
+		await fs.promises.access(outputPath);
+		return outputPath;
+	} catch {
+		// try the first numbered sibling below
+	}
+	const ext = path.extname(outputPath);
+	const numbered = path.join(path.dirname(outputPath), `${path.basename(outputPath, ext)}-0${ext}`);
+	try {
+		await fs.promises.access(numbered);
+		return numbered;
+	} catch {
+		return outputPath;
+	}
+}
+
 function inputExtensionFor(name) {
 	const ext = path
 		.extname(String(name || ''))
@@ -488,7 +511,15 @@ function inputExtensionFor(name) {
 
 async function identifyDimensions(magickBin, filePath) {
 	try {
-		const { stdout } = await runBinary(magickBin, ['identify', '-format', '%w %h', filePath]);
+		// First scene only: multi-image outputs print one `%w %h` per scene
+		// with no separator, which naive parsing would merge into a bogus
+		// geometry (e.g. `10 1010 10` for two 10x10 frames).
+		const { stdout } = await runBinary(magickBin, [
+			'identify',
+			'-format',
+			'%w %h',
+			`${filePath}[0]`
+		]);
 		const [w, h] = stdout.toString('utf-8').trim().split(/\s+/).map(Number);
 		if (Number.isFinite(w) && Number.isFinite(h) && w > 0 && h > 0) {
 			return { width: w, height: h };
@@ -505,7 +536,7 @@ async function identifyOrientation(magickBin, filePath) {
 			'identify',
 			'-format',
 			'%[orientation]',
-			filePath
+			`${filePath}[0]`
 		]);
 		return stdout.toString('utf-8').trim();
 	} catch {
@@ -540,7 +571,25 @@ async function processNativeVips(payload) {
 	}
 
 	const sharp = getSharp();
-	let pipeline = sharp(Buffer.from(sourceData), { animated: true });
+	// sharp sustains animation for GIF/WebP outputs only; decoding a full
+	// sequence into a static encoder stacks every frame vertically, so static
+	// outputs decode a single representative frame instead. The last frame is
+	// the still: disposal-optimized animations often start with a blank
+	// transparent frame, so the first frame renders as an empty canvas.
+	const vipsOutputFormat = String(
+		payload.plan.output.format || payload.outputFormat || 'PNG'
+	).toLowerCase();
+	const vipsAnimatedOutput = vipsOutputFormat === 'gif' || vipsOutputFormat === 'webp';
+	const inputOptions = { animated: vipsAnimatedOutput };
+	if (!vipsAnimatedOutput) {
+		try {
+			const probe = await sharp(Buffer.from(sourceData)).metadata();
+			if ((probe.pages ?? 1) > 1) inputOptions.page = probe.pages - 1;
+		} catch {
+			// fall through to the default (first) frame
+		}
+	}
+	let pipeline = sharp(Buffer.from(sourceData), inputOptions);
 	let width;
 	let height;
 	const gravityOffset = (space, gravity, axis) => {
@@ -670,7 +719,6 @@ async function processNativeVips(payload) {
 				throw new Error(`Unsupported VIPS operation: ${operation.type}`);
 		}
 	}
-
 	const format = String(payload.plan.output.format || payload.outputFormat || 'PNG').toLowerCase();
 	const quality = Math.max(1, Math.min(100, Number(payload.plan.output.quality) || 85));
 	const outputOptions = { quality };
@@ -742,7 +790,9 @@ async function processNativeVips(payload) {
 		}
 		previewData = rgba;
 	}
-
+	// Animated outputs report the stacked strip height; the per-frame height
+	// is what the UI and filenames should use.
+	const frameHeight = info.pages > 1 && info.pageHeight > 0 ? info.pageHeight : info.height;
 	return {
 		data: new Uint8Array(data),
 		previewData: needsPreview ? new Uint8Array(previewData) : new Uint8Array(),
@@ -751,7 +801,7 @@ async function processNativeVips(payload) {
 		previewImageData,
 		previewImageFormat: needsInteractivePreview ? 'WEBP' : undefined,
 		width: info.width,
-		height: info.height,
+		height: frameHeight,
 		format: String(payload.outputFormat || format).toUpperCase(),
 		backend: 'vips'
 	};
@@ -810,11 +860,11 @@ async function processNativeMagick(payload) {
 		}
 
 		const outputSpecifier = outputSpecifierFor(payload.outputFormat, outputPath);
-		// Multi-image inputs (PSD layers, GIF/TIFF frames) would otherwise
-		// write numbered files (`output-0.jpg`, ...) that `outputPath` never
-		// matches. Select the first scene, mirroring the WASM path which
-		// reads a single image; a no-op for single-image inputs.
-		const inputSpecifier = `${inputPath}[0]`;
+		// Process the full image sequence so animations (GIF/WebP) and
+		// multi-page/layer inputs (TIFF/PSD) survive. Single-image outputs of
+		// a sequence land as numbered siblings; those resolve to the first
+		// frame below. A no-op for single-image inputs.
+		const inputSpecifier = inputPath;
 		const substituted = payload.args.map((arg) => {
 			switch (arg) {
 				case TOKENS.CLUT:
@@ -883,11 +933,13 @@ async function processNativeMagick(payload) {
 			if (resizeIndex >= 0) dimensionArgs.splice(resizeIndex, 2);
 			const { stdout } = await runBinary(
 				magickBin,
-				[...dimensionArgs, '-format', '%w %h', 'info:'],
+				[...dimensionArgs, '-format', '%w %h\\n', 'info:'],
 				{ inputName: payload.inputName }
 			);
+			// One line per scene; the first line is the first frame.
 			const [logicalWidth, logicalHeight] = stdout
 				.toString('utf-8')
+				.split('\n')[0]
 				.trim()
 				.split(/\s+/)
 				.map(Number);
@@ -898,8 +950,12 @@ async function processNativeMagick(payload) {
 
 		await runBinary(magickBin, finalArgs, { inputName: payload.inputName });
 
-		const data = new Uint8Array(await fs.promises.readFile(outputPath));
-		const { width, height } = await identifyDimensions(magickBin, outputPath);
+		// Formats without multi-image support (e.g. JPEG from an animated
+		// GIF) write numbered siblings (`output-0.jpg`, ...); use the first
+		// frame there, matching the WASM collection write.
+		const resolvedOutput = await resolveOutputFile(outputPath);
+		const data = new Uint8Array(await fs.promises.readFile(resolvedOutput));
+		const { width, height } = await identifyDimensions(magickBin, resolvedOutput);
 		let previewData = new Uint8Array();
 		let previewWidth = 0;
 		let previewHeight = 0;
@@ -911,7 +967,7 @@ async function processNativeMagick(payload) {
 			await runBinary(
 				magickBin,
 				[
-					outputPath,
+					resolvedOutput,
 					'-resize',
 					`${previewMaxEdge}x${previewMaxEdge}>`,
 					'-depth',
@@ -935,7 +991,7 @@ async function processNativeMagick(payload) {
 			await runBinary(
 				magickBin,
 				[
-					outputPath,
+					resolvedOutput,
 					'-resize',
 					`${MAX_INTERACTIVE_PREVIEW_EDGE}x${MAX_INTERACTIVE_PREVIEW_EDGE}>`,
 					'-quality',
@@ -965,12 +1021,50 @@ async function processNativeMagick(payload) {
 	}
 }
 
+/** Source bytes for a payload, honoring the main-process source cache. */
+function peekPayloadSource(payload) {
+	const canUseCache = Number.isFinite(payload.sourceRevision);
+	if (canUseCache && cachedSource && cachedSource.revision === payload.sourceRevision) {
+		return cachedSource.data;
+	}
+	return payload.inputData instanceof Uint8Array ? payload.inputData : null;
+}
+
+/**
+ * True when a VIPS-planned request carries a multi-frame input (animation,
+ * multi-page TIFF, layered PSD) into a sequence output (GIF/WebP animation,
+ * TIFF pages). sharp would apply geometry to the stacked page strip
+ * (per-frame crop/rotate/flip land in the wrong places, blur bleeds across
+ * frame boundaries) and reads the strip height for the oversize check, which
+ * triggers a hugely upscaled second animated encode. The ImageMagick backend
+ * processes each frame correctly, so those requests belong there; static
+ * outputs keep the fast VIPS last-frame path.
+ */
+async function shouldRouteSequenceToMagick(payload) {
+	const outputFormat = String(
+		payload.plan?.output?.format || payload.outputFormat || ''
+	).toLowerCase();
+	const sequenceOutputs = new Set(['gif', 'webp', 'tiff', 'tif', 'tiff64', 'ptif']);
+	if (!sequenceOutputs.has(outputFormat)) return false;
+	const sourceData = peekPayloadSource(payload);
+	if (!sourceData) return false;
+	try {
+		const metadata = await getSharp()(Buffer.from(sourceData)).metadata();
+		return (metadata.pages ?? 1) > 1;
+	} catch {
+		return false;
+	}
+}
+
 async function processNative(payload) {
 	if (!payload || !Array.isArray(payload.args)) {
 		throw new Error('Invalid native process request');
 	}
 	if (payload.plan?.backend === 'vips') {
 		try {
+			if (await shouldRouteSequenceToMagick(payload)) {
+				return await processNativeMagick(payload);
+			}
 			return await processNativeVips(payload);
 		} catch (error) {
 			console.warn('Native VIPS processing failed; falling back to ImageMagick:', error);
@@ -1103,6 +1197,7 @@ module.exports = {
 	parseNativeFormatList,
 	listNativeFormats,
 	outputSpecifierFor,
+	resolveOutputFile,
 	processNative,
 	getNativeFontMetrics,
 	registerMagickNative,

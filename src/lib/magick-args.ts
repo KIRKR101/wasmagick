@@ -17,7 +17,11 @@
 
 import type { MagickSettings } from './types';
 import { interpolateCliKeyword } from './clut-data';
-import { outputExtensionForFormat } from './export-formats';
+import {
+	isOpaqueOutputFormat,
+	isSequenceOutputFormat,
+	outputExtensionForFormat
+} from './export-formats';
 
 export { outputExtensionForFormat } from './export-formats';
 
@@ -34,6 +38,8 @@ export interface NativeArgsOptions {
 	height?: number;
 	/** Source EXIF orientation, when auto-orient metadata was parsed. */
 	orientation?: number | null;
+	/** Source filename; GIF/WebP inputs are coalesced to full frames. */
+	inputName?: string;
 }
 
 export interface NativeArgsResult {
@@ -116,6 +122,16 @@ export function buildNativeMagickArgs(
 	// native runner adds a fallback only after probing the native decoder, so
 	// already-normalized formats are never rotated twice.
 	if (settings.autoOrient) args.push('-auto-orient');
+
+	// Disposal-based animations (GIF/WebP) store partial frame updates, so
+	// expand to full frames before geometry, mirroring the WASM coalesce step.
+	// A no-op for single-frame inputs; other multi-image inputs (TIFF pages,
+	// PSD layers) are already full images and must not be coalesced.
+	const inputExtension = String(opts.inputName ?? '')
+		.split('.')
+		.pop()
+		?.toLowerCase();
+	if (inputExtension === 'gif' || inputExtension === 'webp') args.push('-coalesce');
 
 	// -- Geometry --
 	const hasVisualCrop = settings.cropX != null || settings.cropY != null;
@@ -463,6 +479,19 @@ export function buildNativeMagickArgs(
 	}
 
 	if (settings.stripMeta) args.push('-strip');
+
+	// Static outputs export the last coalesced frame as the representative
+	// still: disposal-optimized animations often start with a blank
+	// transparent frame, so the first frame renders as an empty canvas.
+	// `-delete 0--2` drops every scene but the last; a no-op for
+	// single-image inputs. Opaque outputs (JPEG) additionally composite
+	// transparency over white, mirroring the WASM/VIPS flatten step.
+	if (!isSequenceOutputFormat(settings.imageFormat)) {
+		args.push('-delete', '0--2');
+		if (isOpaqueOutputFormat(settings.imageFormat)) {
+			args.push('+repage', '-background', 'white', '-flatten');
+		}
+	}
 
 	args.push('-quality', fmtNum(settings.quality[0]));
 

@@ -124,7 +124,8 @@ describe('outputExtensionForFormat', () => {
 describe('buildNativeMagickArgs', () => {
 	it('emits auto-orient and quality for default settings', () => {
 		const result = build({});
-		expect(result.args).toEqual(['-auto-orient', '-quality', '100']);
+		// The PNG default is a static output, so the last-frame selector applies.
+		expect(result.args).toEqual(['-auto-orient', '-delete', '0--2', '-quality', '100']);
 		expect(result.needsClut).toBeNull();
 		expect(result.needsFont).toBeNull();
 		expect(result.outputExtension).toBe('png');
@@ -428,6 +429,29 @@ describe('buildNativeMagickArgs', () => {
 		expect(r.args).toContain('-strip');
 		expect(r.args.slice(-2)).toEqual(['-quality', '85']);
 		expect(r.outputExtension).toBe('webp');
+	});
+
+	it('selects the last frame for static outputs and flattens JPEG over white', () => {
+		const jpeg = build({ imageFormat: 'JPEG' });
+		expect(jpeg.args).toEqual(expect.arrayContaining(['-delete', '0--2']));
+		expect(jpeg.args).toEqual(
+			expect.arrayContaining(['+repage', '-background', 'white', '-flatten'])
+		);
+		// -delete/-flatten land after image ops but before -quality.
+		expect(jpeg.args.indexOf('-delete')).toBeLessThan(jpeg.args.indexOf('-quality'));
+
+		for (const imageFormat of ['PNG', 'AVIF']) {
+			const still = build({ imageFormat });
+			expect(still.args).toEqual(expect.arrayContaining(['-delete', '0--2']));
+		}
+		for (const imageFormat of ['GIF', 'WEBP', 'JXL', 'TIFF']) {
+			const sequence = build({ imageFormat });
+			expect(sequence.args).not.toContain('-delete');
+		}
+
+		const bmp = build({ imageFormat: 'BMP' });
+		expect(bmp.args).toEqual(expect.arrayContaining(['-delete', '0--2']));
+		expect(bmp.args).not.toContain('-flatten');
 	});
 
 	it('keeps operation order: resize before modulate before blur', () => {

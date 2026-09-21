@@ -219,6 +219,41 @@ const POPULAR_LABELS: Record<string, string> = {
 	QOI: 'QOI'
 };
 
+/**
+ * Output formats that keep an image sequence as-is: animation containers
+ * (GIF/WebP/JXL), multi-image documents (TIFF pages, PSD layers, PDF pages).
+ * Multi-frame inputs written to these formats keep every frame; every other
+ * writable format is a still and receives a single representative frame
+ * (see `stillFrameForOutput` in `magick-process.ts`). Note PNG stays a
+ * still: a multi-frame collection would otherwise encode as a blank-first
+ * APNG for disposal-optimized animations.
+ */
+const SEQUENCE_OUTPUT_FORMATS = new Set([
+	'GIF',
+	'GIF87',
+	'WEBP',
+	'JXL',
+	'TIFF',
+	'TIF',
+	'TIFF64',
+	'PTIF',
+	'PSD',
+	'PDF',
+	'PDFA',
+	'EPDF'
+]);
+
+export function isSequenceOutputFormat(format: string): boolean {
+	return SEQUENCE_OUTPUT_FORMATS.has(normalizeFormat(format));
+}
+
+/** Output formats without alpha support; stills flatten transparency over white. */
+const OPAQUE_OUTPUT_FORMATS = new Set(['JPEG', 'JPG', 'JPE', 'PJPEG']);
+
+export function isOpaqueOutputFormat(format: string): boolean {
+	return OPAQUE_OUTPUT_FORMATS.has(normalizeFormat(format));
+}
+
 /** The prioritized fallback used before an engine reports its capabilities. */
 export const FALLBACK_EXPORT_FORMATS: readonly ExportFormat[] = POPULAR_EXPORT_FORMATS.map(
 	(format) => ({

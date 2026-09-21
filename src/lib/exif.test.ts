@@ -36,7 +36,7 @@ async function entriesByLabel(file: string): Promise<Map<string, string>> {
 
 describe('extractExif', () => {
 	it('extracts all metadata fields from a file with EXIF', async () => {
-		const byLabel = await entriesByLabel('test/fixtures/source-exif.jpg');
+		const byLabel = await entriesByLabel('test/fixtures/source/source-exif.jpg');
 
 		expect(byLabel.get('Make')).toBe('RICOH');
 		expect(byLabel.get('Model')).toBe('GR III HDF');
@@ -49,7 +49,7 @@ describe('extractExif', () => {
 	});
 
 	it('excludes path and environment artifacts', async () => {
-		const byLabel = await entriesByLabel('test/fixtures/source-exif.jpg');
+		const byLabel = await entriesByLabel('test/fixtures/source/source-exif.jpg');
 
 		for (const tag of [
 			'SourceFile',
@@ -76,7 +76,7 @@ describe('extractExif', () => {
 	});
 
 	it('lists the important tags first in priority order', async () => {
-		const data = await exifDataFor('test/fixtures/source-exif.jpg');
+		const data = await exifDataFor('test/fixtures/source/source-exif.jpg');
 
 		expect(data.priority.map((e) => e.label)).toEqual([
 			'Make',
@@ -96,7 +96,7 @@ describe('extractExif', () => {
 	});
 
 	it('keeps non-priority tags out of the priority list but in the full list', async () => {
-		const data = await exifDataFor('test/fixtures/source-exif.jpg');
+		const data = await exifDataFor('test/fixtures/source/source-exif.jpg');
 
 		expect(data.priority.some((e) => e.label === 'Megapixels')).toBe(false);
 		const allLabels = data.all.map((e) => e.label);

@@ -39,7 +39,14 @@ import { generateClutImage } from './luts';
 import { renderClutPngBytes } from './clut-data';
 import { buildNativeMagickArgs } from './magick-args';
 import { buildNativeProcessingPlan } from './native-plan';
-import { applyCrop, readImageWithFilename, resolveNoiseAttenuate } from './magick-process';
+import {
+	applyCrop,
+	flattenStillForOutput,
+	readCollectionWithFilename,
+	readImageWithFilename,
+	resolveNoiseAttenuate,
+	stillFrameForOutput
+} from './magick-process';
 import { extractExif, parseExifOrientation, type ExifData } from './exif';
 import { computeCropStepOffset, type CropRect } from './crop-utils';
 import type { AnnotationTextMetrics } from './annotation-utils';
@@ -1502,7 +1509,8 @@ export class MagickState {
 			const built = buildNativeMagickArgs(settings, {
 				width: this.originalWidth,
 				height: this.originalHeight,
-				orientation
+				orientation,
+				inputName: this.originalName
 			});
 			const args = [...built.args];
 
@@ -1635,565 +1643,602 @@ export class MagickState {
 					const appliedOptions: AppliedOptions = {};
 
 					try {
-						readImageWithFilename(this.sourceBytes!, this.originalName, (image) => {
+						readCollectionWithFilename(this.sourceBytes!, this.originalName, (collection) => {
 							try {
-								if (image.format) {
-									this.originalImageFormat = String(image.format).toLowerCase();
+								const detectedFormat = String(collection[0]?.format ?? '');
+								if (detectedFormat) {
+									this.originalImageFormat = detectedFormat.toLowerCase();
 								}
-
-								// Apply EXIF orientation before geometry so the native and WASM
-								// pipelines operate on the same physical pixel orientation.
-								if (this.settings.autoOrient) {
-									this.currentProcessingStep = 'Auto-Orienting';
-									image.autoOrient();
-									appliedOptions.autoOrient = true;
-								}
-
-								const resizeW = this.settings.resizeW ?? 0;
-								const resizeH = this.settings.resizeH ?? 0;
-
-								if (resizeW > 0 || resizeH > 0) {
-									this.currentProcessingStep = 'Resizing';
-									image.resize(resizeW, resizeH);
-									appliedOptions.resize = { width: resizeW, height: resizeH };
-								}
-
-								if (parseInt(this.settings.rotate) !== 0) {
-									this.currentProcessingStep = 'Rotating';
-									image.rotate(parseInt(this.settings.rotate));
-									appliedOptions.rotate = parseInt(this.settings.rotate);
-								}
-
-								if (this.settings.flop) {
-									this.currentProcessingStep = 'Flopping';
-									image.flop();
-									appliedOptions.flop = true;
-								}
-								if (this.settings.flip) {
-									this.currentProcessingStep = 'Flipping';
-									image.flip();
-									appliedOptions.flip = true;
-								}
-
-								if (applyCrop(image, this.settings)) {
-									this.currentProcessingStep = 'Cropping';
-									appliedOptions.crop = {
-										x: this.settings.cropX,
-										y: this.settings.cropY,
-										width: this.settings.cropW,
-										height: this.settings.cropH,
-										gravity: this.settings.cropGravity
-									};
-								}
-
-								if (this.settings.trimEdges) {
-									this.currentProcessingStep = 'Trimming';
-									image.trim();
-									appliedOptions.trim = true;
-								}
-
-								const shaveX = Math.min(
-									this.settings.shaveX ?? 0,
-									Math.floor((image.width - 1) / 2)
-								);
-								const shaveY = Math.min(
-									this.settings.shaveY ?? 0,
-									Math.floor((image.height - 1) / 2)
-								);
-								if (shaveX > 0 || shaveY > 0) {
-									this.currentProcessingStep = 'Shaving';
-									image.shave(shaveX, shaveY);
-									appliedOptions.shave = {
-										x: this.settings.shaveX,
-										y: this.settings.shaveY
-									};
-								}
-
-								if (this.settings.borderSize[0] > 0) {
-									this.currentProcessingStep = 'Adding Border';
-									const { r, g, b } = this.hexToRgb(this.settings.borderColor);
-									image.borderColor = new MagickColor(r, g, b);
-									image.border(this.settings.borderSize[0]);
-									appliedOptions.border = {
-										size: this.settings.borderSize[0],
-										color: this.settings.borderColor
-									};
-								}
-
-								if ((this.settings.extentW ?? 0) > 0 || (this.settings.extentH ?? 0) > 0) {
-									this.currentProcessingStep = 'Adjusting Canvas';
-									const { r, g, b } = this.hexToRgb(this.settings.extentBgColor);
-									image.backgroundColor = new MagickColor(r, g, b);
-									const gravityKey = this.settings.extentGravity as keyof typeof Gravity;
-									image.extent(
-										this.settings.extentW ?? image.width,
-										this.settings.extentH ?? image.height,
-										Gravity[gravityKey]
-									);
-									appliedOptions.extent = {
-										width: this.settings.extentW,
-										height: this.settings.extentH,
-										gravity: this.settings.extentGravity,
-										bg: this.settings.extentBgColor
-									};
-								}
-
-								if (this.settings.deskewThreshold[0] > 0) {
-									this.currentProcessingStep = 'Deskewing';
-									image.deskew(
-										new Percentage(this.settings.deskewThreshold[0]),
-										this.settings.deskewAutoCrop
-									);
-									appliedOptions.deskew = {
-										threshold: this.settings.deskewThreshold[0],
-										autoCrop: this.settings.deskewAutoCrop
-									};
-								}
-
-								if (
-									this.settings.brightness[0] !== 100 ||
-									this.settings.saturation[0] !== 100 ||
-									this.settings.hue[0] !== 100
-								) {
-									this.currentProcessingStep = 'Adjusting Color';
-									image.modulate(
-										new Percentage(this.settings.brightness[0]),
-										new Percentage(this.settings.saturation[0]),
-										new Percentage(this.settings.hue[0])
-									);
-									appliedOptions.modulate = {
-										brightness: this.settings.brightness[0],
-										saturation: this.settings.saturation[0],
-										hue: this.settings.hue[0]
-									};
-								}
-
-								if (this.settings.contrast[0] !== 0) {
-									this.currentProcessingStep = 'Adjusting Contrast';
-									image.brightnessContrast(
-										new Percentage(0),
-										new Percentage(this.settings.contrast[0])
-									);
-									appliedOptions.contrast = this.settings.contrast[0];
-								}
-
-								if (this.settings.normalizeImage) {
-									this.currentProcessingStep = 'Normalizing';
-									image.normalize();
-									appliedOptions.normalize = true;
-								}
-
-								if (this.settings.autoLevel) {
-									this.currentProcessingStep = 'Auto-Leveling';
-									image.autoLevel();
-									appliedOptions.autoLevel = true;
-								}
-
-								if (this.settings.autoGamma) {
-									this.currentProcessingStep = 'Auto-Gamma';
-									image.autoGamma();
-									appliedOptions.autoGamma = true;
-								}
-
-								{
-									const levelChs: LevelChannel[] = ['All', 'Red', 'Green', 'Blue'];
-									const levelApplied: {
-										black: number;
-										white: number;
-										gamma: number;
-										channels: string;
-									}[] = [];
-									for (const ch of levelChs) {
-										const bp = this.settings.levelBlackpoint[ch][0];
-										const wp = this.settings.levelWhitepoint[ch][0];
-										const gm = this.settings.levelGamma[ch][0];
-										if (bp !== 0 || wp !== 100 || gm !== 1.0) {
-											const channel =
-												ch === 'All' ? Channels.All : Channels[ch as keyof typeof Channels];
-											image.level(new Percentage(bp), new Percentage(wp), gm, channel as Channels);
-											levelApplied.push({ black: bp, white: wp, gamma: gm, channels: ch });
-										}
-									}
-									if (levelApplied.length > 0) {
-										appliedOptions.level = levelApplied;
+								// Process every frame so animated inputs stay animated;
+								// single-image inputs are a one-element collection.
+								if (collection.length > 1) {
+									const upperFormat = detectedFormat.toUpperCase();
+									if (upperFormat === 'GIF' || upperFormat === 'GIF87' || upperFormat === 'WEBP') {
+										collection.coalesce();
 									}
 								}
+								for (const image of collection) {
+									// Apply EXIF orientation before geometry so the native and WASM
+									// pipelines operate on the same physical pixel orientation.
+									if (this.settings.autoOrient) {
+										this.currentProcessingStep = 'Auto-Orienting';
+										image.autoOrient();
+										appliedOptions.autoOrient = true;
+									}
 
-								{
-									const black = this.settings.levelColorsBlack;
-									const white = this.settings.levelColorsWhite;
-									const inverse = this.settings.levelColorsInverse;
-									if (black !== '#000000' || white !== '#ffffff' || inverse) {
-										// Map the 'All' option to the RGB composite (matching the
-										// golden fixtures, which use `-channel RGB`): leveling the
-										// alpha channel with opaque endpoint colors hits a
-										// divide-by-zero edge in the wasm.
-										const channel =
-											this.settings.levelColorsChannels === 'All'
-												? Channels.RGB
-												: Channels[this.settings.levelColorsChannels as keyof typeof Channels];
-										const blackRgb = this.hexToRgb(black);
-										const whiteRgb = this.hexToRgb(white);
-										const blackColor = new MagickColor(blackRgb.r, blackRgb.g, blackRgb.b);
-										const whiteColor = new MagickColor(whiteRgb.r, whiteRgb.g, whiteRgb.b);
-										if (inverse) {
-											image.inverseLevelColors(blackColor, whiteColor, channel as Channels);
-										} else {
-											image.levelColors(blackColor, whiteColor, channel as Channels);
-										}
-										appliedOptions.levelColors = {
-											black,
-											white,
-											channels: this.settings.levelColorsChannels,
-											inverse
+									const resizeW = this.settings.resizeW ?? 0;
+									const resizeH = this.settings.resizeH ?? 0;
+
+									if (resizeW > 0 || resizeH > 0) {
+										this.currentProcessingStep = 'Resizing';
+										image.resize(resizeW, resizeH);
+										appliedOptions.resize = { width: resizeW, height: resizeH };
+									}
+
+									if (parseInt(this.settings.rotate) !== 0) {
+										this.currentProcessingStep = 'Rotating';
+										image.rotate(parseInt(this.settings.rotate));
+										appliedOptions.rotate = parseInt(this.settings.rotate);
+									}
+
+									if (this.settings.flop) {
+										this.currentProcessingStep = 'Flopping';
+										image.flop();
+										appliedOptions.flop = true;
+									}
+									if (this.settings.flip) {
+										this.currentProcessingStep = 'Flipping';
+										image.flip();
+										appliedOptions.flip = true;
+									}
+
+									if (applyCrop(image, this.settings)) {
+										this.currentProcessingStep = 'Cropping';
+										appliedOptions.crop = {
+											x: this.settings.cropX,
+											y: this.settings.cropY,
+											width: this.settings.cropW,
+											height: this.settings.cropH,
+											gravity: this.settings.cropGravity
 										};
 									}
-								}
 
-								if (this.settings.thresholdPercentage[0] !== 50) {
-									const thresholdChannels =
-										this.settings.thresholdChannels === 'All'
-											? Channels.All
-											: Channels[this.settings.thresholdChannels as keyof typeof Channels];
-									image.threshold(
-										new Percentage(this.settings.thresholdPercentage[0]),
-										thresholdChannels as Channels
-									);
-									appliedOptions.threshold = {
-										percent: this.settings.thresholdPercentage[0],
-										channels: this.settings.thresholdChannels
-									};
-								}
-
-								if (this.settings.blackThreshold[0] > 0) {
-									this.currentProcessingStep = 'Black Thresholding';
-									image.blackThreshold(new Percentage(this.settings.blackThreshold[0]));
-									appliedOptions.blackThreshold = this.settings.blackThreshold[0];
-								}
-
-								if (this.settings.whiteThreshold[0] < 100) {
-									this.currentProcessingStep = 'White Thresholding';
-									image.whiteThreshold(new Percentage(this.settings.whiteThreshold[0]));
-									appliedOptions.whiteThreshold = this.settings.whiteThreshold[0];
-								}
-
-								if (this.settings.sigmoidalContrast[0] !== 0) {
-									const sigmoidalChannels =
-										this.settings.sigmoidalChannels === 'All'
-											? Channels.All
-											: Channels[this.settings.sigmoidalChannels as keyof typeof Channels];
-									image.sigmoidalContrast(
-										this.settings.sigmoidalContrast[0],
-										this.settings.sigmoidalMidpoint[0] / 100,
-										sigmoidalChannels as Channels
-									);
-									appliedOptions.sigmoidal = {
-										contrast: this.settings.sigmoidalContrast[0],
-										midpoint: this.settings.sigmoidalMidpoint[0]
-									};
-								}
-
-								if (this.settings.autoThreshold !== 'Off') {
-									this.currentProcessingStep = 'Auto-Thresholding';
-									image.autoThreshold(AutoThresholdMethod[this.settings.autoThreshold]);
-									appliedOptions.autoThreshold = this.settings.autoThreshold;
-								}
-
-								if (this.settings.colorSpace !== 'RGB') {
-									const colorSpaceKey = this.settings.colorSpace as keyof typeof ColorSpace;
-									image.colorSpace = ColorSpace[colorSpaceKey];
-									appliedOptions.colorSpace = this.settings.colorSpace;
-								}
-
-								if (this.settings.claheXTiles[0] > 0) {
-									this.currentProcessingStep = 'Applying CLAHE';
-									image.clahe(
-										this.settings.claheXTiles[0],
-										this.settings.claheYTiles[0],
-										this.settings.claheBins[0],
-										this.settings.claheClipLimit[0]
-									);
-									appliedOptions.clahe = {
-										xTiles: this.settings.claheXTiles[0],
-										yTiles: this.settings.claheYTiles[0],
-										bins: this.settings.claheBins[0],
-										clipLimit: this.settings.claheClipLimit[0]
-									};
-								}
-
-								if (this.settings.blur[0] > 0) {
-									this.currentProcessingStep = 'Blurring';
-									image.blur(this.settings.blur[0], this.settings.blur[0] / 2);
-									appliedOptions.blur = this.settings.blur[0];
-								}
-
-								if (this.settings.gaussianBlurRadius[0] > 0) {
-									this.currentProcessingStep = 'Gaussian Blurring';
-									image.gaussianBlur(
-										this.settings.gaussianBlurRadius[0],
-										this.settings.gaussianBlurSigma[0]
-									);
-									appliedOptions.gaussianBlur = {
-										radius: this.settings.gaussianBlurRadius[0],
-										sigma: this.settings.gaussianBlurSigma[0]
-									};
-								}
-
-								if (this.settings.sharpen[0] > 0) {
-									this.currentProcessingStep = 'Sharpening';
-									const radius = this.settings.sharpen[0];
-									const sigma = radius / 2;
-									image.sharpen(radius, sigma);
-									appliedOptions.sharpen = this.settings.sharpen[0];
-								}
-
-								if (this.settings.adaptiveSharpenRadius[0] > 0) {
-									this.currentProcessingStep = 'Adaptive Sharpening';
-									image.adaptiveSharpen(
-										this.settings.adaptiveSharpenRadius[0],
-										this.settings.adaptiveSharpenSigma[0]
-									);
-									appliedOptions.adaptiveSharpen = {
-										radius: this.settings.adaptiveSharpenRadius[0],
-										sigma: this.settings.adaptiveSharpenSigma[0]
-									};
-								}
-
-								if (this.settings.adaptiveBlurRadius[0] > 0) {
-									this.currentProcessingStep = 'Adaptive Blurring';
-									image.adaptiveBlur(
-										this.settings.adaptiveBlurRadius[0],
-										this.settings.adaptiveBlurSigma[0]
-									);
-									appliedOptions.adaptiveBlur = {
-										radius: this.settings.adaptiveBlurRadius[0],
-										sigma: this.settings.adaptiveBlurSigma[0]
-									};
-								}
-
-								if (this.settings.motionBlurRadius[0] > 0) {
-									this.currentProcessingStep = 'Motion Blurring';
-									image.motionBlur(
-										this.settings.motionBlurRadius[0],
-										this.settings.motionBlurSigma[0],
-										this.settings.motionBlurAngle[0]
-									);
-									appliedOptions.motionBlur = {
-										radius: this.settings.motionBlurRadius[0],
-										sigma: this.settings.motionBlurSigma[0],
-										angle: this.settings.motionBlurAngle[0]
-									};
-								}
-
-								if (this.settings.addNoiseType !== 'Off') {
-									this.currentProcessingStep = 'Adding Noise';
-									image.addNoise(
-										NoiseType[this.settings.addNoiseType],
-										resolveNoiseAttenuate(
-											this.settings.addNoiseType,
-											this.settings.addNoiseAttenuate[0]
-										),
-										Channels.All
-									);
-									appliedOptions.addNoise = {
-										type: this.settings.addNoiseType,
-										attenuate: this.settings.addNoiseAttenuate[0]
-									};
-								}
-
-								if (this.settings.effect !== 'none') {
-									appliedOptions.effect = this.settings.effect;
-									switch (this.settings.effect) {
-										case 'grayscale':
-											this.currentProcessingStep = 'Applying Grayscale';
-											image.grayscale(PixelIntensityMethod.Rec709Luminance);
-											break;
-										case 'sepia':
-											this.currentProcessingStep = 'Applying Sepia';
-											image.sepiaTone(new Percentage(this.settings.sepiaThreshold[0]));
-											appliedOptions.sepiaThreshold = this.settings.sepiaThreshold[0];
-											break;
-										case 'charcoal': {
-											this.currentProcessingStep = 'Applying Charcoal';
-											const charcoalRadius = this.settings.charcoalIntensity[0];
-											if (charcoalRadius > 0) {
-												image.charcoal(charcoalRadius, charcoalRadius / 2);
-												appliedOptions.charcoalIntensity = charcoalRadius;
-											} else {
-												image.charcoal();
-											}
-											break;
-										}
-										case 'negate':
-											this.currentProcessingStep = 'Applying Negative';
-											image.negate(Channels.RGB);
-											break;
-										case 'cannyEdge': {
-											this.currentProcessingStep = 'Detecting Edges';
-											const radius = (this.settings.cannyEdgeStrength[0] / 100) * 4;
-											const sigma = (this.settings.cannyEdgeStrength[0] / 100) * 1.5;
-											image.cannyEdge(
-												radius,
-												sigma,
-												new Percentage(this.settings.cannyEdgeLower[0]),
-												new Percentage(this.settings.cannyEdgeUpper[0])
-											);
-											appliedOptions.cannyEdge = {
-												strength: this.settings.cannyEdgeStrength[0],
-												lower: this.settings.cannyEdgeLower[0],
-												upper: this.settings.cannyEdgeUpper[0]
-											};
-											break;
-										}
-										case 'oilpaint':
-											this.currentProcessingStep = 'Applying Oil Paint';
-											image.oilPaint(this.settings.oilpaintRadius[0]);
-											appliedOptions.oilPaintRadius = this.settings.oilpaintRadius[0];
-											break;
-										case 'solarize':
-											this.currentProcessingStep = 'Applying Solarize';
-											image.solarize(new Percentage(this.settings.solarizeFactor[0]));
-											appliedOptions.solarizeFactor = this.settings.solarizeFactor[0];
-											break;
-										case 'bilateralBlur': {
-											this.currentProcessingStep = 'Applying Bilateral Blur';
-											image.bilateralBlur(
-												this.settings.bilateralWidth[0],
-												this.settings.bilateralHeight[0],
-												this.settings.bilateralIntensitySigma[0],
-												this.settings.bilateralSpatialSigma[0]
-											);
-											appliedOptions.bilateral = {
-												w: this.settings.bilateralWidth[0],
-												h: this.settings.bilateralHeight[0],
-												iSig: this.settings.bilateralIntensitySigma[0],
-												sSig: this.settings.bilateralSpatialSigma[0]
-											};
-											break;
-										}
+									if (this.settings.trimEdges) {
+										this.currentProcessingStep = 'Trimming';
+										image.trim();
+										appliedOptions.trim = true;
 									}
-								}
 
-								if (this.settings.clutMap !== 'identity') {
-									this.currentProcessingStep = 'Applying CLUT';
-									const lut = generateClutImage(
-										this.settings.clutMap,
-										this.settings.clutInterpolation
+									const shaveX = Math.min(
+										this.settings.shaveX ?? 0,
+										Math.floor((image.width - 1) / 2)
 									);
-									image.clut(lut, lut.interpolate, Channels.RGB);
-									lut.dispose();
-									appliedOptions.clutMap = this.settings.clutMap;
-									appliedOptions.clutInterpolation = this.settings.clutInterpolation;
-								}
-
-								if (this.settings.quantizeColors[0] > 0) {
-									this.currentProcessingStep = 'Quantizing Colors';
-									const qs = new QuantizeSettings();
-									qs.colors = this.settings.quantizeColors[0];
-									qs.colorSpace =
-										ColorSpace[this.settings.quantizeColorSpace as keyof typeof ColorSpace];
-									qs.treeDepth = this.settings.quantizeTreeDepth[0];
-									qs.measureErrors = this.settings.measureErrors;
-									if (this.settings.ditherMethod !== 'Undefined') {
-										qs.ditherMethod =
-											DitherMethod[this.settings.ditherMethod as keyof typeof DitherMethod];
+									const shaveY = Math.min(
+										this.settings.shaveY ?? 0,
+										Math.floor((image.height - 1) / 2)
+									);
+									if (shaveX > 0 || shaveY > 0) {
+										this.currentProcessingStep = 'Shaving';
+										image.shave(shaveX, shaveY);
+										appliedOptions.shave = {
+											x: this.settings.shaveX,
+											y: this.settings.shaveY
+										};
 									}
-									image.quantize(qs);
-									appliedOptions.quantize = {
-										colors: this.settings.quantizeColors[0],
-										ditherMethod: this.settings.ditherMethod,
-										colorSpace: this.settings.quantizeColorSpace,
-										treeDepth: this.settings.quantizeTreeDepth[0]
-									};
-								}
 
-								if (this.settings.annotateText?.trim().length > 0) {
-									try {
-										this.currentProcessingStep = 'Adding Text';
-										const { r, g, b } = this.hexToRgb(this.settings.annotateFontColor);
-										const draws = new Drawables();
-										if (this.settings.annotateFontFamily?.trim().length > 0) {
-											draws.font(this.settings.annotateFontFamily);
-										}
-										draws.fontPointSize(this.settings.annotateFontSize[0]);
-										draws.fillColor(new MagickColor(r, g, b));
-										if (this.settings.annotateStroke && this.settings.annotateStrokeWidth[0] > 0) {
-											const sr = this.hexToRgb(this.settings.annotateStrokeColor);
-											draws.strokeColor(new MagickColor(sr.r, sr.g, sr.b));
-											draws.strokeWidth(this.settings.annotateStrokeWidth[0]);
-										}
-										const gravityKey = this.settings.annotateGravity as keyof typeof Gravity;
-										draws.gravity(Gravity[gravityKey]);
+									if (this.settings.borderSize[0] > 0) {
+										this.currentProcessingStep = 'Adding Border';
+										const { r, g, b } = this.hexToRgb(this.settings.borderColor);
+										image.borderColor = new MagickColor(r, g, b);
+										image.border(this.settings.borderSize[0]);
+										appliedOptions.border = {
+											size: this.settings.borderSize[0],
+											color: this.settings.borderColor
+										};
+									}
 
-										const angle = this.settings.annotateAngle[0];
-										if (angle !== 0) {
-											const rad = (angle * Math.PI) / 360;
-											// magick-wasm's affine(scaleX, scaleY, shearX, shearY, tx, ty) maps to
-											// ImageMagick's AffineMatrix { sx, rx, ry, sy, tx, ty }. ImageMagick's
-											// -annotate uses a clockwise rotation for positive angles, so shearX
-											// and shearY are swapped relative to the standard CCW matrix.
-											draws.affine(
-												Math.cos(rad),
-												Math.cos(rad),
-												Math.sin(rad),
-												-Math.sin(rad),
-												0,
-												0
-											);
-										}
-
-										draws.text(
-											this.settings.annotateOffsetX,
-											this.settings.annotateOffsetY,
-											this.settings.annotateText
+									if ((this.settings.extentW ?? 0) > 0 || (this.settings.extentH ?? 0) > 0) {
+										this.currentProcessingStep = 'Adjusting Canvas';
+										const { r, g, b } = this.hexToRgb(this.settings.extentBgColor);
+										image.backgroundColor = new MagickColor(r, g, b);
+										const gravityKey = this.settings.extentGravity as keyof typeof Gravity;
+										image.extent(
+											this.settings.extentW ?? image.width,
+											this.settings.extentH ?? image.height,
+											Gravity[gravityKey]
 										);
-										draws.draw(image);
-										appliedOptions.annotate = {
-											text: this.settings.annotateText,
-											font: this.settings.annotateFontFamily,
-											fontSize: this.settings.annotateFontSize[0],
-											color: this.settings.annotateFontColor,
-											gravity: this.settings.annotateGravity,
-											offsetX: this.settings.annotateOffsetX,
-											offsetY: this.settings.annotateOffsetY,
-											angle: this.settings.annotateAngle[0]
+										appliedOptions.extent = {
+											width: this.settings.extentW,
+											height: this.settings.extentH,
+											gravity: this.settings.extentGravity,
+											bg: this.settings.extentBgColor
 										};
-									} catch (e) {
-										console.warn('Annotate failed:', e);
+									}
+
+									if (this.settings.deskewThreshold[0] > 0) {
+										this.currentProcessingStep = 'Deskewing';
+										image.deskew(
+											new Percentage(this.settings.deskewThreshold[0]),
+											this.settings.deskewAutoCrop
+										);
+										appliedOptions.deskew = {
+											threshold: this.settings.deskewThreshold[0],
+											autoCrop: this.settings.deskewAutoCrop
+										};
+									}
+
+									if (
+										this.settings.brightness[0] !== 100 ||
+										this.settings.saturation[0] !== 100 ||
+										this.settings.hue[0] !== 100
+									) {
+										this.currentProcessingStep = 'Adjusting Color';
+										image.modulate(
+											new Percentage(this.settings.brightness[0]),
+											new Percentage(this.settings.saturation[0]),
+											new Percentage(this.settings.hue[0])
+										);
+										appliedOptions.modulate = {
+											brightness: this.settings.brightness[0],
+											saturation: this.settings.saturation[0],
+											hue: this.settings.hue[0]
+										};
+									}
+
+									if (this.settings.contrast[0] !== 0) {
+										this.currentProcessingStep = 'Adjusting Contrast';
+										image.brightnessContrast(
+											new Percentage(0),
+											new Percentage(this.settings.contrast[0])
+										);
+										appliedOptions.contrast = this.settings.contrast[0];
+									}
+
+									if (this.settings.normalizeImage) {
+										this.currentProcessingStep = 'Normalizing';
+										image.normalize();
+										appliedOptions.normalize = true;
+									}
+
+									if (this.settings.autoLevel) {
+										this.currentProcessingStep = 'Auto-Leveling';
+										image.autoLevel();
+										appliedOptions.autoLevel = true;
+									}
+
+									if (this.settings.autoGamma) {
+										this.currentProcessingStep = 'Auto-Gamma';
+										image.autoGamma();
+										appliedOptions.autoGamma = true;
+									}
+
+									{
+										const levelChs: LevelChannel[] = ['All', 'Red', 'Green', 'Blue'];
+										const levelApplied: {
+											black: number;
+											white: number;
+											gamma: number;
+											channels: string;
+										}[] = [];
+										for (const ch of levelChs) {
+											const bp = this.settings.levelBlackpoint[ch][0];
+											const wp = this.settings.levelWhitepoint[ch][0];
+											const gm = this.settings.levelGamma[ch][0];
+											if (bp !== 0 || wp !== 100 || gm !== 1.0) {
+												const channel =
+													ch === 'All' ? Channels.All : Channels[ch as keyof typeof Channels];
+												image.level(
+													new Percentage(bp),
+													new Percentage(wp),
+													gm,
+													channel as Channels
+												);
+												levelApplied.push({ black: bp, white: wp, gamma: gm, channels: ch });
+											}
+										}
+										if (levelApplied.length > 0) {
+											appliedOptions.level = levelApplied;
+										}
+									}
+
+									{
+										const black = this.settings.levelColorsBlack;
+										const white = this.settings.levelColorsWhite;
+										const inverse = this.settings.levelColorsInverse;
+										if (black !== '#000000' || white !== '#ffffff' || inverse) {
+											// Map the 'All' option to the RGB composite (matching the
+											// golden fixtures, which use `-channel RGB`): leveling the
+											// alpha channel with opaque endpoint colors hits a
+											// divide-by-zero edge in the wasm.
+											const channel =
+												this.settings.levelColorsChannels === 'All'
+													? Channels.RGB
+													: Channels[this.settings.levelColorsChannels as keyof typeof Channels];
+											const blackRgb = this.hexToRgb(black);
+											const whiteRgb = this.hexToRgb(white);
+											const blackColor = new MagickColor(blackRgb.r, blackRgb.g, blackRgb.b);
+											const whiteColor = new MagickColor(whiteRgb.r, whiteRgb.g, whiteRgb.b);
+											if (inverse) {
+												image.inverseLevelColors(blackColor, whiteColor, channel as Channels);
+											} else {
+												image.levelColors(blackColor, whiteColor, channel as Channels);
+											}
+											appliedOptions.levelColors = {
+												black,
+												white,
+												channels: this.settings.levelColorsChannels,
+												inverse
+											};
+										}
+									}
+
+									if (this.settings.thresholdPercentage[0] !== 50) {
+										const thresholdChannels =
+											this.settings.thresholdChannels === 'All'
+												? Channels.All
+												: Channels[this.settings.thresholdChannels as keyof typeof Channels];
+										image.threshold(
+											new Percentage(this.settings.thresholdPercentage[0]),
+											thresholdChannels as Channels
+										);
+										appliedOptions.threshold = {
+											percent: this.settings.thresholdPercentage[0],
+											channels: this.settings.thresholdChannels
+										};
+									}
+
+									if (this.settings.blackThreshold[0] > 0) {
+										this.currentProcessingStep = 'Black Thresholding';
+										image.blackThreshold(new Percentage(this.settings.blackThreshold[0]));
+										appliedOptions.blackThreshold = this.settings.blackThreshold[0];
+									}
+
+									if (this.settings.whiteThreshold[0] < 100) {
+										this.currentProcessingStep = 'White Thresholding';
+										image.whiteThreshold(new Percentage(this.settings.whiteThreshold[0]));
+										appliedOptions.whiteThreshold = this.settings.whiteThreshold[0];
+									}
+
+									if (this.settings.sigmoidalContrast[0] !== 0) {
+										const sigmoidalChannels =
+											this.settings.sigmoidalChannels === 'All'
+												? Channels.All
+												: Channels[this.settings.sigmoidalChannels as keyof typeof Channels];
+										image.sigmoidalContrast(
+											this.settings.sigmoidalContrast[0],
+											this.settings.sigmoidalMidpoint[0] / 100,
+											sigmoidalChannels as Channels
+										);
+										appliedOptions.sigmoidal = {
+											contrast: this.settings.sigmoidalContrast[0],
+											midpoint: this.settings.sigmoidalMidpoint[0]
+										};
+									}
+
+									if (this.settings.autoThreshold !== 'Off') {
+										this.currentProcessingStep = 'Auto-Thresholding';
+										image.autoThreshold(AutoThresholdMethod[this.settings.autoThreshold]);
+										appliedOptions.autoThreshold = this.settings.autoThreshold;
+									}
+
+									if (this.settings.colorSpace !== 'RGB') {
+										const colorSpaceKey = this.settings.colorSpace as keyof typeof ColorSpace;
+										image.colorSpace = ColorSpace[colorSpaceKey];
+										appliedOptions.colorSpace = this.settings.colorSpace;
+									}
+
+									if (this.settings.claheXTiles[0] > 0) {
+										this.currentProcessingStep = 'Applying CLAHE';
+										image.clahe(
+											this.settings.claheXTiles[0],
+											this.settings.claheYTiles[0],
+											this.settings.claheBins[0],
+											this.settings.claheClipLimit[0]
+										);
+										appliedOptions.clahe = {
+											xTiles: this.settings.claheXTiles[0],
+											yTiles: this.settings.claheYTiles[0],
+											bins: this.settings.claheBins[0],
+											clipLimit: this.settings.claheClipLimit[0]
+										};
+									}
+
+									if (this.settings.blur[0] > 0) {
+										this.currentProcessingStep = 'Blurring';
+										image.blur(this.settings.blur[0], this.settings.blur[0] / 2);
+										appliedOptions.blur = this.settings.blur[0];
+									}
+
+									if (this.settings.gaussianBlurRadius[0] > 0) {
+										this.currentProcessingStep = 'Gaussian Blurring';
+										image.gaussianBlur(
+											this.settings.gaussianBlurRadius[0],
+											this.settings.gaussianBlurSigma[0]
+										);
+										appliedOptions.gaussianBlur = {
+											radius: this.settings.gaussianBlurRadius[0],
+											sigma: this.settings.gaussianBlurSigma[0]
+										};
+									}
+
+									if (this.settings.sharpen[0] > 0) {
+										this.currentProcessingStep = 'Sharpening';
+										const radius = this.settings.sharpen[0];
+										const sigma = radius / 2;
+										image.sharpen(radius, sigma);
+										appliedOptions.sharpen = this.settings.sharpen[0];
+									}
+
+									if (this.settings.adaptiveSharpenRadius[0] > 0) {
+										this.currentProcessingStep = 'Adaptive Sharpening';
+										image.adaptiveSharpen(
+											this.settings.adaptiveSharpenRadius[0],
+											this.settings.adaptiveSharpenSigma[0]
+										);
+										appliedOptions.adaptiveSharpen = {
+											radius: this.settings.adaptiveSharpenRadius[0],
+											sigma: this.settings.adaptiveSharpenSigma[0]
+										};
+									}
+
+									if (this.settings.adaptiveBlurRadius[0] > 0) {
+										this.currentProcessingStep = 'Adaptive Blurring';
+										image.adaptiveBlur(
+											this.settings.adaptiveBlurRadius[0],
+											this.settings.adaptiveBlurSigma[0]
+										);
+										appliedOptions.adaptiveBlur = {
+											radius: this.settings.adaptiveBlurRadius[0],
+											sigma: this.settings.adaptiveBlurSigma[0]
+										};
+									}
+
+									if (this.settings.motionBlurRadius[0] > 0) {
+										this.currentProcessingStep = 'Motion Blurring';
+										image.motionBlur(
+											this.settings.motionBlurRadius[0],
+											this.settings.motionBlurSigma[0],
+											this.settings.motionBlurAngle[0]
+										);
+										appliedOptions.motionBlur = {
+											radius: this.settings.motionBlurRadius[0],
+											sigma: this.settings.motionBlurSigma[0],
+											angle: this.settings.motionBlurAngle[0]
+										};
+									}
+
+									if (this.settings.addNoiseType !== 'Off') {
+										this.currentProcessingStep = 'Adding Noise';
+										image.addNoise(
+											NoiseType[this.settings.addNoiseType],
+											resolveNoiseAttenuate(
+												this.settings.addNoiseType,
+												this.settings.addNoiseAttenuate[0]
+											),
+											Channels.All
+										);
+										appliedOptions.addNoise = {
+											type: this.settings.addNoiseType,
+											attenuate: this.settings.addNoiseAttenuate[0]
+										};
+									}
+
+									if (this.settings.effect !== 'none') {
+										appliedOptions.effect = this.settings.effect;
+										switch (this.settings.effect) {
+											case 'grayscale':
+												this.currentProcessingStep = 'Applying Grayscale';
+												image.grayscale(PixelIntensityMethod.Rec709Luminance);
+												break;
+											case 'sepia':
+												this.currentProcessingStep = 'Applying Sepia';
+												image.sepiaTone(new Percentage(this.settings.sepiaThreshold[0]));
+												appliedOptions.sepiaThreshold = this.settings.sepiaThreshold[0];
+												break;
+											case 'charcoal': {
+												this.currentProcessingStep = 'Applying Charcoal';
+												const charcoalRadius = this.settings.charcoalIntensity[0];
+												if (charcoalRadius > 0) {
+													image.charcoal(charcoalRadius, charcoalRadius / 2);
+													appliedOptions.charcoalIntensity = charcoalRadius;
+												} else {
+													image.charcoal();
+												}
+												break;
+											}
+											case 'negate':
+												this.currentProcessingStep = 'Applying Negative';
+												image.negate(Channels.RGB);
+												break;
+											case 'cannyEdge': {
+												this.currentProcessingStep = 'Detecting Edges';
+												const radius = (this.settings.cannyEdgeStrength[0] / 100) * 4;
+												const sigma = (this.settings.cannyEdgeStrength[0] / 100) * 1.5;
+												image.cannyEdge(
+													radius,
+													sigma,
+													new Percentage(this.settings.cannyEdgeLower[0]),
+													new Percentage(this.settings.cannyEdgeUpper[0])
+												);
+												appliedOptions.cannyEdge = {
+													strength: this.settings.cannyEdgeStrength[0],
+													lower: this.settings.cannyEdgeLower[0],
+													upper: this.settings.cannyEdgeUpper[0]
+												};
+												break;
+											}
+											case 'oilpaint':
+												this.currentProcessingStep = 'Applying Oil Paint';
+												image.oilPaint(this.settings.oilpaintRadius[0]);
+												appliedOptions.oilPaintRadius = this.settings.oilpaintRadius[0];
+												break;
+											case 'solarize':
+												this.currentProcessingStep = 'Applying Solarize';
+												image.solarize(new Percentage(this.settings.solarizeFactor[0]));
+												appliedOptions.solarizeFactor = this.settings.solarizeFactor[0];
+												break;
+											case 'bilateralBlur': {
+												this.currentProcessingStep = 'Applying Bilateral Blur';
+												image.bilateralBlur(
+													this.settings.bilateralWidth[0],
+													this.settings.bilateralHeight[0],
+													this.settings.bilateralIntensitySigma[0],
+													this.settings.bilateralSpatialSigma[0]
+												);
+												appliedOptions.bilateral = {
+													w: this.settings.bilateralWidth[0],
+													h: this.settings.bilateralHeight[0],
+													iSig: this.settings.bilateralIntensitySigma[0],
+													sSig: this.settings.bilateralSpatialSigma[0]
+												};
+												break;
+											}
+										}
+									}
+
+									if (this.settings.clutMap !== 'identity') {
+										this.currentProcessingStep = 'Applying CLUT';
+										const lut = generateClutImage(
+											this.settings.clutMap,
+											this.settings.clutInterpolation
+										);
+										image.clut(lut, lut.interpolate, Channels.RGB);
+										lut.dispose();
+										appliedOptions.clutMap = this.settings.clutMap;
+										appliedOptions.clutInterpolation = this.settings.clutInterpolation;
+									}
+
+									if (this.settings.quantizeColors[0] > 0) {
+										this.currentProcessingStep = 'Quantizing Colors';
+										const qs = new QuantizeSettings();
+										qs.colors = this.settings.quantizeColors[0];
+										qs.colorSpace =
+											ColorSpace[this.settings.quantizeColorSpace as keyof typeof ColorSpace];
+										qs.treeDepth = this.settings.quantizeTreeDepth[0];
+										qs.measureErrors = this.settings.measureErrors;
+										if (this.settings.ditherMethod !== 'Undefined') {
+											qs.ditherMethod =
+												DitherMethod[this.settings.ditherMethod as keyof typeof DitherMethod];
+										}
+										image.quantize(qs);
+										appliedOptions.quantize = {
+											colors: this.settings.quantizeColors[0],
+											ditherMethod: this.settings.ditherMethod,
+											colorSpace: this.settings.quantizeColorSpace,
+											treeDepth: this.settings.quantizeTreeDepth[0]
+										};
+									}
+
+									if (this.settings.annotateText?.trim().length > 0) {
+										try {
+											this.currentProcessingStep = 'Adding Text';
+											const { r, g, b } = this.hexToRgb(this.settings.annotateFontColor);
+											const draws = new Drawables();
+											if (this.settings.annotateFontFamily?.trim().length > 0) {
+												draws.font(this.settings.annotateFontFamily);
+											}
+											draws.fontPointSize(this.settings.annotateFontSize[0]);
+											draws.fillColor(new MagickColor(r, g, b));
+											if (
+												this.settings.annotateStroke &&
+												this.settings.annotateStrokeWidth[0] > 0
+											) {
+												const sr = this.hexToRgb(this.settings.annotateStrokeColor);
+												draws.strokeColor(new MagickColor(sr.r, sr.g, sr.b));
+												draws.strokeWidth(this.settings.annotateStrokeWidth[0]);
+											}
+											const gravityKey = this.settings.annotateGravity as keyof typeof Gravity;
+											draws.gravity(Gravity[gravityKey]);
+
+											const angle = this.settings.annotateAngle[0];
+											if (angle !== 0) {
+												const rad = (angle * Math.PI) / 360;
+												// magick-wasm's affine(scaleX, scaleY, shearX, shearY, tx, ty) maps to
+												// ImageMagick's AffineMatrix { sx, rx, ry, sy, tx, ty }. ImageMagick's
+												// -annotate uses a clockwise rotation for positive angles, so shearX
+												// and shearY are swapped relative to the standard CCW matrix.
+												draws.affine(
+													Math.cos(rad),
+													Math.cos(rad),
+													Math.sin(rad),
+													-Math.sin(rad),
+													0,
+													0
+												);
+											}
+
+											draws.text(
+												this.settings.annotateOffsetX,
+												this.settings.annotateOffsetY,
+												this.settings.annotateText
+											);
+											draws.draw(image);
+											appliedOptions.annotate = {
+												text: this.settings.annotateText,
+												font: this.settings.annotateFontFamily,
+												fontSize: this.settings.annotateFontSize[0],
+												color: this.settings.annotateFontColor,
+												gravity: this.settings.annotateGravity,
+												offsetX: this.settings.annotateOffsetX,
+												offsetY: this.settings.annotateOffsetY,
+												angle: this.settings.annotateAngle[0]
+											};
+										} catch (e) {
+											console.warn('Annotate failed:', e);
+										}
+									}
+
+									if (this.settings.stripMeta) {
+										image.strip();
+										appliedOptions.stripMeta = true;
 									}
 								}
 
-								if (this.settings.stripMeta) {
-									image.strip();
-									appliedOptions.stripMeta = true;
-								}
-
+								// Sequence outputs keep every frame; static outputs export
+								// the last coalesced frame (see `stillFrameForOutput`).
+								const still = stillFrameForOutput(collection, this.settings.imageFormat);
+								const representative = still ?? collection[0];
 								const magf = magickFormatForName(this.settings.imageFormat) ?? MagickFormat.WebP;
 
 								// Keep AVIF quality 100 usable with the bundled AOM encoder;
 								// its lossless path rejects the default chroma delta-q setting.
-								image.quality =
+								const frameQuality =
 									this.settings.imageFormat.toUpperCase() === 'AVIF' &&
 									this.settings.quality[0] >= 100
 										? 99
 										: this.settings.quality[0];
+								for (const frame of collection) frame.quality = frameQuality;
 								appliedOptions.quality = this.settings.quality[0];
 								appliedOptions.format = magf;
 
-								const finalWidth = image.width;
-								const finalHeight = image.height;
+								const finalWidth = representative.width;
+								const finalHeight = representative.height;
 								const needsPreview = !BROWSER_RENDERABLE_FORMATS.has(
 									this.settings.imageFormat.toUpperCase()
 								);
 								const previewData = needsPreview
-									? image.getPixels(
+									? representative.getPixels(
 											(pixels) =>
 												pixels.toByteArray(0, 0, finalWidth, finalHeight, 'RGBA') ??
 												new Uint8Array()
 										)
 									: new Uint8Array();
 
-								image.write(magf, (data) => {
+								const writeOutput = (onData: (data: Uint8Array) => void): void => {
+									if (!still) {
+										collection.write(magf, onData);
+										return;
+									}
+									const flattened = flattenStillForOutput(still, this.settings.imageFormat);
+									try {
+										flattened.quality = frameQuality;
+										flattened.write(magf, onData);
+									} finally {
+										if (flattened !== still) flattened.dispose();
+									}
+								};
+
+								writeOutput((data) => {
 									const endTime = performance.now();
 
 									if (debugMode) {
