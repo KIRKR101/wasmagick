@@ -810,6 +810,11 @@ async function processNativeMagick(payload) {
 		}
 
 		const outputSpecifier = outputSpecifierFor(payload.outputFormat, outputPath);
+		// Multi-image inputs (PSD layers, GIF/TIFF frames) would otherwise
+		// write numbered files (`output-0.jpg`, ...) that `outputPath` never
+		// matches. Select the first scene, mirroring the WASM path which
+		// reads a single image; a no-op for single-image inputs.
+		const inputSpecifier = `${inputPath}[0]`;
 		const substituted = payload.args.map((arg) => {
 			switch (arg) {
 				case TOKENS.CLUT:
@@ -817,7 +822,7 @@ async function processNativeMagick(payload) {
 				case TOKENS.FONT:
 					return fontPath.replaceAll('\\', '/');
 				case TOKENS.INPUT:
-					return inputPath;
+					return inputSpecifier;
 				case TOKENS.OUTPUT:
 					return outputSpecifier;
 				default:
@@ -829,7 +834,7 @@ async function processNativeMagick(payload) {
 		const hasInput = payload.args.includes(TOKENS.INPUT);
 		const hasOutput = payload.args.includes(TOKENS.OUTPUT);
 		const finalArgs = [
-			...(hasInput ? [] : [inputPath]),
+			...(hasInput ? [] : [inputSpecifier]),
 			...substituted,
 			...(hasOutput ? [] : [outputSpecifier])
 		];
@@ -859,7 +864,7 @@ async function processNativeMagick(payload) {
 			}
 		}
 		if (isRawInputName(payload.inputName)) {
-			const inputIndex = hasInput ? finalArgs.indexOf(inputPath) : 0;
+			const inputIndex = hasInput ? finalArgs.indexOf(inputSpecifier) : 0;
 			finalArgs.splice(
 				inputIndex + 1,
 				0,
