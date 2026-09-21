@@ -366,7 +366,7 @@ describe('animated GIF processing', () => {
 		expect(decoded).toBeGreaterThan(0.15);
 	});
 
-	it('routes animated inputs with animated outputs to the magick backend', async () => {
+	it.runIf(hasNative)('routes animated inputs with animated outputs to the magick backend', async () => {
 		// sharp applies geometry to the stacked page strip and reads the
 		// strip height for the oversize check (a hugely upscaled second
 		// animated encode), so multi-frame inputs with animated outputs must
@@ -420,7 +420,7 @@ describe('animated GIF processing', () => {
 		expect(pages[1].corner).toEqual([0, 0, 255]);
 	});
 
-	it('routes multi-frame inputs with TIFF outputs to the magick backend', async () => {
+	it.runIf(hasNative)('routes multi-frame inputs with TIFF outputs to the magick backend', async () => {
 		// Same stacked-strip hazard as animated outputs: multipage inputs
 		// with TIFF outputs must not stay on VIPS even when the plan allows it.
 		const settings = gifSettings({ imageFormat: 'TIFF', resizeW: 10, resizeH: 10 });
