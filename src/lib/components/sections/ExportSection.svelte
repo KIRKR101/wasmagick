@@ -12,12 +12,15 @@
 	import type { MagickState } from '$lib/useMagick.svelte';
 	import ToggleRow from '$lib/components/controls/ToggleRow.svelte';
 	import TruncatedText from '$lib/components/controls/TruncatedText.svelte';
-	import { isPopularExportFormat, type ExportFormat } from '$lib/export-formats';
+	import {
+		isLosslessExportFormat,
+		isPopularExportFormat,
+		type ExportFormat
+	} from '$lib/export-formats';
 	import { formatDimensions } from '$lib/utils';
 	let { magick } = $props<{ magick: MagickState }>();
 
-	const LOSSLESS = new Set(['PNG', 'GIF']);
-	let isLossless = $derived(LOSSLESS.has(magick.settings.imageFormat));
+	let isLossless = $derived(isLosslessExportFormat(magick.settings.imageFormat));
 	let popularFormats = $derived(
 		(magick.exportFormats as readonly ExportFormat[]).filter((format: ExportFormat) =>
 			isPopularExportFormat(format.value)

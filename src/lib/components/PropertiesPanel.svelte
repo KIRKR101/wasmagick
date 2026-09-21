@@ -20,6 +20,7 @@
 	import HistoryPanel from './sections/HistoryPanel.svelte';
 	import HoverTooltip from './controls/HoverTooltip.svelte';
 	import { shortcutModifier } from '$lib/shortcuts';
+	import { isLosslessExportFormat } from '$lib/export-formats';
 
 	let {
 		activeSection,
@@ -97,6 +98,11 @@
 	let exportTip = $derived(
 		!canDownload ? 'Export — process image first' : `Export result (${shortcutModifier}+S)`
 	);
+	let qualityLabel = $derived(
+		isLosslessExportFormat(magick.settings.imageFormat)
+			? 'Lossless'
+			: `${magick.settings.quality[0]}%`
+	);
 
 	let bodyEl = $state<HTMLElement | null>(null);
 	let lastSection: EditorSection | null = null;
@@ -155,9 +161,7 @@
 	<div class="mt-auto border-t border-divider bg-chrome p-4">
 		<div class="mb-3 flex items-center justify-between text-xs text-muted-foreground uppercase">
 			<span>Output format</span>
-			<span class="underline underline-offset-2"
-				>{magick.settings.imageFormat} {magick.settings.quality[0]}%</span
-			>
+			<span class="underline underline-offset-2">{magick.settings.imageFormat} {qualityLabel}</span>
 		</div>
 		<div class="flex flex-col gap-1.5">
 			<HoverTooltip label={processTip} side="top" triggerClass="w-full">
