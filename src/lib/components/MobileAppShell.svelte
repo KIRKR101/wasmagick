@@ -3,6 +3,7 @@
 	import MobileToolbar from './MobileToolbar.svelte';
 	import MobilePanel from './MobilePanel.svelte';
 	import ConfirmDialog from './ConfirmDialog.svelte';
+	import LargeFileDialog from './LargeFileDialog.svelte';
 	import ErrorDialog from './ErrorDialog.svelte';
 	import { IMAGE_FILE_ACCEPT } from '$lib/utils';
 	import type { MagickState } from '$lib/useMagick.svelte';
@@ -149,6 +150,14 @@
 		guard.requestClose(onClose);
 	}
 
+	function onLargeFileContinue() {
+		magick.dismissLargeFileWarning();
+	}
+	function onLargeFileClose() {
+		magick.dismissLargeFileWarning();
+		onClose();
+	}
+
 	function handleCompareStart() {
 		viewport?.pressCompareDown();
 		isComparing = viewport?.isCompareActive() ?? false;
@@ -289,4 +298,10 @@
 	kind="reset-all"
 	onConfirm={onResetConfirm}
 	onCancel={onResetCancel}
+/>
+
+<LargeFileDialog
+	warning={magick.largeFileWarning}
+	onContinue={onLargeFileContinue}
+	onClose={onLargeFileClose}
 />

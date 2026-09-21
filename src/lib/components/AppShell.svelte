@@ -4,6 +4,7 @@
 	import PropertiesPanel from './PropertiesPanel.svelte';
 	import StatusBar from './StatusBar.svelte';
 	import ConfirmDialog from './ConfirmDialog.svelte';
+	import LargeFileDialog from './LargeFileDialog.svelte';
 	import BuildDetailsDialog from './BuildDetailsDialog.svelte';
 	import { IMAGE_FILE_ACCEPT } from '$lib/utils';
 	import type { MagickState } from '$lib/useMagick.svelte';
@@ -108,6 +109,14 @@
 
 	function onCloseRequest() {
 		guard.requestClose(onClose);
+	}
+
+	function onLargeFileContinue() {
+		magick.dismissLargeFileWarning();
+	}
+	function onLargeFileClose() {
+		magick.dismissLargeFileWarning();
+		onClose();
 	}
 
 	let clearHistoryOpen = $state(false);
@@ -257,6 +266,12 @@
 	kind="reset-all"
 	onConfirm={onResetConfirm}
 	onCancel={onResetCancel}
+/>
+
+<LargeFileDialog
+	warning={magick.largeFileWarning}
+	onContinue={onLargeFileContinue}
+	onClose={onLargeFileClose}
 />
 
 {#if isElectron}

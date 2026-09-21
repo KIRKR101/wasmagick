@@ -250,6 +250,16 @@ export const DEFAULT_SETTINGS: MagickSettings = {
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
 export const MAX_FILE_SIZE_MB = MAX_FILE_SIZE / 1024 / 1024;
 
+/** Details for the Electron-only large-file advisory (see `largeFileWarning`). */
+export interface LargeFileWarning {
+	fileName: string;
+	sizeMB: number;
+}
+
+function isElectronEnv(): boolean {
+	return typeof window !== 'undefined' && (window as Window).wasmagick != null;
+}
+
 const RAW_INPUT_EXTENSIONS = new Set([
 	'3fr',
 	'arw',
@@ -524,6 +534,13 @@ export class MagickState {
 	 * wasm; only the in-browser preview is unavailable until then.
 	 */
 	originalPreviewFailed = $state(false);
+	/**
+	 * Electron-only advisory for files over the 50MB limit. Null when the
+	 * current source is within the limit (or when running on web, where the
+	 * limit remains a hard error). The shell renders a dialog from this;
+	 * dismissing keeps the loaded image, closing discards it.
+	 */
+	largeFileWarning = $state<LargeFileWarning | null>(null);
 	private _wasmInitPromise: Promise<void> | null = null;
 	settings = $state<MagickSettings>({
 		...DEFAULT_SETTINGS,
@@ -930,6 +947,10 @@ export class MagickState {
 		}
 
 		if (file.size > MAX_FILE_SIZE) {
+			// Electron routes large files through the native engine, so the
+			// limit is advisory there (surfaced via `largeFileWarning` after
+			// load). Web keeps the hard block.
+			if (isElectronEnv()) return { isValid: true };
 			return {
 				isValid: false,
 				error: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`
@@ -940,6 +961,11 @@ export class MagickState {
 		// `IMAGE_FILE_ACCEPT`) is allowed through; unreadable content surfaces
 		// as a load/process error instead.
 		return { isValid: true };
+	}
+
+	/** Dismiss the large-file advisory and keep the loaded image. */
+	dismissLargeFileWarning(): void {
+		this.largeFileWarning = null;
 	}
 
 	resetGeometry(): void {
@@ -1077,6 +1103,7 @@ export class MagickState {
 	async setSourceFile(file: File): Promise<boolean> {
 		this.hasError = false;
 		this.errorMessage = null;
+		this.largeFileWarning = null;
 
 		const validation = this.validateFile(file);
 		if (!validation.isValid) {
@@ -1138,6 +1165,12 @@ export class MagickState {
 
 			this.statsMessage = 'Ready';
 			this.hasUnsavedEdits = false;
+			if (file.size > MAX_FILE_SIZE && isElectronEnv()) {
+				this.largeFileWarning = {
+					fileName: file.name,
+					sizeMB: Math.round((file.size / 1024 / 1024) * 10) / 10
+				};
+			}
 			void this.prepareOriginalPreview(source, sourceRevision, fastDims);
 			return true;
 		} catch (error) {
@@ -1181,6 +1214,7 @@ export class MagickState {
 		this.exifError = null;
 		this.exifChecked = false;
 		this.originalPreviewFailed = false;
+		this.largeFileWarning = null;
 	}
 
 	private async prepareOriginalPreview(
