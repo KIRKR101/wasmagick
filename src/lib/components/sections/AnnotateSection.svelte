@@ -67,7 +67,7 @@
 						const blob = await font.blob();
 						const data = new Uint8Array(await blob.arrayBuffer());
 						const label = font.style ? `${font.family} ${font.style}` : font.family;
-						registerLocalFont(font.postscriptName, data, label);
+						await registerLocalFont(font.postscriptName, data, label);
 					} catch (err) {
 						console.warn(`Skipping font "${font.family}":`, err);
 					}
