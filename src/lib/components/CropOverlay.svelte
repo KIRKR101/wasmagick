@@ -554,7 +554,7 @@
 		<button
 			class="flex min-h-9 cursor-pointer items-center px-2 transition-colors hover:bg-muted focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {aspectPreset ===
 			preset.id
-				? 'bg-muted font-bold text-foreground'
+				? 'bg-muted font-semibold text-foreground'
 				: 'text-muted-foreground'}"
 			aria-pressed={aspectPreset === preset.id}
 			onclick={() => onAspectRatioChange(preset.id)}

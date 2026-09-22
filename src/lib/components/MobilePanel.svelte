@@ -264,7 +264,7 @@
 				onclick={onProcess}
 				disabled={!magick.wasmLoaded || !magick.sourceBytes}
 				class="mobile-action-btn primary {magick.isStale
-					? 'font-bold underline underline-offset-4'
+					? 'font-semibold underline underline-offset-4'
 					: ''}"
 				aria-label={!magick.sourceBytes
 					? 'Process — load an image first'

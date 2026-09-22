@@ -176,7 +176,7 @@
 						<div class="grid grid-cols-2 gap-2">
 							<div class="relative">
 								<span
-									class="absolute top-1/2 left-3 -translate-y-1/2 font-mono text-[11px] font-bold text-muted-foreground"
+									class="absolute top-1/2 left-3 -translate-y-1/2 font-mono text-[11px] font-semibold text-muted-foreground"
 									>W</span
 								>
 								<Input
@@ -193,7 +193,7 @@
 							</div>
 							<div class="relative">
 								<span
-									class="absolute top-1/2 left-3 -translate-y-1/2 font-mono text-[11px] font-bold text-muted-foreground"
+									class="absolute top-1/2 left-3 -translate-y-1/2 font-mono text-[11px] font-semibold text-muted-foreground"
 									>H</span
 								>
 								<Input
@@ -238,7 +238,7 @@
 		<div class="grid grid-cols-2 gap-2">
 			<div class="relative">
 				<span
-					class="absolute top-1/2 left-3 -translate-y-1/2 font-mono text-[11px] font-bold text-muted-foreground"
+					class="absolute top-1/2 left-3 -translate-y-1/2 font-mono text-[11px] font-semibold text-muted-foreground"
 					>W</span
 				>
 				<Input
@@ -251,7 +251,7 @@
 			</div>
 			<div class="relative">
 				<span
-					class="absolute top-1/2 left-3 -translate-y-1/2 font-mono text-[11px] font-bold text-muted-foreground"
+					class="absolute top-1/2 left-3 -translate-y-1/2 font-mono text-[11px] font-semibold text-muted-foreground"
 					>H</span
 				>
 				<Input
@@ -337,7 +337,7 @@
 				<div class="grid grid-cols-2 gap-2">
 					<div class="relative">
 						<span
-							class="absolute top-1/2 left-3 -translate-y-1/2 font-mono text-[11px] font-bold text-muted-foreground"
+							class="absolute top-1/2 left-3 -translate-y-1/2 font-mono text-[11px] font-semibold text-muted-foreground"
 							>X</span
 						>
 						<Input
@@ -350,7 +350,7 @@
 					</div>
 					<div class="relative">
 						<span
-							class="absolute top-1/2 left-3 -translate-y-1/2 font-mono text-[11px] font-bold text-muted-foreground"
+							class="absolute top-1/2 left-3 -translate-y-1/2 font-mono text-[11px] font-semibold text-muted-foreground"
 							>Y</span
 						>
 						<Input
@@ -401,7 +401,7 @@
 			<div class="grid grid-cols-2 gap-2">
 				<div class="relative">
 					<span
-						class="absolute top-1/2 left-3 -translate-y-1/2 font-mono text-[11px] font-bold text-muted-foreground"
+						class="absolute top-1/2 left-3 -translate-y-1/2 font-mono text-[11px] font-semibold text-muted-foreground"
 						>W</span
 					>
 					<Input
@@ -414,7 +414,7 @@
 				</div>
 				<div class="relative">
 					<span
-						class="absolute top-1/2 left-3 -translate-y-1/2 font-mono text-[11px] font-bold text-muted-foreground"
+						class="absolute top-1/2 left-3 -translate-y-1/2 font-mono text-[11px] font-semibold text-muted-foreground"
 						>H</span
 					>
 					<Input

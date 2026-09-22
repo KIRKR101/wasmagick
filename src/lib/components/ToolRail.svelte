@@ -295,7 +295,7 @@
 				onclick={() => onSectionChange(item.id)}
 				class="group flex w-full cursor-pointer items-center justify-between text-left transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {activeSection ===
 				item.id
-					? 'font-bold text-foreground'
+					? 'font-semibold text-foreground'
 					: 'text-muted-foreground'}"
 				aria-label="{item.label} (Alt+{item.shortcut})"
 				title="{item.label} (Alt+{item.shortcut})"
