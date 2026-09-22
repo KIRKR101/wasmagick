@@ -2,6 +2,7 @@
 	import type { MagickState } from '$lib/useMagick.svelte';
 	import type { HistoryState, SettingsDiffItem } from '$lib/hooks/useHistory.svelte';
 	import { formatBytes, formatDimensions } from '$lib/utils';
+	import { Trash2 } from 'lucide-svelte';
 	import UndoRedoButtons from '../controls/UndoRedoButtons.svelte';
 
 	let {
@@ -60,8 +61,9 @@
 			disabled={history.count === 0}
 			class="cursor-pointer border border-divider px-2 py-1.5 font-mono text-[11px] uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 			aria-label="Clear history"
+			title="Clear history"
 		>
-			[X]
+			<Trash2 class="size-3.5" aria-hidden="true" />
 		</button>
 	</div>
 
@@ -71,8 +73,8 @@
 				onclick={() => (diffMode = 'relative')}
 				class="flex-1 cursor-pointer border px-1.5 py-1 font-mono text-[11px] uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {diffMode ===
 				'relative'
-					? 'border-foreground/50 bg-muted/50 text-foreground'
-					: 'border-foreground/20 text-muted-foreground/60 hover:text-muted-foreground'}"
+					? 'border-divider bg-muted/50 text-foreground'
+					: 'border-divider text-muted-foreground/60 hover:border-foreground/50 hover:text-muted-foreground'}"
 			>
 				Since last
 			</button>
@@ -80,8 +82,8 @@
 				onclick={() => (diffMode = 'absolute')}
 				class="flex-1 cursor-pointer border px-1.5 py-1 font-mono text-[11px] uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {diffMode ===
 				'absolute'
-					? 'border-foreground/50 bg-muted/50 text-foreground'
-					: 'border-foreground/20 text-muted-foreground/60 hover:text-muted-foreground'}"
+					? 'border-divider bg-muted/50 text-foreground'
+					: 'border-divider text-muted-foreground/60 hover:border-foreground/50 hover:text-muted-foreground'}"
 			>
 				From original
 			</button>
@@ -103,8 +105,8 @@
 						<button
 							onclick={() => jump(entry.id, entry.label)}
 							class="flex w-full flex-col border text-left transition-colors {isCurrent
-								? 'border-foreground bg-muted/50'
-								: 'border-divider bg-transparent hover:border-foreground/60 hover:bg-muted/30'}"
+								? 'border-divider bg-muted/50'
+								: 'border-divider bg-transparent hover:border-foreground/50 hover:bg-muted/30'}"
 							aria-current={isCurrent}
 						>
 							<div class="flex items-center gap-2.5 px-2 py-1.5">
