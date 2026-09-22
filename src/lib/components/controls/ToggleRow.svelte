@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CaretRight from 'phosphor-svelte/lib/CaretRight';
 	import { cn } from '$lib/utils';
 
 	let {
@@ -44,11 +45,8 @@
 		{/if}
 	</span>
 	{#if chevron}
-		<span
-			class="font-mono text-[11px] text-muted-foreground transition-transform {checked
-				? 'rotate-90'
-				: ''}"
-			aria-hidden="true">[>]</span
+		<span class="inline-flex text-muted-foreground" aria-hidden="true"
+			><CaretRight class="size-3.5 transition-transform {checked ? 'rotate-90' : ''}" /></span
 		>
 	{/if}
 </button>

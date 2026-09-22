@@ -46,7 +46,7 @@
 	);
 </script>
 
-<div class="space-y-5">
+<div class="space-y-5 overflow-x-hidden">
 	<SectionCard
 		title="Output"
 		dirty={magick.settings.imageFormat !== DEFAULT_SETTINGS.imageFormat ||
