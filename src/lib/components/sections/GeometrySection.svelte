@@ -188,11 +188,11 @@
 			</div>
 
 			<!-- Mode tabs -->
-			<div class="flex h-8 divide-x divide-divider border border-divider" role="group" aria-label="Crop mode">
+			<div class="relative flex h-8 overflow-hidden border border-divider" role="group" aria-label="Crop mode">
 				<button
 					type="button"
 					aria-pressed={cropInputMode === 'visual'}
-					class="h-full flex-1 cursor-pointer px-2.5 py-0 font-mono text-[11px] whitespace-nowrap uppercase transition-colors duration-75 outline-none select-none focus-visible:ring-1 focus-visible:ring-ring/50 dark:hover:bg-muted/50 {cropInputMode ===
+					class="h-full flex-1 cursor-pointer px-2.5 py-0 font-mono text-[11px] whitespace-nowrap uppercase transition-colors duration-75 outline-none select-none focus-visible:ring-1 focus-visible:ring-ring/50 {cropInputMode ===
 					'visual'
 						? 'bg-muted/50 font-medium text-foreground'
 						: 'bg-transparent text-muted-foreground'}"
@@ -212,7 +212,7 @@
 				<button
 					type="button"
 					aria-pressed={cropInputMode === 'manual'}
-					class="h-full flex-1 cursor-pointer px-2.5 py-0 font-mono text-[11px] whitespace-nowrap uppercase transition-colors duration-75 outline-none select-none focus-visible:ring-1 focus-visible:ring-ring/50 dark:hover:bg-muted/50 {cropInputMode ===
+					class="h-full flex-1 cursor-pointer px-2.5 py-0 font-mono text-[11px] whitespace-nowrap uppercase transition-colors duration-75 outline-none select-none focus-visible:ring-1 focus-visible:ring-ring/50 {cropInputMode ===
 					'manual'
 						? 'bg-muted/50 font-medium text-foreground'
 						: 'bg-transparent text-muted-foreground'}"
@@ -227,6 +227,10 @@
 				>
 					Gravity
 				</button>
+				<div
+					class="pointer-events-none absolute top-0 bottom-0 left-1/2 w-px -translate-x-1/2 bg-divider"
+					aria-hidden="true"
+				></div>
 			</div>
 
 			{#if cropInputMode === 'visual'}
