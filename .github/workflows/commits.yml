@@ -50,6 +50,10 @@ jobs:
             subjects="$(git log --no-merges --format=%s "$range")"
           elif [[ "$BEFORE" == "0000000000000000000000000000000000000000" ]]; then
             subjects="$(git show -s --no-merges --format=%s "$AFTER")"
+          elif ! git rev-parse --verify --quiet "$BEFORE^{commit}" >/dev/null || \
+            ! git merge-base --is-ancestor "$BEFORE" "$AFTER"; then
+            echo "Non-fast-forward or missing-base push; checking the resulting history." >&2
+            subjects="$(git log --no-merges --format=%s "$AFTER")"
           else
             subjects="$(git log --no-merges --format=%s "$BEFORE..$AFTER")"
           fi
