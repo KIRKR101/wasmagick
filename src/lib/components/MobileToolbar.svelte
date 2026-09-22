@@ -91,7 +91,7 @@
 				onpointercancel={onCompareEnd}
 				onpointerleave={() => onCompareEnd()}
 				disabled={!magick.processedImageUrl}
-				class="mobile-btn-sm {isComparing ? 'bg-muted text-foreground' : ''}"
+				class="mobile-btn-sm {isComparing ? 'bg-muted/50 text-foreground' : ''}"
 				aria-label="Hold to compare"
 				aria-pressed={isComparing}
 			>
@@ -100,7 +100,7 @@
 			<button
 				onclick={onToggleSplitCompare}
 				disabled={!magick.processedImageUrl}
-				class="mobile-btn-sm {splitMode ? 'bg-muted text-foreground' : ''}"
+				class="mobile-btn-sm {splitMode ? 'bg-muted/50 text-foreground' : ''}"
 				aria-label="Split compare"
 				aria-pressed={splitMode}
 			>

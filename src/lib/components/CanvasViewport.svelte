@@ -1053,7 +1053,7 @@
 						}}
 						disabled={!processedImageUrl}
 						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 {compareActive
-							? 'bg-muted text-foreground'
+							? 'bg-muted/50 text-foreground'
 							: ''}"
 						aria-pressed={compareActive}
 						aria-label={processedImageUrl
@@ -1071,7 +1071,7 @@
 						onclick={toggleSplitCompare}
 						disabled={!canSplit}
 						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 {splitMode
-							? 'bg-muted text-foreground'
+							? 'bg-muted/50 text-foreground'
 							: ''}"
 						aria-pressed={splitMode}
 						aria-label={canSplit ? 'Split compare (B)' : 'Split unavailable — process image first'}

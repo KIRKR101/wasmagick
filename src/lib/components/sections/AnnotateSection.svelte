@@ -246,7 +246,7 @@
 						onclick={() => onAnnotationPlacementChange(!annotationPlacementActive)}
 						aria-pressed={annotationPlacementActive}
 						class="shrink-0 cursor-pointer border border-foreground/40 px-2 py-1.5 font-mono text-[11px] tracking-wide text-muted-foreground uppercase transition-colors hover:border-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 {annotationPlacementActive
-							? 'bg-foreground text-background hover:bg-foreground hover:text-background'
+							? 'bg-muted text-background hover:text-background'
 							: ''}"
 					>
 						{annotationPlacementActive ? 'DONE' : 'PLACE'}
