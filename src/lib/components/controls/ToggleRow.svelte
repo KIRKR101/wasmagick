@@ -7,6 +7,7 @@
 		description = '',
 		checked = $bindable(),
 		chevron = false,
+		disabled = false,
 		class: className
 	}: {
 		id: string;
@@ -14,6 +15,7 @@
 		description?: string;
 		checked: boolean;
 		chevron?: boolean;
+		disabled?: boolean;
 		class?: string;
 	} = $props();
 </script>
@@ -21,8 +23,9 @@
 <button
 	type="button"
 	{id}
+	{disabled}
 	class={cn(
-		'flex w-full cursor-pointer items-center justify-between gap-3 px-1 py-1.5 text-left transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none',
+		'flex w-full cursor-pointer items-center justify-between gap-3 px-1 py-1.5 text-left transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50',
 		className
 	)}
 	onclick={() => (checked = !checked)}

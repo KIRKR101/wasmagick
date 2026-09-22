@@ -12,12 +12,14 @@
 	import type { MagickState } from '$lib/useMagick.svelte';
 	import ToggleRow from '$lib/components/controls/ToggleRow.svelte';
 	import TruncatedText from '$lib/components/controls/TruncatedText.svelte';
+	import SectionCard from '$lib/components/controls/SectionCard.svelte';
 	import {
 		isLosslessExportFormat,
 		isPopularExportFormat,
 		type ExportFormat
 	} from '$lib/export-formats';
 	import { formatDimensions } from '$lib/utils';
+	import { DEFAULT_SETTINGS } from '$lib/useMagick.svelte';
 	let { magick } = $props<{ magick: MagickState }>();
 
 	let isLossless = $derived(isLosslessExportFormat(magick.settings.imageFormat));
@@ -45,63 +47,105 @@
 </script>
 
 <div class="space-y-5">
-	<div class="grid grid-cols-2 gap-3">
-		<div class="flex flex-col gap-2">
-			<span class="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase"
-				>Format</span
-			>
-			<Select type="single" bind:value={magick.settings.imageFormat}>
-				<SelectTrigger class="h-9 w-full font-mono text-xs uppercase">
-					{magick.settings.imageFormat}
-				</SelectTrigger>
-				<SelectContent>
-					<SelectGroup>
-						{#each popularFormats as format}
-							<SelectItem value={format.value}>{format.label}</SelectItem>
-						{/each}
-					</SelectGroup>
-					{#if otherFormats.length > 0}
-						<SelectSeparator />
-						<SelectGroup>
-							<SelectLabel>All formats</SelectLabel>
-							{#each otherFormats as format}
-								<SelectItem value={format.value}>{format.label}</SelectItem>
-							{/each}
-						</SelectGroup>
-					{/if}
-				</SelectContent>
-			</Select>
-		</div>
-		<div class="flex flex-col gap-2">
-			<div class="flex h-4 items-center justify-between">
-				<span class="text-[11px] tracking-wide text-muted-foreground uppercase">Quality</span>
-				<span class="font-mono text-xs text-foreground tabular-nums">
-					{#if isLossless}
-						<span class="text-muted-foreground">Lossless</span>
-					{:else}
-						{magick.settings.quality[0]}%
-					{/if}
-				</span>
+	<SectionCard
+		title="Output"
+		dirty={magick.settings.imageFormat !== DEFAULT_SETTINGS.imageFormat ||
+			magick.settings.quality[0] !== DEFAULT_SETTINGS.quality[0] ||
+			magick.settings.stripMeta}
+	>
+		<div class="space-y-3">
+			<div class="grid grid-cols-2 gap-3">
+				<div class="flex flex-col gap-2">
+					<span class="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase"
+						>Format</span
+					>
+					<Select type="single" bind:value={magick.settings.imageFormat}>
+						<SelectTrigger class="h-9 w-full font-mono text-xs uppercase">
+							{magick.settings.imageFormat}
+						</SelectTrigger>
+						<SelectContent>
+							<SelectGroup>
+								{#each popularFormats as format}
+									<SelectItem value={format.value}>{format.label}</SelectItem>
+								{/each}
+							</SelectGroup>
+							{#if otherFormats.length > 0}
+								<SelectSeparator />
+								<SelectGroup>
+									<SelectLabel>All formats</SelectLabel>
+									{#each otherFormats as format}
+										<SelectItem value={format.value}>{format.label}</SelectItem>
+									{/each}
+								</SelectGroup>
+							{/if}
+						</SelectContent>
+					</Select>
+				</div>
+				<div class="flex flex-col gap-2">
+					<div class="flex h-4 items-center justify-between">
+						<span class="text-[11px] tracking-wide text-muted-foreground uppercase">Quality</span>
+						<span class="font-mono text-xs text-foreground tabular-nums">
+							{#if isLossless}
+								<span class="text-muted-foreground">Lossless</span>
+							{:else}
+								{magick.settings.quality[0]}%
+							{/if}
+						</span>
+					</div>
+					<div class="flex h-9 items-center">
+						<Slider
+							type="multiple"
+							bind:value={magick.settings.quality}
+							min={1}
+							max={100}
+							step={1}
+							disabled={isLossless}
+						/>
+					</div>
+				</div>
 			</div>
-			<div class="flex h-9 items-center">
-				<Slider
-					type="multiple"
-					bind:value={magick.settings.quality}
-					min={1}
-					max={100}
-					step={1}
-					disabled={isLossless}
+
+			<div class="border-t border-foreground/10 pt-3">
+				<ToggleRow
+					id="exp-strip-meta"
+					label="Strip Metadata"
+					description="Remove EXIF / profiles"
+					bind:checked={magick.settings.stripMeta}
 				/>
 			</div>
 		</div>
-	</div>
+	</SectionCard>
 
-	<ToggleRow
-		id="exp-strip-meta"
-		label="Strip Metadata"
-		description="Remove EXIF / profiles"
-		bind:checked={magick.settings.stripMeta}
-	/>
+	<!-- Output preview -->
+	{#if magick.processedImageUrl}
+		<div class="border border-divider bg-transparent p-3">
+			<div class="mb-2 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+				Result
+			</div>
+			<div class="space-y-1 font-mono text-xs">
+				<div class="flex justify-between">
+					<span class="text-muted-foreground">Dimensions</span>
+					<span class="text-foreground">
+						{formatDimensions(magick.processedWidth, magick.processedHeight)}
+					</span>
+				</div>
+				<div class="flex justify-between">
+					<span class="text-muted-foreground">Format</span>
+					<span class="text-foreground uppercase">{magick.processedImageFormat}</span>
+				</div>
+				{#if magick.statsMessage}
+					<div class="flex justify-between">
+						<span class="text-muted-foreground">Process time</span>
+						<span class="text-foreground">{magick.processedImageTime}ms</span>
+					</div>
+					<div class="flex justify-between">
+						<span class="text-muted-foreground">File size</span>
+						<span class="text-foreground">{magick.processedImageDelta}</span>
+					</div>
+				{/if}
+			</div>
+		</div>
+	{/if}
 
 	<ToggleRow id="exp-show-exif" label="Show EXIF" chevron bind:checked={showExif} />
 	{#if showExif}
@@ -141,37 +185,6 @@
 					<span class="text-muted-foreground">No EXIF data</span>
 				</div>
 			{/if}
-		</div>
-	{/if}
-
-	<!-- Output preview -->
-	{#if magick.processedImageUrl}
-		<div class="border border-divider bg-transparent p-3">
-			<div class="mb-2 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
-				Output
-			</div>
-			<div class="space-y-1 font-mono text-xs">
-				<div class="flex justify-between">
-					<span class="text-muted-foreground">Dimensions</span>
-					<span class="text-foreground">
-						{formatDimensions(magick.processedWidth, magick.processedHeight)}
-					</span>
-				</div>
-				<div class="flex justify-between">
-					<span class="text-muted-foreground">Format</span>
-					<span class="text-foreground uppercase">{magick.processedImageFormat}</span>
-				</div>
-				{#if magick.statsMessage}
-					<div class="flex justify-between">
-						<span class="text-muted-foreground">Process time</span>
-						<span class="text-foreground">{magick.processedImageTime}ms</span>
-					</div>
-					<div class="flex justify-between">
-						<span class="text-muted-foreground">File size</span>
-						<span class="text-foreground">{magick.processedImageDelta}</span>
-					</div>
-				{/if}
-			</div>
 		</div>
 	{/if}
 </div>

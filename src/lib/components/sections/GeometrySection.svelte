@@ -50,127 +50,6 @@
 </script>
 
 <div class="space-y-5">
-	<!-- Resize -->
-	<SectionCard
-		title="Resize"
-		dirty={magick.settings.resizeW != null || magick.settings.resizeH != null}
-	>
-		<div class="grid grid-cols-2 gap-2">
-			<div class="relative">
-				<span
-					class="absolute top-1/2 left-3 -translate-y-1/2 font-mono text-[11px] font-bold text-muted-foreground"
-					>W</span
-				>
-				<Input
-					type="number"
-					bind:value={magick.settings.resizeW}
-					placeholder="Auto"
-					min="0"
-					class="h-9 pl-8 font-mono text-xs"
-				/>
-			</div>
-			<div class="relative">
-				<span
-					class="absolute top-1/2 left-3 -translate-y-1/2 font-mono text-[11px] font-bold text-muted-foreground"
-					>H</span
-				>
-				<Input
-					type="number"
-					bind:value={magick.settings.resizeH}
-					placeholder="Auto"
-					min="0"
-					class="h-9 pl-8 font-mono text-xs"
-				/>
-			</div>
-		</div>
-	</SectionCard>
-
-	<!-- Rotate + Transform + Auto Orient -->
-	<SectionCard
-		title="Rotate"
-		dirty={magick.settings.rotate !== '0' ||
-			magick.settings.flip ||
-			magick.settings.flop ||
-			magick.settings.autoOrient !== true}
-	>
-		<div class="space-y-3">
-			<div class="grid grid-cols-2 gap-3">
-				<Select type="single" bind:value={magick.settings.rotate}>
-					<SelectTrigger class="h-9 w-full font-mono text-xs">
-						{ROTATE_OPTIONS.find((o) => o.value === magick.settings.rotate)?.label ??
-							magick.settings.rotate}
-					</SelectTrigger>
-					<SelectContent>
-						{#each ROTATE_OPTIONS as opt (opt.value)}
-							<SelectItem value={opt.value}>{opt.label}</SelectItem>
-						{/each}
-					</SelectContent>
-				</Select>
-				<div class="grid h-9 grid-cols-2 gap-1.5">
-					<button
-						type="button"
-						class="group flex cursor-pointer items-center justify-center gap-1 border border-divider bg-transparent px-2 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-						onclick={() => (magick.settings.flip = !magick.settings.flip)}
-					>
-						<span class="font-mono text-[11px] whitespace-pre"
-							>[{magick.settings.flip ? '*' : ' '}]</span
-						>
-						<span class="font-mono text-[11px] uppercase group-hover:underline">Flip</span>
-					</button>
-					<button
-						type="button"
-						class="group flex cursor-pointer items-center justify-center gap-1 border border-divider bg-transparent px-2 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-						onclick={() => (magick.settings.flop = !magick.settings.flop)}
-					>
-						<span class="font-mono text-[11px] whitespace-pre"
-							>[{magick.settings.flop ? '*' : ' '}]</span
-						>
-						<span class="font-mono text-[11px] uppercase group-hover:underline">Flop</span>
-					</button>
-				</div>
-			</div>
-			<ToggleRow
-				id="geo-auto-orient"
-				label="Auto Orient"
-				description="Apply EXIF orientation"
-				bind:checked={magick.settings.autoOrient}
-			/>
-		</div>
-	</SectionCard>
-
-	<!-- Deskew / Trim -->
-	<SectionCard
-		title="Deskew / Trim"
-		dirty={magick.settings.deskewThreshold[0] > 0 ||
-			magick.settings.deskewAutoCrop ||
-			magick.settings.trimEdges}
-	>
-		<div class="space-y-3">
-			<SliderRow
-				label="Threshold"
-				bind:value={magick.settings.deskewThreshold}
-				suffix="%"
-				min={0}
-				max={100}
-			/>
-			<ToggleRow
-				id="geo-deskew-crop"
-				label="Auto Crop"
-				description="Trim after straightening"
-				bind:checked={magick.settings.deskewAutoCrop}
-			/>
-			<!-- Trim -->
-			<div class="border-t border-foreground/10 pt-3">
-				<ToggleRow
-					id="geo-trim"
-					label="Trim Edges"
-					description="Remove boring borders"
-					bind:checked={magick.settings.trimEdges}
-				/>
-			</div>
-		</div>
-	</SectionCard>
-
 	<!-- Crop -->
 	<SectionCard
 		title="Crop"
@@ -351,21 +230,21 @@
 		</div>
 	</SectionCard>
 
-	<!-- Shave -->
+	<!-- Resize -->
 	<SectionCard
-		title="Shave"
-		dirty={magick.settings.shaveX != null || magick.settings.shaveY != null}
+		title="Resize"
+		dirty={magick.settings.resizeW != null || magick.settings.resizeH != null}
 	>
 		<div class="grid grid-cols-2 gap-2">
 			<div class="relative">
 				<span
 					class="absolute top-1/2 left-3 -translate-y-1/2 font-mono text-[11px] font-bold text-muted-foreground"
-					>X</span
+					>W</span
 				>
 				<Input
 					type="number"
-					bind:value={magick.settings.shaveX}
-					placeholder="0"
+					bind:value={magick.settings.resizeW}
+					placeholder="Auto"
 					min="0"
 					class="h-9 pl-8 font-mono text-xs"
 				/>
@@ -373,12 +252,12 @@
 			<div class="relative">
 				<span
 					class="absolute top-1/2 left-3 -translate-y-1/2 font-mono text-[11px] font-bold text-muted-foreground"
-					>Y</span
+					>H</span
 				>
 				<Input
 					type="number"
-					bind:value={magick.settings.shaveY}
-					placeholder="0"
+					bind:value={magick.settings.resizeH}
+					placeholder="Auto"
 					min="0"
 					class="h-9 pl-8 font-mono text-xs"
 				/>
@@ -386,12 +265,139 @@
 		</div>
 	</SectionCard>
 
-	<!-- Canvas Extent -->
+	<!-- Orient: EXIF auto-orient runs first, then manual rotate/flip -->
 	<SectionCard
-		title="Canvas Extent"
-		dirty={magick.settings.extentW != null || magick.settings.extentH != null}
+		title="Orient"
+		dirty={magick.settings.rotate !== '0' ||
+			magick.settings.flip ||
+			magick.settings.flop ||
+			magick.settings.autoOrient !== true}
 	>
 		<div class="space-y-3">
+			<ToggleRow
+				id="geo-auto-orient"
+				label="Auto Orient"
+				description="Apply EXIF orientation first"
+				bind:checked={magick.settings.autoOrient}
+			/>
+			<div class="grid grid-cols-2 gap-3 border-t border-foreground/10 pt-3">
+				<Select type="single" bind:value={magick.settings.rotate}>
+					<SelectTrigger class="h-9 w-full font-mono text-xs">
+						{ROTATE_OPTIONS.find((o) => o.value === magick.settings.rotate)?.label ??
+							magick.settings.rotate}
+					</SelectTrigger>
+					<SelectContent>
+						{#each ROTATE_OPTIONS as opt (opt.value)}
+							<SelectItem value={opt.value}>{opt.label}</SelectItem>
+						{/each}
+					</SelectContent>
+				</Select>
+				<div class="grid h-9 grid-cols-2 gap-1.5">
+					<button
+						type="button"
+						class="group flex cursor-pointer items-center justify-center gap-1 border border-divider bg-transparent px-2 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+						onclick={() => (magick.settings.flip = !magick.settings.flip)}
+					>
+						<span class="font-mono text-[11px] whitespace-pre"
+							>[{magick.settings.flip ? '*' : ' '}]</span
+						>
+						<span class="font-mono text-[11px] uppercase group-hover:underline">Flip</span>
+					</button>
+					<button
+						type="button"
+						class="group flex cursor-pointer items-center justify-center gap-1 border border-divider bg-transparent px-2 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+						onclick={() => (magick.settings.flop = !magick.settings.flop)}
+					>
+						<span class="font-mono text-[11px] whitespace-pre"
+							>[{magick.settings.flop ? '*' : ' '}]</span
+						>
+						<span class="font-mono text-[11px] uppercase group-hover:underline">Flop</span>
+					</button>
+				</div>
+			</div>
+		</div>
+	</SectionCard>
+
+	<!-- Clean edges: trim + shave share one intent -->
+	<SectionCard
+		title="Clean Edges"
+		dirty={magick.settings.trimEdges ||
+			magick.settings.shaveX != null ||
+			magick.settings.shaveY != null}
+	>
+		<div class="space-y-3">
+			<ToggleRow
+				id="geo-trim"
+				label="Trim Edges"
+				description="Remove boring borders"
+				bind:checked={magick.settings.trimEdges}
+			/>
+			<div class="border-t border-foreground/10 pt-3">
+				<div class="mb-1.5 font-mono text-[11px] text-muted-foreground uppercase">Shave (px)</div>
+				<div class="grid grid-cols-2 gap-2">
+					<div class="relative">
+						<span
+							class="absolute top-1/2 left-3 -translate-y-1/2 font-mono text-[11px] font-bold text-muted-foreground"
+							>X</span
+						>
+						<Input
+							type="number"
+							bind:value={magick.settings.shaveX}
+							placeholder="0"
+							min="0"
+							class="h-9 pl-8 font-mono text-xs"
+						/>
+					</div>
+					<div class="relative">
+						<span
+							class="absolute top-1/2 left-3 -translate-y-1/2 font-mono text-[11px] font-bold text-muted-foreground"
+							>Y</span
+						>
+						<Input
+							type="number"
+							bind:value={magick.settings.shaveY}
+							placeholder="0"
+							min="0"
+							class="h-9 pl-8 font-mono text-xs"
+						/>
+					</div>
+				</div>
+			</div>
+		</div>
+	</SectionCard>
+
+	<!-- Straighten: niche auto deskew, runs last in the pipeline -->
+	<SectionCard
+		title="Straighten"
+		dirty={magick.settings.deskewThreshold[0] > 0}
+	>
+		<div class="space-y-3">
+			<SliderRow
+				label="Deskew Threshold"
+				bind:value={magick.settings.deskewThreshold}
+				suffix="%"
+				min={0}
+				max={100}
+			/>
+			<ToggleRow
+				id="geo-deskew-crop"
+				label="Auto Crop"
+				description="Trim after straightening"
+				bind:checked={magick.settings.deskewAutoCrop}
+				disabled={magick.settings.deskewThreshold[0] === 0}
+			/>
+		</div>
+	</SectionCard>
+
+	<!-- Canvas: extent + border run before deskew in the pipeline -->
+	<SectionCard
+		title="Canvas"
+		dirty={magick.settings.extentW != null ||
+			magick.settings.extentH != null ||
+			magick.settings.borderSize[0] > 0}
+	>
+		<div class="space-y-3">
+			<div class="mb-1.5 font-mono text-[11px] text-muted-foreground uppercase">Extent</div>
 			<div class="grid grid-cols-2 gap-2">
 				<div class="relative">
 					<span
@@ -448,36 +454,35 @@
 					>
 				</div>
 			</div>
+			<div class="border-t border-foreground/10 pt-3">
+				<div class="mb-1.5 font-mono text-[11px] text-muted-foreground uppercase">Border</div>
+				<div class="flex items-end gap-3">
+					<div class="flex-1">
+						<SliderRow
+							label="Size"
+							bind:value={magick.settings.borderSize}
+							suffix="px"
+							min={0}
+							max={50}
+						/>
+					</div>
+					<div class="flex items-center gap-1.5">
+						<div
+							class="relative h-7 w-7 shrink-0 overflow-hidden border border-divider transition-all hover:border-foreground"
+						>
+							<input
+								type="color"
+								bind:value={magick.settings.borderColor}
+								aria-label="Border color"
+								class="absolute inset-0 -top-1/2 -left-1/2 h-[200%] w-[200%] cursor-pointer border-0 p-0"
+							/>
+						</div>
+						<span class="font-mono text-[11px] text-muted-foreground uppercase"
+							>{magick.settings.borderColor}</span
+						>
+					</div>
+				</div>
+			</div>
 		</div></SectionCard
 	>
-
-	<!-- Border -->
-	<SectionCard title="Border" dirty={magick.settings.borderSize[0] > 0}>
-		<div class="flex items-end gap-3">
-			<div class="flex-1">
-				<SliderRow
-					label="Size"
-					bind:value={magick.settings.borderSize}
-					suffix="px"
-					min={0}
-					max={50}
-				/>
-			</div>
-			<div class="flex items-center gap-1.5">
-				<div
-					class="relative h-7 w-7 shrink-0 overflow-hidden border border-divider transition-all hover:border-foreground"
-				>
-					<input
-						type="color"
-						bind:value={magick.settings.borderColor}
-						aria-label="Border color"
-						class="absolute inset-0 -top-1/2 -left-1/2 h-[200%] w-[200%] cursor-pointer border-0 p-0"
-					/>
-				</div>
-				<span class="font-mono text-[11px] text-muted-foreground uppercase"
-					>{magick.settings.borderColor}</span
-				>
-			</div>
-		</div>
-	</SectionCard>
 </div>

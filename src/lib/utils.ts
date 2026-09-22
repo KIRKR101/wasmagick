@@ -1,4 +1,5 @@
 import type { MagickSettings } from './types';
+import { DEFAULT_SETTINGS } from './useMagick.svelte';
 
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -50,7 +51,6 @@ export function isGeoDirty(s: MagickSettings): boolean {
 		s.extentW != null ||
 		s.extentH != null ||
 		s.deskewThreshold[0] > 0 ||
-		s.deskewAutoCrop ||
 		s.autoOrient !== true ||
 		s.shaveX != null ||
 		s.shaveY != null
@@ -104,7 +104,11 @@ export function isFiltersDirty(s: MagickSettings): boolean {
 }
 
 export function isExportDirty(s: MagickSettings): boolean {
-	return s.imageFormat !== 'WebP' || s.quality[0] !== 85 || s.stripMeta;
+	return (
+		s.imageFormat !== DEFAULT_SETTINGS.imageFormat ||
+		s.quality[0] !== DEFAULT_SETTINGS.quality[0] ||
+		s.stripMeta
+	);
 }
 
 export function isAnnotateDirty(s: MagickSettings): boolean {
@@ -117,8 +121,7 @@ export function isAnnotateDirty(s: MagickSettings): boolean {
 		s.annotateOffsetX !== 0 ||
 		s.annotateOffsetY !== 0 ||
 		s.annotateAngle[0] !== 0 ||
-		s.annotateStroke ||
-		s.annotateStrokeWidth[0] !== 1
+		s.annotateStroke
 	);
 }
 

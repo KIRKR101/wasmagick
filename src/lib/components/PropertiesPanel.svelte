@@ -52,18 +52,18 @@
 	> = {
 		geometry: {
 			title: 'Geometry',
-			subtitle: 'Size · rotation · canvas',
+			subtitle: 'Crop · resize · orient · canvas',
 			reset: () => magick.resetGeometry()
 		},
-		color: { title: 'Color', subtitle: 'Tone · levels · space', reset: () => magick.resetColor() },
+		color: { title: 'Color', subtitle: 'Tone · thresholds · curve · space', reset: () => magick.resetColor() },
 		filters: {
 			title: 'Filters',
-			subtitle: 'Effects · blur · sharpen · quantize',
+			subtitle: 'Effects · blur · noise · LUT · quantize',
 			reset: () => magick.resetFilters()
 		},
 		annotate: {
 			title: 'Annotate',
-			subtitle: 'Text · overlay · caption',
+			subtitle: 'Text · style · placement',
 			reset: () => magick.resetAnnotate()
 		},
 		export: {

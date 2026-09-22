@@ -55,7 +55,7 @@
 </script>
 
 <div class="space-y-5">
-	<!-- Effect preset -->
+	<!-- Effect preset: most-used creative entry point -->
 	<div class="space-y-2">
 		<span class="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase"
 			>Effect Preset</span
@@ -137,11 +137,20 @@
 					/>
 				{:else if magick.settings.effect === 'bilateralBlur'}
 					<SliderRow label="Width" bind:value={magick.settings.bilateralWidth} min={0} max={20} />
+					<SliderRow label="Height" bind:value={magick.settings.bilateralHeight} min={0} max={20} />
 					<SliderRow
-						label="Height"
-						bind:value={magick.settings.bilateralHeight}
-						min={0}
-						max={20}
+						label="Intensity Sigma"
+						bind:value={magick.settings.bilateralIntensitySigma}
+						min={0.1}
+						max={10}
+						step={0.1}
+					/>
+					<SliderRow
+						label="Spatial Sigma"
+						bind:value={magick.settings.bilateralSpatialSigma}
+						min={0.1}
+						max={10}
+						step={0.1}
 						class="pb-1"
 					/>
 				{:else if ['grayscale', 'negate'].includes(magick.settings.effect as string)}
@@ -153,103 +162,108 @@
 		</SectionCard>
 	{/if}
 
-	<!-- Blur + Sharpen -->
+	<!-- Blur / Sharpen: all blur ops merged, pipeline order -->
 	<SectionCard
 		title="Blur / Sharpen"
-		dirty={magick.settings.blur[0] > 0 || magick.settings.sharpen[0] > 0}
-	>
-		<div class="grid grid-cols-2 gap-3 pb-1">
-			<SliderRow label="Blur" bind:value={magick.settings.blur} min={0} max={20} step={0.5} />
-			<SliderRow label="Sharpen" bind:value={magick.settings.sharpen} min={0} max={10} step={0.5} />
-		</div>
-	</SectionCard>
-
-	<!-- Adaptive Sharpen / Blur -->
-	<SectionCard
-		title="Adaptive Sharpen / Blur"
-		dirty={magick.settings.adaptiveSharpenRadius[0] > 0 ||
+		dirty={magick.settings.blur[0] > 0 ||
+			magick.settings.sharpen[0] > 0 ||
+			magick.settings.gaussianBlurRadius[0] > 0 ||
+			magick.settings.motionBlurRadius[0] > 0 ||
+			magick.settings.adaptiveSharpenRadius[0] > 0 ||
 			magick.settings.adaptiveBlurRadius[0] > 0}
 	>
 		<div class="space-y-3">
-			<SliderRow
-				label="Sharpen Radius"
-				bind:value={magick.settings.adaptiveSharpenRadius}
-				min={0}
-				max={10}
-				step={0.5}
-			/>
-			<SliderRow
-				label="Sharpen Sigma"
-				bind:value={magick.settings.adaptiveSharpenSigma}
-				min={0.1}
-				max={5}
-				step={0.1}
-				disabled={magick.settings.adaptiveSharpenRadius[0] === 0}
-			/>
-			<SliderRow
-				label="Blur Radius"
-				bind:value={magick.settings.adaptiveBlurRadius}
-				min={0}
-				max={10}
-				step={0.5}
-			/>
-			<SliderRow
-				label="Blur Sigma"
-				bind:value={magick.settings.adaptiveBlurSigma}
-				min={0.1}
-				max={5}
-				step={0.1}
-				disabled={magick.settings.adaptiveBlurRadius[0] === 0}
-				class="pb-1"
-			/>
-		</div>
-	</SectionCard>
+			<div class="grid grid-cols-2 gap-3">
+				<SliderRow label="Blur" bind:value={magick.settings.blur} min={0} max={20} step={0.5} />
+				<SliderRow label="Sharpen" bind:value={magick.settings.sharpen} min={0} max={10} step={0.5} />
+			</div>
 
-	<!-- Advanced Blur -->
-	<SectionCard
-		title="Advanced Blur"
-		dirty={magick.settings.gaussianBlurRadius[0] > 0 || magick.settings.motionBlurRadius[0] > 0}
-	>
-		<div class="space-y-3">
-			<SliderRow
-				label="Gaussian Radius"
-				bind:value={magick.settings.gaussianBlurRadius}
-				min={0}
-				max={20}
-				step={0.5}
-			/>
-			<SliderRow
-				label="Gaussian Sigma"
-				bind:value={magick.settings.gaussianBlurSigma}
-				min={0.1}
-				max={10}
-				step={0.1}
-				disabled={magick.settings.gaussianBlurRadius[0] === 0}
-			/>
-			<SliderRow
-				label="Motion Radius"
-				bind:value={magick.settings.motionBlurRadius}
-				min={0}
-				max={20}
-				step={0.5}
-			/>
-			<SliderRow
-				label="Motion Sigma"
-				bind:value={magick.settings.motionBlurSigma}
-				min={0.1}
-				max={10}
-				step={0.1}
-				disabled={magick.settings.motionBlurRadius[0] === 0}
-			/>
-			<SliderRow
-				label="Motion Angle"
-				bind:value={magick.settings.motionBlurAngle}
-				suffix="°"
-				min={0}
-				max={360}
-				disabled={magick.settings.motionBlurRadius[0] === 0}
-				class="pb-1"
-			/>
+			<div class="border-t border-foreground/10 pt-3">
+				<div class="mb-1.5 font-mono text-[11px] text-muted-foreground uppercase">Gaussian</div>
+				<div class="space-y-3">
+					<SliderRow
+						label="Radius"
+						bind:value={magick.settings.gaussianBlurRadius}
+						min={0}
+						max={20}
+						step={0.5}
+					/>
+					<SliderRow
+						label="Sigma"
+						bind:value={magick.settings.gaussianBlurSigma}
+						min={0.1}
+						max={10}
+						step={0.1}
+						disabled={magick.settings.gaussianBlurRadius[0] === 0}
+					/>
+				</div>
+			</div>
+
+			<div class="border-t border-foreground/10 pt-3">
+				<div class="mb-1.5 font-mono text-[11px] text-muted-foreground uppercase">Adaptive</div>
+				<div class="space-y-3">
+					<SliderRow
+						label="Sharpen Radius"
+						bind:value={magick.settings.adaptiveSharpenRadius}
+						min={0}
+						max={10}
+						step={0.5}
+					/>
+					<SliderRow
+						label="Sharpen Sigma"
+						bind:value={magick.settings.adaptiveSharpenSigma}
+						min={0.1}
+						max={5}
+						step={0.1}
+						disabled={magick.settings.adaptiveSharpenRadius[0] === 0}
+					/>
+					<SliderRow
+						label="Blur Radius"
+						bind:value={magick.settings.adaptiveBlurRadius}
+						min={0}
+						max={10}
+						step={0.5}
+					/>
+					<SliderRow
+						label="Blur Sigma"
+						bind:value={magick.settings.adaptiveBlurSigma}
+						min={0.1}
+						max={5}
+						step={0.1}
+						disabled={magick.settings.adaptiveBlurRadius[0] === 0}
+					/>
+				</div>
+			</div>
+
+			<div class="border-t border-foreground/10 pt-3">
+				<div class="mb-1.5 font-mono text-[11px] text-muted-foreground uppercase">Motion</div>
+				<div class="space-y-3">
+					<SliderRow
+						label="Radius"
+						bind:value={magick.settings.motionBlurRadius}
+						min={0}
+						max={20}
+						step={0.5}
+					/>
+					<SliderRow
+						label="Sigma"
+						bind:value={magick.settings.motionBlurSigma}
+						min={0.1}
+						max={10}
+						step={0.1}
+						disabled={magick.settings.motionBlurRadius[0] === 0}
+					/>
+					<SliderRow
+						label="Angle"
+						bind:value={magick.settings.motionBlurAngle}
+						suffix="°"
+						min={0}
+						max={360}
+						disabled={magick.settings.motionBlurRadius[0] === 0}
+						class="pb-1"
+					/>
+				</div>
+			</div>
 		</div>
 	</SectionCard>
 
@@ -320,7 +334,7 @@
 		</div>
 	</SectionCard>
 
-	<!-- Quantize / Dithering -->
+	<!-- Quantize / Dithering: keep last, it must run near-end -->
 	<SectionCard title="Quantize / Dithering" dirty={magick.settings.quantizeColors[0] > 0}>
 		<div class="space-y-3">
 			<SliderRow

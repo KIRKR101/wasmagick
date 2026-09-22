@@ -59,10 +59,6 @@
 		switch (id) {
 			case 'geometry': {
 				const parts: string[] = [];
-				if (s.resizeW || s.resizeH) parts.push(`Resize ${s.resizeW ?? 'A'}×${s.resizeH ?? 'A'}`);
-				if (s.rotate !== '0') parts.push(`Rotate ${s.rotate}°`);
-				if (s.flip) parts.push('Flip');
-				if (s.flop) parts.push('Flop');
 				if (s.cropX != null || s.cropY != null || s.cropW || s.cropH) {
 					if (s.cropX != null) {
 						parts.push(
@@ -72,19 +68,23 @@
 						parts.push(`Crop ${Math.round(s.cropW ?? 0)}×${Math.round(s.cropH ?? 0)}`);
 					}
 				}
+				if (s.resizeW || s.resizeH) parts.push(`Resize ${s.resizeW ?? 'A'}×${s.resizeH ?? 'A'}`);
+				if (s.rotate !== '0') parts.push(`Rotate ${s.rotate}°`);
+				if (s.flip) parts.push('Flip');
+				if (s.flop) parts.push('Flop');
+				if (!s.autoOrient) parts.push('Auto-Orient Off');
+				if (s.trimEdges) parts.push('Trim');
 				if (s.shaveX != null || s.shaveY != null) {
 					parts.push(`Shave ${s.shaveX ?? '0'}×${s.shaveY ?? '0'}`);
-				}
-				if (s.trimEdges) parts.push('Trim');
-				if (s.borderSize[0] > 0) parts.push(`Border ${s.borderSize[0]}px`);
-				if (s.extentW || s.extentH) {
-					parts.push(`Extent ${s.extentW ?? 'A'}×${s.extentH ?? 'A'}`);
 				}
 				if (s.deskewThreshold[0] > 0) {
 					parts.push(`Deskew ${s.deskewThreshold[0]}%`);
 					parts.push(s.deskewAutoCrop ? 'Auto Crop' : 'No AutoCrop');
 				}
-				if (!s.autoOrient) parts.push('Auto-Orient Off');
+				if (s.extentW || s.extentH) {
+					parts.push(`Extent ${s.extentW ?? 'A'}×${s.extentH ?? 'A'}`);
+				}
+				if (s.borderSize[0] > 0) parts.push(`Border ${s.borderSize[0]}px`);
 				return parts.join(' · ');
 			}
 			case 'color': {
@@ -118,7 +118,9 @@
 					);
 				}
 				if (s.thresholdPercentage[0] !== 50) {
-					parts.push(`Threshold ${s.thresholdPercentage[0]}%`);
+					parts.push(
+						`Threshold ${s.thresholdPercentage[0]}%${s.thresholdChannels !== 'All' ? ` ${s.thresholdChannels}` : ''}`
+					);
 				}
 				if (s.autoThreshold !== 'Off') {
 					parts.push(`Auto-Threshold ${s.autoThreshold}`);
@@ -133,7 +135,9 @@
 					parts.push(`CLAHE ${s.claheXTiles[0]}×${s.claheYTiles[0]}`);
 				}
 				if (s.sigmoidalContrast[0] !== 0) {
-					parts.push(`Sigmoidal ${s.sigmoidalContrast[0]}@${s.sigmoidalMidpoint[0]}`);
+					parts.push(
+						`Sigmoidal ${s.sigmoidalContrast[0]}@${s.sigmoidalMidpoint[0]}${s.sigmoidalChannels !== 'All' ? ` ${s.sigmoidalChannels}` : ''}`
+					);
 				}
 				if (s.colorSpace !== 'RGB') parts.push(s.colorSpace);
 				return parts.join(' · ');
@@ -162,6 +166,10 @@
 							break;
 						case 'bilateralBlur':
 							parts.push(`${s.bilateralWidth[0]}×${s.bilateralHeight[0]}`);
+							if (s.bilateralIntensitySigma[0] !== 1.5)
+								parts.push(`iΣ ${s.bilateralIntensitySigma[0]}`);
+							if (s.bilateralSpatialSigma[0] !== 1)
+								parts.push(`sΣ ${s.bilateralSpatialSigma[0]}`);
 							break;
 					}
 				}

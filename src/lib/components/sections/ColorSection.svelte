@@ -40,7 +40,7 @@
 </script>
 
 <div class="space-y-5">
-	<!-- Modulate -->
+	<!-- Adjust: modulate + brightness-contrast run first -->
 	<SectionCard
 		title="Adjust"
 		dirty={magick.settings.brightness[0] !== 100 ||
@@ -75,20 +75,13 @@
 		</div>
 	</SectionCard>
 
-	<!-- Color space + auto operations -->
-	<div class="space-y-3">
-		<Select type="single" bind:value={magick.settings.colorSpace}>
-			<SelectTrigger class="h-9 w-full font-mono text-xs">
-				{COLORSPACE_OPTIONS.find((o) => o.value === magick.settings.colorSpace)?.label ??
-					magick.settings.colorSpace}
-			</SelectTrigger>
-			<SelectContent>
-				{#each COLORSPACE_OPTIONS as opt (opt.value)}
-					<SelectItem value={opt.value}>{opt.label}</SelectItem>
-				{/each}
-			</SelectContent>
-		</Select>
-
+	<!-- Auto corrections run before manual levels -->
+	<SectionCard
+		title="Auto Correct"
+		dirty={magick.settings.normalizeImage ||
+			magick.settings.autoLevel ||
+			magick.settings.autoGamma}
+	>
 		<div class="grid grid-cols-2 gap-2">
 			<ToggleRow
 				id="clr-normalize"
@@ -98,7 +91,7 @@
 			<ToggleRow id="clr-autolevel" label="Auto Level" bind:checked={magick.settings.autoLevel} />
 			<ToggleRow id="clr-autogamma" label="Auto Gamma" bind:checked={magick.settings.autoGamma} />
 		</div>
-	</div>
+	</SectionCard>
 
 	<!-- Levels -->
 	<SectionCard
@@ -209,28 +202,37 @@
 		</div>
 	</SectionCard>
 
-	<!-- Advanced -->
+	<!-- Thresholds -->
 	<SectionCard
-		title="Advanced Color"
+		title="Thresholds"
 		dirty={magick.settings.thresholdPercentage[0] !== 50 ||
-			magick.settings.sigmoidalContrast[0] !== 0 ||
-			magick.settings.autoThreshold !== 'Off' ||
 			magick.settings.blackThreshold[0] > 0 ||
-			magick.settings.whiteThreshold[0] < 100}
+			magick.settings.whiteThreshold[0] < 100 ||
+			magick.settings.autoThreshold !== 'Off'}
 	>
 		<div class="space-y-3">
+		<div class="flex items-center justify-start">
+			<Select type="single" bind:value={magick.settings.thresholdChannels}>
+				<SelectTrigger
+					class="h-9 w-24 font-mono text-xs"
+					disabled={magick.settings.thresholdPercentage[0] === 50}
+				>
+						{CHANNEL_OPTIONS.find((o) => o.value === magick.settings.thresholdChannels)?.label ??
+							magick.settings.thresholdChannels}
+					</SelectTrigger>
+					<SelectContent>
+						{#each CHANNEL_OPTIONS as opt (opt.value)}
+							<SelectItem value={opt.value}>{opt.label}</SelectItem>
+						{/each}
+					</SelectContent>
+				</Select>
+			</div>
 			<SliderRow
 				label="Threshold"
 				bind:value={magick.settings.thresholdPercentage}
 				suffix="%"
 				min={0}
 				max={100}
-			/>
-			<SliderRow
-				label="Sigmoidal Contrast"
-				bind:value={magick.settings.sigmoidalContrast}
-				min={-20}
-				max={20}
 			/>
 			<SliderRow
 				label="Black Threshold"
@@ -245,9 +247,8 @@
 				suffix="%"
 				min={0}
 				max={100}
-				class="pb-1"
 			/>
-			<div class="space-y-1.5">
+			<div class="space-y-1.5 border-t border-foreground/10 pt-3">
 				<span class="font-mono text-[11px] text-muted-foreground uppercase">Auto Threshold</span>
 				<Select type="single" bind:value={magick.settings.autoThreshold}>
 					<SelectTrigger class="h-9 w-full font-mono text-xs">
@@ -264,7 +265,47 @@
 		</div>
 	</SectionCard>
 
-	<!-- CLAHE -->
+	<!-- Contrast Curve -->
+	<SectionCard
+		title="Contrast Curve"
+		dirty={magick.settings.sigmoidalContrast[0] !== 0}
+	>
+		<div class="space-y-3">
+		<div class="flex items-center justify-start">
+			<Select type="single" bind:value={magick.settings.sigmoidalChannels}>
+				<SelectTrigger
+					class="h-9 w-24 font-mono text-xs"
+					disabled={magick.settings.sigmoidalContrast[0] === 0}
+				>
+						{CHANNEL_OPTIONS.find((o) => o.value === magick.settings.sigmoidalChannels)?.label ??
+							magick.settings.sigmoidalChannels}
+					</SelectTrigger>
+					<SelectContent>
+						{#each CHANNEL_OPTIONS as opt (opt.value)}
+							<SelectItem value={opt.value}>{opt.label}</SelectItem>
+						{/each}
+					</SelectContent>
+				</Select>
+			</div>
+			<SliderRow
+				label="Sigmoidal Contrast"
+				bind:value={magick.settings.sigmoidalContrast}
+				min={-20}
+				max={20}
+			/>
+			<SliderRow
+				label="Midpoint"
+				bind:value={magick.settings.sigmoidalMidpoint}
+				suffix="%"
+				min={0}
+				max={100}
+				disabled={magick.settings.sigmoidalContrast[0] === 0}
+				class="pb-1"
+			/>
+		</div>
+	</SectionCard>
+
+	<!-- CLAHE: local contrast enhancement -->
 	<SectionCard title="CLAHE" dirty={magick.settings.claheXTiles[0] > 0}>
 		<div class="space-y-3">
 			<SliderRow label="X Tiles" bind:value={magick.settings.claheXTiles} min={0} max={16} />
@@ -292,6 +333,23 @@
 				disabled={magick.settings.claheXTiles[0] === 0}
 				class="pb-1"
 			/>
+		</div>
+	</SectionCard>
+
+	<!-- Color space applies before CLAHE in the pipeline -->
+	<SectionCard title="Color Space" dirty={magick.settings.colorSpace !== 'RGB'}>
+		<div class="space-y-1.5">
+			<Select type="single" bind:value={magick.settings.colorSpace}>
+				<SelectTrigger class="h-9 w-full font-mono text-xs">
+					{COLORSPACE_OPTIONS.find((o) => o.value === magick.settings.colorSpace)?.label ??
+						magick.settings.colorSpace}
+				</SelectTrigger>
+				<SelectContent>
+					{#each COLORSPACE_OPTIONS as opt (opt.value)}
+						<SelectItem value={opt.value}>{opt.label}</SelectItem>
+					{/each}
+				</SelectContent>
+			</Select>
 		</div>
 	</SectionCard>
 </div>

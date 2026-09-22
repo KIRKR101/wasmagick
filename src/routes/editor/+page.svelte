@@ -4,7 +4,7 @@
 	import MobileAppShell from '$lib/components/MobileAppShell.svelte';
 	import KeyboardShortcuts from '$lib/components/KeyboardShortcuts.svelte';
 	import SettingsOverlay from '$lib/components/SettingsOverlay.svelte';
-	import { useMagick } from '$lib/useMagick.svelte';
+	import { useMagick, DEFAULT_SETTINGS } from '$lib/useMagick.svelte';
 	import { useHistory } from '$lib/hooks/useHistory.svelte';
 	import { usePresets } from '$lib/hooks/usePresets.svelte';
 	import { useReplaceGuard, installClipboardPaste } from '$lib/hooks/useReplaceGuard.svelte';
@@ -85,10 +85,6 @@
 		const s = magick.settings;
 		const parts: string[] = [];
 		// Geometry
-		if (s.resizeW || s.resizeH) parts.push(`Resize ${s.resizeW ?? 'A'}×${s.resizeH ?? 'A'}`);
-		if (s.rotate !== '0') parts.push(`Rotate ${s.rotate}°`);
-		if (s.flip) parts.push('Flip');
-		if (s.flop) parts.push('Flop');
 		if (s.cropX != null || s.cropY != null || s.cropW || s.cropH) {
 			if (s.cropX != null) {
 				parts.push(`Crop ${s.cropW ?? '?'}×${s.cropH ?? '?'} @${s.cropX},${s.cropY}`);
@@ -96,17 +92,21 @@
 				parts.push(`Crop ${s.cropW ?? 'A'}×${s.cropH ?? 'A'}`);
 			}
 		}
+		if (s.resizeW || s.resizeH) parts.push(`Resize ${s.resizeW ?? 'A'}×${s.resizeH ?? 'A'}`);
+		if (s.rotate !== '0') parts.push(`Rotate ${s.rotate}°`);
+		if (s.flip) parts.push('Flip');
+		if (s.flop) parts.push('Flop');
+		if (s.autoOrient) parts.push('Auto-Orient');
+		if (s.trimEdges) parts.push('Trim');
 		if (s.shaveX != null || s.shaveY != null) {
 			parts.push(`Shave ${s.shaveX ?? '0'}×${s.shaveY ?? '0'}`);
 		}
-		if (s.trimEdges) parts.push('Trim');
-		if (s.borderSize[0] > 0) parts.push(`Border ${s.borderSize[0]}px`);
-		if (s.extentW || s.extentH) parts.push('Canvas');
 		if (s.deskewThreshold[0] > 0) {
 			parts.push('Deskew');
 			parts.push(s.deskewAutoCrop ? 'Auto Crop' : 'No AutoCrop');
 		}
-		if (s.autoOrient) parts.push('Auto-Orient');
+		if (s.extentW || s.extentH) parts.push('Canvas');
+		if (s.borderSize[0] > 0) parts.push(`Border ${s.borderSize[0]}px`);
 		// Color
 		if (s.brightness[0] !== 100) parts.push(`Brightness ${s.brightness[0]}%`);
 		if (s.saturation[0] !== 100) parts.push(`Saturation ${s.saturation[0]}%`);
@@ -133,13 +133,18 @@
 				`LvlColors ${s.levelColorsBlack}→${s.levelColorsWhite}${s.levelColorsInverse ? ' inv' : ''}`
 			);
 		}
-		if (s.thresholdPercentage[0] !== 50) parts.push(`Threshold ${s.thresholdPercentage[0]}%`);
+		if (s.thresholdPercentage[0] !== 50)
+			parts.push(
+				`Threshold ${s.thresholdPercentage[0]}%${s.thresholdChannels !== 'All' ? ` ${s.thresholdChannels}` : ''}`
+			);
 		if (s.autoThreshold !== 'Off') parts.push(`AutoThreshold ${s.autoThreshold}`);
 		if (s.blackThreshold[0] > 0) parts.push(`BlackThresh ${s.blackThreshold[0]}%`);
 		if (s.whiteThreshold[0] < 100) parts.push(`WhiteThresh ${s.whiteThreshold[0]}%`);
 		if (s.claheXTiles[0] > 0) parts.push(`CLAHE ${s.claheXTiles[0]}×${s.claheYTiles[0]}`);
 		if (s.sigmoidalContrast[0] !== 0)
-			parts.push(`Sigmoidal ${s.sigmoidalContrast[0]}@${s.sigmoidalMidpoint[0]}`);
+			parts.push(
+				`Sigmoidal ${s.sigmoidalContrast[0]}@${s.sigmoidalMidpoint[0]}${s.sigmoidalChannels !== 'All' ? ` ${s.sigmoidalChannels}` : ''}`
+			);
 		if (s.colorSpace !== 'RGB') parts.push(s.colorSpace);
 		// Filters
 		if (s.effect !== 'none') parts.push(s.effect);
@@ -165,8 +170,8 @@
 			if (s.quantizeColorSpace !== 'sRGB') parts.push(`CS: ${s.quantizeColorSpace}`);
 		}
 		// Export
-		if (s.imageFormat !== 'WebP') parts.push(s.imageFormat);
-		if (s.quality[0] !== 85) parts.push(`Quality ${s.quality[0]}%`);
+		if (s.imageFormat !== DEFAULT_SETTINGS.imageFormat) parts.push(s.imageFormat);
+		if (s.quality[0] !== DEFAULT_SETTINGS.quality[0]) parts.push(`Quality ${s.quality[0]}%`);
 		if (s.stripMeta) parts.push('Strip Meta');
 		// Annotate
 		if (s.annotateText?.trim()) parts.push(`Text "${s.annotateText.slice(0, 15)}"`);

@@ -4,8 +4,7 @@
     "": {
       "name": "wasmagick-svelte",
       "dependencies": {
-        "@fontsource-variable/geist-mono": "^5.2.7",
-        "@fontsource-variable/jetbrains-mono": "^5.2.8",
+        "@fontsource-variable/google-sans-code": "^5.3.1",
         "@imagemagick/magick-wasm": "^0.0.43",
         "@uswriting/exiftool": "^1.0.9",
         "lucide-svelte": "^1.0.1",
@@ -369,9 +368,7 @@
 
     "@fontsource-variable/geist": ["@fontsource-variable/geist@5.2.8", "", {}, ""],
 
-    "@fontsource-variable/geist-mono": ["@fontsource-variable/geist-mono@5.2.7", "", {}, "sha512-ZKlZ5sjtalb2TwXKs400mAGDlt/+2ENLNySPx0wTz3bP3mWARCsUW+rpxzZc7e05d2qGch70pItt3K4qttbIYA=="],
-
-    "@fontsource-variable/jetbrains-mono": ["@fontsource-variable/jetbrains-mono@5.3.0", "", {}, "sha512-F32xpS2NsGYoQi2ADSkKTgpJj7ozajsGgDJ8woTnqjmIB+dxDIqImjl4pXZVEExu8UFZ2ndhmX18EBS/hdz3Lw=="],
+    "@fontsource-variable/google-sans-code": ["@fontsource-variable/google-sans-code@5.3.1", "", {}, "sha512-yY7wGZK9u3DUoqSMpHUoAJfnB+DMX6SfNPQvtlVeyDfua92X42Wc84gqqQOLpiamrszbDdChp2wQOj6oPfY5Nw=="],
 
     "@hapi/address": ["@hapi/address@5.1.1", "", { "dependencies": { "@hapi/hoek": "^11.0.2" } }, "sha512-A+po2d/dVoY7cYajycYI43ZbYMXukuopIsqCjh5QzsBCipDtdofHntljDlpccMjIfTy6UOkg+5KPriwYch2bXA=="],
 
