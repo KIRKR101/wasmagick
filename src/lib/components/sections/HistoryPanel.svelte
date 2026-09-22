@@ -2,7 +2,7 @@
 	import type { MagickState } from '$lib/useMagick.svelte';
 	import type { HistoryState, SettingsDiffItem } from '$lib/hooks/useHistory.svelte';
 	import { formatBytes, formatDimensions } from '$lib/utils';
-	import { Trash2 } from 'lucide-svelte';
+	import Trash from 'phosphor-svelte/lib/Trash';
 	import UndoRedoButtons from '../controls/UndoRedoButtons.svelte';
 
 	let {
@@ -63,7 +63,7 @@
 			aria-label="Clear history"
 			title="Clear history"
 		>
-			<Trash2 class="size-3.5" aria-hidden="true" />
+			<Trash class="size-3.5" aria-hidden="true" />
 		</button>
 	</div>
 

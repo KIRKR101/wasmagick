@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Redo2, Undo2 } from 'lucide-svelte';
+	import ArrowUUpLeft from 'phosphor-svelte/lib/ArrowUUpLeft';
+	import ArrowUUpRight from 'phosphor-svelte/lib/ArrowUUpRight';
 
 	let {
 		canUndo,
@@ -29,7 +30,7 @@
 		class="group flex flex-1 cursor-pointer items-center justify-center gap-1.5 px-2 py-1 font-mono text-[11px] leading-none text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 	>
 		<span class="inline-flex w-[3ch] shrink-0 items-center justify-center" aria-hidden="true"
-			><Undo2 class="size-[1em]" /></span
+			><ArrowUUpLeft class="size-[1em]" /></span
 		>
 		<span class="group-hover:underline">UNDO</span>
 	</button>
@@ -41,7 +42,7 @@
 		class="group flex flex-1 cursor-pointer items-center justify-center gap-1.5 px-2 py-1 font-mono text-[11px] leading-none text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 	>
 		<span class="inline-flex w-[3ch] shrink-0 items-center justify-center" aria-hidden="true"
-			><Redo2 class="size-[1em]" /></span
+			><ArrowUUpRight class="size-[1em]" /></span
 		>
 		<span class="group-hover:underline">REDO</span>
 	</button>

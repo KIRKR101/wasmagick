@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Select as SelectPrimitive } from 'bits-ui';
 	import { cn, type WithoutChildrenOrChild } from '$lib/utils.js';
-	import ChevronUpIcon from '@lucide/svelte/icons/chevron-up';
+	import CaretUp from 'phosphor-svelte/lib/CaretUp';
 
 	let {
 		ref = $bindable(null),
@@ -19,5 +19,5 @@
 	)}
 	{...restProps}
 >
-	<ChevronUpIcon />
+	<CaretUp />
 </SelectPrimitive.ScrollUpButton>

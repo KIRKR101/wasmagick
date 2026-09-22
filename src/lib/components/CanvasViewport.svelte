@@ -1,5 +1,9 @@
 <script lang="ts">
-	import { Columns2, Images, Maximize, ZoomIn, ZoomOut } from 'lucide-svelte';
+	import SquareSplitHorizontal from 'phosphor-svelte/lib/SquareSplitHorizontal';
+	import Images from 'phosphor-svelte/lib/Images';
+	import CornersOut from 'phosphor-svelte/lib/CornersOut';
+	import MagnifyingGlassPlus from 'phosphor-svelte/lib/MagnifyingGlassPlus';
+	import MagnifyingGlassMinus from 'phosphor-svelte/lib/MagnifyingGlassMinus';
 	import FileDropzone from './FileDropzone.svelte';
 	import HoverTooltip from './controls/HoverTooltip.svelte';
 	import { shortcutModifier } from '$lib/shortcuts';
@@ -989,7 +993,7 @@
 						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 						aria-label={`Zoom out (${shortcutModifier}+-)`}
 					>
-						<ZoomOut class="size-3.5" />
+						<MagnifyingGlassMinus class="size-3.5" />
 					</button>
 				</HoverTooltip>
 				<HoverTooltip label="Zoom level — click to reset to 100%" side="top">
@@ -1007,7 +1011,7 @@
 						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 						aria-label={`Zoom in (${shortcutModifier}+=)`}
 					>
-						<ZoomIn class="size-3.5" />
+						<MagnifyingGlassPlus class="size-3.5" />
 					</button>
 				</HoverTooltip>
 				<HoverTooltip
@@ -1024,7 +1028,7 @@
 							? 'Fit unavailable (preview failed)'
 							: `Fit to screen (${shortcutModifier}+0)`}
 					>
-						<Maximize class="size-3.5" />
+						<CornersOut class="size-3.5" />
 					</button>
 				</HoverTooltip>
 				<div class="mx-0.5 h-4 w-px bg-border"></div>
@@ -1072,7 +1076,7 @@
 						aria-pressed={splitMode}
 						aria-label={canSplit ? 'Split compare (B)' : 'Split unavailable — process image first'}
 					>
-						<Columns2 class="size-3.5" />
+						<SquareSplitHorizontal class="size-3.5" />
 					</button>
 				</HoverTooltip>
 			</div>

@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { AlertCircle, Loader2 } from 'lucide-svelte';
+	import WarningCircle from 'phosphor-svelte/lib/WarningCircle';
+	import CircleNotch from 'phosphor-svelte/lib/CircleNotch';
 	import type { MagickState } from '$lib/useMagick.svelte';
 	import ErrorDialog from './ErrorDialog.svelte';
 	import { shortcutModifier } from '$lib/shortcuts';
@@ -27,12 +28,12 @@
 				class="flex min-w-0 cursor-pointer items-center gap-1 text-destructive focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 				aria-label="Show full error details"
 			>
-				<AlertCircle class="size-3 shrink-0" />
+				<WarningCircle class="size-3 shrink-0" />
 				<span class="max-w-[40ch] truncate">{magick.errorMessage || 'Error'}</span>
 			</button>
 		{:else if magick.isLoading}
 			<span class="flex items-center gap-1 text-foreground/80">
-				<Loader2 class="size-3 animate-spin" />
+				<CircleNotch class="size-3 animate-spin" />
 				<span>{magick.currentProcessingStep || 'Processing…'}</span>
 			</span>
 		{:else if magick.isStale}

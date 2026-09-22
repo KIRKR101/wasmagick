@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Copy, Minus, Square, X } from 'lucide-svelte';
+	import Copy from 'phosphor-svelte/lib/Copy';
+	import Minus from 'phosphor-svelte/lib/Minus';
+	import Square from 'phosphor-svelte/lib/Square';
+	import X from 'phosphor-svelte/lib/X';
 	import { pwaInstall } from '$lib/stores/pwa.svelte';
 	import { hasCustomTitleBar, resolveInitialTheme, watchSystemTheme } from '$lib/theme';
 	import './layout.css';

@@ -17,7 +17,12 @@
 	import HoverTooltip from './controls/HoverTooltip.svelte';
 	import UndoRedoButtons from './controls/UndoRedoButtons.svelte';
 	import { shortcutModifier } from '$lib/shortcuts';
-	import { Info, Keyboard, RotateCcw, Settings, Upload, X } from 'lucide-svelte';
+	import Info from 'phosphor-svelte/lib/Info';
+	import Keyboard from 'phosphor-svelte/lib/Keyboard';
+	import ArrowCounterClockwise from 'phosphor-svelte/lib/ArrowCounterClockwise';
+	import GearSix from 'phosphor-svelte/lib/GearSix';
+	import UploadSimple from 'phosphor-svelte/lib/UploadSimple';
+	import X from 'phosphor-svelte/lib/X';
 
 	let {
 		activeSection,
@@ -168,8 +173,7 @@
 							parts.push(`${s.bilateralWidth[0]}×${s.bilateralHeight[0]}`);
 							if (s.bilateralIntensitySigma[0] !== 1.5)
 								parts.push(`iΣ ${s.bilateralIntensitySigma[0]}`);
-							if (s.bilateralSpatialSigma[0] !== 1)
-								parts.push(`sΣ ${s.bilateralSpatialSigma[0]}`);
+							if (s.bilateralSpatialSigma[0] !== 1) parts.push(`sΣ ${s.bilateralSpatialSigma[0]}`);
 							break;
 					}
 				}
@@ -344,7 +348,7 @@
 			>
 				<span class="inline-flex items-center gap-1.5 truncate"
 					><span class="inline-flex w-[3ch] items-center justify-center"
-						><Upload class="size-[1em]" /></span
+						><UploadSimple class="size-[1em]" /></span
 					>
 					<span class="hover:underline">UPLOAD</span></span
 				>
@@ -363,7 +367,7 @@
 			>
 				<span class="inline-flex items-center gap-1.5 truncate"
 					><span class="inline-flex w-[3ch] items-center justify-center"
-						><RotateCcw class="size-[1em]" /></span
+						><ArrowCounterClockwise class="size-[1em]" /></span
 					>
 					<span class="hover:underline">RESET ALL</span></span
 				>
@@ -519,7 +523,7 @@
 				>
 					<span class="inline-flex items-center gap-1.5 truncate"
 						><span class="inline-flex w-[3ch] items-center justify-center"
-							><Settings class="size-[1em]" /></span
+							><GearSix class="size-[1em]" /></span
 						>
 						<span class="hover:underline">SETTINGS</span></span
 					>

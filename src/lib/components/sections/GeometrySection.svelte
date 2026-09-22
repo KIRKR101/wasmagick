@@ -10,7 +10,7 @@
 	import SliderRow from '$lib/components/controls/SliderRow.svelte';
 	import ToggleRow from '$lib/components/controls/ToggleRow.svelte';
 	import SectionCard from '$lib/components/controls/SectionCard.svelte';
-	import { Crop } from 'lucide-svelte';
+	import Crop from 'phosphor-svelte/lib/Crop';
 	import { formatDimensions } from '$lib/utils';
 
 	let { magick } = $props<{ magick: MagickState }>();
@@ -67,7 +67,11 @@
 			</div>
 
 			<!-- Mode tabs -->
-			<div class="relative flex h-8 overflow-hidden border border-divider" role="group" aria-label="Crop mode">
+			<div
+				class="relative flex h-8 overflow-hidden border border-divider"
+				role="group"
+				aria-label="Crop mode"
+			>
 				<button
 					type="button"
 					aria-pressed={cropInputMode === 'visual'}
@@ -367,10 +371,7 @@
 	</SectionCard>
 
 	<!-- Straighten: niche auto deskew, runs last in the pipeline -->
-	<SectionCard
-		title="Straighten"
-		dirty={magick.settings.deskewThreshold[0] > 0}
-	>
+	<SectionCard title="Straighten" dirty={magick.settings.deskewThreshold[0] > 0}>
 		<div class="space-y-3">
 			<SliderRow
 				label="Deskew Threshold"

@@ -15,7 +15,7 @@
 	import Moon from 'phosphor-svelte/lib/Moon';
 	import PencilSimple from 'phosphor-svelte/lib/PencilSimple';
 	import Sun from 'phosphor-svelte/lib/Sun';
-	import TrashSimple from 'phosphor-svelte/lib/TrashSimple';
+	import Trash from 'phosphor-svelte/lib/Trash';
 	import UploadSimple from 'phosphor-svelte/lib/UploadSimple';
 	import X from 'phosphor-svelte/lib/X';
 	import { applyThemeMode, getThemeMode, type ThemeMode } from '$lib/theme';
@@ -401,7 +401,7 @@
 								aria-label="Delete preset {preset.name}"
 								class="flex size-6 shrink-0 cursor-pointer items-center justify-center text-muted-foreground transition-colors duration-75 hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 							>
-								<TrashSimple class="size-3.5" />
+								<Trash class="size-3.5" />
 							</button>
 						{/if}
 					</li>
@@ -435,7 +435,7 @@
 					? 'border-destructive text-destructive'
 					: 'text-muted-foreground'}"
 			>
-				<TrashSimple class="size-3.5" />
+				<Trash class="size-3.5" />
 				<span class="group-hover:underline"
 					>{armedAction === 'clear-presets' ? 'CONFIRM DELETE' : 'DELETE ALL'}</span
 				>
