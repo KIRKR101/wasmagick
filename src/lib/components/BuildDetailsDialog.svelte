@@ -50,7 +50,7 @@
 			showCloseButton={false}
 		>
 			<div
-				class="border-b border-foreground/30 px-4 py-3 text-xs tracking-wider text-muted-foreground uppercase"
+				class="border-b border-divider px-4 py-3 text-xs tracking-wider text-muted-foreground uppercase"
 			>
 				Build details
 			</div>

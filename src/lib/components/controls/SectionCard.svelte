@@ -9,7 +9,7 @@
 	}>();
 </script>
 
-<section class={cn('border border-foreground/30 bg-transparent p-3', props.class)}>
+<section class={cn('border border-divider bg-transparent p-3', props.class)}>
 	{#if props.title}
 		<h4 class="mb-2.5 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
 			{props.title} <span class="font-mono">{props.dirty ? '*' : ''}</span>

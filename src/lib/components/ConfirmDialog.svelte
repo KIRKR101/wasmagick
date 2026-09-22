@@ -43,7 +43,7 @@
 			showCloseButton={false}
 		>
 			<div
-				class="border-b border-foreground/30 px-4 py-3 text-xs tracking-wider text-muted-foreground uppercase"
+				class="border-b border-divider px-4 py-3 text-xs tracking-wider text-muted-foreground uppercase"
 			>
 				{#if kind === 'close'}
 					Close current image?
@@ -83,16 +83,16 @@
 				{/if}
 			</div>
 
-			<div class="flex items-center justify-end gap-2 border-t border-foreground/30 px-4 py-3">
+			<div class="flex items-center justify-end gap-2 border-t border-divider px-4 py-3">
 				<button
 					onclick={cancel}
-					class="cursor-pointer border border-foreground/30 px-3 py-1 font-mono text-[11px] text-muted-foreground uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+					class="cursor-pointer border border-divider px-3 py-1 font-mono text-[11px] text-muted-foreground uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 				>
 					[<span class="hover:underline"> Cancel </span>]
 				</button>
 				<button
 					onclick={confirm}
-					class="cursor-pointer border border-foreground/30 px-3 py-1 font-mono text-[11px] text-muted-foreground uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+					class="cursor-pointer border border-divider px-3 py-1 font-mono text-[11px] text-muted-foreground uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 				>
 					[<span class="hover:underline"
 						>{kind === 'close'

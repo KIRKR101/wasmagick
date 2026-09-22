@@ -60,7 +60,7 @@
 
 <div class="mobile-toolbar">
 	<!-- View / Canvas tools -->
-	<div class="flex items-center justify-between border-b border-foreground/30 px-3 py-1">
+	<div class="flex items-center justify-between border-b border-divider px-3 py-1">
 		<!-- Zoom -->
 		<div class="flex items-center gap-0">
 			<button

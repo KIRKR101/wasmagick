@@ -45,7 +45,7 @@
 
 <div class="flex h-full flex-col">
 	<!-- Undo/redo controls -->
-	<div class="flex shrink-0 gap-1.5 border-b border-foreground/30 pb-3">
+	<div class="flex shrink-0 gap-1.5 border-b border-divider pb-3">
 		<UndoRedoButtons
 			class="min-w-0 flex-1"
 			canUndo={history.canUndo}
@@ -58,7 +58,7 @@
 		<button
 			onclick={() => onClearRequest?.()}
 			disabled={history.count === 0}
-			class="cursor-pointer border border-foreground/30 px-2 py-1.5 font-mono text-[11px] uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+			class="cursor-pointer border border-divider px-2 py-1.5 font-mono text-[11px] uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 			aria-label="Clear history"
 		>
 			[X]
@@ -104,7 +104,7 @@
 							onclick={() => jump(entry.id, entry.label)}
 							class="flex w-full flex-col border text-left transition-colors {isCurrent
 								? 'border-foreground bg-muted/50'
-								: 'border-foreground/30 bg-transparent hover:border-foreground/60 hover:bg-muted/30'}"
+								: 'border-divider bg-transparent hover:border-foreground/60 hover:bg-muted/30'}"
 							aria-current={isCurrent}
 						>
 							<div class="flex items-center gap-2.5 px-2 py-1.5">

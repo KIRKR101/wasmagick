@@ -109,7 +109,7 @@
 				<div class="grid h-9 grid-cols-2 gap-1.5">
 					<button
 						type="button"
-						class="group flex cursor-pointer items-center justify-center gap-1 border border-foreground/30 bg-transparent px-2 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+						class="group flex cursor-pointer items-center justify-center gap-1 border border-divider bg-transparent px-2 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 						onclick={() => (magick.settings.flip = !magick.settings.flip)}
 					>
 						<span class="font-mono text-[11px] whitespace-pre"
@@ -119,7 +119,7 @@
 					</button>
 					<button
 						type="button"
-						class="group flex cursor-pointer items-center justify-center gap-1 border border-foreground/30 bg-transparent px-2 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+						class="group flex cursor-pointer items-center justify-center gap-1 border border-divider bg-transparent px-2 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 						onclick={() => (magick.settings.flop = !magick.settings.flop)}
 					>
 						<span class="font-mono text-[11px] whitespace-pre"
@@ -188,7 +188,7 @@
 			</div>
 
 			<!-- Mode tabs -->
-			<div class="flex h-8 border border-foreground/30" role="group" aria-label="Crop mode">
+			<div class="flex h-8 divide-x divide-divider border border-divider" role="group" aria-label="Crop mode">
 				<button
 					type="button"
 					aria-pressed={cropInputMode === 'visual'}
@@ -209,7 +209,6 @@
 				>
 					Select Region
 				</button>
-				<div class="w-px bg-foreground/30"></div>
 				<button
 					type="button"
 					aria-pressed={cropInputMode === 'manual'}
@@ -234,7 +233,7 @@
 				<!-- Visual mode: Select Region + Ratio + Position bar -->
 				<button
 					type="button"
-					class="flex h-8 w-full cursor-pointer items-center justify-center gap-1.5 rounded-none border border-foreground/30 px-2.5 py-0 font-mono text-[11px] whitespace-nowrap uppercase transition-colors duration-75 outline-none select-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 dark:hover:bg-muted/50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 {magick.cropMode
+					class="flex h-8 w-full cursor-pointer items-center justify-center gap-1.5 rounded-none border border-divider px-2.5 py-0 font-mono text-[11px] whitespace-nowrap uppercase transition-colors duration-75 outline-none select-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 dark:hover:bg-muted/50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 {magick.cropMode
 						? 'bg-muted/50 font-medium text-foreground'
 						: 'bg-transparent text-muted-foreground dark:bg-transparent'}"
 					onclick={() => magick.toggleCropMode()}
@@ -272,7 +271,7 @@
 						</div>
 						<button
 							type="button"
-							class="flex h-7 cursor-pointer items-center gap-1 border border-foreground/30 px-2 font-mono text-[11px] text-muted-foreground transition-colors hover:border-foreground/50 hover:bg-muted focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+							class="flex h-7 cursor-pointer items-center gap-1 border border-divider px-2 font-mono text-[11px] text-muted-foreground transition-colors hover:border-foreground/50 hover:bg-muted focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 							onclick={() => {
 								magick.settings.cropX = null;
 								magick.settings.cropY = null;
@@ -431,7 +430,7 @@
 				</Select>
 				<div class="flex items-center gap-1.5">
 					<div
-						class="relative h-7 w-7 shrink-0 overflow-hidden border border-foreground/30 transition-all hover:border-foreground"
+						class="relative h-7 w-7 shrink-0 overflow-hidden border border-divider transition-all hover:border-foreground"
 					>
 						<input
 							type="color"
@@ -462,7 +461,7 @@
 			</div>
 			<div class="flex items-center gap-1.5">
 				<div
-					class="relative h-7 w-7 shrink-0 overflow-hidden border border-foreground/30 transition-all hover:border-foreground"
+					class="relative h-7 w-7 shrink-0 overflow-hidden border border-divider transition-all hover:border-foreground"
 				>
 					<input
 						type="color"

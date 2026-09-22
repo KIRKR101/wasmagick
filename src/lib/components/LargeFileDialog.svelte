@@ -47,7 +47,7 @@
 			showCloseButton={false}
 		>
 			<div
-				class="border-b border-foreground/30 px-4 py-3 text-xs tracking-wider text-muted-foreground uppercase"
+				class="border-b border-divider px-4 py-3 text-xs tracking-wider text-muted-foreground uppercase"
 			>
 				Large image
 			</div>
@@ -58,16 +58,16 @@
 				be slow or impossible on this device. You can continue anyway or close the image.
 			</div>
 
-			<div class="flex items-center justify-end gap-2 border-t border-foreground/30 px-4 py-3">
+			<div class="flex items-center justify-end gap-2 border-t border-divider px-4 py-3">
 				<button
 					onclick={handleClose}
-					class="cursor-pointer border border-foreground/30 px-3 py-1 font-mono text-[11px] text-muted-foreground uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+					class="cursor-pointer border border-divider px-3 py-1 font-mono text-[11px] text-muted-foreground uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 				>
 					[<span class="hover:underline"> Close image </span>]
 				</button>
 				<button
 					onclick={handleContinue}
-					class="cursor-pointer border border-foreground/30 px-3 py-1 font-mono text-[11px] text-muted-foreground uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+					class="cursor-pointer border border-divider px-3 py-1 font-mono text-[11px] text-muted-foreground uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 				>
 					[<span class="hover:underline"> Continue anyway </span>]
 				</button>

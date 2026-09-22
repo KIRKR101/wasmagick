@@ -20,7 +20,7 @@
 	} = $props();
 </script>
 
-<div class="flex border border-foreground/30 {className}">
+<div class="flex border border-divider {className}">
 	<button
 		onclick={onUndo}
 		disabled={!canUndo}

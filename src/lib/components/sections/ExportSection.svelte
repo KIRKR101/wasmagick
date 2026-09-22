@@ -105,7 +105,7 @@
 
 	<ToggleRow id="exp-show-exif" label="Show EXIF" chevron bind:checked={showExif} />
 	{#if showExif}
-		<div class="border border-foreground/30 bg-transparent p-3">
+		<div class="border border-divider bg-transparent p-3">
 			<div class="mb-2 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
 				EXIF
 			</div>
@@ -130,7 +130,7 @@
 					<button
 						type="button"
 						onclick={() => (showAllExif = !showAllExif)}
-						class="group mt-2 w-full cursor-pointer border border-foreground/30 px-3 py-1.5 font-mono text-xs transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+						class="group mt-2 w-full cursor-pointer border border-divider px-3 py-1.5 font-mono text-xs transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 					>
 						[{showAllExif ? '-' : '+'}]
 						<span class="group-hover:underline">{showAllExif ? 'SHOW FEWER' : 'SHOW MORE'}</span>
@@ -146,7 +146,7 @@
 
 	<!-- Output preview -->
 	{#if magick.processedImageUrl}
-		<div class="border border-foreground/30 bg-transparent p-3">
+		<div class="border border-divider bg-transparent p-3">
 			<div class="mb-2 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
 				Output
 			</div>

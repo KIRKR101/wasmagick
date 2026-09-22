@@ -169,7 +169,7 @@
 					onclick={onProcess}
 					disabled={!magick.wasmLoaded || !magick.sourceBytes}
 					aria-label={processTip}
-					class="group flex h-8 w-full shrink-0 cursor-pointer items-center justify-between border border-foreground/30 bg-transparent px-2 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+					class="group flex h-8 w-full shrink-0 cursor-pointer items-center justify-between border border-divider bg-transparent px-2 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 				>
 					<span class="inline-flex items-center"
 						><span class="group-hover:underline">PROCESS</span>{#if magick.isStale}<span
@@ -189,7 +189,7 @@
 					onclick={onDownload}
 					disabled={!canDownload}
 					aria-label={exportTip}
-					class="group flex h-8 w-full shrink-0 cursor-pointer items-center justify-between border border-foreground/30 bg-transparent px-2 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+					class="group flex h-8 w-full shrink-0 cursor-pointer items-center justify-between border border-divider bg-transparent px-2 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 				>
 					<span class="group-hover:underline">EXPORT</span>
 					<span class="text-[11px] opacity-70">{shortcutModifier.toUpperCase()}+S</span>

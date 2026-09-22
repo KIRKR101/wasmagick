@@ -252,7 +252,7 @@
 					class="flex cursor-pointer items-center justify-center gap-1.5 border px-2 py-2 text-xs transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {themeMode ===
 					option.id
 						? 'border-foreground bg-muted/50 text-foreground'
-						: 'border-foreground/30 text-muted-foreground hover:border-foreground/60'}"
+						: 'border-divider text-muted-foreground hover:border-foreground/60'}"
 				>
 					<option.icon class="size-3.5" />
 					<span class={themeMode === option.id ? 'underline' : ''}>{option.label}</span>
@@ -307,7 +307,7 @@
 		<button
 			type="button"
 			onclick={resetExportDefaults}
-			class="group mt-2 flex cursor-pointer items-center gap-1.5 border border-foreground/30 px-3 py-1.5 font-mono text-xs text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+			class="group mt-2 flex cursor-pointer items-center gap-1.5 border border-divider px-3 py-1.5 font-mono text-xs text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 		>
 			<ArrowCounterClockwise class="size-3.5" />
 			<span class="group-hover:underline">RESET EXPORT DEFAULTS</span>
@@ -330,7 +330,7 @@
 			spellcheck={false}
 			autocomplete="off"
 			aria-label="Output filename format"
-			class="h-9 w-full border border-dashed border-foreground/30 bg-transparent px-2 font-mono text-xs text-foreground"
+			class="h-9 w-full border border-dashed border-divider bg-transparent px-2 font-mono text-xs text-foreground"
 		/>
 		<div class="mt-2 flex items-center justify-between gap-3 font-mono text-[11px]">
 			<span class="truncate text-muted-foreground"
@@ -366,7 +366,7 @@
 		{:else}
 			<ul class="space-y-1.5">
 				{#each presets.userPresets as preset (preset.id)}
-					<li class="flex items-center gap-2 border border-foreground/30 px-3 py-2">
+					<li class="flex items-center gap-2 border border-divider px-3 py-2">
 						{#if renameId === preset.id}
 							<input
 								type="text"
@@ -413,7 +413,7 @@
 				type="button"
 				onclick={exportPresets}
 				disabled={presets.userPresets.length === 0}
-				class="group flex cursor-pointer items-center gap-1.5 border border-foreground/30 px-3 py-1.5 font-mono text-xs text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+				class="group flex cursor-pointer items-center gap-1.5 border border-divider px-3 py-1.5 font-mono text-xs text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 			>
 				<DownloadSimple class="size-3.5" />
 				<span class="group-hover:underline">EXPORT JSON</span>
@@ -421,7 +421,7 @@
 			<button
 				type="button"
 				onclick={() => importInput?.click()}
-				class="group flex cursor-pointer items-center gap-1.5 border border-foreground/30 px-3 py-1.5 font-mono text-xs text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+				class="group flex cursor-pointer items-center gap-1.5 border border-divider px-3 py-1.5 font-mono text-xs text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 			>
 				<UploadSimple class="size-3.5" />
 				<span class="group-hover:underline">IMPORT JSON</span>
@@ -430,7 +430,7 @@
 				type="button"
 				onclick={() => armOrRun('clear-presets', clearPresets)}
 				disabled={presets.userPresets.length === 0}
-				class="group flex cursor-pointer items-center gap-1.5 border border-foreground/30 px-3 py-1.5 font-mono text-xs transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 {armedAction ===
+				class="group flex cursor-pointer items-center gap-1.5 border border-divider px-3 py-1.5 font-mono text-xs transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 {armedAction ===
 				'clear-presets'
 					? 'border-destructive text-destructive'
 					: 'text-muted-foreground'}"
@@ -475,7 +475,7 @@
 				step={1}
 				value={historyLimit}
 				oninput={(e) => onHistoryLimitInput(e.currentTarget.valueAsNumber)}
-				class="h-8 w-20 border border-dashed border-foreground/30 bg-transparent px-2 text-right font-mono text-xs text-foreground"
+				class="h-8 w-20 border border-dashed border-divider bg-transparent px-2 text-right font-mono text-xs text-foreground"
 			/>
 		</div>
 		<div class="border-t border-foreground/20 pt-3">
@@ -497,7 +497,7 @@
 			<button
 				type="button"
 				onclick={() => armOrRun('reset-all', resetAllSettings)}
-				class="group flex cursor-pointer items-center gap-1.5 border border-foreground/30 px-3 py-1.5 font-mono text-xs transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {armedAction ===
+				class="group flex cursor-pointer items-center gap-1.5 border border-divider px-3 py-1.5 font-mono text-xs transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {armedAction ===
 				'reset-all'
 					? 'border-destructive text-destructive'
 					: 'text-muted-foreground'}"
@@ -547,7 +547,7 @@
 				href={REPO_URL}
 				target="_blank"
 				rel="noopener noreferrer"
-				class="group border border-foreground/30 px-3 py-1.5 font-mono text-xs text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+				class="group border border-divider px-3 py-1.5 font-mono text-xs text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 			>
 				[<span class="group-hover:underline">GitHub</span>]
 			</a>
@@ -555,7 +555,7 @@
 				href={issuesHref}
 				target="_blank"
 				rel="noopener noreferrer"
-				class="group border border-foreground/30 px-3 py-1.5 font-mono text-xs text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+				class="group border border-divider px-3 py-1.5 font-mono text-xs text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 			>
 				[<span class="group-hover:underline">Issues</span>]
 			</a>
@@ -563,7 +563,7 @@
 				href={MAGICK_WASM_URL}
 				target="_blank"
 				rel="noopener noreferrer"
-				class="group border border-foreground/30 px-3 py-1.5 font-mono text-xs text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+				class="group border border-divider px-3 py-1.5 font-mono text-xs text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 			>
 				[<span class="group-hover:underline">magick-wasm</span>]
 			</a>

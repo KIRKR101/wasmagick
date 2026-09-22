@@ -909,7 +909,7 @@
 					class="pointer-events-none fixed right-3 bottom-12 z-50 max-w-[calc(100%-1.5rem)] sm:right-4"
 				>
 					<div
-						class="flex items-center gap-2 border border-foreground/30 bg-background px-3 py-2 font-mono text-xs text-foreground shadow-sm"
+						class="flex items-center gap-2 border border-divider bg-background px-3 py-2 font-mono text-xs text-foreground shadow-sm"
 						role="status"
 					>
 						<span

@@ -573,7 +573,7 @@
 	onpointerdown={(e) => e.stopPropagation()}
 >
 	<button
-		class="min-h-11 cursor-pointer border border-foreground/30 px-4 text-muted-foreground transition-colors hover:bg-muted focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+		class="min-h-11 cursor-pointer border border-divider px-4 text-muted-foreground transition-colors hover:bg-muted focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 		onclick={onCancel}
 	>
 		Cancel

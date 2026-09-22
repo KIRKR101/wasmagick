@@ -171,7 +171,7 @@
 			<div class="flex items-center gap-3">
 				<div class="flex items-center gap-1.5">
 					<div
-						class="relative h-7 w-7 shrink-0 overflow-hidden border border-foreground/30 transition-all hover:border-foreground"
+						class="relative h-7 w-7 shrink-0 overflow-hidden border border-divider transition-all hover:border-foreground"
 					>
 						<input
 							type="color"
@@ -187,7 +187,7 @@
 				<span class="font-mono text-[11px] text-muted-foreground">→</span>
 				<div class="flex items-center gap-1.5">
 					<div
-						class="relative h-7 w-7 shrink-0 overflow-hidden border border-foreground/30 transition-all hover:border-foreground"
+						class="relative h-7 w-7 shrink-0 overflow-hidden border border-divider transition-all hover:border-foreground"
 					>
 						<input
 							type="color"

@@ -375,11 +375,11 @@ input[type='number'] {
 }
 .properties-panel-inner input[type='number'],
 .properties-panel-inner input[type='text'] {
-	border: 1px dashed color-mix(in oklch, var(--foreground) 30%, transparent);
+	border: 1px dashed var(--divider);
 }
 .properties-panel-inner select {
 	border: none;
-	border-bottom: 1px dashed color-mix(in oklch, var(--foreground) 30%, transparent);
+	border-bottom: 1px dashed var(--divider);
 	-webkit-appearance: none;
 	-moz-appearance: none;
 	appearance: none;
@@ -428,7 +428,7 @@ input[type='number'] {
 }
 .mobile-sheet-content input[type='number'],
 .mobile-sheet-content input[type='text'] {
-	border: 1px dashed color-mix(in oklch, var(--foreground) 30%, transparent);
+	border: 1px dashed var(--divider);
 }
 .mobile-sheet-content input[type='number']:focus,
 .mobile-sheet-content input[type='text']:focus {

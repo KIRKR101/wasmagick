@@ -141,7 +141,7 @@
 					type="button"
 					onclick={loadSystemFonts}
 					disabled={loadingSystemFonts}
-					class="group w-full cursor-pointer border border-foreground/30 px-3 py-1.5 font-mono text-xs transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:cursor-wait disabled:opacity-50"
+					class="group w-full cursor-pointer border border-divider px-3 py-1.5 font-mono text-xs transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:cursor-wait disabled:opacity-50"
 				>
 					{#if loadingSystemFonts}
 						[···] <span class="group-hover:underline">LOADING</span>
@@ -164,7 +164,7 @@
 				</div>
 				<div class="flex items-center gap-1.5">
 					<div
-						class="relative h-7 w-7 shrink-0 overflow-hidden border border-foreground/30 transition-all hover:border-foreground"
+						class="relative h-7 w-7 shrink-0 overflow-hidden border border-divider transition-all hover:border-foreground"
 					>
 						<input
 							type="color"
@@ -189,7 +189,7 @@
 			magick.settings.annotateAngle[0] !== 0}
 	>
 		<div class="space-y-3">
-			<div class="border border-dashed border-foreground/30 p-2.5">
+			<div class="border border-dashed border-divider p-2.5">
 				<div class="flex items-center justify-between gap-3">
 					<div class="min-w-0">
 						<p class="font-mono text-[11px] text-foreground">Place on canvas</p>
@@ -309,7 +309,7 @@
 					/>
 					<div class="flex items-center gap-1.5">
 						<div
-							class="relative h-7 w-7 shrink-0 overflow-hidden border border-foreground/30 transition-all hover:border-foreground"
+							class="relative h-7 w-7 shrink-0 overflow-hidden border border-divider transition-all hover:border-foreground"
 						>
 							<input
 								type="color"

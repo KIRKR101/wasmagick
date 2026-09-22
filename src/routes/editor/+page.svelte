@@ -493,7 +493,7 @@
 
 {#if actionNotice}
 	<div
-		class="fixed right-4 bottom-12 z-50 flex items-center gap-3 border border-foreground/30 bg-background px-3 py-2 font-mono text-xs text-foreground shadow-sm"
+		class="fixed right-4 bottom-12 z-50 flex items-center gap-3 border border-divider bg-background px-3 py-2 font-mono text-xs text-foreground shadow-sm"
 		role="status"
 	>
 		{actionNotice}
@@ -501,7 +501,7 @@
 			<button
 				type="button"
 				onclick={revealSavedFile}
-				class="cursor-pointer border-l border-foreground/30 pl-3 text-muted-foreground underline decoration-dashed underline-offset-3 transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+				class="cursor-pointer border-l border-divider pl-3 text-muted-foreground underline decoration-dashed underline-offset-3 transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 			>
 				SHOW IN FOLDER
 			</button>

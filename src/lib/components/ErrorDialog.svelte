@@ -111,7 +111,7 @@
 			showCloseButton={false}
 		>
 			<div
-				class="border-b border-foreground/30 px-4 py-3 text-xs tracking-wider text-muted-foreground uppercase"
+				class="border-b border-divider px-4 py-3 text-xs tracking-wider text-muted-foreground uppercase"
 			>
 				Error
 			</div>
@@ -129,11 +129,11 @@
 			</div>
 
 			<div
-				class="flex flex-wrap items-center justify-end gap-2 border-t border-foreground/30 px-4 py-3"
+				class="flex flex-wrap items-center justify-end gap-2 border-t border-divider px-4 py-3"
 			>
 				<button
 					onclick={copyDetails}
-					class="cursor-pointer border border-foreground/30 px-3 py-1 font-mono text-[11px] text-muted-foreground uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+					class="cursor-pointer border border-divider px-3 py-1 font-mono text-[11px] text-muted-foreground uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 				>
 					[<span class="hover:underline">{copied ? 'Copied' : 'Copy details'}</span>]
 				</button>
@@ -141,21 +141,21 @@
 					href={reportHref}
 					target="_blank"
 					rel="noreferrer"
-					class="border border-foreground/30 px-3 py-1 font-mono text-[11px] text-muted-foreground uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+				class="border border-divider px-3 py-1 font-mono text-[11px] text-muted-foreground uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 				>
 					[<span class="hover:underline">Report issue</span>]
 				</a>
 				{#if onRetry}
 					<button
 						onclick={retry}
-						class="cursor-pointer border border-foreground/30 px-3 py-1 font-mono text-[11px] text-muted-foreground uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+						class="cursor-pointer border border-divider px-3 py-1 font-mono text-[11px] text-muted-foreground uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 					>
 						[<span class="hover:underline">Retry</span>]
 					</button>
 				{/if}
 				<button
 					onclick={close}
-					class="cursor-pointer border border-foreground/30 px-3 py-1 font-mono text-[11px] text-muted-foreground uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+					class="cursor-pointer border border-divider px-3 py-1 font-mono text-[11px] text-muted-foreground uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 				>
 					[<span class="hover:underline">Close</span>]
 				</button>

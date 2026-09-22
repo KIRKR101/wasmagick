@@ -38,7 +38,7 @@
 					aria-pressed={active}
 					class="group flex items-center justify-between gap-3 border px-3 py-2 text-left transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {active
 						? 'border-foreground bg-muted/50'
-						: 'border-foreground/30 bg-transparent hover:border-foreground/60 hover:bg-muted/30'}"
+						: 'border-divider bg-transparent hover:border-foreground/60 hover:bg-muted/30'}"
 				>
 					<span class="min-w-0">
 						<span
@@ -76,7 +76,7 @@
 			/>
 			<button
 				onclick={save}
-				class="group shrink-0 cursor-pointer border border-foreground/30 px-3 font-mono text-xs focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+				class="group shrink-0 cursor-pointer border border-divider px-3 font-mono text-xs focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 			>
 				[+] <span class="group-hover:underline">SAVE</span>
 			</button>
@@ -94,7 +94,7 @@
 					<div
 						class="group flex items-center gap-2 border px-3 py-2 transition-colors {active
 							? 'border-foreground bg-muted/50'
-							: 'border-foreground/30 bg-transparent hover:border-foreground/60 hover:bg-muted/30'}"
+							: 'border-divider bg-transparent hover:border-foreground/60 hover:bg-muted/30'}"
 					>
 						<button
 							onclick={() => applyUser(p)}

@@ -391,10 +391,10 @@
 			<div class="mb-6">
 				<div class="mb-3 text-muted-foreground">/FILE</div>
 				<div
-					class="flex flex-col gap-1.5 border border-foreground/30 px-2 py-2 font-mono text-[11px] text-muted-foreground uppercase"
+					class="flex flex-col gap-1.5 border border-divider px-2 py-2 font-mono text-[11px] text-muted-foreground uppercase"
 				>
 					<div
-						class="truncate border-b border-foreground/30 pb-1.5 text-foreground/90"
+						class="truncate border-b border-divider pb-1.5 text-foreground/90"
 						title={magick.originalName}
 					>
 						{magick.originalName}
