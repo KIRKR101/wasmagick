@@ -136,29 +136,29 @@
 			<span class="text-[11px]">CLOSE</span>
 		</button>
 
-		<div class="h-5 w-px bg-foreground/30"></div>
+		<div class="h-5 w-px bg-divider"></div>
 
 		<!-- History -->
 		<button
 			onclick={onUndo}
 			disabled={!history.canUndo}
-			class="mobile-btn"
+			class="mobile-btn flex-row gap-1.5"
 			aria-label={history.undoTargetLabel ? `Undo ${history.undoTargetLabel}` : 'Undo'}
 		>
 			<Undo2 class="size-4.5" />
-			<span class="text-[11px]">UNDO</span>
+			<span class="text-[11px] leading-none">UNDO</span>
 		</button>
 		<button
 			onclick={onRedo}
 			disabled={!history.canRedo}
-			class="mobile-btn"
+			class="mobile-btn flex-row gap-1.5"
 			aria-label={history.redoTargetLabel ? `Redo ${history.redoTargetLabel}` : 'Redo'}
 		>
 			<Redo2 class="size-4.5" />
-			<span class="text-[11px]">REDO</span>
+			<span class="text-[11px] leading-none">REDO</span>
 		</button>
 
-		<div class="h-5 w-px bg-foreground/30"></div>
+		<div class="h-5 w-px bg-divider"></div>
 
 		<!-- Settings -->
 		<button onclick={onReset} disabled={!anyDirty} class="mobile-btn" aria-label="Reset all">
