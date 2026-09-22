@@ -27,9 +27,9 @@
 		MIN_HISTORY_LIMIT,
 		MAGICK_WASM_URL,
 		REPO_URL,
-		buildOutputFilename,
 		clearAllAppStorage,
 		clearExportDefaults,
+		formatOutputFilename,
 		getExportDefaults,
 		getFilenameTemplate,
 		getHistoryLimit,
@@ -115,7 +115,7 @@
 
 	let filenamePreview = $derived.by(() => {
 		try {
-			return buildOutputFilename({
+			return formatOutputFilename(filenameTemplate, {
 				name: 'photo',
 				ext: 'webp',
 				format: 'webp',
