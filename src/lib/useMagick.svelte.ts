@@ -32,7 +32,7 @@ import {
 	outputExtensionForFormat,
 	type ExportFormat
 } from './export-formats';
-import { buildOutputFilename } from './settings';
+import { basenameWithoutExtension, buildOutputFilename } from './settings';
 import { BROWSER_RENDERABLE_FORMATS } from './image-capabilities';
 import {
 	isSvgInputName,
@@ -1964,9 +1964,7 @@ export class MagickState {
 		this.hasUnsavedEdits = true;
 		this.markPreviewFresh();
 
-		const nameParts = this.originalName.split('.');
-		if (nameParts.length > 1) nameParts.pop();
-		const baseName = nameParts.join('.') || this.originalName;
+		const baseName = basenameWithoutExtension(this.originalName);
 		this.processedImageName = buildOutputFilename({
 			name: baseName,
 			ext: outputExtension,

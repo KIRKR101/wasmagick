@@ -375,17 +375,18 @@ function registerIpc() {
 
 	ipcMain.handle('file:save', async (event, payload) => {
 		const win = BrowserWindow.fromWebContents(event.sender);
-		const ext = path.extname(payload.name).replace('.', '').toLowerCase() || 'png';
-		const previousPath =
-			lastSavedPath && path.extname(lastSavedPath).toLowerCase() === `.${ext}`
-				? lastSavedPath
-				: lastSavedPath
-					? path.join(path.dirname(lastSavedPath), payload.name)
-					: null;
+		const rawName = typeof payload?.name === 'string' ? payload.name.trim() : '';
+		const ext = path.extname(rawName).replace('.', '').toLowerCase() || 'png';
+		const fileName = rawName || `image.${ext}`;
+		// Always use the current export name; only the directory is remembered
+		// from the previous save so consecutive exports never reuse a stale name.
+		const defaultPath = lastSavedPath
+			? path.join(path.dirname(lastSavedPath), fileName)
+			: path.join(app.getPath('downloads'), fileName);
 
 		const result = await dialog.showSaveDialog(win, {
 			title: 'Save Image',
-			defaultPath: previousPath || path.join(app.getPath('downloads'), payload.name),
+			defaultPath,
 			filters: [{ name: 'Image', extensions: [ext] }]
 		});
 		if (result.canceled || !result.filePath) return false;

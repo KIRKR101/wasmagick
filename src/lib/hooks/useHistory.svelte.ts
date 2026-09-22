@@ -12,7 +12,7 @@
 
 import type { MagickState } from '$lib/useMagick.svelte';
 import { outputExtensionForFormat } from '$lib/export-formats';
-import { buildOutputFilename, getHistoryLimit } from '$lib/settings';
+import { basenameWithoutExtension, buildOutputFilename, getHistoryLimit } from '$lib/settings';
 import type { MagickSettings } from '$lib/types';
 
 export interface SettingsDiffItem {
@@ -379,7 +379,7 @@ export class HistoryState {
 				? await cloneBlobUrl(entry.previewBlobUrl)
 				: null;
 			magick.processedImageFormat = entry.format;
-			const base = magick.originalName.replace(/\.[^.]+$/, '');
+			const base = basenameWithoutExtension(magick.originalName);
 			magick.processedImageName = buildOutputFilename({
 				name: base,
 				ext: outputExtensionForFormat(entry.format),
