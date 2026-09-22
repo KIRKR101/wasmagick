@@ -20,30 +20,33 @@
 	} = $props();
 </script>
 
-<div class="flex border border-divider {className}">
+<div class="relative flex overflow-hidden border border-divider {className}">
 	<button
 		onclick={onUndo}
 		disabled={!canUndo}
 		aria-label={undoLabel}
 		title={undoLabel}
-		class="group flex flex-1 cursor-pointer items-center justify-center gap-1.5 px-2 py-1 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+		class="group flex flex-1 cursor-pointer items-center justify-center gap-1.5 px-2 py-1 font-mono text-[11px] leading-none text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 	>
-		<span class="inline-flex w-[3ch] items-center justify-center" aria-hidden="true"
+		<span class="inline-flex w-[3ch] shrink-0 items-center justify-center" aria-hidden="true"
 			><Undo2 class="size-[1em]" /></span
 		>
 		<span class="group-hover:underline">UNDO</span>
 	</button>
-	<div class="w-px self-stretch bg-foreground/30"></div>
 	<button
 		onclick={onRedo}
 		disabled={!canRedo}
 		aria-label={redoLabel}
 		title={redoLabel}
-		class="group flex flex-1 cursor-pointer items-center justify-center gap-1.5 px-2 py-1 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+		class="group flex flex-1 cursor-pointer items-center justify-center gap-1.5 px-2 py-1 font-mono text-[11px] leading-none text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 	>
-		<span class="group-hover:underline">REDO</span>
-		<span class="inline-flex w-[3ch] items-center justify-center" aria-hidden="true"
+		<span class="inline-flex w-[3ch] shrink-0 items-center justify-center" aria-hidden="true"
 			><Redo2 class="size-[1em]" /></span
 		>
+		<span class="group-hover:underline">REDO</span>
 	</button>
+	<div
+		class="pointer-events-none absolute top-0 bottom-0 left-1/2 w-px -translate-x-1/2 bg-divider"
+		aria-hidden="true"
+	></div>
 </div>

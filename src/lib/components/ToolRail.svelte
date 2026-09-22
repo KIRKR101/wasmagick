@@ -459,7 +459,7 @@
 		<div class="mb-3 text-muted-foreground">/NAV</div>
 		<div class="flex flex-col gap-1.5">
 			<UndoRedoButtons
-				class="mb-2"
+				class="mb-2 min-h-7"
 				canUndo={history.canUndo}
 				canRedo={history.canRedo}
 				{onUndo}
