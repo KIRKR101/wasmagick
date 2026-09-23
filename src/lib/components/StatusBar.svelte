@@ -52,7 +52,7 @@
 		{#if isDirty}
 			<span
 				class="flex items-center gap-1 text-foreground/70"
-				title={`Unsaved edits — press ${shortcutModifier}+S to export`}
+				title={`Unsaved edits, press ${shortcutModifier}+S to export`}
 			>
 				<span class="font-mono text-xs text-amber-500" aria-hidden="true">[*]</span>
 				<span>Unsaved</span>

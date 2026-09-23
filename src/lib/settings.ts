@@ -7,8 +7,8 @@ import packageJson from '../../package.json';
  * instantiating any editor state (the filename template is resolved on every
  * process, the history limit on every push):
  *
- * - `wasmagick.filename-template` — output filename pattern
- * - `wasmagick-settings` — default export format / quality / metadata
+ * - `wasmagick.filename-template` - output filename pattern
+ * - `wasmagick-settings` - default export format / quality / metadata
  *   stripping (shared with the editor's persisted export settings)
  *
  * Theme mode lives in `theme` and is handled by `$lib/theme`.

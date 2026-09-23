@@ -23,19 +23,19 @@
 		const target = history.undoTargetLabel;
 		if (!target) return;
 		await history.undo(magick);
-		onNavigate?.(`Undid — ${target}`);
+		onNavigate?.(`Undid - ${target}`);
 	}
 
 	async function redo() {
 		const target = history.redoTargetLabel;
 		if (!target) return;
 		await history.redo(magick);
-		onNavigate?.(`Redid — ${target}`);
+		onNavigate?.(`Redid - ${target}`);
 	}
 
 	async function jump(id: number, label: string) {
 		await history.jumpTo(magick, id);
-		onNavigate?.(`History — ${label}`);
+		onNavigate?.(`History - ${label}`);
 	}
 
 	function getDiff(i: number): SettingsDiffItem[] {

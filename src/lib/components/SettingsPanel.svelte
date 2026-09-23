@@ -361,7 +361,7 @@
 			<p
 				class="border border-dashed border-foreground/20 px-2 py-4 text-center text-[10px] text-muted-foreground/60"
 			>
-				No saved presets yet — save one from the editor, or import a backup.
+				No saved presets yet, save one from the editor, or import a backup.
 			</p>
 		{:else}
 			<ul class="space-y-1">

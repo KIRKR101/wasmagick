@@ -182,14 +182,14 @@
 		const target = history.undoTargetLabel;
 		if (!target) return;
 		await history.undo(magick);
-		showNotice(`Undid — ${target}`);
+		showNotice(`Undid - ${target}`);
 	}
 
 	async function handleRedo(): Promise<void> {
 		const target = history.redoTargetLabel;
 		if (!target) return;
 		await history.redo(magick);
-		showNotice(`Redid — ${target}`);
+		showNotice(`Redid - ${target}`);
 	}
 
 	function processCurrent() {
@@ -236,12 +236,12 @@
 			history.markCurrentSaved();
 			if (window.wasmagick) {
 				showNotice(
-					stale ? 'Image saved — settings changed since preview' : 'Image saved',
+					stale ? 'Image saved, settings changed since preview' : 'Image saved',
 					true,
 					5000
 				);
 			} else {
-				showNotice(stale ? 'Exported last preview — settings changed' : 'Image exported');
+				showNotice(stale ? 'Exported last preview, settings changed' : 'Image exported');
 			}
 		} else {
 			showNotice('Could not save image');
@@ -351,7 +351,7 @@
 		const files = e.dataTransfer?.files;
 		if (files && files.length > 0) {
 			if (files.length > 1) {
-				showNotice(`Only one image at a time — opening the first of ${files.length}`);
+				showNotice(`Only one image at a time, opening the first of ${files.length}`);
 			}
 			guard.requestReplace(files[0], replaceImage);
 		}

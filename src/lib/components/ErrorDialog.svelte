@@ -85,7 +85,7 @@
 			if (copyTimer) clearTimeout(copyTimer);
 			copyTimer = setTimeout(() => (copied = false), 2000);
 		} catch {
-			// Clipboard unavailable (permissions, non-secure context) — the
+			// Clipboard unavailable (permissions, non-secure context), the
 			// full text is still visible above for manual copying.
 		}
 	}

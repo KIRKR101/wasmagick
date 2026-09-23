@@ -88,15 +88,15 @@
 	let canDownload = $derived(!!magick.processedImageUrl);
 	let processTip = $derived(
 		!magick.sourceBytes
-			? 'Process — load an image first'
+			? 'Process - load an image first'
 			: !magick.wasmLoaded
-				? 'Process — engine loading…'
+				? 'Process - engine loading…'
 				: magick.isStale
-					? `Settings changed — process to update preview (${shortcutModifier}+Enter)`
+					? `Settings changed, process to update preview (${shortcutModifier}+Enter)`
 					: `Process image (${shortcutModifier}+Enter)`
 	);
 	let exportTip = $derived(
-		!canDownload ? 'Export — process image first' : `Export result (${shortcutModifier}+S)`
+		!canDownload ? 'Export - process image first' : `Export result (${shortcutModifier}+S)`
 	);
 	let qualityLabel = $derived(
 		isLosslessExportFormat(magick.settings.imageFormat)

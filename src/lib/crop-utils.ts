@@ -116,10 +116,10 @@ export function constrainAspect(
 
 	const currentRatio = w / h;
 	if (currentRatio > ratio) {
-		// Too wide — reduce width
+		// Too wide, reduce width
 		w = h * ratio;
 	} else {
-		// Too tall — reduce height
+		// Too tall, reduce height
 		h = w / ratio;
 	}
 
@@ -135,7 +135,7 @@ export function constrainAspect(
 		case 'sw':
 			y = crop.y + crop.h - h;
 			break;
-		// 'nw' — anchor is top-left, no position adjustment needed
+		// 'nw' - anchor is top-left, no position adjustment needed
 	}
 
 	return { x, y, w, h };
@@ -175,7 +175,7 @@ export function hitTestHandle(
 		}
 	}
 
-	// 2. Edge bands — wider hit zones along each border, excluding corners
+	// 2. Edge bands - wider hit zones along each border, excluding corners
 	const inTopBand = screenPt.y >= y - edgeBand && screenPt.y <= y + edgeBand;
 	const inBottomBand = screenPt.y >= y + h - edgeBand && screenPt.y <= y + h + edgeBand;
 	const inLeftBand = screenPt.x >= x - edgeBand && screenPt.x <= x + edgeBand;
@@ -192,7 +192,7 @@ export function hitTestHandle(
 	if (inLeftBand && !isVertCorner(screenPt.y)) return 'w';
 	if (inRightBand && !isVertCorner(screenPt.y)) return 'e';
 
-	// 3. Interior — moving
+	// 3. Interior - moving
 	if (screenPt.x >= x && screenPt.x <= x + w && screenPt.y >= y && screenPt.y <= y + h) {
 		return 'move';
 	}

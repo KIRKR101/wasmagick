@@ -181,7 +181,7 @@ function getNativeVersions() {
 			if (typeof versions.vips === 'string') vips = versions.vips;
 		}
 	} catch {
-		// sharp unavailable — leave nulls
+		// sharp unavailable, leave nulls
 	}
 	return { magick: getNativeVersion(), sharp, vips };
 }

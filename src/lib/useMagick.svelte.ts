@@ -582,7 +582,7 @@ export class MagickState {
 	/**
 	 * True when a processed preview exists but settings have changed since
 	 * it was rendered. History navigation restores settings and preview
-	 * together (and re-marks them fresh), so it never trips this — only
+	 * together (and re-marks them fresh), so it never trips this, only
 	 * real edits after a process do.
 	 */
 	get isStale(): boolean {

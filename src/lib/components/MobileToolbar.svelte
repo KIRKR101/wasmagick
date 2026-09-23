@@ -163,11 +163,11 @@
 			disabled={!canProcess}
 			class="mobile-btn"
 			aria-label={!magick.sourceBytes
-				? 'Process — load an image first'
+				? 'Process - load an image first'
 				: !magick.wasmLoaded
-					? 'Process — engine loading…'
+					? 'Process - engine loading…'
 					: magick.isStale
-						? 'Settings changed — process to update preview'
+						? 'Settings changed, process to update preview'
 						: 'Process image'}
 		>
 			{#if isLoading}

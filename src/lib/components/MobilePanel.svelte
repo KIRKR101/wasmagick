@@ -287,11 +287,11 @@
 					? 'font-semibold underline underline-offset-4'
 					: ''}"
 				aria-label={!magick.sourceBytes
-					? 'Process — load an image first'
+					? 'Process - load an image first'
 					: !magick.wasmLoaded
-						? 'Process — engine loading…'
+						? 'Process - engine loading…'
 						: magick.isStale
-							? 'Settings changed — process to update preview'
+							? 'Settings changed, process to update preview'
 							: 'Process image'}
 			>
 				{#if magick.isLoading}

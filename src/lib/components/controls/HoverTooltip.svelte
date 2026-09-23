@@ -8,19 +8,19 @@
 	 * popover-style tooltip next to it. Reveals on hover and keyboard focus.
 	 *
 	 * The tooltip is `position: fixed` (viewport coordinates, very high
-	 * z-index) so it can escape overflow containers — e.g. the properties
-	 * panel's scroll area — without being clipped, and stays above canvas
+	 * z-index) so it can escape overflow containers, e.g. the properties
+	 * panel's scroll area, without being clipped, and stays above canvas
 	 * overlays. It is edge-clamped: when the chosen side would push the
 	 * tooltip off the viewport, it is nudged back so it always stays on
 	 * screen. On viewports < 768px wide the tooltip is hidden entirely
 	 * (matching the original ToolRail `max-md:hidden` behavior).
 	 *
 	 * `side` controls visual placement:
-	 *   - `auto` (default) — pick the side with the most viewport space
-	 *   - `right` — to the right of the trigger, vertically centered
-	 *   - `bottom` — below the trigger, horizontally centered
-	 *   - `top`    — above the trigger, horizontally centered
-	 *   - `left`   — to the left of the trigger, vertically centered
+	 *   - `auto` (default) - pick the side with the most viewport space
+	 *   - `right` - to the right of the trigger, vertically centered
+	 *   - `bottom` - below the trigger, horizontally centered
+	 *   - `top`    - above the trigger, horizontally centered
+	 *   - `left`   - to the left of the trigger, vertically centered
 	 *
 	 * Pass `label` for a plain string, or `labelChildren` for rich content
 	 * (e.g. mixed text styles for shortcut hints). If both are provided,
@@ -62,7 +62,7 @@
 		// Decide which side to use. For 'auto', prefer the orientation that
 		// matches the trigger's shape (wide triggers want top/bottom, tall
 		// triggers want left/right). A side "fits" when the tooltip can sit
-		// without any clamping in the parallel axis — i.e. it naturally
+		// without any clamping in the parallel axis, i.e. it naturally
 		// fits on the screen without being pushed against an edge. If the
 		// preferred side doesn't fit, try the next, falling back to the
 		// first preference with clamping.

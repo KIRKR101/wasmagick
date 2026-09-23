@@ -426,7 +426,7 @@
 	);
 
 	// Warn exactly while the original (which the browser cannot render) is the
-	// image on screen — before processing, and in compare/split views.
+	// image on screen, before processing, and in compare/split views.
 	let imageFailed = $derived(
 		!!originalPreviewFailed &&
 			!originalPreviewData &&
@@ -593,7 +593,7 @@
 	// Re-fit when the processed image changes (history navigation can swap
 	// the <img src> to a cached copy, in which case onload may not refire
 	// and the previous fit would be stale for the new dimensions).
-	// Only refit for the processed image — toggling between processed and
+	// Only refit for the processed image, toggling between processed and
 	// original for hold-to-compare must not reset zoom/pan.
 	$effect(() => {
 		const url = processedImageUrl;
@@ -996,11 +996,11 @@
 						<MagnifyingGlassMinus class="size-3.5" />
 					</button>
 				</HoverTooltip>
-				<HoverTooltip label="Zoom level — click to reset to 100%" side="top">
+				<HoverTooltip label="Zoom level - click to reset to 100%" side="top">
 					<button
 						onclick={zoomToOneToOne}
 						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-						aria-label="Zoom level — click to reset to 100%"
+						aria-label="Zoom level - click to reset to 100%"
 					>
 						<span class="tabular-nums">{Math.round(currentZoom)}%</span>
 					</button>
@@ -1035,7 +1035,7 @@
 				<HoverTooltip
 					label={processedImageUrl
 						? 'Hold to compare original (Space)'
-						: 'Compare unavailable — process image first'}
+						: 'Compare unavailable, process image first'}
 					side="top"
 				>
 					<button
@@ -1058,13 +1058,13 @@
 						aria-pressed={compareActive}
 						aria-label={processedImageUrl
 							? 'Hold to compare original (Space)'
-							: 'Compare unavailable — process image first'}
+							: 'Compare unavailable, process image first'}
 					>
 						<Images class="size-3.5" />
 					</button>
 				</HoverTooltip>
 				<HoverTooltip
-					label={canSplit ? 'Split compare (B)' : 'Split unavailable — process image first'}
+					label={canSplit ? 'Split compare (B)' : 'Split unavailable, process image first'}
 					side="top"
 				>
 					<button
@@ -1074,7 +1074,7 @@
 							? 'bg-muted/50 text-foreground'
 							: ''}"
 						aria-pressed={splitMode}
-						aria-label={canSplit ? 'Split compare (B)' : 'Split unavailable — process image first'}
+						aria-label={canSplit ? 'Split compare (B)' : 'Split unavailable, process image first'}
 					>
 						<SquareSplitHorizontal class="size-3.5" />
 					</button>

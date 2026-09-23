@@ -23,10 +23,10 @@ export interface SettingsDiffItem {
 }
 
 function fmt(val: unknown): string {
-	if (val === null || val === undefined) return '—';
+	if (val === null || val === undefined) return '-';
 	if (typeof val === 'boolean') return val ? 'on' : 'off';
 	if (typeof val === 'number') return String(val);
-	if (typeof val === 'string') return val || '—';
+	if (typeof val === 'string') return val || '-';
 	return String(val);
 }
 
@@ -394,7 +394,7 @@ export class HistoryState {
 		magick.processedImageTime = entry.time;
 		magick.hasUnsavedEdits = !entry.isOriginal && !entry.saved;
 		// The restored preview was rendered from the restored settings, so
-		// re-mark them fresh — undo/redo itself must never read as stale.
+		// re-mark them fresh, undo/redo itself must never read as stale.
 		if (entry.isOriginal) magick.clearPreviewSnapshot();
 		else magick.markPreviewFresh();
 		magick.hasError = false;
