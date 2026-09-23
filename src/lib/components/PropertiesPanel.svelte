@@ -161,7 +161,7 @@
 	<div class="mt-auto border-t border-divider bg-chrome p-4">
 		<div class="mb-3 flex items-center justify-between text-xs text-muted-foreground uppercase">
 			<span>Output format</span>
-			<span class="underline underline-offset-2">{magick.settings.imageFormat} {qualityLabel}</span>
+			<span>{magick.settings.imageFormat} {qualityLabel}</span>
 		</div>
 		<div class="flex flex-col gap-1.5">
 			<HoverTooltip label={processTip} side="top" triggerClass="w-full">
