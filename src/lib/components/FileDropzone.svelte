@@ -83,7 +83,7 @@
 		</button>
 		<button
 			onclick={() => cameraInputEl?.click()}
-			class="cursor-pointer border border-divider px-3 py-1.5 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+			class="cursor-pointer border border-divider px-3 py-1.5 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none sm:hidden"
 		>
 			[<span class="hover:underline"> Take photo </span>]
 		</button>
