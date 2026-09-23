@@ -51,7 +51,7 @@
 			Drop an image to begin
 		</h2>
 		<p class="font-mono text-[11px] text-muted-foreground/60">
-			Drag &amp; drop anywhere, paste from clipboard, or browse.
+			Drag &amp; drop, paste from clipboard, or browse.
 		</p>
 	</div>
 
