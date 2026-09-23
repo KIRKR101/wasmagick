@@ -29,47 +29,59 @@
 </script>
 
 <div class="relative h-full overflow-y-auto bg-background">
-	<div class="grid-bg" aria-hidden="true"></div>
-	<div class="grain-bg" aria-hidden="true"></div>
+	<!-- Mobile: image as full background -->
+	<img
+		src="/images/lake.jpg"
+		alt=""
+		aria-hidden="true"
+		class="fixed inset-0 h-full w-full object-cover sm:hidden"
+	/>
 	<div
-		class="pointer-events-none absolute -top-[300px] -left-[220px] h-[760px] w-[760px] rounded-full bg-[radial-gradient(circle,color-mix(in_oklch,var(--foreground)_4%,transparent),transparent_68%)]"
+		class="fixed inset-0 bg-gradient-to-b from-background/70 via-background/20 to-background/80 sm:hidden"
+		aria-hidden="true"
+	></div>
+
+	<div class="grid-bg hidden sm:block" aria-hidden="true"></div>
+	<div class="grain-bg hidden sm:block" aria-hidden="true"></div>
+	<div
+		class="pointer-events-none absolute -top-[300px] -left-[220px] hidden h-[760px] w-[760px] rounded-full bg-[radial-gradient(circle,color-mix(in_oklch,var(--foreground)_4%,transparent),transparent_68%)] sm:block"
 		aria-hidden="true"
 	></div>
 
 	<main
 		id="main"
-		class="relative z-10 mx-auto flex min-h-full w-full max-w-3xl flex-1 flex-col justify-center px-4 py-10 text-foreground sm:px-6 sm:py-16"
+		class="relative z-10 mx-auto flex min-h-full w-full max-w-3xl flex-1 flex-col justify-center px-3 py-6 text-foreground sm:px-6 sm:py-16"
 	>
-		<section class="relative overflow-hidden rounded-3xl border border-border">
+		<section class="relative sm:overflow-hidden sm:rounded-3xl sm:border sm:border-border">
 			<img
 				src="/images/lake.jpg"
 				alt=""
 				aria-hidden="true"
-				class="absolute inset-0 h-full w-full object-cover"
+				class="absolute inset-0 hidden h-full w-full object-cover sm:block"
 			/>
 
 			<div
-				class="relative mx-auto my-6 w-full max-w-xl overflow-hidden rounded-2xl border border-border bg-card p-8 text-card-foreground sm:my-10 sm:p-10"
+				class="relative mx-auto my-2 w-full max-w-xl overflow-hidden rounded-xl border border-border bg-card p-5 text-card-foreground shadow-xl sm:my-10 sm:rounded-2xl sm:p-10 sm:shadow-none"
 			>
 				<div class="card-grain" aria-hidden="true"></div>
 				<div class="relative z-10">
-					<section class="pb-10 text-left sm:pb-12">
-						<p class="-ml-[0.16em] font-mono text-5xl leading-none text-muted-foreground/30">
+					<section class="pb-6 text-left sm:pb-12">
+						<p class="-ml-[0.16em] font-mono text-4xl leading-none text-muted-foreground/30 sm:text-5xl">
 							[<span
-								class="font-sans text-4xl leading-none tracking-tighter text-foreground sm:text-5xl"
+								class="font-sans text-3xl leading-none tracking-tighter text-foreground sm:text-5xl"
 							>
 								WASMagick
 							</span>]
 						</p>
 
-						<p class="mt-4 max-w-prose text-base leading-relaxed text-muted-foreground">
+						<p class="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground sm:mt-4 sm:text-base">
 							Edit and convert images in your browser or on your desktop. Nothing leaves your device.
 						</p>
 
-						<div class="mt-6 flex flex-wrap items-center gap-3">
+						<div class="mt-4 flex flex-col gap-2 sm:mt-6 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
 							<a
 								href={releasesUrl}
-								class="inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-85 dark:bg-white dark:text-black"
+								class="hidden h-9 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-85 sm:inline-flex sm:h-10 dark:bg-white dark:text-black"
 							>
 								<DownloadSimple size={17} weight="bold" />
 								Download for {platformLabel}
@@ -77,7 +89,7 @@
 
 							<a
 								href="/editor"
-								class="inline-flex h-10 items-center gap-2 rounded-md border border-border bg-white px-4 text-sm font-medium text-black backdrop-blur-sm transition-colors hover:bg-muted dark:bg-secondary dark:text-secondary-foreground dark:hover:bg-muted"
+								class="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-85 sm:h-10 sm:border sm:border-border sm:bg-white sm:text-black sm:backdrop-blur-sm sm:hover:bg-muted sm:hover:opacity-100 dark:bg-white dark:text-black sm:dark:bg-secondary sm:dark:text-secondary-foreground sm:dark:hover:bg-muted"
 							>
 								<Globe size={17} weight="bold" />
 								Open web app
@@ -89,7 +101,7 @@
 						class="grid divide-y divide-border border-y border-border"
 						aria-label="WASMagick features"
 					>
-						<article class="grid gap-2 py-6 sm:grid-cols-[180px_1fr] sm:gap-8">
+						<article class="grid gap-1 py-4 sm:grid-cols-[180px_1fr] sm:gap-8 sm:py-6">
 							<h2 class="text-sm font-semibold tracking-tight text-foreground">Private</h2>
 
 							<p class="max-w-prose text-sm leading-relaxed text-muted-foreground">
@@ -98,7 +110,7 @@
 							</p>
 						</article>
 
-						<article class="grid gap-2 py-6 sm:grid-cols-[180px_1fr] sm:gap-8">
+						<article class="grid gap-1 py-4 sm:grid-cols-[180px_1fr] sm:gap-8 sm:py-6">
 							<h2 class="text-sm font-semibold tracking-tight text-foreground">Fast</h2>
 
 							<p class="max-w-prose text-sm leading-relaxed text-muted-foreground">
@@ -106,7 +118,7 @@
 							</p>
 						</article>
 
-						<article class="grid gap-2 py-6 sm:grid-cols-[180px_1fr] sm:gap-8">
+						<article class="grid gap-1 py-4 sm:grid-cols-[180px_1fr] sm:gap-8 sm:py-6">
 							<h2 class="text-sm font-semibold tracking-tight text-foreground">Any format</h2>
 
 							<p class="max-w-prose text-sm leading-relaxed text-muted-foreground">
@@ -132,7 +144,7 @@
 							</p>
 						</article>
 
-						<article class="grid gap-2 py-6 sm:grid-cols-[180px_1fr] sm:gap-8">
+						<article class="grid gap-1 py-4 sm:grid-cols-[180px_1fr] sm:gap-8 sm:py-6">
 							<h2 class="text-sm font-semibold tracking-tight text-foreground">Web and desktop</h2>
 
 							<p class="max-w-prose text-sm leading-relaxed text-muted-foreground">
