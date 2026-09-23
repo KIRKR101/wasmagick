@@ -245,13 +245,13 @@
 				{onUndo}
 				{onRedo}
 				{onDownload}
+				{onProcess}
 				onToggleTools={togglePanel}
 				onFitToScreen={handleFitToScreen}
 				onCompareStart={handleCompareStart}
 				onCompareEnd={handleCompareEnd}
 				onToggleSplitCompare={handleToggleSplit}
 				{splitMode}
-				onReset={onResetRequest}
 				onClose={onCloseRequest}
 				{onOpenSettings}
 			/>
@@ -269,6 +269,7 @@
 		{onAnnotationPlacementChange}
 		{onProcess}
 		{onDownload}
+		onReset={onResetRequest}
 		onClearRequest={onClearHistoryRequest}
 		onNavigate={onHistoryNavigate}
 		onClose={() => (panelOpen = false)}

@@ -8,11 +8,10 @@
 	import SlidersHorizontal from 'phosphor-svelte/lib/SlidersHorizontal';
 	import CornersOut from 'phosphor-svelte/lib/CornersOut';
 	import CircleNotch from 'phosphor-svelte/lib/CircleNotch';
-	import ArrowCounterClockwise from 'phosphor-svelte/lib/ArrowCounterClockwise';
+	import Play from 'phosphor-svelte/lib/Play';
 	import X from 'phosphor-svelte/lib/X';
 	import type { MagickState } from '$lib/useMagick.svelte';
 	import type { HistoryState } from '$lib/hooks/useHistory.svelte';
-	import { isSettingsDirty } from '$lib/utils';
 
 	let {
 		magick,
@@ -23,13 +22,13 @@
 		onUndo,
 		onRedo,
 		onDownload,
+		onProcess,
 		onToggleTools,
 		onFitToScreen,
 		onCompareStart,
 		onCompareEnd,
 		onToggleSplitCompare,
 		splitMode = false,
-		onReset,
 		onClose,
 		onOpenSettings
 	}: {
@@ -41,19 +40,19 @@
 		onUndo: () => void;
 		onRedo: () => void;
 		onDownload: () => void;
+		onProcess: () => void;
 		onToggleTools: () => void;
 		onFitToScreen: () => void;
 		onCompareStart: () => void;
 		onCompareEnd: () => void;
 		onToggleSplitCompare: () => void;
 		splitMode?: boolean;
-		onReset: () => void;
 		onClose: () => void;
 		onOpenSettings: () => void;
 	} = $props();
 
 	let canDownload = $derived(!!magick.processedImageUrl);
-	let anyDirty = $derived(isSettingsDirty(magick.settings));
+	let canProcess = $derived(!!magick.sourceBytes && magick.wasmLoaded && !isLoading);
 </script>
 
 <div class="mobile-toolbar">
@@ -159,9 +158,24 @@
 		<div class="h-5 w-px bg-divider"></div>
 
 		<!-- Settings -->
-		<button onclick={onReset} disabled={!anyDirty} class="mobile-btn" aria-label="Reset all">
-			<ArrowCounterClockwise class="size-4.5" />
-			<span class="text-[11px]">RESET</span>
+		<button
+			onclick={onProcess}
+			disabled={!canProcess}
+			class="mobile-btn"
+			aria-label={!magick.sourceBytes
+				? 'Process — load an image first'
+				: !magick.wasmLoaded
+					? 'Process — engine loading…'
+					: magick.isStale
+						? 'Settings changed — process to update preview'
+						: 'Process image'}
+		>
+			{#if isLoading}
+				<CircleNotch class="size-4.5 animate-spin" />
+			{:else}
+				<Play class="size-4.5" />
+			{/if}
+			<span class="text-[11px]">PROCESS</span>
 		</button>
 		<button
 			onclick={onToggleTools}

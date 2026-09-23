@@ -66,7 +66,9 @@
 				<div class="card-grain" aria-hidden="true"></div>
 				<div class="relative z-10">
 					<section class="pb-6 text-left sm:pb-12">
-						<p class="-ml-[0.16em] font-mono text-4xl leading-none text-muted-foreground/30 sm:text-5xl">
+						<p
+							class="-ml-[0.16em] font-mono text-4xl leading-none text-muted-foreground/30 sm:text-5xl"
+						>
 							[<span
 								class="font-sans text-3xl leading-none tracking-tighter text-foreground sm:text-5xl"
 							>
@@ -74,11 +76,16 @@
 							</span>]
 						</p>
 
-						<p class="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground sm:mt-4 sm:text-base">
-							Edit and convert images in your browser or on your desktop. Nothing leaves your device.
+						<p
+							class="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground sm:mt-4 sm:text-base"
+						>
+							Edit and convert images in your browser or on your desktop. Nothing leaves your
+							device.
 						</p>
 
-						<div class="mt-4 flex flex-col gap-2 sm:mt-6 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+						<div
+							class="mt-4 flex flex-col gap-2 sm:mt-6 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3"
+						>
 							<a
 								href={releasesUrl}
 								class="hidden h-9 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-85 sm:inline-flex sm:h-10 dark:bg-white dark:text-black"
@@ -105,8 +112,8 @@
 							<h2 class="text-sm font-semibold tracking-tight text-foreground">Private</h2>
 
 							<p class="max-w-prose text-sm leading-relaxed text-muted-foreground">
-								Images are decoded, processed, and exported on your device and never sent to a server.
-								There are no accounts, cookies, or analytics.
+								Images are decoded, processed, and exported on your device and never sent to a
+								server. There are no accounts, cookies, or analytics.
 							</p>
 						</article>
 
@@ -134,9 +141,9 @@
 										class="invisible absolute bottom-full left-0 z-50 mb-2 w-64 rounded-md border border-border bg-popover p-3 text-left text-xs leading-relaxed font-normal text-popover-foreground opacity-0 shadow-lg transition group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100"
 									>
 										<strong class="mb-1 block text-[13px]">Format support</strong>
-										Reads JPEG, PNG, WebP, AVIF, JXL, HEIC, TIFF, GIF, PSD, PDF, SVG, EXR etc. plus 29 camera
-										RAW coders such as CR2, NEF, ARW and DNG. Writes 72 containers, from WebP and JPEG to
-										ICO, TGA and PDF. RAW is read-only.
+										Reads JPEG, PNG, WebP, AVIF, JXL, HEIC, TIFF, GIF, PSD, PDF, SVG, EXR etc. plus 29
+										camera RAW coders such as CR2, NEF, ARW and DNG. Writes 72 containers, from WebP and
+										JPEG to ICO, TGA and PDF. RAW is read-only.
 									</span>
 								</button>
 								and output 72. Convert between everyday formats like JPEG, PNG, and WebP and rarer ones
@@ -197,7 +204,7 @@
 		pointer-events: none;
 		background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 		background-size: 180px 180px;
-		opacity: 0.20;
+		opacity: 0.2;
 		image-rendering: pixelated;
 	}
 
