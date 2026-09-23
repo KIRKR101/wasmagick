@@ -90,7 +90,7 @@
 						}
 					}}
 				>
-					Select Region
+					Visual
 				</button>
 				<button
 					type="button"
@@ -108,7 +108,7 @@
 						}
 					}}
 				>
-					Gravity
+					Manual
 				</button>
 				<div
 					class="pointer-events-none absolute top-0 bottom-0 left-1/2 w-px -translate-x-1/2 bg-divider"
