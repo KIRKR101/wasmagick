@@ -120,7 +120,8 @@
 				<!-- Visual mode: Select Region + Ratio + Position bar -->
 				<button
 					type="button"
-					class="flex h-8 w-full cursor-pointer items-center justify-center gap-1.5 rounded-none border border-divider px-2.5 py-0 font-mono text-[11px] whitespace-nowrap uppercase transition-colors duration-75 outline-none select-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 dark:hover:bg-muted/50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 {magick.cropMode
+					disabled={!magick.originalImageUrl}
+					class="flex h-8 w-full cursor-pointer items-center justify-center gap-1.5 rounded-none border border-divider px-2.5 py-0 font-mono text-[11px] whitespace-nowrap uppercase transition-colors duration-75 outline-none select-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-muted/50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 {magick.cropMode
 						? 'bg-muted/50 font-medium text-foreground'
 						: 'bg-transparent text-muted-foreground dark:bg-transparent'}"
 					onclick={() => magick.toggleCropMode()}
