@@ -31,7 +31,6 @@
 	let actionNoticeTimer: ReturnType<typeof setTimeout> | null = null;
 	let toastCanReveal = $state(false);
 	let annotationPlacementActive = $state(false);
-	let isElectron = $state(false);
 	installClipboardPaste(guard, replaceImage);
 
 	$effect(() => {
@@ -64,8 +63,7 @@
 	});
 
 	onMount(() => {
-		isElectron = Boolean(window.wasmagick);
-		if (!isElectron) {
+		if (!window.wasmagick) {
 			window.wasmagickSetDebug = (enabled = true) => (debugMode = enabled);
 		}
 		const mql = window.matchMedia(MOBILE_BREAKPOINT);
@@ -473,7 +471,6 @@
 		{history}
 		{presets}
 		{guard}
-		{isElectron}
 		bind:activeSection
 		bind:viewport
 		{annotationPlacementActive}

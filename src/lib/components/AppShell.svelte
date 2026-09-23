@@ -5,7 +5,6 @@
 	import StatusBar from './StatusBar.svelte';
 	import ConfirmDialog from './ConfirmDialog.svelte';
 	import LargeFileDialog from './LargeFileDialog.svelte';
-	import BuildDetailsDialog from './BuildDetailsDialog.svelte';
 	import { IMAGE_FILE_ACCEPT } from '$lib/utils';
 	import type { MagickState } from '$lib/useMagick.svelte';
 	import type { HistoryState } from '$lib/hooks/useHistory.svelte';
@@ -19,7 +18,6 @@
 		history,
 		presets,
 		guard,
-		isElectron = false,
 		activeSection = $bindable('geometry'),
 		viewport = $bindable(null),
 		onToggleShortcuts,
@@ -40,7 +38,6 @@
 		history: HistoryState;
 		presets: PresetsState;
 		guard: ReplaceGuardState;
-		isElectron?: boolean;
 		activeSection?: EditorSection;
 		viewport?: ReturnType<typeof CanvasViewport> | null;
 		onToggleShortcuts: () => void;
@@ -121,11 +118,6 @@
 
 	let clearHistoryOpen = $state(false);
 	let resetConfirmOpen = $state(false);
-	let buildDetailsOpen = $state(false);
-
-	function handleDebugClick() {
-		buildDetailsOpen = true;
-	}
 
 	function onClearHistoryRequest() {
 		clearHistoryOpen = true;
@@ -168,13 +160,11 @@
 		<ToolRail
 			{magick}
 			{history}
-			{isElectron}
 			{activeSection}
 			onSectionChange={setSection}
 			onUploadClick={openFilePicker}
 			onReset={onResetRequest}
 			onClose={onCloseRequest}
-			onShowBuildDetails={handleDebugClick}
 			{onToggleShortcuts}
 			{onOpenSettings}
 			{onUndo}
@@ -273,7 +263,3 @@
 	onContinue={onLargeFileContinue}
 	onClose={onLargeFileClose}
 />
-
-{#if isElectron}
-	<BuildDetailsDialog bind:open={buildDetailsOpen} />
-{/if}

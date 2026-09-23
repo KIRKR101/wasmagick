@@ -170,6 +170,22 @@ function getNativeVersion() {
 	return String(result.stdout || '').match(/^Version:\s*ImageMagick\s+([^\s]+)/m)?.[1] ?? null;
 }
 
+/** Versions backing Settings → Build on Electron (magick CLI + sharp/libvips). */
+function getNativeVersions() {
+	let sharp = null;
+	let vips = null;
+	try {
+		const versions = getSharp()?.versions;
+		if (versions) {
+			if (typeof versions.sharp === 'string') sharp = versions.sharp;
+			if (typeof versions.vips === 'string') vips = versions.vips;
+		}
+	} catch {
+		// sharp unavailable — leave nulls
+	}
+	return { magick: getNativeVersion(), sharp, vips };
+}
+
 /** Parse the writable rows from `magick -list format`. */
 function parseNativeFormatList(output) {
 	const formats = [];
@@ -1181,6 +1197,7 @@ async function getNativeFontMetrics(payload) {
 function registerMagickNative(ipcMain) {
 	ipcMain.handle('magick:native-available', () => isNativeAvailable());
 	ipcMain.handle('magick:native-version', () => getNativeVersion());
+	ipcMain.handle('magick:native-versions', () => getNativeVersions());
 	ipcMain.handle('magick:native-raw-available', () => isNativeRawAvailable());
 	ipcMain.handle('magick:native-formats', () => listNativeFormats());
 	ipcMain.handle('magick:process-native', async (_event, payload) => processNative(payload));
@@ -1193,6 +1210,7 @@ module.exports = {
 	resolveWebpTool,
 	isNativeAvailable,
 	getNativeVersion,
+	getNativeVersions,
 	isNativeRawAvailable,
 	parseNativeFormatList,
 	listNativeFormats,

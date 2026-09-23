@@ -8,7 +8,6 @@ import packageJson from '../../package.json';
  * process, the history limit on every push):
  *
  * - `wasmagick.filename-template` — output filename pattern
- * - `wasmagick.history-limit` — max undo entries kept per editor session
  * - `wasmagick-settings` — default export format / quality / metadata
  *   stripping (shared with the editor's persisted export settings)
  *
@@ -16,17 +15,16 @@ import packageJson from '../../package.json';
  */
 
 export const APP_VERSION = packageJson.version;
+/** Installed `@imagemagick/magick-wasm` version without the semver range prefix. */
+export const MAGICK_WASM_VERSION =
+	packageJson.dependencies['@imagemagick/magick-wasm']?.replace(/^[^\d]*/, '') || 'Unknown';
 export const REPO_URL = 'https://github.com/KIRKR101/wasmagick';
 export const MAGICK_WASM_URL = 'https://github.com/dlemstra/magick-wasm';
 
 const FILENAME_KEY = 'wasmagick.filename-template';
-const HISTORY_LIMIT_KEY = 'wasmagick.history-limit';
 const EXPORT_DEFAULTS_KEY = 'wasmagick-settings';
 
 export const DEFAULT_FILENAME_TEMPLATE = '{name}-edited.{ext}';
-export const DEFAULT_HISTORY_LIMIT = 40;
-export const MIN_HISTORY_LIMIT = 5;
-export const MAX_HISTORY_LIMIT = 200;
 
 function readStorage(key: string): string | null {
 	try {
@@ -131,27 +129,6 @@ export function buildOutputFilename(vars: FilenameVars): string {
 	return formatOutputFilename(getFilenameTemplate(), vars);
 }
 
-// --- History limit -----------------------------------------------------------
-
-export function getHistoryLimit(): number {
-	const raw = readStorage(HISTORY_LIMIT_KEY);
-	if (raw == null) return DEFAULT_HISTORY_LIMIT;
-	const parsed = Number.parseInt(raw, 10);
-	if (!Number.isFinite(parsed)) return DEFAULT_HISTORY_LIMIT;
-	return Math.min(MAX_HISTORY_LIMIT, Math.max(MIN_HISTORY_LIMIT, parsed));
-}
-
-export function setHistoryLimit(limit: number): void {
-	if (!Number.isFinite(limit) || limit === DEFAULT_HISTORY_LIMIT) {
-		removeStorage(HISTORY_LIMIT_KEY);
-	} else {
-		writeStorage(
-			HISTORY_LIMIT_KEY,
-			String(Math.min(MAX_HISTORY_LIMIT, Math.max(MIN_HISTORY_LIMIT, Math.round(limit))))
-		);
-	}
-}
-
 // --- Default export settings ---------------------------------------------------
 
 export interface ExportDefaults {
@@ -211,13 +188,7 @@ export interface StorageEntry {
 	bytes: number;
 }
 
-const KNOWN_STORAGE_KEYS = [
-	'theme',
-	FILENAME_KEY,
-	HISTORY_LIMIT_KEY,
-	EXPORT_DEFAULTS_KEY,
-	'wasmagick.presets.v1'
-];
+const KNOWN_STORAGE_KEYS = ['theme', FILENAME_KEY, EXPORT_DEFAULTS_KEY, 'wasmagick.presets.v1'];
 
 export function getStorageUsage(): StorageEntry[] {
 	const entries: StorageEntry[] = [];
@@ -228,9 +199,4 @@ export function getStorageUsage(): StorageEntry[] {
 		}
 	}
 	return entries;
-}
-
-/** Remove every known app key (theme, filename, history limit, export defaults, presets). */
-export function clearAllAppStorage(): void {
-	for (const key of KNOWN_STORAGE_KEYS) removeStorage(key);
 }

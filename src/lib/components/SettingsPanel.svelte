@@ -22,27 +22,19 @@
 	import {
 		APP_VERSION,
 		DEFAULT_FILENAME_TEMPLATE,
-		DEFAULT_HISTORY_LIMIT,
-		MAX_HISTORY_LIMIT,
-		MIN_HISTORY_LIMIT,
-		MAGICK_WASM_URL,
-		REPO_URL,
+		MAGICK_WASM_VERSION,
 		buildOutputFilename,
-		clearAllAppStorage,
 		clearExportDefaults,
 		getExportDefaults,
 		getFilenameTemplate,
-		getHistoryLimit,
 		getStorageUsage,
 		setExportDefaults,
 		setFilenameTemplate,
-		setHistoryLimit,
 		type ExportDefaults,
 		type StorageEntry
 	} from '$lib/settings';
 	import { PresetsState, BUILTIN_PRESETS, type UserPreset } from '$lib/hooks/usePresets.svelte';
 	import { formatBytes } from '$lib/utils';
-	import { buildGeneralIssueBody, buildIssueUrl } from '$lib/issue-report';
 	import { FALLBACK_EXPORT_FORMATS } from '$lib/export-formats';
 
 	let { onClose }: { onClose: () => void } = $props();
@@ -56,8 +48,16 @@
 		stripMeta: false
 	});
 	let filenameTemplate = $state(DEFAULT_FILENAME_TEMPLATE);
-	let historyLimit = $state(DEFAULT_HISTORY_LIMIT);
 	let storage = $state<StorageEntry[]>([]);
+	const isElectron = typeof window !== 'undefined' && Boolean(window.wasmagick);
+	let nativeVersions = $state<WasmagickNativeVersions>({
+		magick: null,
+		sharp: null,
+		vips: null
+	});
+	// Loaded lazily on open so importing settings does not pull
+	// `@imagemagick/magick-wasm` into the initial chunk.
+	let wasmEngineVersion = $state('Not loaded');
 	let renameId = $state<string | null>(null);
 	let renameValue = $state('');
 	let importInput = $state<HTMLInputElement | null>(null);
@@ -98,20 +98,6 @@
 		filenameTemplate = DEFAULT_FILENAME_TEMPLATE;
 		setFilenameTemplate(DEFAULT_FILENAME_TEMPLATE);
 	}
-
-	function onHistoryLimitInput(value: number): void {
-		if (!Number.isFinite(value)) return;
-		historyLimit = Math.min(MAX_HISTORY_LIMIT, Math.max(MIN_HISTORY_LIMIT, Math.round(value)));
-		setHistoryLimit(historyLimit);
-	}
-
-	let issuesHref = $derived.by(() => {
-		try {
-			return buildIssueUrl('Bug report', buildGeneralIssueBody());
-		} catch {
-			return buildIssueUrl('Bug report', '');
-		}
-	});
 
 	let filenamePreview = $derived.by(() => {
 		try {
@@ -196,65 +182,78 @@
 		exportDefaults = getExportDefaults();
 	}
 
-	function resetAllSettings(): void {
-		clearAllAppStorage();
-		themeMode = getThemeMode();
-		applyThemeMode(themeMode);
-		filenameTemplate = getFilenameTemplate();
-		historyLimit = getHistoryLimit();
-		exportDefaults = getExportDefaults();
-		presets.clearUsers();
-		refreshStorage();
-	}
-
 	onMount(() => {
 		themeMode = getThemeMode();
 		exportDefaults = getExportDefaults();
 		filenameTemplate = getFilenameTemplate();
-		historyLimit = getHistoryLimit();
 		presets.load();
 		refreshStorage();
+
+		let cancelled = false;
+		import('@imagemagick/magick-wasm')
+			.then(({ Magick }) => {
+				if (cancelled) return;
+				try {
+					wasmEngineVersion =
+						Magick.imageMagickVersion.match(/\bImageMagick\s+([^\s]+)/)?.[1] ?? 'Not loaded';
+				} catch {
+					wasmEngineVersion = 'Not loaded';
+				}
+			})
+			.catch(() => {
+				if (!cancelled) wasmEngineVersion = 'Not loaded';
+			});
+		if (window.wasmagick?.getNativeVersions) {
+			window.wasmagick
+				.getNativeVersions()
+				.then((versions) => {
+					if (!cancelled && versions) nativeVersions = versions;
+				})
+				.catch(() => {});
+		} else if (window.wasmagick?.getNativeVersion) {
+			window.wasmagick
+				.getNativeVersion()
+				.then((version) => {
+					if (!cancelled) nativeVersions = { magick: version, sharp: null, vips: null };
+				})
+				.catch(() => {});
+		}
+		return () => {
+			cancelled = true;
+		};
 	});
 </script>
 
-<div class="settings-page font-mono">
-	<div class="mb-4 flex items-start justify-between gap-4 border-b border-divider pb-4">
-		<div>
-			<h2 class="text-xs tracking-wider text-muted-foreground uppercase">Settings</h2>
-			<p class="mt-1 max-w-md text-[11px] text-muted-foreground/60">
-				Changes save automatically and apply immediately.
-			</p>
-		</div>
+<div class="settings-page space-y-2 font-mono sm:space-y-3">
+	<div class="flex items-center justify-between gap-3 border-b border-divider pb-2">
+		<h2 class="text-[11px] tracking-wider text-muted-foreground uppercase">Settings</h2>
 		<button
 			type="button"
 			onclick={onClose}
 			aria-label="Close settings"
-			class="flex size-6 shrink-0 cursor-pointer items-center justify-center text-muted-foreground/40 transition-colors duration-75 hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+			class="flex size-8 shrink-0 cursor-pointer items-center justify-center text-muted-foreground/60 transition-colors duration-75 hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 		>
-			<X class="size-3.5" />
+			<X class="size-4" />
 		</button>
 	</div>
 
 	<!-- Appearance -->
-	<section class="mb-4 border border-divider p-4">
-		<h3 class="mb-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-			/APPEARANCE
+	<section class="border border-divider p-2.5 sm:p-3">
+		<h3 class="mb-2 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+			Appearance
 		</h3>
-		<p class="mb-3 text-[11px] text-muted-foreground/60">
-			Auto follows your operating system's color scheme.
-		</p>
-		<div class="grid grid-cols-3 gap-1.5" role="group" aria-label="Theme">
+		<div class="grid grid-cols-3 gap-1" role="group" aria-label="Theme">
 			{#each themeOptions as option (option.id)}
 				<button
 					type="button"
 					aria-pressed={themeMode === option.id}
 					onclick={() => onThemeChange(option.id as ThemeMode)}
-					class="flex cursor-pointer items-center justify-center gap-1.5 border px-2 py-2 text-xs transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {themeMode ===
+					class="flex cursor-pointer items-center justify-center gap-1.5 border px-1 py-2 text-[11px] transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {themeMode ===
 					option.id
 						? 'border-foreground bg-muted/50 text-foreground'
 						: 'border-divider text-muted-foreground hover:border-foreground/60'}"
 				>
-					<option.icon class="size-3.5" />
+					<option.icon class="size-3.5 shrink-0" />
 					<span class={themeMode === option.id ? 'underline' : ''}>{option.label}</span>
 				</button>
 			{/each}
@@ -262,18 +261,25 @@
 	</section>
 
 	<!-- Export defaults -->
-	<section class="mb-4 border border-divider p-4">
-		<h3 class="mb-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-			/EXPORT DEFAULTS
-		</h3>
-		<p class="mb-3 text-[11px] text-muted-foreground/60">
-			Starting point for every new editor session.
-		</p>
-		<div class="grid grid-cols-2 gap-3">
-			<div class="flex flex-col gap-2">
-				<span class="text-[11px] tracking-wide text-muted-foreground uppercase">Format</span>
+	<section class="border border-divider p-2.5 sm:p-3">
+		<div class="mb-2 flex items-baseline justify-between gap-2">
+			<h3 class="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+				Export defaults
+			</h3>
+			<button
+				type="button"
+				onclick={resetExportDefaults}
+				class="group flex shrink-0 cursor-pointer items-center gap-1 text-[11px] text-muted-foreground/70 transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+			>
+				<ArrowCounterClockwise class="size-3" />
+				<span class="group-hover:underline">RESET</span>
+			</button>
+		</div>
+		<div class="grid grid-cols-1 gap-2 min-[440px]:grid-cols-2">
+			<div class="flex min-w-0 flex-col gap-1">
+				<span class="text-[10px] tracking-wide text-muted-foreground uppercase">Format</span>
 				<Select type="single" bind:value={exportDefaults.imageFormat}>
-					<SelectTrigger class="h-9 w-full font-mono text-xs uppercase">
+					<SelectTrigger class="h-8 w-full font-mono text-[11px] uppercase">
 						{exportDefaults.imageFormat}
 					</SelectTrigger>
 					<SelectContent>
@@ -285,14 +291,14 @@
 					</SelectContent>
 				</Select>
 			</div>
-			<div class="flex flex-col gap-2">
+			<div class="flex min-w-0 flex-col gap-1">
 				<div class="flex h-4 items-center justify-between">
-					<span class="text-[11px] tracking-wide text-muted-foreground uppercase">Quality</span>
-					<span class="font-mono text-xs text-foreground tabular-nums"
+					<span class="text-[10px] tracking-wide text-muted-foreground uppercase">Quality</span>
+					<span class="font-mono text-[11px] text-foreground tabular-nums"
 						>{exportDefaults.quality[0]}%</span
 					>
 				</div>
-				<div class="flex h-9 items-center">
+				<div class="flex h-8 items-center">
 					<Slider type="multiple" bind:value={exportDefaults.quality} min={1} max={100} step={1} />
 				</div>
 			</div>
@@ -300,28 +306,19 @@
 		<ToggleRow
 			id="settings-strip-meta"
 			label="Strip Metadata"
-			description="Remove EXIF / profiles by default"
+			description="EXIF / profiles"
 			bind:checked={exportDefaults.stripMeta}
-			class="mt-3"
+			class="mt-1"
 		/>
-		<button
-			type="button"
-			onclick={resetExportDefaults}
-			class="group mt-2 flex cursor-pointer items-center gap-1.5 border border-divider px-3 py-1.5 font-mono text-xs text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-		>
-			<ArrowCounterClockwise class="size-3.5" />
-			<span class="group-hover:underline">RESET EXPORT DEFAULTS</span>
-		</button>
 	</section>
 
 	<!-- Output filename -->
-	<section class="mb-4 border border-divider p-4">
-		<h3 class="mb-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-			/OUTPUT FILENAME
+	<section class="border border-divider p-2.5 sm:p-3">
+		<h3 class="mb-1 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+			Filename
 		</h3>
-		<p class="mb-3 text-[11px] text-muted-foreground/60">
-			Tokens: <span class="text-foreground/80">{'{name} {ext} {format} {date} {time} {w} {h}'}</span
-			>
+		<p class="mb-2 text-[10px] break-all text-muted-foreground/60">
+			<span class="text-foreground/70">{'{name} {ext} {format} {date} {time} {w} {h}'}</span>
 		</p>
 		<input
 			type="text"
@@ -330,49 +327,52 @@
 			spellcheck={false}
 			autocomplete="off"
 			aria-label="Output filename format"
-			class="h-9 w-full border border-dashed border-divider bg-transparent px-2 font-mono text-xs text-foreground"
+			class="h-8 w-full border border-dashed border-divider bg-transparent px-2 font-mono text-[11px] text-foreground"
 		/>
-		<div class="mt-2 flex items-center justify-between gap-3 font-mono text-[11px]">
-			<span class="truncate text-muted-foreground"
-				>Preview: <span class="text-foreground">{filenamePreview}</span></span
+		<div
+			class="mt-1.5 flex flex-col gap-1 font-mono text-[10px] min-[440px]:flex-row min-[440px]:items-center min-[440px]:justify-between"
+		>
+			<span class="min-w-0 truncate text-muted-foreground"
+				>→ <span class="text-foreground">{filenamePreview}</span></span
 			>
 			<button
 				type="button"
 				onclick={resetFilename}
-				class="group flex shrink-0 cursor-pointer items-center gap-1.5 text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+				class="group flex shrink-0 cursor-pointer items-center gap-1 self-start text-muted-foreground/70 transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none min-[440px]:self-auto"
 			>
-				<ArrowCounterClockwise class="size-3.5" />
+				<ArrowCounterClockwise class="size-3" />
 				<span class="group-hover:underline">RESET</span>
 			</button>
 		</div>
 	</section>
 
 	<!-- Presets -->
-	<section class="mb-4 border border-divider p-4">
-		<h3 class="mb-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-			/PRESETS
-		</h3>
-		<p class="mb-3 text-[11px] text-muted-foreground/60">
-			{BUILTIN_PRESETS.length} built-in &middot; {presets.userPresets.length} saved
-			{#if presetsBytes > 0}({formatBytes(presetsBytes)} locally){/if}. Manage your saved presets
-			here — the editor's Presets panel stays for applying them mid-edit.
-		</p>
+	<section class="border border-divider p-2.5 sm:p-3">
+		<div class="mb-2 flex items-baseline justify-between gap-2">
+			<h3 class="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+				Presets
+			</h3>
+			<span class="shrink-0 text-[10px] text-muted-foreground/60 tabular-nums">
+				{BUILTIN_PRESETS.length} built-in · {presets.userPresets.length} saved{#if presetsBytes > 0}
+					· {formatBytes(presetsBytes)}{/if}
+			</span>
+		</div>
 		{#if presets.userPresets.length === 0}
 			<p
-				class="border border-dashed border-foreground/20 px-3 py-6 text-center text-[11px] text-muted-foreground/60"
+				class="border border-dashed border-foreground/20 px-2 py-4 text-center text-[10px] text-muted-foreground/60"
 			>
-				No saved presets yet — save one from the editor's Presets panel, or import a backup below.
+				No saved presets yet — save one from the editor, or import a backup.
 			</p>
 		{:else}
-			<ul class="space-y-1.5">
+			<ul class="space-y-1">
 				{#each presets.userPresets as preset (preset.id)}
-					<li class="flex items-center gap-2 border border-divider px-3 py-2">
+					<li class="flex items-center gap-1.5 border border-divider px-2 py-1.5">
 						{#if renameId === preset.id}
 							<input
 								type="text"
 								bind:value={renameValue}
 								aria-label="Preset name"
-								class="h-8 w-full min-w-0 border border-foreground/50 bg-transparent px-2 font-mono text-xs text-foreground"
+								class="h-7 w-full min-w-0 border border-foreground/50 bg-transparent px-2 font-mono text-[11px] text-foreground"
 								onkeydown={(e) => {
 									if (e.key === 'Enter') commitRename(preset.id);
 									else if (e.key === 'Escape') renameId = null;
@@ -381,16 +381,16 @@
 							/>
 						{:else}
 							<div class="min-w-0 flex-1">
-								<div class="truncate text-xs font-semibold text-foreground">{preset.name}</div>
-								<div class="truncate text-[11px] text-muted-foreground">
-									{preset.settings.imageFormat} &middot; q{preset.settings.quality[0]}
+								<div class="truncate text-[11px] font-semibold text-foreground">{preset.name}</div>
+								<div class="truncate text-[10px] text-muted-foreground">
+									{preset.settings.imageFormat} · q{preset.settings.quality[0]}
 								</div>
 							</div>
 							<button
 								type="button"
 								onclick={() => startRename(preset)}
 								aria-label="Rename preset {preset.name}"
-								class="group flex shrink-0 cursor-pointer items-center gap-1.5 px-1 font-mono text-xs text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+								class="group flex shrink-0 cursor-pointer items-center gap-1 px-1.5 py-1 font-mono text-[11px] text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 							>
 								<PencilSimple class="size-3.5" />
 								<span class="group-hover:underline">RENAME</span>
@@ -399,7 +399,7 @@
 								type="button"
 								onclick={() => deletePreset(preset.id)}
 								aria-label="Delete preset {preset.name}"
-								class="flex size-6 shrink-0 cursor-pointer items-center justify-center text-muted-foreground transition-colors duration-75 hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+								class="flex size-7 shrink-0 cursor-pointer items-center justify-center text-muted-foreground transition-colors duration-75 hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 							>
 								<Trash class="size-3.5" />
 							</button>
@@ -408,36 +408,36 @@
 				{/each}
 			</ul>
 		{/if}
-		<div class="mt-3 flex flex-wrap gap-1.5">
+		<div class="mt-2 flex flex-wrap gap-1">
 			<button
 				type="button"
 				onclick={exportPresets}
 				disabled={presets.userPresets.length === 0}
-				class="group flex cursor-pointer items-center gap-1.5 border border-divider px-3 py-1.5 font-mono text-xs text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+				class="group flex cursor-pointer items-center gap-1 border border-divider px-2 py-1 font-mono text-[11px] text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 			>
-				<DownloadSimple class="size-3.5" />
-				<span class="group-hover:underline">EXPORT JSON</span>
+				<DownloadSimple class="size-3" />
+				<span class="group-hover:underline">EXPORT</span>
 			</button>
 			<button
 				type="button"
 				onclick={() => importInput?.click()}
-				class="group flex cursor-pointer items-center gap-1.5 border border-divider px-3 py-1.5 font-mono text-xs text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+				class="group flex cursor-pointer items-center gap-1 border border-divider px-2 py-1 font-mono text-[11px] text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 			>
-				<UploadSimple class="size-3.5" />
-				<span class="group-hover:underline">IMPORT JSON</span>
+				<UploadSimple class="size-3" />
+				<span class="group-hover:underline">IMPORT</span>
 			</button>
 			<button
 				type="button"
 				onclick={() => armOrRun('clear-presets', clearPresets)}
 				disabled={presets.userPresets.length === 0}
-				class="group flex cursor-pointer items-center gap-1.5 border border-divider px-3 py-1.5 font-mono text-xs transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 {armedAction ===
+				class="group flex cursor-pointer items-center gap-1 border border-divider px-2 py-1 font-mono text-[11px] transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 {armedAction ===
 				'clear-presets'
 					? 'border-destructive text-destructive'
 					: 'text-muted-foreground'}"
 			>
-				<Trash class="size-3.5" />
+				<Trash class="size-3" />
 				<span class="group-hover:underline"
-					>{armedAction === 'clear-presets' ? 'CONFIRM DELETE' : 'DELETE ALL'}</span
+					>{armedAction === 'clear-presets' ? 'CONFIRM' : 'DELETE ALL'}</span
 				>
 			</button>
 			<input
@@ -454,119 +454,48 @@
 		</div>
 	</section>
 
-	<!-- History & storage -->
-	<section class="mb-4 border border-divider p-4">
-		<h3 class="mb-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-			/HISTORY &amp; STORAGE
+	<!-- Build -->
+	<section class="border border-divider p-2.5 sm:p-3">
+		<h3 class="mb-2 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+			Build
 		</h3>
-		<p class="mb-3 text-[11px] text-muted-foreground/60">
-			Undo history lives in memory per editor session and clears on reload — this controls how many
-			states each session keeps.
-		</p>
-		<div class="mb-3 flex items-center justify-between gap-3">
-			<label for="history-limit" class="text-[11px] tracking-wide text-muted-foreground uppercase">
-				Max history entries ({MIN_HISTORY_LIMIT}–{MAX_HISTORY_LIMIT})
-			</label>
-			<input
-				id="history-limit"
-				type="number"
-				min={MIN_HISTORY_LIMIT}
-				max={MAX_HISTORY_LIMIT}
-				step={1}
-				value={historyLimit}
-				oninput={(e) => onHistoryLimitInput(e.currentTarget.valueAsNumber)}
-				class="h-8 w-20 border border-dashed border-divider bg-transparent px-2 text-right font-mono text-xs text-foreground"
-			/>
-		</div>
-		<div class="border-t border-foreground/20 pt-3">
-			<div class="mb-2 text-[11px] tracking-wide text-muted-foreground uppercase">
-				Local storage
+		<div class="grid gap-1 text-[11px]">
+			<div class="flex justify-between gap-4">
+				<span class="text-muted-foreground">App</span><span>{APP_VERSION}</span>
 			</div>
-			{#if storage.length === 0}
-				<p class="text-[11px] text-muted-foreground/60">Nothing stored yet.</p>
-			{:else}
-				<ul class="mb-3 space-y-1 font-mono text-[11px]">
-					{#each storage as entry (entry.key)}
-						<li class="flex justify-between gap-3">
-							<span class="truncate text-muted-foreground">{entry.key}</span>
-							<span class="shrink-0 text-foreground tabular-nums">{formatBytes(entry.bytes)}</span>
-						</li>
-					{/each}
-				</ul>
+			{#if isElectron}
+				<div class="flex justify-between gap-4">
+					<span class="text-muted-foreground">Native ImageMagick</span><span
+						>{nativeVersions.magick ?? 'Unavailable'}</span
+					>
+				</div>
+				<div class="flex justify-between gap-4">
+					<span class="text-muted-foreground">Sharp</span><span
+						>{nativeVersions.sharp ?? 'Unavailable'}</span
+					>
+				</div>
+				<div class="flex justify-between gap-4">
+					<span class="text-muted-foreground">libvips</span><span
+						>{nativeVersions.vips ?? 'Unavailable'}</span
+					>
+				</div>
+				<div class="flex justify-between gap-4">
+					<span class="text-muted-foreground">Electron</span><span
+						>{window.wasmagick?.electronVersion ?? 'Unknown'}</span
+					>
+				</div>
 			{/if}
-			<button
-				type="button"
-				onclick={() => armOrRun('reset-all', resetAllSettings)}
-				class="group flex cursor-pointer items-center gap-1.5 border border-divider px-3 py-1.5 font-mono text-xs transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {armedAction ===
-				'reset-all'
-					? 'border-destructive text-destructive'
-					: 'text-muted-foreground'}"
-			>
-				<ArrowCounterClockwise class="size-3.5" />
-				<span class="group-hover:underline"
-					>{armedAction === 'reset-all' ? 'CONFIRM RESET' : 'RESET ALL SETTINGS'}</span
+			<div class="flex justify-between gap-4">
+				<span class="text-muted-foreground">WASM package</span><span>{MAGICK_WASM_VERSION}</span>
+			</div>
+			<div class="flex justify-between gap-4">
+				<span class="text-muted-foreground">WASM engine</span><span>{wasmEngineVersion}</span>
+			</div>
+			<div class="flex justify-between gap-4">
+				<span class="text-muted-foreground">Platform</span><span
+					>{window.wasmagick?.platform ?? 'Web'}</span
 				>
-			</button>
-		</div>
-	</section>
-
-	<!-- About -->
-	<section class="border border-divider p-4">
-		<h3 class="mb-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-			/ABOUT
-		</h3>
-		<p class="mb-3 text-[11px] leading-relaxed text-muted-foreground/80">
-			WASMagick v{APP_VERSION} — client-side image editor. All processing happens locally in your browser
-			or desktop app; images never leave your device.
-		</p>
-		<ul class="mb-3 space-y-1 font-mono text-[11px] text-muted-foreground">
-			<li class="flex justify-between gap-3">
-				<span>UI</span><span class="text-right text-foreground"
-					>SvelteKit + Svelte 5 + Tailwind CSS</span
-				>
-			</li>
-			<li class="flex justify-between gap-3">
-				<span>Engine</span><span class="text-right text-foreground"
-					>ImageMagick via magick-wasm</span
-				>
-			</li>
-			<li class="flex justify-between gap-3">
-				<span>Desktop</span><span class="text-right text-foreground"
-					>Electron + native ImageMagick bundle</span
-				>
-			</li>
-			<li class="flex justify-between gap-3">
-				<span>Offline</span><span class="text-right text-foreground">PWA with service worker</span>
-			</li>
-			<li class="flex justify-between gap-3">
-				<span>License</span><span class="text-right text-foreground">see GitHub repository</span>
-			</li>
-		</ul>
-		<div class="flex flex-wrap gap-1.5">
-			<a
-				href={REPO_URL}
-				target="_blank"
-				rel="noopener noreferrer"
-				class="group border border-divider px-3 py-1.5 font-mono text-xs text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-			>
-				[<span class="group-hover:underline">GitHub</span>]
-			</a>
-			<a
-				href={issuesHref}
-				target="_blank"
-				rel="noopener noreferrer"
-				class="group border border-divider px-3 py-1.5 font-mono text-xs text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-			>
-				[<span class="group-hover:underline">Issues</span>]
-			</a>
-			<a
-				href={MAGICK_WASM_URL}
-				target="_blank"
-				rel="noopener noreferrer"
-				class="group border border-divider px-3 py-1.5 font-mono text-xs text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-			>
-				[<span class="group-hover:underline">magick-wasm</span>]
-			</a>
+			</div>
 		</div>
 	</section>
 </div>
