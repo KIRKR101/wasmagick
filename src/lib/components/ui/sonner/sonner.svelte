@@ -45,12 +45,12 @@
 		display: flex;
 		align-items: center;
 		gap: 0.75rem;
-		border: 1px solid var(--border);
-		border-radius: var(--radius);
-		background: var(--background);
+		border: 1px solid var(--divider);
+		border-radius: 0;
+		background: var(--chrome);
 		padding: 0.625rem 0.75rem;
 		color: var(--foreground);
-		box-shadow: 0 4px 14px rgb(0 0 0 / 12%);
+		box-shadow: 0 1px 3px rgb(0 0 0 / 8%);
 		font-family: var(--font-mono, monospace);
 		font-size: 0.75rem;
 		line-height: 1.25rem;
