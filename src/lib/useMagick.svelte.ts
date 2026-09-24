@@ -487,6 +487,7 @@ export class MagickState {
 	processedImageUrl = $state<string | null>(null);
 	processedPreviewUrl = $state<string | null>(null);
 	processedPreviewData = $state<Uint8Array | null>(null);
+	processedImageSize = $state(0);
 	processedPreviewWidth = $state(0);
 	processedPreviewHeight = $state(0);
 	processedImageFormat = $state<string | null>(null);
@@ -1219,6 +1220,7 @@ export class MagickState {
 			this.clearPreviewSnapshot();
 
 			this.processedImageFormat = null;
+			this.processedImageSize = 0;
 			this.processedPreviewData = null;
 			this.processedPreviewWidth = 0;
 			this.processedPreviewHeight = 0;
@@ -1273,6 +1275,7 @@ export class MagickState {
 		this.processedImageUrl = null;
 		this.processedPreviewData = null;
 		this.processedImageFormat = null;
+		this.processedImageSize = 0;
 		this.processedImageName = null;
 		this.processedImageTime = 0;
 		this.processedImageDelta = 'N/A';
@@ -1987,6 +1990,7 @@ export class MagickState {
 		if (this.processedPreviewUrl) URL.revokeObjectURL(this.processedPreviewUrl);
 
 		this.processedImageUrl = URL.createObjectURL(blob);
+		this.processedImageSize = blob.size;
 		this.processedPreviewUrl = previewImageData?.length
 			? URL.createObjectURL(
 					new Blob([previewImageData as unknown as BlobPart], {

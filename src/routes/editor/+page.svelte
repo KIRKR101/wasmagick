@@ -14,6 +14,7 @@
 	import { resolveInitialTheme } from '$lib/theme';
 	import { usesShortcutModifier } from '$lib/shortcuts';
 	import { toast } from '$lib/components/ui/sonner';
+	import { formatBytes } from '$lib/utils';
 	import type { EditorSection } from '$lib/editor-types';
 	import type { AnnotationPlacement } from '$lib/annotation-utils';
 
@@ -192,6 +193,18 @@
 		magick.processImage(debugMode, () => {
 			// Push to history after a successful process.
 			void history.pushFromMagick(magick, describeSettings());
+			if (isMobile) {
+				const percentChange =
+					magick.originalImageSize > 0
+						? ((magick.processedImageSize - magick.originalImageSize) / magick.originalImageSize) *
+							100
+						: 0;
+				const percentLabel = `${percentChange > 0 ? '+' : ''}${percentChange.toFixed(1)}%`;
+				toast(
+					`${formatBytes(magick.originalImageSize)} ${(magick.originalImageFormat ?? 'unknown').toUpperCase()} → ${formatBytes(magick.processedImageSize)} ${(magick.processedImageFormat ?? 'unknown').toUpperCase()} ${percentLabel}`,
+					{ duration: 5000 }
+				);
+			}
 			// Defer the reset so the new processed image has time to decode
 			// and expose its naturalWidth/Height to fitImageToScreen.
 			setTimeout(() => viewport?.resetView(), 100);
