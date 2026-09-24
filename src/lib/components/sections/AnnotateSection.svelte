@@ -7,7 +7,7 @@
 		SelectTrigger
 	} from '$lib/components/ui/select/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
-	import type { MagickState } from '$lib/useMagick.svelte';
+	import { DEFAULT_SETTINGS, type MagickState } from '$lib/useMagick.svelte';
 	import SliderRow from '$lib/components/controls/SliderRow.svelte';
 	import ToggleRow from '$lib/components/controls/ToggleRow.svelte';
 	import SectionCard from '$lib/components/controls/SectionCard.svelte';
@@ -162,6 +162,7 @@
 						suffix="pt"
 						min={4}
 						max={400}
+						resetValue={DEFAULT_SETTINGS.annotateFontSize[0]}
 					/>
 				</div>
 				<div class="flex items-center gap-1.5">
@@ -186,6 +187,7 @@
 				suffix="°"
 				min={-180}
 				max={180}
+				resetValue={DEFAULT_SETTINGS.annotateAngle[0]}
 			/>
 			<div class="border-t border-foreground/10 pt-3">
 				<div class="mb-1.5 font-mono text-[11px] text-muted-foreground uppercase">Outline</div>
@@ -203,6 +205,7 @@
 							min={0}
 							max={10}
 							step={0.5}
+							resetValue={DEFAULT_SETTINGS.annotateStrokeWidth[0]}
 						/>
 						<div class="flex items-center gap-1.5">
 							<div

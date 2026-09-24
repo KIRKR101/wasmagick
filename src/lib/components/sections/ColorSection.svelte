@@ -5,7 +5,7 @@
 		SelectItem,
 		SelectTrigger
 	} from '$lib/components/ui/select/index.js';
-	import type { MagickState } from '$lib/useMagick.svelte';
+	import { DEFAULT_SETTINGS, type MagickState } from '$lib/useMagick.svelte';
 	import type { LevelChannel } from '$lib/types';
 	import SliderRow from '$lib/components/controls/SliderRow.svelte';
 	import ToggleRow from '$lib/components/controls/ToggleRow.svelte';
@@ -55,14 +55,22 @@
 				suffix="%"
 				min={0}
 				max={200}
+				resetValue={DEFAULT_SETTINGS.brightness[0]}
 			/>
-			<SliderRow label="Contrast" bind:value={magick.settings.contrast} min={-100} max={100} />
+			<SliderRow
+				label="Contrast"
+				bind:value={magick.settings.contrast}
+				min={-100}
+				max={100}
+				resetValue={DEFAULT_SETTINGS.contrast[0]}
+			/>
 			<SliderRow
 				label="Saturation"
 				bind:value={magick.settings.saturation}
 				suffix="%"
 				min={0}
 				max={300}
+				resetValue={DEFAULT_SETTINGS.saturation[0]}
 			/>
 			<SliderRow
 				label="Hue"
@@ -70,6 +78,7 @@
 				suffix="%"
 				min={0}
 				max={200}
+				resetValue={DEFAULT_SETTINGS.hue[0]}
 				class="pb-1"
 			/>
 		</div>
@@ -78,9 +87,7 @@
 	<!-- Auto corrections run before manual levels -->
 	<SectionCard
 		title="Auto Correct"
-		dirty={magick.settings.normalizeImage ||
-			magick.settings.autoLevel ||
-			magick.settings.autoGamma}
+		dirty={magick.settings.normalizeImage || magick.settings.autoLevel || magick.settings.autoGamma}
 	>
 		<div class="grid grid-cols-2 gap-2">
 			<ToggleRow
@@ -128,6 +135,9 @@
 				bind:value={magick.settings.levelWhitepoint[magick.settings.levelChannels as LevelChannel]}
 				min={0}
 				max={100}
+				resetValue={DEFAULT_SETTINGS.levelWhitepoint[
+					magick.settings.levelChannels as LevelChannel
+				][0]}
 			/>
 			<SliderRow
 				label="Gamma"
@@ -135,6 +145,7 @@
 				min={0.1}
 				max={3}
 				step={0.1}
+				resetValue={DEFAULT_SETTINGS.levelGamma[magick.settings.levelChannels as LevelChannel][0]}
 				class="pb-1"
 			/>
 		</div>
@@ -211,12 +222,12 @@
 			magick.settings.autoThreshold !== 'Off'}
 	>
 		<div class="space-y-3">
-		<div class="flex items-center justify-start">
-			<Select type="single" bind:value={magick.settings.thresholdChannels}>
-				<SelectTrigger
-					class="h-9 w-24 font-mono text-xs"
-					disabled={magick.settings.thresholdPercentage[0] === 50}
-				>
+			<div class="flex items-center justify-start">
+				<Select type="single" bind:value={magick.settings.thresholdChannels}>
+					<SelectTrigger
+						class="h-9 w-24 font-mono text-xs"
+						disabled={magick.settings.thresholdPercentage[0] === 50}
+					>
 						{CHANNEL_OPTIONS.find((o) => o.value === magick.settings.thresholdChannels)?.label ??
 							magick.settings.thresholdChannels}
 					</SelectTrigger>
@@ -233,6 +244,7 @@
 				suffix="%"
 				min={0}
 				max={100}
+				resetValue={DEFAULT_SETTINGS.thresholdPercentage[0]}
 			/>
 			<SliderRow
 				label="Black Threshold"
@@ -247,6 +259,7 @@
 				suffix="%"
 				min={0}
 				max={100}
+				resetValue={DEFAULT_SETTINGS.whiteThreshold[0]}
 			/>
 			<div class="space-y-1.5 border-t border-foreground/10 pt-3">
 				<span class="font-mono text-[11px] text-muted-foreground uppercase">Auto Threshold</span>
@@ -266,17 +279,14 @@
 	</SectionCard>
 
 	<!-- Contrast Curve -->
-	<SectionCard
-		title="Contrast Curve"
-		dirty={magick.settings.sigmoidalContrast[0] !== 0}
-	>
+	<SectionCard title="Contrast Curve" dirty={magick.settings.sigmoidalContrast[0] !== 0}>
 		<div class="space-y-3">
-		<div class="flex items-center justify-start">
-			<Select type="single" bind:value={magick.settings.sigmoidalChannels}>
-				<SelectTrigger
-					class="h-9 w-24 font-mono text-xs"
-					disabled={magick.settings.sigmoidalContrast[0] === 0}
-				>
+			<div class="flex items-center justify-start">
+				<Select type="single" bind:value={magick.settings.sigmoidalChannels}>
+					<SelectTrigger
+						class="h-9 w-24 font-mono text-xs"
+						disabled={magick.settings.sigmoidalContrast[0] === 0}
+					>
 						{CHANNEL_OPTIONS.find((o) => o.value === magick.settings.sigmoidalChannels)?.label ??
 							magick.settings.sigmoidalChannels}
 					</SelectTrigger>
@@ -299,6 +309,7 @@
 				suffix="%"
 				min={0}
 				max={100}
+				resetValue={DEFAULT_SETTINGS.sigmoidalMidpoint[0]}
 				disabled={magick.settings.sigmoidalContrast[0] === 0}
 				class="pb-1"
 			/>
@@ -322,6 +333,7 @@
 				min={32}
 				max={512}
 				step={32}
+				resetValue={DEFAULT_SETTINGS.claheBins[0]}
 				disabled={magick.settings.claheXTiles[0] === 0}
 			/>
 			<SliderRow
@@ -330,6 +342,7 @@
 				min={0}
 				max={10}
 				step={0.5}
+				resetValue={DEFAULT_SETTINGS.claheClipLimit[0]}
 				disabled={magick.settings.claheXTiles[0] === 0}
 				class="pb-1"
 			/>

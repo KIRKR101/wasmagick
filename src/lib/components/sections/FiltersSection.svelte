@@ -5,7 +5,7 @@
 		SelectItem,
 		SelectTrigger
 	} from '$lib/components/ui/select/index.js';
-	import type { MagickState } from '$lib/useMagick.svelte';
+	import { DEFAULT_SETTINGS, type MagickState } from '$lib/useMagick.svelte';
 	import SliderRow from '$lib/components/controls/SliderRow.svelte';
 	import SectionCard from '$lib/components/controls/SectionCard.svelte';
 	import { getClutPresets, getInterpolationOptions } from '$lib/luts';
@@ -83,6 +83,7 @@
 						suffix="%"
 						min={0}
 						max={100}
+						resetValue={DEFAULT_SETTINGS.sepiaThreshold[0]}
 						class="pb-1"
 					/>
 				{:else if magick.settings.effect === 'charcoal'}
@@ -110,6 +111,7 @@
 						suffix="%"
 						min={0}
 						max={100}
+						resetValue={DEFAULT_SETTINGS.solarizeFactor[0]}
 						class="pb-1"
 					/>
 				{:else if magick.settings.effect === 'cannyEdge'}
@@ -126,6 +128,7 @@
 						suffix="%"
 						min={0}
 						max={100}
+						resetValue={DEFAULT_SETTINGS.cannyEdgeLower[0]}
 					/>
 					<SliderRow
 						label="Upper Threshold"
@@ -133,17 +136,31 @@
 						suffix="%"
 						min={0}
 						max={100}
+						resetValue={DEFAULT_SETTINGS.cannyEdgeUpper[0]}
 						class="pb-1"
 					/>
 				{:else if magick.settings.effect === 'bilateralBlur'}
-					<SliderRow label="Width" bind:value={magick.settings.bilateralWidth} min={0} max={20} />
-					<SliderRow label="Height" bind:value={magick.settings.bilateralHeight} min={0} max={20} />
+					<SliderRow
+						label="Width"
+						bind:value={magick.settings.bilateralWidth}
+						min={0}
+						max={20}
+						resetValue={DEFAULT_SETTINGS.bilateralWidth[0]}
+					/>
+					<SliderRow
+						label="Height"
+						bind:value={magick.settings.bilateralHeight}
+						min={0}
+						max={20}
+						resetValue={DEFAULT_SETTINGS.bilateralHeight[0]}
+					/>
 					<SliderRow
 						label="Intensity Sigma"
 						bind:value={magick.settings.bilateralIntensitySigma}
 						min={0.1}
 						max={10}
 						step={0.1}
+						resetValue={DEFAULT_SETTINGS.bilateralIntensitySigma[0]}
 					/>
 					<SliderRow
 						label="Spatial Sigma"
@@ -151,6 +168,7 @@
 						min={0.1}
 						max={10}
 						step={0.1}
+						resetValue={DEFAULT_SETTINGS.bilateralSpatialSigma[0]}
 						class="pb-1"
 					/>
 				{:else if ['grayscale', 'negate'].includes(magick.settings.effect as string)}
@@ -175,7 +193,13 @@
 		<div class="space-y-3">
 			<div class="grid grid-cols-2 gap-3">
 				<SliderRow label="Blur" bind:value={magick.settings.blur} min={0} max={20} step={0.5} />
-				<SliderRow label="Sharpen" bind:value={magick.settings.sharpen} min={0} max={10} step={0.5} />
+				<SliderRow
+					label="Sharpen"
+					bind:value={magick.settings.sharpen}
+					min={0}
+					max={10}
+					step={0.5}
+				/>
 			</div>
 
 			<div class="border-t border-foreground/10 pt-3">
@@ -194,6 +218,7 @@
 						min={0.1}
 						max={10}
 						step={0.1}
+						resetValue={DEFAULT_SETTINGS.gaussianBlurSigma[0]}
 						disabled={magick.settings.gaussianBlurRadius[0] === 0}
 					/>
 				</div>
@@ -215,6 +240,7 @@
 						min={0.1}
 						max={5}
 						step={0.1}
+						resetValue={DEFAULT_SETTINGS.adaptiveSharpenSigma[0]}
 						disabled={magick.settings.adaptiveSharpenRadius[0] === 0}
 					/>
 					<SliderRow
@@ -230,6 +256,7 @@
 						min={0.1}
 						max={5}
 						step={0.1}
+						resetValue={DEFAULT_SETTINGS.adaptiveBlurSigma[0]}
 						disabled={magick.settings.adaptiveBlurRadius[0] === 0}
 					/>
 				</div>
@@ -251,6 +278,7 @@
 						min={0.1}
 						max={10}
 						step={0.1}
+						resetValue={DEFAULT_SETTINGS.motionBlurSigma[0]}
 						disabled={magick.settings.motionBlurRadius[0] === 0}
 					/>
 					<SliderRow
@@ -259,6 +287,7 @@
 						suffix="°"
 						min={0}
 						max={360}
+						resetValue={DEFAULT_SETTINGS.motionBlurAngle[0]}
 						disabled={magick.settings.motionBlurRadius[0] === 0}
 						class="pb-1"
 					/>
@@ -289,6 +318,7 @@
 				min={0.1}
 				max={2}
 				step={0.1}
+				resetValue={DEFAULT_SETTINGS.addNoiseAttenuate[0]}
 				disabled={magick.settings.addNoiseType === 'Off'}
 				class="pb-1"
 			/>
