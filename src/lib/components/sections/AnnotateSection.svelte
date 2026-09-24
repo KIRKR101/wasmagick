@@ -7,7 +7,7 @@
 		SelectTrigger
 	} from '$lib/components/ui/select/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
-	import type { MagickState } from '$lib/useMagick.svelte';
+	import { DEFAULT_SETTINGS, type MagickState } from '$lib/useMagick.svelte';
 	import SliderRow from '$lib/components/controls/SliderRow.svelte';
 	import ToggleRow from '$lib/components/controls/ToggleRow.svelte';
 	import SectionCard from '$lib/components/controls/SectionCard.svelte';
@@ -113,10 +113,12 @@
 	</SectionCard>
 
 	<SectionCard
-		title="Font"
+		title="Style"
 		dirty={magick.settings.annotateFontFamily !== 'Roboto-Regular' ||
 			magick.settings.annotateFontSize[0] !== 24 ||
-			magick.settings.annotateFontColor !== '#ffffff'}
+			magick.settings.annotateFontColor !== '#ffffff' ||
+			magick.settings.annotateAngle[0] !== 0 ||
+			magick.settings.annotateStroke}
 	>
 		<div class="space-y-3">
 			<Select type="single" bind:value={magick.settings.annotateFontFamily}>
@@ -141,7 +143,7 @@
 					type="button"
 					onclick={loadSystemFonts}
 					disabled={loadingSystemFonts}
-					class="group w-full cursor-pointer border border-foreground/30 px-3 py-1.5 font-mono text-xs transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:cursor-wait disabled:opacity-50"
+					class="group w-full cursor-pointer border border-divider px-3 py-1.5 font-mono text-xs transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:cursor-wait disabled:opacity-50"
 				>
 					{#if loadingSystemFonts}
 						[···] <span class="group-hover:underline">LOADING</span>
@@ -160,11 +162,12 @@
 						suffix="pt"
 						min={4}
 						max={400}
+						resetValue={DEFAULT_SETTINGS.annotateFontSize[0]}
 					/>
 				</div>
 				<div class="flex items-center gap-1.5">
 					<div
-						class="relative h-7 w-7 shrink-0 overflow-hidden border border-foreground/30 transition-all hover:border-foreground"
+						class="relative h-7 w-7 shrink-0 overflow-hidden border border-divider transition-all hover:border-foreground"
 					>
 						<input
 							type="color"
@@ -178,18 +181,61 @@
 					>
 				</div>
 			</div>
+			<SliderRow
+				label="Angle"
+				bind:value={magick.settings.annotateAngle}
+				suffix="°"
+				min={-180}
+				max={180}
+				resetValue={DEFAULT_SETTINGS.annotateAngle[0]}
+			/>
+			<div class="border-t border-foreground/10 pt-3">
+				<div class="mb-1.5 font-mono text-[11px] text-muted-foreground uppercase">Outline</div>
+				<ToggleRow
+					id="annotate-stroke"
+					label="Enable Stroke"
+					bind:checked={magick.settings.annotateStroke}
+				/>
+				{#if magick.settings.annotateStroke}
+					<div class="mt-3 space-y-3">
+						<SliderRow
+							label="Width"
+							bind:value={magick.settings.annotateStrokeWidth}
+							suffix="px"
+							min={0}
+							max={10}
+							step={0.5}
+							resetValue={DEFAULT_SETTINGS.annotateStrokeWidth[0]}
+						/>
+						<div class="flex items-center gap-1.5">
+							<div
+								class="relative h-7 w-7 shrink-0 overflow-hidden border border-divider transition-all hover:border-foreground"
+							>
+								<input
+									type="color"
+									bind:value={magick.settings.annotateStrokeColor}
+									aria-label="Stroke color"
+									class="absolute inset-0 -top-1/2 -left-1/2 h-[200%] w-[200%] cursor-pointer border-0 p-0"
+								/>
+							</div>
+							<span class="font-mono text-[11px] text-muted-foreground uppercase"
+								>{magick.settings.annotateStrokeColor}</span
+							>
+						</div>
+					</div>
+				{/if}
+			</div>
 		</div>
 	</SectionCard>
 
 	<SectionCard
-		title="Position & Rotation"
+		title="Placement"
 		dirty={magick.settings.annotateGravity !== 'Center' ||
 			magick.settings.annotateOffsetX !== 0 ||
-			magick.settings.annotateOffsetY !== 0 ||
-			magick.settings.annotateAngle[0] !== 0}
+			magick.settings.annotateOffsetY !== 0}
 	>
 		<div class="space-y-3">
-			<div class="border border-dashed border-foreground/30 p-2.5">
+			<div class="border border-dashed border-divider p-2.5">
 				<div class="flex items-center justify-between gap-3">
 					<div class="min-w-0">
 						<p class="font-mono text-[11px] text-foreground">Place on canvas</p>
@@ -203,7 +249,7 @@
 						onclick={() => onAnnotationPlacementChange(!annotationPlacementActive)}
 						aria-pressed={annotationPlacementActive}
 						class="shrink-0 cursor-pointer border border-foreground/40 px-2 py-1.5 font-mono text-[11px] tracking-wide text-muted-foreground uppercase transition-colors hover:border-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 {annotationPlacementActive
-							? 'bg-foreground text-background hover:bg-foreground hover:text-background'
+							? 'bg-muted text-background hover:text-background'
 							: ''}"
 					>
 						{annotationPlacementActive ? 'DONE' : 'PLACE'}
@@ -279,51 +325,6 @@
 					/>
 				</div>
 			</div>
-			<SliderRow
-				label="Angle"
-				bind:value={magick.settings.annotateAngle}
-				suffix="°"
-				min={-180}
-				max={180}
-				class="pb-1"
-			/>
-		</div>
-	</SectionCard>
-
-	<SectionCard title="Stroke Outline" dirty={magick.settings.annotateStroke}>
-		<div class="space-y-3">
-			<ToggleRow
-				id="annotate-stroke"
-				label="Enable Stroke"
-				bind:checked={magick.settings.annotateStroke}
-			/>
-			{#if magick.settings.annotateStroke}
-				<div class="space-y-3">
-					<SliderRow
-						label="Width"
-						bind:value={magick.settings.annotateStrokeWidth}
-						suffix="px"
-						min={0}
-						max={10}
-						step={0.5}
-					/>
-					<div class="flex items-center gap-1.5">
-						<div
-							class="relative h-7 w-7 shrink-0 overflow-hidden border border-foreground/30 transition-all hover:border-foreground"
-						>
-							<input
-								type="color"
-								bind:value={magick.settings.annotateStrokeColor}
-								aria-label="Stroke color"
-								class="absolute inset-0 -top-1/2 -left-1/2 h-[200%] w-[200%] cursor-pointer border-0 p-0"
-							/>
-						</div>
-						<span class="font-mono text-[11px] text-muted-foreground uppercase"
-							>{magick.settings.annotateStrokeColor}</span
-						>
-					</div>
-				</div>
-			{/if}
 		</div>
 	</SectionCard>
 </div>

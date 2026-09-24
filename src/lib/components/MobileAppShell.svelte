@@ -21,6 +21,7 @@
 		activeSection = $bindable('geometry'),
 		viewport = $bindable(null),
 		onProcess,
+		onCancel,
 		onReset,
 		onDownload,
 		onUndo,
@@ -40,6 +41,7 @@
 		activeSection?: EditorSection;
 		viewport?: ReturnType<typeof CanvasViewport> | null;
 		onProcess: () => void;
+		onCancel?: () => void;
 		onReset: () => void;
 		onDownload: () => void;
 		onUndo: () => void;
@@ -245,13 +247,14 @@
 				{onUndo}
 				{onRedo}
 				{onDownload}
+				{onProcess}
+				{onCancel}
 				onToggleTools={togglePanel}
 				onFitToScreen={handleFitToScreen}
 				onCompareStart={handleCompareStart}
 				onCompareEnd={handleCompareEnd}
 				onToggleSplitCompare={handleToggleSplit}
 				{splitMode}
-				onReset={onResetRequest}
 				onClose={onCloseRequest}
 				{onOpenSettings}
 			/>
@@ -268,7 +271,9 @@
 		{annotationPlacementActive}
 		{onAnnotationPlacementChange}
 		{onProcess}
+		{onCancel}
 		{onDownload}
+		onReset={onResetRequest}
 		onClearRequest={onClearHistoryRequest}
 		onNavigate={onHistoryNavigate}
 		onClose={() => (panelOpen = false)}

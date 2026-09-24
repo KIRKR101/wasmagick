@@ -31,19 +31,19 @@ get along, so we shut typescript up by casting `value` to `never`.
 			data-slot="slider-track"
 			data-orientation={orientation}
 			class={cn(
-				'relative grow overflow-hidden rounded-none bg-muted bg-muted data-horizontal:h-1 data-horizontal:w-full data-horizontal:w-full data-vertical:h-full data-vertical:h-full data-vertical:w-1'
+				'relative grow overflow-hidden rounded-none bg-foreground/12 data-horizontal:h-1 data-horizontal:w-full data-vertical:h-full data-vertical:w-1'
 			)}
 		>
 			<SliderPrimitive.Range
 				data-slot="slider-range"
-				class={cn('absolute bg-primary select-none data-horizontal:h-full data-vertical:w-full')}
+				class={cn('absolute bg-primary/70 select-none data-horizontal:h-full data-vertical:w-full')}
 			/>
 		</span>
 		{#each thumbItems as thumb (thumb)}
 			<SliderPrimitive.Thumb
 				data-slot="slider-thumb"
 				index={thumb.index}
-				class="relative block size-2.5 shrink-0 cursor-pointer rounded-none border bg-white transition-[color,box-shadow] select-none after:absolute after:-inset-4 focus-visible:ring-1 focus-visible:outline-hidden active:ring-1 disabled:pointer-events-none disabled:opacity-50"
+				class="relative block size-2.5 shrink-0 cursor-pointer rounded-none border border-foreground/25 bg-background transition-[color,box-shadow] select-none after:absolute after:-inset-4 focus-visible:ring-1 focus-visible:outline-hidden active:ring-1 disabled:pointer-events-none disabled:opacity-50"
 			/>
 		{/each}
 	{/snippet}

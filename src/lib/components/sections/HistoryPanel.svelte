@@ -2,6 +2,8 @@
 	import type { MagickState } from '$lib/useMagick.svelte';
 	import type { HistoryState, SettingsDiffItem } from '$lib/hooks/useHistory.svelte';
 	import { formatBytes, formatDimensions } from '$lib/utils';
+	import Trash from 'phosphor-svelte/lib/Trash';
+	import HoverTooltip from '../controls/HoverTooltip.svelte';
 	import UndoRedoButtons from '../controls/UndoRedoButtons.svelte';
 
 	let {
@@ -22,19 +24,19 @@
 		const target = history.undoTargetLabel;
 		if (!target) return;
 		await history.undo(magick);
-		onNavigate?.(`Undid — ${target}`);
+		onNavigate?.(`Undid - ${target}`);
 	}
 
 	async function redo() {
 		const target = history.redoTargetLabel;
 		if (!target) return;
 		await history.redo(magick);
-		onNavigate?.(`Redid — ${target}`);
+		onNavigate?.(`Redid - ${target}`);
 	}
 
 	async function jump(id: number, label: string) {
 		await history.jumpTo(magick, id);
-		onNavigate?.(`History — ${label}`);
+		onNavigate?.(`History - ${label}`);
 	}
 
 	function getDiff(i: number): SettingsDiffItem[] {
@@ -45,7 +47,7 @@
 
 <div class="flex h-full flex-col">
 	<!-- Undo/redo controls -->
-	<div class="flex shrink-0 gap-1.5 border-b border-foreground/30 pb-3">
+	<div class="flex shrink-0 gap-1.5 border-b border-divider pb-3">
 		<UndoRedoButtons
 			class="min-w-0 flex-1"
 			canUndo={history.canUndo}
@@ -54,15 +56,18 @@
 			onRedo={redo}
 			undoLabel={history.undoTargetLabel ? `Undo ${history.undoTargetLabel}` : 'Undo'}
 			redoLabel={history.redoTargetLabel ? `Redo ${history.redoTargetLabel}` : 'Redo'}
+			tooltipSide="bottom"
 		/>
-		<button
-			onclick={() => onClearRequest?.()}
-			disabled={history.count === 0}
-			class="cursor-pointer border border-foreground/30 px-2 py-1.5 font-mono text-[11px] uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-			aria-label="Clear history"
-		>
-			[X]
-		</button>
+		<HoverTooltip label="Clear history" side="bottom">
+			<button
+				onclick={() => onClearRequest?.()}
+				disabled={history.count === 0}
+				class="cursor-pointer border border-divider px-2 py-1.5 font-mono text-[11px] uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+				aria-label="Clear history"
+			>
+				<Trash class="size-3.5" aria-hidden="true" />
+			</button>
+		</HoverTooltip>
 	</div>
 
 	{#if history.entries.length > 1}
@@ -71,8 +76,8 @@
 				onclick={() => (diffMode = 'relative')}
 				class="flex-1 cursor-pointer border px-1.5 py-1 font-mono text-[11px] uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {diffMode ===
 				'relative'
-					? 'border-foreground/50 bg-muted/50 text-foreground'
-					: 'border-foreground/20 text-muted-foreground/60 hover:text-muted-foreground'}"
+					? 'border-divider bg-muted/50 text-foreground'
+					: 'border-divider text-muted-foreground/60 hover:border-foreground/50 hover:text-muted-foreground'}"
 			>
 				Since last
 			</button>
@@ -80,8 +85,8 @@
 				onclick={() => (diffMode = 'absolute')}
 				class="flex-1 cursor-pointer border px-1.5 py-1 font-mono text-[11px] uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {diffMode ===
 				'absolute'
-					? 'border-foreground/50 bg-muted/50 text-foreground'
-					: 'border-foreground/20 text-muted-foreground/60 hover:text-muted-foreground'}"
+					? 'border-divider bg-muted/50 text-foreground'
+					: 'border-divider text-muted-foreground/60 hover:border-foreground/50 hover:text-muted-foreground'}"
 			>
 				From original
 			</button>
@@ -103,8 +108,8 @@
 						<button
 							onclick={() => jump(entry.id, entry.label)}
 							class="flex w-full flex-col border text-left transition-colors {isCurrent
-								? 'border-foreground bg-muted/50'
-								: 'border-foreground/30 bg-transparent hover:border-foreground/60 hover:bg-muted/30'}"
+								? 'border-divider bg-muted/50'
+								: 'border-divider bg-transparent hover:border-foreground/50 hover:bg-muted/30'}"
 							aria-current={isCurrent}
 						>
 							<div class="flex items-center gap-2.5 px-2 py-1.5">

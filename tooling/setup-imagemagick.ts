@@ -238,6 +238,41 @@ function verifyTiffSupport(slug: Slug): void {
 	}
 }
 
+/** Verify the host bundle can encode a real JPEG XL image. */
+function verifyJxlSupport(slug: Slug): void {
+	const slugDir = join(TOOL_DIR, slug);
+	const bin = slugBin(slug);
+	const env = { ...process.env };
+	const libDir = join(slugDir, 'lib');
+	const coderDir = join(libDir, 'ImageMagick', 'modules-Q16HDRI', 'coders');
+	const filterDir = join(libDir, 'ImageMagick', 'modules-Q16HDRI', 'filters');
+	const configDirs = [join(slugDir, 'etc', 'ImageMagick-7'), join(libDir, 'ImageMagick', 'config-Q16HDRI')];
+
+	if (existsSync(libDir)) {
+		env.DYLD_LIBRARY_PATH = [libDir, env.DYLD_LIBRARY_PATH].filter(Boolean).join(delimiter);
+	}
+	if (existsSync(coderDir)) env.MAGICK_CODER_MODULE_PATH = coderDir;
+	if (existsSync(filterDir)) env.MAGICK_FILTER_MODULE_PATH = filterDir;
+	env.MAGICK_CONFIGURE_PATH = configDirs.filter(existsSync).join(delimiter);
+	env.MAGICK_HOME = slugDir;
+
+	const probe = join(tmpdir(), `wasmagick-jxl-${slug}-${process.pid}.jxl`);
+	try {
+		const result = spawnSync(bin, ['-size', '1x1', 'xc:white', probe], {
+			cwd: slugDir,
+			env,
+			encoding: 'utf8'
+		});
+		if (result.error || result.status !== 0 || !existsSync(probe)) {
+			const detail = result.error?.message || result.stderr?.trim() || 'no JPEG XL output';
+			throw new Error(`ImageMagick JPEG XL support is unavailable for ${slug}: ${detail}`);
+		}
+		console.log(`Verified ImageMagick JPEG XL support for ${slug}.`);
+	} finally {
+		rmSync(probe, { force: true });
+	}
+}
+
 /**
  * Verify the host build decodes RAW camera formats (CR2, NEF, ARW, DNG, ...)
  * internally via libraw.
@@ -528,6 +563,36 @@ function bundleFromBrew(slugDir: string): void {
 			return [];
 		}
 	};
+	const otoolRpaths = (file: string): string[] => {
+		try {
+			const output = execSync(`otool -l "${file}" 2>/dev/null`, { encoding: 'utf-8' });
+			return [...output.matchAll(/cmd LC_RPATH[\s\S]*?\n\s*path (.+?) \(offset \d+\)/g)].map(
+				(match) => match[1]
+			);
+		} catch {
+			return [];
+		}
+	};
+	const resolveDependency = (dep: string, file: string): string | null => {
+		if (!dep.startsWith('@')) return dep;
+		const candidates: string[] = [];
+		if (dep.startsWith('@loader_path/')) {
+			candidates.push(join(dirname(file), dep.slice('@loader_path/'.length)));
+		} else if (dep.startsWith('@executable_path/')) {
+			candidates.push(join(dirname(brewBin), dep.slice('@executable_path/'.length)));
+		} else if (dep.startsWith('@rpath/')) {
+			const relativeDep = dep.slice('@rpath/'.length);
+			for (const rpath of otoolRpaths(file)) {
+				const expanded = rpath.startsWith('@loader_path/')
+					? join(dirname(file), rpath.slice('@loader_path/'.length))
+					: rpath.startsWith('@executable_path/')
+						? join(dirname(brewBin), rpath.slice('@executable_path/'.length))
+						: rpath;
+				candidates.push(join(expanded, relativeDep));
+			}
+		}
+		return candidates.find(existsSync) ?? null;
+	};
 	const realpath = (p: string): string => {
 		try {
 			return execSync(`realpath "${p}"`, { encoding: 'utf-8' }).trim() || p;
@@ -561,8 +626,9 @@ function bundleFromBrew(slugDir: string): void {
 		const scanned = queue.pop()!;
 		if (!existsSync(scanned)) continue;
 		for (const dep of otool(scanned)) {
-			if (!isBrewLib(dep)) continue;
-			const real = realpath(dep);
+			const resolved = resolveDependency(dep, scanned);
+			if (!resolved || !isBrewLib(resolved)) continue;
+			const real = realpath(resolved);
 			if (!existsSync(real)) {
 				console.warn(`Skipping missing dependency: ${real}`);
 				continue;
@@ -643,9 +709,11 @@ function bundleFromBrew(slugDir: string): void {
 	while (extraQueue.length > 0) {
 		const scanned = extraQueue.pop()!;
 		if (!existsSync(scanned)) continue;
-		for (const dep of otool(scanned)) {
-			if (!isBrewLib(dep)) continue;
-			const real = realpath(dep);
+		const original = nameMap.get(scanned) ?? scanned;
+		for (const dep of otool(original)) {
+			const resolved = resolveDependency(dep, original);
+			if (!resolved || !isBrewLib(resolved)) continue;
+			const real = realpath(resolved);
 			if (!existsSync(real)) {
 				console.warn(`Skipping missing dependency: ${real}`);
 				continue;
@@ -790,8 +858,17 @@ function ensureMac(slugDir: string, arch: 'x64' | 'arm64'): void {
 		process.platform === 'darwin' && (arch === 'x64') === (process.arch !== 'arm64');
 	if (existsSync(bin)) {
 		if (existingBundleHasRaw(slugDir)) {
-			console.log(`ImageMagick ${IM_VERSION} (${slugDir}) already installed.`);
-			return;
+			if (!hostArchMatches) {
+				console.log(`ImageMagick ${IM_VERSION} (${slugDir}) already installed.`);
+				return;
+			}
+			try {
+				verifyJxlSupport(slug);
+				console.log(`ImageMagick ${IM_VERSION} (${slugDir}) already installed.`);
+				return;
+			} catch {
+				console.log(`Existing bundle at ${slugDir} lacks working JPEG XL support; rebuilding from Homebrew...`);
+			}
 		}
 		if (hostArchMatches) {
 			console.log(
@@ -960,6 +1037,7 @@ const hostSlug = slugFor(process.platform, process.arch);
 if (slugs.includes(hostSlug)) {
 	verifyWebpSupport(hostSlug);
 	verifyTiffSupport(hostSlug);
+	if (hostSlug.startsWith('mac-')) verifyJxlSupport(hostSlug);
 	verifyWebpTools(hostSlug);
 	verifyRawSupport(hostSlug);
 }

@@ -709,4 +709,80 @@ describe('MagickSettings type', () => {
 			expect(staleMagick.isStale).toBe(false);
 		});
 	});
+
+	describe('cancelProcessing', () => {
+		let cancelMagick: MagickState;
+
+		beforeEach(() => {
+			cancelMagick = useMagick();
+		});
+
+		it('is a no-op when nothing is processing', () => {
+			expect(cancelMagick.isLoading).toBe(false);
+			cancelMagick.cancelProcessing();
+			expect(cancelMagick.isLoading).toBe(false);
+			expect(cancelMagick.statsMessage).toBe('Ready');
+		});
+
+		it('resets loading state and clears progress', () => {
+			cancelMagick.isLoading = true;
+			cancelMagick.currentProcessingStep = 'Processing in worker';
+			cancelMagick.processingStartedAt = performance.now();
+
+			cancelMagick.cancelProcessing();
+
+			expect(cancelMagick.isLoading).toBe(false);
+			expect(cancelMagick.currentProcessingStep).toBeNull();
+			expect(cancelMagick.processingStartedAt).toBeNull();
+			expect(cancelMagick.canCancelProcessing).toBe(false);
+			expect(cancelMagick.statsMessage).toBe('Cancelled');
+		});
+
+		it('reports the phase label with elapsed time', () => {
+			cancelMagick.currentProcessingStep = 'Processing with native ImageMagick';
+			cancelMagick.processingStartedAt = performance.now();
+			cancelMagick.processingElapsedMs = 3200;
+
+			expect(cancelMagick.processingStepLabel).toBe('Processing with native ImageMagick (3.2s)');
+		});
+
+		it('falls back to a plain label without step counts', () => {
+			expect(cancelMagick.processingStepLabel).toBe('Processing');
+		});
+
+		it('reports elapsed time on its own, empty when idle', () => {
+			expect(cancelMagick.processingElapsedLabel).toBe('');
+			cancelMagick.processingStartedAt = performance.now();
+			cancelMagick.processingElapsedMs = 3200;
+			expect(cancelMagick.processingElapsedLabel).toBe('3.2s');
+		});
+
+		it('bumps the run generation on cancel so stale continuations drop', () => {
+			const internals = cancelMagick as unknown as { _processGeneration: number };
+			cancelMagick.isLoading = true;
+			const before = internals._processGeneration;
+			cancelMagick.cancelProcessing();
+			expect(internals._processGeneration).toBeGreaterThan(before);
+		});
+
+		it('clearSource stops an in-flight run and resets to Ready', () => {
+			cancelMagick.sourceBytes = new Uint8Array([1, 2, 3]);
+			cancelMagick.isLoading = true;
+			cancelMagick.currentProcessingStep = 'Processing';
+
+			cancelMagick.clearSource();
+
+			expect(cancelMagick.isLoading).toBe(false);
+			expect(cancelMagick.currentProcessingStep).toBeNull();
+			expect(cancelMagick.sourceBytes).toBeNull();
+			expect(cancelMagick.statsMessage).toBe('Ready');
+		});
+	});
+
+	describe('syncFontToWorker', () => {
+		it('resolves false when no worker is running', async () => {
+			const fresh = useMagick();
+			await expect(fresh.syncFontToWorker('Some-Local-Font')).resolves.toBe(false);
+		});
+	});
 });

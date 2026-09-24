@@ -12,6 +12,7 @@
 			items: [
 				...(isDesktop ? [{ keys: [shortcutModifier, 'O'], description: 'Open Image' }] : []),
 				{ keys: [shortcutModifier, 'Enter'], description: 'Process Image' },
+				{ keys: ['Escape'], description: 'Cancel Processing' },
 				{ keys: [shortcutModifier, 'S'], description: 'Export Result' },
 				{ keys: [shortcutModifier, 'Z'], description: 'Undo' },
 				{ keys: [shortcutModifier, 'Shift', 'Z'], description: 'Redo' },
@@ -130,7 +131,7 @@
 									<div class="flex items-center gap-1">
 										{#each shortcut.keys as key, kindex}
 											<kbd
-												class="border border-foreground/30 px-2 py-0.5 font-mono text-[11px] text-foreground"
+												class="border border-divider px-2 py-0.5 font-mono text-[11px] text-foreground"
 											>
 												{key}
 											</kbd>

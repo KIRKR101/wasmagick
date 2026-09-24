@@ -20,6 +20,7 @@ declare global {
 	}
 
 	interface Window {
+		__wasmagickIsMac?: boolean;
 		queryLocalFonts?(options?: { postscriptNames?: string[] }): Promise<FontData[]>;
 		wasmagick?: WasmagickElectronApi;
 		wasmagickSetDebug?(enabled?: boolean): boolean;
@@ -82,6 +83,12 @@ declare global {
 		description?: string;
 	}
 
+	interface WasmagickNativeVersions {
+		magick: string | null;
+		sharp: string | null;
+		vips: string | null;
+	}
+
 	interface WasmagickNativeFontMetricsPayload {
 		text: string;
 		fontSize: number;
@@ -121,11 +128,14 @@ declare global {
 		readSystemFont(postscriptName: string): Promise<WasmagickSystemFontData | null>;
 		isNativeAvailable(): Promise<boolean>;
 		getNativeVersion(): Promise<string | null>;
+		getNativeVersions?(): Promise<WasmagickNativeVersions>;
 		isNativeRawAvailable?(): Promise<boolean>;
 		listNativeFormats?(): Promise<WasmagickNativeFormatInfo[]>;
 		processNativeImage(
 			payload: WasmagickNativeProcessPayload
 		): Promise<WasmagickNativeProcessResult>;
+		/** Best-effort SIGKILL of the in-flight native job (Electron only). */
+		cancelNativeProcess?(): Promise<void>;
 		getNativeFontMetrics(
 			payload: WasmagickNativeFontMetricsPayload
 		): Promise<WasmagickNativeFontMetrics>;

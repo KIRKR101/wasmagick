@@ -82,6 +82,25 @@ const RAW_EXTENSIONS = new Set([
 
 let cachedSource = null;
 let sharpModule = null;
+/** Child processes currently running a native ImageMagick job. */
+const activeChildren = new Set();
+let nativeCancellationGeneration = 0;
+
+/**
+ * Best-effort cancellation for the in-flight native job. Kills every tracked
+ * child with SIGKILL; the awaiting `runBinary` promise then rejects and the
+ * renderer drops the run via its request-id guard.
+ */
+function cancelNativeProcess() {
+	nativeCancellationGeneration++;
+	for (const child of activeChildren) {
+		try {
+			child.kill('SIGKILL');
+		} catch {
+			// already exited; the close handler cleans up the set
+		}
+	}
+}
 
 function getSharp() {
 	if (!sharpModule) sharpModule = require('sharp');
@@ -168,6 +187,22 @@ function getNativeVersion() {
 	});
 	if (result.error || result.status !== 0) return null;
 	return String(result.stdout || '').match(/^Version:\s*ImageMagick\s+([^\s]+)/m)?.[1] ?? null;
+}
+
+/** Versions backing Settings → Build on Electron (magick CLI + sharp/libvips). */
+function getNativeVersions() {
+	let sharp = null;
+	let vips = null;
+	try {
+		const versions = getSharp()?.versions;
+		if (versions) {
+			if (typeof versions.sharp === 'string') sharp = versions.sharp;
+			if (typeof versions.vips === 'string') vips = versions.vips;
+		}
+	} catch {
+		// sharp unavailable, leave nulls
+	}
+	return { magick: getNativeVersion(), sharp, vips };
 }
 
 /** Parse the writable rows from `magick -list format`. */
@@ -432,6 +467,8 @@ function formatNativeError(code, detail, inputName) {
 function runBinary(bin, args, { timeout = PROCESS_TIMEOUT_MS, inputName } = {}) {
 	return new Promise((resolve, reject) => {
 		const child = spawn(bin, args, { env: spawnEnv(bin), stdio: ['ignore', 'pipe', 'pipe'] });
+		activeChildren.add(child);
+		const untrack = () => activeChildren.delete(child);
 		let stdout = Buffer.alloc(0);
 		let stderr = Buffer.alloc(0);
 		let timedOut = false;
@@ -448,10 +485,12 @@ function runBinary(bin, args, { timeout = PROCESS_TIMEOUT_MS, inputName } = {}) 
 		});
 		child.on('error', (err) => {
 			clearTimeout(timer);
+			untrack();
 			reject(err);
 		});
 		child.on('close', (code) => {
 			clearTimeout(timer);
+			untrack();
 			if (timedOut) {
 				reject(new Error(`ImageMagick timed out after ${timeout}ms`));
 			} else if (code !== 0) {
@@ -558,7 +597,11 @@ async function processNativeVips(payload) {
 	const canUseCache = Number.isFinite(payload.sourceRevision);
 	const hasCachedSource =
 		canUseCache && cachedSource && cachedSource.revision === payload.sourceRevision;
-	const sourceData = hasCachedSource ? cachedSource.data : payload.inputData;
+	const sourceData = payload.inputData instanceof Uint8Array
+		? payload.inputData
+		: hasCachedSource
+			? cachedSource.data
+			: undefined;
 	if (!(sourceData instanceof Uint8Array)) {
 		throw new Error('Native source image is unavailable');
 	}
@@ -838,7 +881,10 @@ async function processNativeMagick(payload) {
 
 	const tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'wasmagick-'));
 	const inputPath = path.join(tmpDir, `input.${inputExtensionFor(payload.inputName)}`);
-	await fs.promises.writeFile(inputPath, hasCachedSource ? cachedSource.data : payload.inputData);
+	await fs.promises.writeFile(
+		inputPath,
+		payload.inputData instanceof Uint8Array ? payload.inputData : cachedSource.data
+	);
 	if (canUseCache && payload.inputData instanceof Uint8Array) {
 		cachedSource = { revision: payload.sourceRevision, data: payload.inputData };
 	}
@@ -1057,16 +1103,26 @@ async function shouldRouteSequenceToMagick(payload) {
 }
 
 async function processNative(payload) {
+	const cancellationGeneration = nativeCancellationGeneration;
+	const isCancelled = () => cancellationGeneration !== nativeCancellationGeneration;
 	if (!payload || !Array.isArray(payload.args)) {
 		throw new Error('Invalid native process request');
 	}
 	if (payload.plan?.backend === 'vips') {
 		try {
-			if (await shouldRouteSequenceToMagick(payload)) {
+			const routeToMagick = await shouldRouteSequenceToMagick(payload);
+			if (isCancelled()) throw new Error('Native image processing cancelled');
+			if (routeToMagick) {
 				return await processNativeMagick(payload);
 			}
-			return await processNativeVips(payload);
+			const result = await processNativeVips(payload);
+			if (isCancelled()) throw new Error('Native image processing cancelled');
+			return result;
 		} catch (error) {
+			// Cancellation kills the active child, which rejects its promise.
+			// Do not interpret that rejection as a VIPS failure and launch a
+			// second ImageMagick job after the user has canceled.
+			if (isCancelled()) throw error;
 			console.warn('Native VIPS processing failed; falling back to ImageMagick:', error);
 			return processNativeMagick(payload);
 		}
@@ -1181,9 +1237,11 @@ async function getNativeFontMetrics(payload) {
 function registerMagickNative(ipcMain) {
 	ipcMain.handle('magick:native-available', () => isNativeAvailable());
 	ipcMain.handle('magick:native-version', () => getNativeVersion());
+	ipcMain.handle('magick:native-versions', () => getNativeVersions());
 	ipcMain.handle('magick:native-raw-available', () => isNativeRawAvailable());
 	ipcMain.handle('magick:native-formats', () => listNativeFormats());
 	ipcMain.handle('magick:process-native', async (_event, payload) => processNative(payload));
+	ipcMain.handle('magick:cancel-native', () => cancelNativeProcess());
 	ipcMain.handle('magick:font-metrics', async (_event, payload) => getNativeFontMetrics(payload));
 }
 
@@ -1193,6 +1251,7 @@ module.exports = {
 	resolveWebpTool,
 	isNativeAvailable,
 	getNativeVersion,
+	getNativeVersions,
 	isNativeRawAvailable,
 	parseNativeFormatList,
 	listNativeFormats,
@@ -1201,5 +1260,6 @@ module.exports = {
 	processNative,
 	getNativeFontMetrics,
 	registerMagickNative,
-	formatNativeError
+	formatNativeError,
+	cancelNativeProcess
 };

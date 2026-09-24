@@ -1,4 +1,8 @@
 <script lang="ts">
+	import X from 'phosphor-svelte/lib/X';
+	import Play from 'phosphor-svelte/lib/Play';
+	import DownloadSimple from 'phosphor-svelte/lib/DownloadSimple';
+	import ArrowCounterClockwise from 'phosphor-svelte/lib/ArrowCounterClockwise';
 	import type { MagickState } from '$lib/useMagick.svelte';
 	import type { HistoryState } from '$lib/hooks/useHistory.svelte';
 	import type { PresetsState } from '$lib/hooks/usePresets.svelte';
@@ -8,7 +12,8 @@
 		isColorDirty,
 		isFiltersDirty,
 		isExportDirty,
-		isAnnotateDirty
+		isAnnotateDirty,
+		isSettingsDirty
 	} from '$lib/utils';
 
 	import GeometrySection from './sections/GeometrySection.svelte';
@@ -26,7 +31,9 @@
 		presets,
 		activeSection = $bindable('geometry'),
 		onProcess,
+		onCancel,
 		onDownload,
+		onReset,
 		onClearRequest,
 		onClose,
 		onNavigate,
@@ -39,7 +46,9 @@
 		presets: PresetsState;
 		activeSection?: EditorSection;
 		onProcess: () => void;
+		onCancel?: () => void;
 		onDownload: () => void;
+		onReset: () => void;
 		onClearRequest?: () => void;
 		onClose: () => void;
 		onNavigate?: (message: string) => void;
@@ -58,6 +67,7 @@
 	];
 
 	let canDownload = $derived(!!magick.processedImageUrl);
+	let anyDirty = $derived(isSettingsDirty(magick.settings));
 
 	let tabsRef = $state<HTMLDivElement | null>(null);
 	let contentRef = $state<HTMLDivElement | null>(null);
@@ -81,12 +91,14 @@
 
 	const MIN_TRANSLATE = 0;
 
-	// Animate sheet in when opened
+	// Animate sheet in when opened. Default to 50vh so all operations are
+	// comfortable to reach, while the canvas stays visible behind the
+	// non-modal sheet.
 	$effect(() => {
 		if (open) {
 			returnFocusTo = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 			const rafId = requestAnimationFrame(() => {
-				currentTranslate = window.innerHeight * 0.55;
+				currentTranslate = window.innerHeight * 0.5;
 				sheetRef?.focus();
 			});
 			return () => {
@@ -101,7 +113,7 @@
 	function snapToNearest(y: number) {
 		const vh = window.innerHeight;
 		const thirdHeight = vh * 0.33;
-		const halfHeight = vh * 0.55;
+		const halfHeight = vh * 0.5;
 		const maxHeight = vh * 0.88;
 
 		if (y < thirdHeight * 0.6) {
@@ -141,10 +153,6 @@
 		if (currentTranslate <= 10) {
 			onClose();
 		}
-	}
-
-	function onBackdropClick() {
-		onClose();
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -187,14 +195,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 {#if open}
-	<!-- Backdrop -->
-	<button
-		type="button"
-		class="mobile-sheet-backdrop"
-		onclick={onBackdropClick}
-		aria-label="Close panel"
-	></button>
-
+	<!-- Non-modal sheet: no backdrop so the canvas stays visible and interactive -->
 	<!-- Sheet -->
 	<div
 		bind:this={sheetRef}
@@ -206,15 +207,25 @@
 		tabindex="-1"
 	>
 		<h2 id="mobile-tools-title" class="sr-only">Image editing tools</h2>
-		<!-- Drag handle -->
-		<div
-			class="flex cursor-grab touch-none items-center justify-center pt-2.5 pb-1.5 active:cursor-grabbing"
-			onpointerdown={onDragStart}
-			onpointermove={onDragMove}
-			onpointerup={onDragEnd}
-			aria-hidden="true"
-		>
-			<div class="h-1 w-10 rounded-full bg-foreground/20"></div>
+		<!-- Drag handle + explicit close (no backdrop in non-modal mode) -->
+		<div class="relative flex items-center justify-center pt-2.5 pb-1.5">
+			<div
+				class="flex cursor-grab touch-none items-center justify-center px-8 py-1 active:cursor-grabbing"
+				onpointerdown={onDragStart}
+				onpointermove={onDragMove}
+				onpointerup={onDragEnd}
+				aria-hidden="true"
+			>
+				<div class="h-1 w-10 rounded-full bg-foreground/20"></div>
+			</div>
+			<button
+				type="button"
+				onclick={onClose}
+				class="mobile-btn-sm absolute top-0 right-1"
+				aria-label="Close tools"
+			>
+				<X class="size-4" />
+			</button>
 		</div>
 
 		<!-- Tab bar -->
@@ -261,28 +272,55 @@
 		<!-- Bottom action bar -->
 		<div class="mobile-sheet-footer">
 			<button
-				onclick={onProcess}
-				disabled={!magick.wasmLoaded || !magick.sourceBytes}
-				class="mobile-action-btn primary {magick.isStale
-					? 'font-bold underline underline-offset-4'
-					: ''}"
-				aria-label={!magick.sourceBytes
-					? 'Process — load an image first'
-					: !magick.wasmLoaded
-						? 'Process — engine loading…'
-						: magick.isStale
-							? 'Settings changed — process to update preview'
-							: 'Process image'}
+				onclick={onReset}
+				disabled={!anyDirty}
+				class="mobile-action-btn gap-1.5"
+				style="flex: none; padding: 0 12px;"
+				aria-label="Reset all edits"
 			>
-				PROCESS{#if magick.isStale}<span
-						class="ml-1.5 inline-block size-1.5 rounded-full bg-current"
-						aria-hidden="true"
-					></span>{/if}<span class="ml-1 inline-block w-3 text-left"
-					>{magick.isLoading ? ' ~' : ''}</span
-				>
+				<ArrowCounterClockwise class="size-4" />
+				<span>RESET</span>
 			</button>
-			<button onclick={onDownload} disabled={!canDownload} class="mobile-action-btn">
-				EXPORT
+			<!-- Process / Cancel: a single flex:1 button (plus min-w-0 so ticking
+				time can't force it wider) so RESET/EXPORT never shift when the
+				label swaps or the timer ticks. -->
+			<button
+				onclick={magick.isLoading ? () => onCancel?.() : onProcess}
+				disabled={magick.isLoading ? !onCancel : !magick.wasmLoaded || !magick.sourceBytes}
+				class="mobile-action-btn primary min-w-0 gap-2 {magick.isStale && !magick.isLoading
+					? 'font-semibold underline underline-offset-4'
+					: ''}"
+				aria-label={magick.isLoading
+					? `Cancel processing. ${magick.processingStepLabel}`
+					: !magick.sourceBytes
+						? 'Process image (load an image first)'
+						: !magick.wasmLoaded
+							? 'Process image (engine loading…)'
+							: magick.isStale
+								? 'Settings changed, process to update preview'
+								: 'Process image'}
+			>
+				{#if magick.isLoading}
+					<X class="size-4" />
+					<span>CANCEL</span>
+					<span class="tabular-nums" aria-hidden="true">({magick.processingElapsedLabel})</span>
+				{:else}
+					{#if magick.isStale}
+						<Play class="size-4" weight="fill" />
+					{:else}
+						<Play class="size-4" />
+					{/if}
+					<span>PROCESS</span>
+				{/if}
+			</button>
+			<button
+				onclick={onDownload}
+				disabled={!canDownload}
+				class="mobile-action-btn gap-2"
+				aria-label="Export image"
+			>
+				<DownloadSimple class="size-4" />
+				<span>EXPORT</span>
 			</button>
 		</div>
 	</div>

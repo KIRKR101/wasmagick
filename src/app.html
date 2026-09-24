@@ -38,6 +38,55 @@
 				// ignore private mode
 			}
 		</script>
+		<script>
+			(() => {
+				var isMac =
+					window.wasmagick?.platform === 'darwin' ||
+					/Mac|iPhone|iPad|iPod/.test(navigator.platform);
+				window.__wasmagickIsMac = isMac;
+				if (!isMac) return;
+
+				var replaceShortcut = (node) => {
+					if (node.nodeType === Node.TEXT_NODE) {
+						var value = node.nodeValue ?? '';
+						if (value.includes('Ctrl')) node.nodeValue = value.replace(/Ctrl/g, '⌘');
+						return;
+					}
+					if (node.nodeType !== Node.ELEMENT_NODE) return;
+					for (var attribute of node.attributes) {
+						if (attribute.value.includes('Ctrl')) {
+							attribute.value = attribute.value.replace(/Ctrl/g, '⌘');
+						}
+					}
+					var walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
+					var textNode;
+					while ((textNode = walker.nextNode())) {
+						var value = textNode.nodeValue ?? '';
+						if (value.includes('Ctrl')) textNode.nodeValue = value.replace(/Ctrl/g, '⌘');
+					}
+				};
+
+				new MutationObserver((records) => {
+					for (var record of records) {
+						if (record.type === 'attributes') {
+							var attribute = record.target.getAttributeNode(record.attributeName);
+							if (attribute?.value.includes('Ctrl')) {
+								attribute.value = attribute.value.replace(/Ctrl/g, '⌘');
+							}
+						} else if (record.type === 'characterData') {
+							replaceShortcut(record.target);
+						} else {
+							for (var node of record.addedNodes) replaceShortcut(node);
+						}
+					}
+				}).observe(document, {
+					attributes: true,
+					characterData: true,
+					childList: true,
+					subtree: true
+				});
+			})();
+		</script>
 
 		%sveltekit.head%
 	</head>

@@ -36,7 +36,6 @@
 		"@eslint/js": "^10.0.1",
 		"@fontsource-variable/geist": "^5.2.8",
 		"@internationalized/date": "^3.12.0",
-		"@lucide/svelte": "^1.21.0",
 		"@sveltejs/adapter-cloudflare": "^7.2.8",
 		"@sveltejs/adapter-static": "^3.0.10",
 		"@sveltejs/kit": "^2.50.2",
@@ -80,11 +79,9 @@
 		"wrangler": "^4.114.0"
 	},
 	"dependencies": {
-		"@fontsource-variable/geist-mono": "^5.2.7",
-		"@fontsource-variable/jetbrains-mono": "^5.2.8",
+		"@fontsource-variable/google-sans-code": "^5.3.1",
 		"@imagemagick/magick-wasm": "^0.0.43",
 		"@uswriting/exiftool": "^1.0.9",
-		"lucide-svelte": "^1.0.1",
 		"phosphor-svelte": "^3.1.0",
 		"sharp": "^0.35.4"
 	},

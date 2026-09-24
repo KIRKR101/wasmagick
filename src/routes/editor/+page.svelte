@@ -4,7 +4,7 @@
 	import MobileAppShell from '$lib/components/MobileAppShell.svelte';
 	import KeyboardShortcuts from '$lib/components/KeyboardShortcuts.svelte';
 	import SettingsOverlay from '$lib/components/SettingsOverlay.svelte';
-	import { useMagick } from '$lib/useMagick.svelte';
+	import { useMagick, DEFAULT_SETTINGS } from '$lib/useMagick.svelte';
 	import { useHistory } from '$lib/hooks/useHistory.svelte';
 	import { usePresets } from '$lib/hooks/usePresets.svelte';
 	import { useReplaceGuard, installClipboardPaste } from '$lib/hooks/useReplaceGuard.svelte';
@@ -13,6 +13,8 @@
 	import { takePendingFile } from '$lib/pending-drop';
 	import { resolveInitialTheme } from '$lib/theme';
 	import { usesShortcutModifier } from '$lib/shortcuts';
+	import { toast } from '$lib/components/ui/sonner';
+	import { formatBytes } from '$lib/utils';
 	import type { EditorSection } from '$lib/editor-types';
 	import type { AnnotationPlacement } from '$lib/annotation-utils';
 
@@ -27,11 +29,7 @@
 	let settingsOpen = $state(false);
 	let activeSection = $state<EditorSection>('geometry');
 	let isMobile = $state(false);
-	let actionNotice = $state('');
-	let actionNoticeTimer: ReturnType<typeof setTimeout> | null = null;
-	let toastCanReveal = $state(false);
 	let annotationPlacementActive = $state(false);
-	let isElectron = $state(false);
 	installClipboardPaste(guard, replaceImage);
 
 	$effect(() => {
@@ -49,13 +47,10 @@
 	});
 
 	function showNotice(message: string, canReveal = false, duration = 2400): void {
-		if (actionNoticeTimer) clearTimeout(actionNoticeTimer);
-		actionNotice = message;
-		toastCanReveal = canReveal;
-		actionNoticeTimer = setTimeout(() => {
-			actionNotice = '';
-			toastCanReveal = false;
-		}, duration);
+		toast(message, {
+			duration,
+			action: canReveal ? { label: 'SHOW IN FOLDER', onClick: revealSavedFile } : undefined
+		});
 	}
 
 	$effect(() => {
@@ -64,8 +59,7 @@
 	});
 
 	onMount(() => {
-		isElectron = Boolean(window.wasmagick);
-		if (!isElectron) {
+		if (!window.wasmagick) {
 			window.wasmagickSetDebug = (enabled = true) => (debugMode = enabled);
 		}
 		const mql = window.matchMedia(MOBILE_BREAKPOINT);
@@ -85,10 +79,6 @@
 		const s = magick.settings;
 		const parts: string[] = [];
 		// Geometry
-		if (s.resizeW || s.resizeH) parts.push(`Resize ${s.resizeW ?? 'A'}×${s.resizeH ?? 'A'}`);
-		if (s.rotate !== '0') parts.push(`Rotate ${s.rotate}°`);
-		if (s.flip) parts.push('Flip');
-		if (s.flop) parts.push('Flop');
 		if (s.cropX != null || s.cropY != null || s.cropW || s.cropH) {
 			if (s.cropX != null) {
 				parts.push(`Crop ${s.cropW ?? '?'}×${s.cropH ?? '?'} @${s.cropX},${s.cropY}`);
@@ -96,17 +86,21 @@
 				parts.push(`Crop ${s.cropW ?? 'A'}×${s.cropH ?? 'A'}`);
 			}
 		}
+		if (s.resizeW || s.resizeH) parts.push(`Resize ${s.resizeW ?? 'A'}×${s.resizeH ?? 'A'}`);
+		if (s.rotate !== '0') parts.push(`Rotate ${s.rotate}°`);
+		if (s.flip) parts.push('Flip');
+		if (s.flop) parts.push('Flop');
+		if (s.autoOrient) parts.push('Auto-Orient');
+		if (s.trimEdges) parts.push('Trim');
 		if (s.shaveX != null || s.shaveY != null) {
 			parts.push(`Shave ${s.shaveX ?? '0'}×${s.shaveY ?? '0'}`);
 		}
-		if (s.trimEdges) parts.push('Trim');
-		if (s.borderSize[0] > 0) parts.push(`Border ${s.borderSize[0]}px`);
-		if (s.extentW || s.extentH) parts.push('Canvas');
 		if (s.deskewThreshold[0] > 0) {
 			parts.push('Deskew');
 			parts.push(s.deskewAutoCrop ? 'Auto Crop' : 'No AutoCrop');
 		}
-		if (s.autoOrient) parts.push('Auto-Orient');
+		if (s.extentW || s.extentH) parts.push('Canvas');
+		if (s.borderSize[0] > 0) parts.push(`Border ${s.borderSize[0]}px`);
 		// Color
 		if (s.brightness[0] !== 100) parts.push(`Brightness ${s.brightness[0]}%`);
 		if (s.saturation[0] !== 100) parts.push(`Saturation ${s.saturation[0]}%`);
@@ -133,13 +127,18 @@
 				`LvlColors ${s.levelColorsBlack}→${s.levelColorsWhite}${s.levelColorsInverse ? ' inv' : ''}`
 			);
 		}
-		if (s.thresholdPercentage[0] !== 50) parts.push(`Threshold ${s.thresholdPercentage[0]}%`);
+		if (s.thresholdPercentage[0] !== 50)
+			parts.push(
+				`Threshold ${s.thresholdPercentage[0]}%${s.thresholdChannels !== 'All' ? ` ${s.thresholdChannels}` : ''}`
+			);
 		if (s.autoThreshold !== 'Off') parts.push(`AutoThreshold ${s.autoThreshold}`);
 		if (s.blackThreshold[0] > 0) parts.push(`BlackThresh ${s.blackThreshold[0]}%`);
 		if (s.whiteThreshold[0] < 100) parts.push(`WhiteThresh ${s.whiteThreshold[0]}%`);
 		if (s.claheXTiles[0] > 0) parts.push(`CLAHE ${s.claheXTiles[0]}×${s.claheYTiles[0]}`);
 		if (s.sigmoidalContrast[0] !== 0)
-			parts.push(`Sigmoidal ${s.sigmoidalContrast[0]}@${s.sigmoidalMidpoint[0]}`);
+			parts.push(
+				`Sigmoidal ${s.sigmoidalContrast[0]}@${s.sigmoidalMidpoint[0]}${s.sigmoidalChannels !== 'All' ? ` ${s.sigmoidalChannels}` : ''}`
+			);
 		if (s.colorSpace !== 'RGB') parts.push(s.colorSpace);
 		// Filters
 		if (s.effect !== 'none') parts.push(s.effect);
@@ -165,8 +164,8 @@
 			if (s.quantizeColorSpace !== 'sRGB') parts.push(`CS: ${s.quantizeColorSpace}`);
 		}
 		// Export
-		if (s.imageFormat !== 'WebP') parts.push(s.imageFormat);
-		if (s.quality[0] !== 85) parts.push(`Quality ${s.quality[0]}%`);
+		if (s.imageFormat !== DEFAULT_SETTINGS.imageFormat) parts.push(s.imageFormat);
+		if (s.quality[0] !== DEFAULT_SETTINGS.quality[0]) parts.push(`Quality ${s.quality[0]}%`);
 		if (s.stripMeta) parts.push('Strip Meta');
 		// Annotate
 		if (s.annotateText?.trim()) parts.push(`Text "${s.annotateText.slice(0, 15)}"`);
@@ -179,14 +178,14 @@
 		const target = history.undoTargetLabel;
 		if (!target) return;
 		await history.undo(magick);
-		showNotice(`Undid — ${target}`);
+		showNotice(`Undid - ${target}`);
 	}
 
 	async function handleRedo(): Promise<void> {
 		const target = history.redoTargetLabel;
 		if (!target) return;
 		await history.redo(magick);
-		showNotice(`Redid — ${target}`);
+		showNotice(`Redid - ${target}`);
 	}
 
 	function processCurrent() {
@@ -194,10 +193,28 @@
 		magick.processImage(debugMode, () => {
 			// Push to history after a successful process.
 			void history.pushFromMagick(magick, describeSettings());
+			if (isMobile) {
+				const percentChange =
+					magick.originalImageSize > 0
+						? ((magick.processedImageSize - magick.originalImageSize) / magick.originalImageSize) *
+							100
+						: 0;
+				const percentLabel = `${percentChange > 0 ? '+' : ''}${percentChange.toFixed(1)}%`;
+				toast(
+					`${formatBytes(magick.originalImageSize)} ${(magick.originalImageFormat ?? 'unknown').toUpperCase()} → ${formatBytes(magick.processedImageSize)} ${(magick.processedImageFormat ?? 'unknown').toUpperCase()} ${percentLabel}`,
+					{ duration: 5000 }
+				);
+			}
 			// Defer the reset so the new processed image has time to decode
 			// and expose its naturalWidth/Height to fitImageToScreen.
 			setTimeout(() => viewport?.resetView(), 100);
 		});
+	}
+
+	function cancelCurrent() {
+		if (!magick.isLoading) return;
+		magick.cancelProcessing();
+		showNotice('Processing cancelled');
 	}
 
 	function handleAnnotationPlace(placement: AnnotationPlacement): void {
@@ -233,12 +250,12 @@
 			history.markCurrentSaved();
 			if (window.wasmagick) {
 				showNotice(
-					stale ? 'Image saved — settings changed since preview' : 'Image saved',
+					stale ? 'Image saved, settings changed since preview' : 'Image saved',
 					true,
 					5000
 				);
 			} else {
-				showNotice(stale ? 'Exported last preview — settings changed' : 'Image exported');
+				showNotice(stale ? 'Exported last preview, settings changed' : 'Image exported');
 			}
 		} else {
 			showNotice('Could not save image');
@@ -254,6 +271,19 @@
 		// mounted but must not react to shortcuts (the overlay handles Escape).
 		if (settingsOpen) return;
 		const cmdOrCtrl = usesShortcutModifier(e);
+		const inField =
+			e.target instanceof HTMLInputElement ||
+			e.target instanceof HTMLTextAreaElement ||
+			e.target instanceof HTMLSelectElement;
+
+		// Escape cancels an in-flight process run (annotation placement and
+		// crop overlays handle their own Escape first via the viewport), but
+		// never while typing in a field, where Escape means blur/dismiss.
+		if (e.key === 'Escape' && magick.isLoading && !annotationPlacementActive && !inField) {
+			e.preventDefault();
+			cancelCurrent();
+			return;
+		}
 
 		if (cmdOrCtrl && e.key === 'Enter') {
 			e.preventDefault();
@@ -261,12 +291,7 @@
 			return;
 		}
 
-		if (
-			e.target instanceof HTMLInputElement ||
-			e.target instanceof HTMLTextAreaElement ||
-			e.target instanceof HTMLSelectElement
-		)
-			return;
+		if (inField) return;
 
 		// Undo / Redo
 		if (cmdOrCtrl && !e.shiftKey && (e.key === 'z' || e.key === 'Z')) {
@@ -348,7 +373,7 @@
 		const files = e.dataTransfer?.files;
 		if (files && files.length > 0) {
 			if (files.length > 1) {
-				showNotice(`Only one image at a time — opening the first of ${files.length}`);
+				showNotice(`Only one image at a time, opening the first of ${files.length}`);
 			}
 			guard.requestReplace(files[0], replaceImage);
 		}
@@ -453,6 +478,7 @@
 		onAnnotationPlacementChange={(active) => (annotationPlacementActive = active)}
 		onAnnotationPlace={handleAnnotationPlace}
 		onProcess={processCurrent}
+		onCancel={cancelCurrent}
 		onReset={() => magick.resetSettings()}
 		onDownload={downloadCurrent}
 		onUndo={handleUndo}
@@ -468,7 +494,6 @@
 		{history}
 		{presets}
 		{guard}
-		{isElectron}
 		bind:activeSection
 		bind:viewport
 		{annotationPlacementActive}
@@ -476,6 +501,7 @@
 		onAnnotationPlace={handleAnnotationPlace}
 		onToggleShortcuts={() => (showShortcuts = !showShortcuts)}
 		onProcess={processCurrent}
+		onCancel={cancelCurrent}
 		onReset={() => magick.resetSettings()}
 		onDownload={downloadCurrent}
 		onUndo={handleUndo}
@@ -490,21 +516,3 @@
 <KeyboardShortcuts bind:open={showShortcuts} />
 
 <SettingsOverlay bind:open={settingsOpen} />
-
-{#if actionNotice}
-	<div
-		class="fixed right-4 bottom-12 z-50 flex items-center gap-3 border border-foreground/30 bg-background px-3 py-2 font-mono text-xs text-foreground shadow-sm"
-		role="status"
-	>
-		{actionNotice}
-		{#if toastCanReveal}
-			<button
-				type="button"
-				onclick={revealSavedFile}
-				class="cursor-pointer border-l border-foreground/30 pl-3 text-muted-foreground underline decoration-dashed underline-offset-3 transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-			>
-				SHOW IN FOLDER
-			</button>
-		{/if}
-	</div>
-{/if}

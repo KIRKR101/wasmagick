@@ -20,7 +20,21 @@
 	import HistoryPanel from './sections/HistoryPanel.svelte';
 	import HoverTooltip from './controls/HoverTooltip.svelte';
 	import { shortcutModifier } from '$lib/shortcuts';
-	import { isLosslessExportFormat } from '$lib/export-formats';
+	import {
+		isLosslessExportFormat,
+		isPopularExportFormat,
+		type ExportFormat
+	} from '$lib/export-formats';
+	import {
+		Select,
+		SelectGroup,
+		SelectContent,
+		SelectItem,
+		SelectLabel,
+		SelectSeparator,
+		SelectTrigger
+	} from './ui/select/index.js';
+	import { Slider } from './ui/slider/index.js';
 
 	let {
 		activeSection,
@@ -28,6 +42,7 @@
 		history,
 		presets,
 		onProcess,
+		onCancel,
 		onDownload,
 		onClearRequest,
 		onNavigate,
@@ -39,6 +54,7 @@
 		history: HistoryState;
 		presets: PresetsState;
 		onProcess: () => void;
+		onCancel?: () => void;
 		onDownload: () => void;
 		onClearRequest?: () => void;
 		annotationPlacementActive?: boolean;
@@ -52,18 +68,22 @@
 	> = {
 		geometry: {
 			title: 'Geometry',
-			subtitle: 'Size · rotation · canvas',
+			subtitle: 'Crop · resize · orient · canvas',
 			reset: () => magick.resetGeometry()
 		},
-		color: { title: 'Color', subtitle: 'Tone · levels · space', reset: () => magick.resetColor() },
+		color: {
+			title: 'Color',
+			subtitle: 'Tone · thresholds · curve · space',
+			reset: () => magick.resetColor()
+		},
 		filters: {
 			title: 'Filters',
-			subtitle: 'Effects · blur · sharpen · quantize',
+			subtitle: 'Effects · blur · noise · LUT · quantize',
 			reset: () => magick.resetFilters()
 		},
 		annotate: {
 			title: 'Annotate',
-			subtitle: 'Text · overlay · caption',
+			subtitle: 'Text · style · placement',
 			reset: () => magick.resetAnnotate()
 		},
 		export: {
@@ -88,21 +108,55 @@
 	let canDownload = $derived(!!magick.processedImageUrl);
 	let processTip = $derived(
 		!magick.sourceBytes
-			? 'Process — load an image first'
+			? 'Process image (load an image first)'
 			: !magick.wasmLoaded
-				? 'Process — engine loading…'
+				? 'Process image (engine loading…)'
 				: magick.isStale
-					? `Settings changed — process to update preview (${shortcutModifier}+Enter)`
+					? `Settings changed, process to update preview (${shortcutModifier}+Enter)`
 					: `Process image (${shortcutModifier}+Enter)`
 	);
 	let exportTip = $derived(
-		!canDownload ? 'Export — process image first' : `Export result (${shortcutModifier}+S)`
+		!canDownload ? 'Export - process image first' : `Export result (${shortcutModifier}+S)`
 	);
 	let qualityLabel = $derived(
 		isLosslessExportFormat(magick.settings.imageFormat)
 			? 'Lossless'
 			: `${magick.settings.quality[0]}%`
 	);
+	let isLossless = $derived(isLosslessExportFormat(magick.settings.imageFormat));
+	let popularFormats = $derived(
+		(magick.exportFormats as readonly ExportFormat[]).filter((format: ExportFormat) =>
+			isPopularExportFormat(format.value)
+		)
+	);
+	let otherFormats = $derived(
+		(magick.exportFormats as readonly ExportFormat[]).filter(
+			(format: ExportFormat) => !isPopularExportFormat(format.value)
+		)
+	);
+
+	let qualityOpen = $state(false);
+	function closeQuality() {
+		qualityOpen = false;
+	}
+	$effect(() => {
+		if (!qualityOpen) return;
+		const onPointerDown = (e: PointerEvent) => {
+			const target = e.target as HTMLElement | null;
+			if (target?.closest('[data-quality-popover]') || target?.closest('[data-quality-button]'))
+				return;
+			closeQuality();
+		};
+		const onKeyDown = (e: KeyboardEvent) => {
+			if (e.key === 'Escape') closeQuality();
+		};
+		document.addEventListener('pointerdown', onPointerDown);
+		document.addEventListener('keydown', onKeyDown);
+		return () => {
+			document.removeEventListener('pointerdown', onPointerDown);
+			document.removeEventListener('keydown', onKeyDown);
+		};
+	});
 
 	let bodyEl = $state<HTMLElement | null>(null);
 	let lastSection: EditorSection | null = null;
@@ -159,37 +213,120 @@
 
 	<!-- Bottom Action Bar -->
 	<div class="mt-auto border-t border-divider bg-chrome p-4">
-		<div class="mb-3 flex items-center justify-between text-xs text-muted-foreground uppercase">
+		<div
+			class="relative mb-3 flex items-center justify-between text-xs text-muted-foreground uppercase"
+		>
 			<span>Output format</span>
-			<span class="underline underline-offset-2">{magick.settings.imageFormat} {qualityLabel}</span>
+			<span class="inline-flex items-center gap-1.5">
+				<Select type="single" bind:value={magick.settings.imageFormat}>
+					<SelectTrigger
+						aria-label="Output format"
+						class="!my-0 !h-auto !py-0 gap-0 border-0 bg-transparent p-0 text-xs text-muted-foreground uppercase underline underline-offset-2 hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none [&_svg]:hidden"
+					>
+						{magick.settings.imageFormat}
+					</SelectTrigger>
+					<SelectContent side="top" align="end">
+						<SelectGroup>
+							{#each popularFormats as format}
+								<SelectItem value={format.value}>{format.label}</SelectItem>
+							{/each}
+						</SelectGroup>
+						{#if otherFormats.length > 0}
+							<SelectSeparator />
+							<SelectGroup>
+								<SelectLabel>All formats</SelectLabel>
+								{#each otherFormats as format}
+									<SelectItem value={format.value}>{format.label}</SelectItem>
+								{/each}
+							</SelectGroup>
+						{/if}
+					</SelectContent>
+				</Select>
+				<button
+					type="button"
+					data-quality-button
+					onclick={() => (qualityOpen = !qualityOpen)}
+					aria-label="Output quality"
+					aria-haspopup="dialog"
+					aria-expanded={qualityOpen}
+					class="cursor-pointer text-xs text-muted-foreground uppercase underline underline-offset-2 hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+				>
+					{qualityLabel}
+				</button>
+			</span>
+			{#if qualityOpen}
+				<div
+					data-quality-popover
+					role="dialog"
+					aria-label="Output quality"
+					class="absolute right-0 bottom-full mb-2 w-52 border border-divider bg-chrome p-3 shadow-md ring-1 ring-foreground/10"
+				>
+					<div class="mb-2 flex items-center justify-between text-xs uppercase">
+						<span>Quality</span>
+						<span class="tabular-nums">
+							{#if isLossless}
+								<span class="text-muted-foreground">Lossless</span>
+							{:else}
+								{magick.settings.quality[0]}%
+							{/if}
+						</span>
+					</div>
+					<Slider
+						type="multiple"
+						bind:value={magick.settings.quality}
+						min={1}
+						max={100}
+						step={1}
+						disabled={isLossless}
+					/>
+					{#if isLossless}
+						<p class="mt-2 text-[11px] normal-case opacity-70">This format is always lossless.</p>
+					{/if}
+				</div>
+			{/if}
 		</div>
 		<div class="flex flex-col gap-1.5">
-			<HoverTooltip label={processTip} side="top" triggerClass="w-full">
-				<button
-					onclick={onProcess}
-					disabled={!magick.wasmLoaded || !magick.sourceBytes}
-					aria-label={processTip}
-					class="group flex h-8 w-full shrink-0 cursor-pointer items-center justify-between border border-foreground/30 bg-transparent px-2 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-				>
-					<span class="inline-flex items-center"
-						><span class="group-hover:underline">PROCESS</span>{#if magick.isStale}<span
-								class="ml-1.5 inline-block size-1.5 rounded-full bg-current"
-								aria-hidden="true"
-							></span>{/if}<span class="ml-1 inline-block w-3 text-left"
-							>{magick.isLoading ? ' ~' : ''}</span
-						></span
+			{#if magick.isLoading}
+				<HoverTooltip label={magick.processingStepLabel} side="top" triggerClass="w-full">
+					<button
+						onclick={() => onCancel?.()}
+						disabled={!onCancel}
+						aria-label={`Cancel processing. ${magick.processingStepLabel}`}
+						class="group flex h-8 w-full shrink-0 cursor-pointer items-center justify-between gap-2 border border-divider bg-transparent px-2 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 					>
-					<span class="text-[11px] opacity-70"
-						>{shortcutModifier.toUpperCase()}+<span class="text-sm">↵</span></span
+						<span class="shrink-0 group-hover:underline">CANCEL</span>
+						<span
+							class="text-[11px] whitespace-nowrap normal-case tabular-nums opacity-70"
+							aria-hidden="true">{magick.processingElapsedLabel}</span
+						>
+					</button>
+				</HoverTooltip>
+			{:else}
+				<HoverTooltip label={processTip} side="top" triggerClass="w-full">
+					<button
+						onclick={onProcess}
+						disabled={!magick.wasmLoaded || !magick.sourceBytes}
+						aria-label={processTip}
+						class="group flex h-8 w-full shrink-0 cursor-pointer items-center justify-between border border-divider bg-transparent px-2 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 					>
-				</button>
-			</HoverTooltip>
+						<span class="inline-flex items-center"
+							><span class="group-hover:underline">PROCESS</span>{#if magick.isStale}<span
+									class="ml-1.5 inline-block size-1.5 rounded-full bg-current"
+									aria-hidden="true"
+								></span>{/if}<span class="ml-1 inline-block w-3 text-left"></span></span
+						>
+						<span class="text-[11px] opacity-70"
+							>{shortcutModifier.toUpperCase()}+<span class="text-sm">↵</span></span
+						>
+					</button>
+				</HoverTooltip>
+			{/if}
 			<HoverTooltip label={exportTip} side="top" triggerClass="w-full">
 				<button
 					onclick={onDownload}
 					disabled={!canDownload}
 					aria-label={exportTip}
-					class="group flex h-8 w-full shrink-0 cursor-pointer items-center justify-between border border-foreground/30 bg-transparent px-2 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+					class="group flex h-8 w-full shrink-0 cursor-pointer items-center justify-between border border-divider bg-transparent px-2 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 				>
 					<span class="group-hover:underline">EXPORT</span>
 					<span class="text-[11px] opacity-70">{shortcutModifier.toUpperCase()}+S</span>

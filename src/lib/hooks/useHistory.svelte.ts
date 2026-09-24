@@ -6,14 +6,15 @@
  * blob URLs (cloned from magick's) so magick's lifecycle (which revokes its
  * own URLs on the next process) never invalidates history entries.
  *
- * Cap defaults to 40 entries (configurable in settings); oldest is evicted
- * (FIFO) with URL revoke.
+ * Capped at MAX_HISTORY_ENTRIES (oldest evicted FIFO) with URL revoke.
  */
-
 import type { MagickState } from '$lib/useMagick.svelte';
 import { outputExtensionForFormat } from '$lib/export-formats';
-import { basenameWithoutExtension, buildOutputFilename, getHistoryLimit } from '$lib/settings';
+import { basenameWithoutExtension, buildOutputFilename } from '$lib/settings';
 import type { MagickSettings } from '$lib/types';
+
+/** Max undo entries kept per editor session; oldest is evicted FIFO. */
+export const MAX_HISTORY_ENTRIES = 50;
 
 export interface SettingsDiffItem {
 	label: string;
@@ -22,10 +23,10 @@ export interface SettingsDiffItem {
 }
 
 function fmt(val: unknown): string {
-	if (val === null || val === undefined) return '—';
+	if (val === null || val === undefined) return '-';
 	if (typeof val === 'boolean') return val ? 'on' : 'off';
 	if (typeof val === 'number') return String(val);
-	if (typeof val === 'string') return val || '—';
+	if (typeof val === 'string') return val || '-';
 	return String(val);
 }
 
@@ -313,9 +314,8 @@ export class HistoryState {
 		}
 		this.entries = [...this.entries, entry];
 
-		// Enforce the cap from settings (evict oldest, but never the entry we just pushed).
-		const maxEntries = getHistoryLimit();
-		while (this.entries.length > maxEntries) {
+		// Enforce the cap (evict oldest, but never the entry we just pushed).
+		while (this.entries.length > MAX_HISTORY_ENTRIES) {
 			const evicted = this.entries.shift()!;
 			if (evicted.blobUrl !== entry.blobUrl) this._urlsToRevoke.add(evicted.blobUrl);
 			if (evicted.previewBlobUrl && evicted.previewBlobUrl !== entry.previewBlobUrl)
@@ -367,6 +367,7 @@ export class HistoryState {
 			magick.processedPreviewHeight = 0;
 			magick.processedImageUrl = null;
 			magick.processedImageFormat = null;
+			magick.processedImageSize = 0;
 			magick.processedImageName = null;
 			magick.processedWidth = 0;
 			magick.processedHeight = 0;
@@ -375,6 +376,7 @@ export class HistoryState {
 			magick.processedPreviewWidth = 0;
 			magick.processedPreviewHeight = 0;
 			magick.processedImageUrl = await cloneBlobUrl(entry.blobUrl);
+			magick.processedImageSize = entry.size;
 			magick.processedPreviewUrl = entry.previewBlobUrl
 				? await cloneBlobUrl(entry.previewBlobUrl)
 				: null;
@@ -394,7 +396,7 @@ export class HistoryState {
 		magick.processedImageTime = entry.time;
 		magick.hasUnsavedEdits = !entry.isOriginal && !entry.saved;
 		// The restored preview was rendered from the restored settings, so
-		// re-mark them fresh — undo/redo itself must never read as stale.
+		// re-mark them fresh, undo/redo itself must never read as stale.
 		if (entry.isOriginal) magick.clearPreviewSnapshot();
 		else magick.markPreviewFresh();
 		magick.hasError = false;

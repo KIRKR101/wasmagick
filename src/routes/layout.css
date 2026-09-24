@@ -2,7 +2,7 @@
 @import 'tw-animate-css';
 @import 'shadcn-svelte/tailwind.css';
 @import '@fontsource-variable/geist';
-@import '@fontsource-variable/jetbrains-mono';
+@import '@fontsource-variable/google-sans-code';
 
 @font-face {
 	font-family: 'Roboto-Regular';
@@ -117,7 +117,7 @@
 	--default-transition-duration: 75ms;
 	--font-sans: 'Geist Variable', sans-serif;
 	--font-heading: 'Geist Variable', sans-serif;
-	--font-mono: 'JetBrains Mono Variable', monospace;
+	--font-mono: 'Google Sans Code Variable', monospace;
 	--color-canvas: var(--canvas);
 	--color-chrome: var(--chrome);
 	--color-divider: var(--divider);
@@ -375,11 +375,11 @@ input[type='number'] {
 }
 .properties-panel-inner input[type='number'],
 .properties-panel-inner input[type='text'] {
-	border: 1px dashed color-mix(in oklch, var(--foreground) 30%, transparent);
+	border: 1px dashed var(--divider);
 }
 .properties-panel-inner select {
 	border: none;
-	border-bottom: 1px dashed color-mix(in oklch, var(--foreground) 30%, transparent);
+	border-bottom: 1px dashed var(--divider);
 	-webkit-appearance: none;
 	-moz-appearance: none;
 	appearance: none;
@@ -428,7 +428,7 @@ input[type='number'] {
 }
 .mobile-sheet-content input[type='number'],
 .mobile-sheet-content input[type='text'] {
-	border: 1px dashed color-mix(in oklch, var(--foreground) 30%, transparent);
+	border: 1px dashed var(--divider);
 }
 .mobile-sheet-content input[type='number']:focus,
 .mobile-sheet-content input[type='text']:focus {

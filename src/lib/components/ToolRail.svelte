@@ -15,20 +15,23 @@
 	} from '$lib/utils';
 	import { DEFAULT_SETTINGS } from '$lib/useMagick.svelte';
 	import HoverTooltip from './controls/HoverTooltip.svelte';
+	import TruncatedText from './controls/TruncatedText.svelte';
 	import UndoRedoButtons from './controls/UndoRedoButtons.svelte';
 	import { shortcutModifier } from '$lib/shortcuts';
-	import { Info, Keyboard, RotateCcw, Settings, Upload, X } from 'lucide-svelte';
+	import Keyboard from 'phosphor-svelte/lib/Keyboard';
+	import ArrowCounterClockwise from 'phosphor-svelte/lib/ArrowCounterClockwise';
+	import GearSix from 'phosphor-svelte/lib/GearSix';
+	import UploadSimple from 'phosphor-svelte/lib/UploadSimple';
+	import X from 'phosphor-svelte/lib/X';
 
 	let {
 		activeSection,
 		onSectionChange,
 		magick,
 		history,
-		isElectron = false,
 		onUploadClick,
 		onReset,
 		onClose,
-		onShowBuildDetails,
 		onToggleShortcuts,
 		onOpenSettings,
 		onUndo,
@@ -38,11 +41,9 @@
 		onSectionChange: (section: EditorSection) => void;
 		magick: MagickState;
 		history: HistoryState;
-		isElectron?: boolean;
 		onUploadClick: () => void;
 		onReset: () => void;
 		onClose: () => void;
-		onShowBuildDetails?: () => void;
 		onToggleShortcuts?: () => void;
 		onOpenSettings: () => void;
 		onUndo: () => void;
@@ -59,10 +60,6 @@
 		switch (id) {
 			case 'geometry': {
 				const parts: string[] = [];
-				if (s.resizeW || s.resizeH) parts.push(`Resize ${s.resizeW ?? 'A'}×${s.resizeH ?? 'A'}`);
-				if (s.rotate !== '0') parts.push(`Rotate ${s.rotate}°`);
-				if (s.flip) parts.push('Flip');
-				if (s.flop) parts.push('Flop');
 				if (s.cropX != null || s.cropY != null || s.cropW || s.cropH) {
 					if (s.cropX != null) {
 						parts.push(
@@ -72,19 +69,23 @@
 						parts.push(`Crop ${Math.round(s.cropW ?? 0)}×${Math.round(s.cropH ?? 0)}`);
 					}
 				}
+				if (s.resizeW || s.resizeH) parts.push(`Resize ${s.resizeW ?? 'A'}×${s.resizeH ?? 'A'}`);
+				if (s.rotate !== '0') parts.push(`Rotate ${s.rotate}°`);
+				if (s.flip) parts.push('Flip');
+				if (s.flop) parts.push('Flop');
+				if (!s.autoOrient) parts.push('Auto-Orient Off');
+				if (s.trimEdges) parts.push('Trim');
 				if (s.shaveX != null || s.shaveY != null) {
 					parts.push(`Shave ${s.shaveX ?? '0'}×${s.shaveY ?? '0'}`);
-				}
-				if (s.trimEdges) parts.push('Trim');
-				if (s.borderSize[0] > 0) parts.push(`Border ${s.borderSize[0]}px`);
-				if (s.extentW || s.extentH) {
-					parts.push(`Extent ${s.extentW ?? 'A'}×${s.extentH ?? 'A'}`);
 				}
 				if (s.deskewThreshold[0] > 0) {
 					parts.push(`Deskew ${s.deskewThreshold[0]}%`);
 					parts.push(s.deskewAutoCrop ? 'Auto Crop' : 'No AutoCrop');
 				}
-				if (!s.autoOrient) parts.push('Auto-Orient Off');
+				if (s.extentW || s.extentH) {
+					parts.push(`Extent ${s.extentW ?? 'A'}×${s.extentH ?? 'A'}`);
+				}
+				if (s.borderSize[0] > 0) parts.push(`Border ${s.borderSize[0]}px`);
 				return parts.join(' · ');
 			}
 			case 'color': {
@@ -118,7 +119,9 @@
 					);
 				}
 				if (s.thresholdPercentage[0] !== 50) {
-					parts.push(`Threshold ${s.thresholdPercentage[0]}%`);
+					parts.push(
+						`Threshold ${s.thresholdPercentage[0]}%${s.thresholdChannels !== 'All' ? ` ${s.thresholdChannels}` : ''}`
+					);
 				}
 				if (s.autoThreshold !== 'Off') {
 					parts.push(`Auto-Threshold ${s.autoThreshold}`);
@@ -133,7 +136,9 @@
 					parts.push(`CLAHE ${s.claheXTiles[0]}×${s.claheYTiles[0]}`);
 				}
 				if (s.sigmoidalContrast[0] !== 0) {
-					parts.push(`Sigmoidal ${s.sigmoidalContrast[0]}@${s.sigmoidalMidpoint[0]}`);
+					parts.push(
+						`Sigmoidal ${s.sigmoidalContrast[0]}@${s.sigmoidalMidpoint[0]}${s.sigmoidalChannels !== 'All' ? ` ${s.sigmoidalChannels}` : ''}`
+					);
 				}
 				if (s.colorSpace !== 'RGB') parts.push(s.colorSpace);
 				return parts.join(' · ');
@@ -162,6 +167,9 @@
 							break;
 						case 'bilateralBlur':
 							parts.push(`${s.bilateralWidth[0]}×${s.bilateralHeight[0]}`);
+							if (s.bilateralIntensitySigma[0] !== 1.5)
+								parts.push(`iΣ ${s.bilateralIntensitySigma[0]}`);
+							if (s.bilateralSpatialSigma[0] !== 1) parts.push(`sΣ ${s.bilateralSpatialSigma[0]}`);
 							break;
 					}
 				}
@@ -283,46 +291,44 @@
 	<!-- Section buttons -->
 	<div class="mb-6 flex flex-col gap-1.5">
 		{#each items as item (item.id)}
-			<button
-				onclick={() => onSectionChange(item.id)}
-				class="group flex w-full cursor-pointer items-center justify-between text-left transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {activeSection ===
-				item.id
-					? 'font-bold text-foreground'
-					: 'text-muted-foreground'}"
-				aria-label="{item.label} (Alt+{item.shortcut})"
-				title="{item.label} (Alt+{item.shortcut})"
-				aria-pressed={activeSection === item.id}
+			{@const summary = sectionSummary(item.id)}
+			<HoverTooltip
+				label={summary
+					? `${item.label} (Alt+${item.shortcut}) - ${summary}`
+					: `${item.label} (Alt+${item.shortcut})`}
+				side="right"
+				triggerClass="w-full"
 			>
-				<span class="inline-flex items-center gap-1.5 truncate"
-					><span>[{activeSection === item.id ? '*' : ' '}]</span><span class="hover:underline"
-						>{item.label}</span
-					></span
+				<button
+					onclick={() => onSectionChange(item.id)}
+					class="group flex w-full cursor-pointer items-center justify-between text-left transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {activeSection ===
+					item.id
+						? 'font-semibold text-foreground'
+						: 'text-muted-foreground'}"
+					aria-label="{item.label} (Alt+{item.shortcut})"
+					aria-pressed={activeSection === item.id}
 				>
-				<div class="flex shrink-0 items-center gap-1">
-					<span
-						class="w-3 text-center text-xs text-muted-foreground/60 {item.dirty ? '' : 'invisible'}"
-						aria-label={item.dirty ? 'Modified' : undefined}>^</span
+					<span class="inline-flex items-center gap-1.5 truncate"
+						><span>[{activeSection === item.id ? '*' : ' '}]</span><span class="hover:underline"
+							>{item.label}</span
+						></span
 					>
-					{#if sectionSummary(item.id)}
-						{@const lines = sectionSummary(item.id).split(' · ')}
-						<span class="group/tip relative">
+					<div class="flex shrink-0 items-center gap-1">
+						<span
+							class="w-3 text-center text-xs text-muted-foreground/60 {item.dirty
+								? ''
+								: 'invisible'}"
+							aria-hidden={item.dirty ? undefined : true}>^</span
+						>
+						{#if summary}
 							<span
 								class="block max-w-24 truncate text-[11px] font-normal text-muted-foreground normal-case hover:text-foreground"
-								>{sectionSummary(item.id)}</span
+								aria-hidden="true">{summary}</span
 							>
-							<span
-								class="pointer-events-none absolute top-1/2 left-full z-50 ml-1.5 -translate-y-1/2 rounded-none border border-divider bg-chrome px-2 py-1 font-mono text-[11px] text-muted-foreground normal-case opacity-0 shadow-md transition-opacity group-hover/tip:opacity-100 group-hover/tip:delay-500 max-md:hidden"
-							>
-								<div class="flex flex-col gap-0.5 whitespace-nowrap">
-									{#each lines as line}
-										<span>{line}</span>
-									{/each}
-								</div>
-							</span>
-						</span>
-					{/if}
-				</div>
-			</button>
+						{/if}
+					</div>
+				</button>
+			</HoverTooltip>
 		{/each}
 	</div>
 
@@ -336,7 +342,7 @@
 			>
 				<span class="inline-flex items-center gap-1.5 truncate"
 					><span class="inline-flex w-[3ch] items-center justify-center"
-						><Upload class="size-[1em]" /></span
+						><UploadSimple class="size-[1em]" /></span
 					>
 					<span class="hover:underline">UPLOAD</span></span
 				>
@@ -355,7 +361,7 @@
 			>
 				<span class="inline-flex items-center gap-1.5 truncate"
 					><span class="inline-flex w-[3ch] items-center justify-center"
-						><RotateCcw class="size-[1em]" /></span
+						><ArrowCounterClockwise class="size-[1em]" /></span
 					>
 					<span class="hover:underline">RESET ALL</span></span
 				>
@@ -391,13 +397,10 @@
 			<div class="mb-6">
 				<div class="mb-3 text-muted-foreground">/FILE</div>
 				<div
-					class="flex flex-col gap-1.5 border border-foreground/30 px-2 py-2 font-mono text-[11px] text-muted-foreground uppercase"
+					class="flex flex-col gap-1.5 border border-divider px-2 py-2 font-mono text-[11px] text-muted-foreground uppercase"
 				>
-					<div
-						class="truncate border-b border-foreground/30 pb-1.5 text-foreground/90"
-						title={magick.originalName}
-					>
-						{magick.originalName}
+					<div class="border-b border-divider pb-1.5 text-foreground/90">
+						<TruncatedText text={magick.originalName} />
 					</div>
 					<div class="flex justify-between gap-2">
 						<span class="shrink-0 text-[11px] text-muted-foreground">DIMS</span>
@@ -459,7 +462,7 @@
 		<div class="mb-3 text-muted-foreground">/NAV</div>
 		<div class="flex flex-col gap-1.5">
 			<UndoRedoButtons
-				class="mb-2"
+				class="mb-2 min-h-7"
 				canUndo={history.canUndo}
 				canRedo={history.canRedo}
 				{onUndo}
@@ -467,23 +470,6 @@
 				undoLabel={undoTip}
 				redoLabel={redoTip}
 			/>
-
-			{#if isElectron}
-				<HoverTooltip label="Show build details" triggerClass="w-full">
-					<button
-						onclick={onShowBuildDetails}
-						aria-label="Show build details"
-						class="group flex w-full cursor-pointer items-center justify-between text-left text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-					>
-						<span class="inline-flex items-center gap-1.5 truncate"
-							><span class="inline-flex w-[3ch] items-center justify-center"
-								><Info class="size-[1em]" /></span
-							>
-							<span class="hover:underline">BUILD</span></span
-						>
-					</button>
-				</HoverTooltip>
-			{/if}
 
 			<HoverTooltip
 				label={`Keyboard shortcuts (${shortcutModifier}+Shift+?)`}
@@ -511,7 +497,7 @@
 				>
 					<span class="inline-flex items-center gap-1.5 truncate"
 						><span class="inline-flex w-[3ch] items-center justify-center"
-							><Settings class="size-[1em]" /></span
+							><GearSix class="size-[1em]" /></span
 						>
 						<span class="hover:underline">SETTINGS</span></span
 					>

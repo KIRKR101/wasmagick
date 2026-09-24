@@ -410,7 +410,7 @@ function applyTitleBarTheme() {
 
 function updateWindowTitle() {
 	if (!mainWindow || mainWindow.isDestroyed()) return;
-	const file = editorState.fileName ? ` — ${editorState.fileName}` : '';
+	const file = editorState.fileName ? ` - ${editorState.fileName}` : '';
 	const dirty = editorState.hasUnsavedEdits ? ' •' : '';
 	mainWindow.setTitle(`WASMagick${file}${dirty}`);
 }

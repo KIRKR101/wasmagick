@@ -1,7 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Copy, Minus, Square, X } from 'lucide-svelte';
+	import Copy from 'phosphor-svelte/lib/Copy';
+	import Minus from 'phosphor-svelte/lib/Minus';
+	import Square from 'phosphor-svelte/lib/Square';
+	import X from 'phosphor-svelte/lib/X';
 	import { pwaInstall } from '$lib/stores/pwa.svelte';
+	import { Toaster } from '$lib/components/ui/sonner';
 	import { hasCustomTitleBar, resolveInitialTheme, watchSystemTheme } from '$lib/theme';
 	import './layout.css';
 
@@ -38,17 +42,11 @@
 		<span aria-hidden="true">WASMAGICK</span>
 		{#if isLinux}
 			<div class="titlebar-controls">
-				<button
-					type="button"
-					title="Minimize"
-					aria-label="Minimize window"
-					onclick={controls.minimize}
-				>
+				<button type="button" aria-label="Minimize window" onclick={controls.minimize}>
 					<span class="titlebar-control-icon"><Minus size={12} /></span>
 				</button>
 				<button
 					type="button"
-					title={isMaximized ? 'Restore' : 'Maximize'}
 					aria-label={isMaximized ? 'Restore window' : 'Maximize window'}
 					onclick={controls.toggleMaximize}
 				>
@@ -56,13 +54,7 @@
 						>{#if isMaximized}<Copy size={12} />{:else}<Square size={12} />{/if}</span
 					>
 				</button>
-				<button
-					type="button"
-					class="close"
-					title="Close"
-					aria-label="Close window"
-					onclick={controls.close}
-				>
+				<button type="button" class="close" aria-label="Close window" onclick={controls.close}>
 					<span class="titlebar-control-icon"><X size={12} /></span>
 				</button>
 			</div>
@@ -74,3 +66,4 @@
 	<div aria-live="polite" aria-atomic="true" class="sr-only">Image editor ready</div>
 	{@render children()}
 </div>
+<Toaster />

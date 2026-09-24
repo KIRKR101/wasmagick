@@ -1,20 +1,17 @@
 <script lang="ts">
-	import {
-		Undo2,
-		Redo2,
-		Columns2,
-		Images,
-		Download,
-		Settings,
-		SlidersHorizontal,
-		Maximize,
-		Loader2,
-		RotateCcw,
-		X
-	} from 'lucide-svelte';
+	import ArrowUUpLeft from 'phosphor-svelte/lib/ArrowUUpLeft';
+	import ArrowUUpRight from 'phosphor-svelte/lib/ArrowUUpRight';
+	import SquareSplitHorizontal from 'phosphor-svelte/lib/SquareSplitHorizontal';
+	import Images from 'phosphor-svelte/lib/Images';
+	import DownloadSimple from 'phosphor-svelte/lib/DownloadSimple';
+	import GearSix from 'phosphor-svelte/lib/GearSix';
+	import SlidersHorizontal from 'phosphor-svelte/lib/SlidersHorizontal';
+	import CornersOut from 'phosphor-svelte/lib/CornersOut';
+	import CircleNotch from 'phosphor-svelte/lib/CircleNotch';
+	import Play from 'phosphor-svelte/lib/Play';
+	import X from 'phosphor-svelte/lib/X';
 	import type { MagickState } from '$lib/useMagick.svelte';
 	import type { HistoryState } from '$lib/hooks/useHistory.svelte';
-	import { isSettingsDirty } from '$lib/utils';
 
 	let {
 		magick,
@@ -25,13 +22,14 @@
 		onUndo,
 		onRedo,
 		onDownload,
+		onProcess,
+		onCancel,
 		onToggleTools,
 		onFitToScreen,
 		onCompareStart,
 		onCompareEnd,
 		onToggleSplitCompare,
 		splitMode = false,
-		onReset,
 		onClose,
 		onOpenSettings
 	}: {
@@ -43,24 +41,25 @@
 		onUndo: () => void;
 		onRedo: () => void;
 		onDownload: () => void;
+		onProcess: () => void;
+		onCancel?: () => void;
 		onToggleTools: () => void;
 		onFitToScreen: () => void;
 		onCompareStart: () => void;
 		onCompareEnd: () => void;
 		onToggleSplitCompare: () => void;
 		splitMode?: boolean;
-		onReset: () => void;
 		onClose: () => void;
 		onOpenSettings: () => void;
 	} = $props();
 
 	let canDownload = $derived(!!magick.processedImageUrl);
-	let anyDirty = $derived(isSettingsDirty(magick.settings));
+	let canProcess = $derived(!!magick.sourceBytes && magick.wasmLoaded && !isLoading);
 </script>
 
 <div class="mobile-toolbar">
 	<!-- View / Canvas tools -->
-	<div class="flex items-center justify-between border-b border-foreground/30 px-3 py-1">
+	<div class="flex items-center justify-between border-b border-divider px-3 py-1">
 		<!-- Zoom -->
 		<div class="flex items-center gap-0">
 			<button
@@ -69,7 +68,7 @@
 				class="mobile-btn-sm"
 				aria-label="Fit to screen"
 			>
-				<Maximize class="size-4" />
+				<CornersOut class="size-4" />
 			</button>
 			<span
 				class="w-12 text-center font-mono text-[11px] text-muted-foreground tabular-nums"
@@ -93,7 +92,7 @@
 				onpointercancel={onCompareEnd}
 				onpointerleave={() => onCompareEnd()}
 				disabled={!magick.processedImageUrl}
-				class="mobile-btn-sm {isComparing ? 'bg-muted text-foreground' : ''}"
+				class="mobile-btn-sm {isComparing ? 'bg-muted/50 text-foreground' : ''}"
 				aria-label="Hold to compare"
 				aria-pressed={isComparing}
 			>
@@ -102,14 +101,14 @@
 			<button
 				onclick={onToggleSplitCompare}
 				disabled={!magick.processedImageUrl}
-				class="mobile-btn-sm {splitMode ? 'bg-muted text-foreground' : ''}"
+				class="mobile-btn-sm {splitMode ? 'bg-muted/50 text-foreground' : ''}"
 				aria-label="Split compare"
 				aria-pressed={splitMode}
 			>
-				<Columns2 class="size-4" />
+				<SquareSplitHorizontal class="size-4" />
 			</button>
 			<button onclick={onOpenSettings} class="mobile-btn-sm" aria-label="App settings">
-				<Settings class="size-4" />
+				<GearSix class="size-4" />
 			</button>
 		</div>
 	</div>
@@ -123,7 +122,7 @@
 			class="mobile-btn"
 			aria-label="Export image"
 		>
-			<Download class="size-4.5" />
+			<DownloadSimple class="size-4.5" />
 			<span class="text-[11px]">EXPORT</span>
 		</button>
 		<button
@@ -136,34 +135,56 @@
 			<span class="text-[11px]">CLOSE</span>
 		</button>
 
-		<div class="h-5 w-px bg-foreground/30"></div>
+		<div class="h-5 w-px bg-divider"></div>
 
 		<!-- History -->
 		<button
 			onclick={onUndo}
 			disabled={!history.canUndo}
-			class="mobile-btn"
+			class="mobile-btn flex-row gap-1.5"
 			aria-label={history.undoTargetLabel ? `Undo ${history.undoTargetLabel}` : 'Undo'}
 		>
-			<Undo2 class="size-4.5" />
-			<span class="text-[11px]">UNDO</span>
+			<ArrowUUpLeft class="size-4.5" />
+			<span class="text-[11px] leading-none">UNDO</span>
 		</button>
 		<button
 			onclick={onRedo}
 			disabled={!history.canRedo}
-			class="mobile-btn"
+			class="mobile-btn flex-row gap-1.5"
 			aria-label={history.redoTargetLabel ? `Redo ${history.redoTargetLabel}` : 'Redo'}
 		>
-			<Redo2 class="size-4.5" />
-			<span class="text-[11px]">REDO</span>
+			<ArrowUUpRight class="size-4.5" />
+			<span class="text-[11px] leading-none">REDO</span>
 		</button>
 
-		<div class="h-5 w-px bg-foreground/30"></div>
+		<div class="h-5 w-px bg-divider"></div>
 
 		<!-- Settings -->
-		<button onclick={onReset} disabled={!anyDirty} class="mobile-btn" aria-label="Reset all">
-			<RotateCcw class="size-4.5" />
-			<span class="text-[11px]">RESET</span>
+		<!-- Process / Cancel: a single button so the slot keeps its size when the
+			label swaps (no time shown here, just PROCESS <-> CANCEL). The label
+			gets a fixed 7ch slot (both words fit, mono font) so neighbours never shift. -->
+		<button
+			onclick={isLoading ? () => onCancel?.() : onProcess}
+			disabled={isLoading ? !onCancel : !canProcess}
+			class="mobile-btn"
+			aria-label={isLoading
+				? `Cancel processing. ${magick.processingStepLabel}`
+				: !magick.sourceBytes
+					? 'Process image (load an image first)'
+					: !magick.wasmLoaded
+						? 'Process image (engine loading…)'
+						: magick.isStale
+							? 'Settings changed, process to update preview'
+							: 'Process image'}
+		>
+			{#if isLoading}
+				<X class="size-4.5" />
+			{:else}
+				<Play class="size-4.5" />
+			{/if}
+			<span class="inline-block w-[7ch] text-center text-[11px]"
+				>{isLoading ? 'CANCEL' : 'PROCESS'}</span
+			>
 		</button>
 		<button
 			onclick={onToggleTools}
@@ -171,7 +192,7 @@
 			aria-label="Open tools"
 		>
 			{#if isLoading}
-				<Loader2 class="size-4.5 animate-spin" />
+				<CircleNotch class="size-4.5 animate-spin" />
 			{:else}
 				<SlidersHorizontal class="size-4.5" />
 			{/if}

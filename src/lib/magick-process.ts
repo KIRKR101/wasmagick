@@ -137,7 +137,7 @@ export function readImageWithFilename<T>(
  * The last coalesced frame is the representative still: disposal-optimized
  * animations often start with a blank transparent frame (cumulative drawing
  * GIFs render nothing at t=0), so exporting the first frame produces an
- * empty white canvas — or an empty transparent canvas where supported.
+ * empty white canvas, or an empty transparent canvas where supported.
  */
 export function stillFrameForOutput(
 	collection: IMagickImageCollection,
@@ -153,7 +153,7 @@ export function stillFrameForOutput(
  * Composite a still frame over an opaque white canvas for output formats
  * without alpha support (JPEG), mirroring the native VIPS `flatten` step.
  * Returns a new image the caller must dispose, unless the format supports
- * alpha — then the input image itself is returned and must NOT be disposed.
+ * alpha, then the input image itself is returned and must NOT be disposed.
  */
 export function flattenStillForOutput(image: IMagickImage, formatName: string): IMagickImage {
 	if (!isOpaqueOutputFormat(formatName)) return image;

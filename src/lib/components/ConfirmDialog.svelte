@@ -11,13 +11,15 @@
 		open = $bindable(false),
 		fileName = '',
 		kind = 'replace',
+		presetName = '',
 		hasUnsavedEdits = false,
 		onConfirm,
 		onCancel
 	}: {
 		open?: boolean;
 		fileName?: string;
-		kind?: 'replace' | 'close' | 'clear-history' | 'reset-all';
+		kind?: 'replace' | 'close' | 'clear-history' | 'reset-all' | 'apply-preset';
+		presetName?: string;
 		hasUnsavedEdits?: boolean;
 		onConfirm: () => void;
 		onCancel: () => void;
@@ -43,10 +45,12 @@
 			showCloseButton={false}
 		>
 			<div
-				class="border-b border-foreground/30 px-4 py-3 text-xs tracking-wider text-muted-foreground uppercase"
+				class="border-b border-divider px-4 py-3 text-xs tracking-wider text-muted-foreground uppercase"
 			>
 				{#if kind === 'close'}
 					Close current image?
+				{:else if kind === 'apply-preset'}
+					Apply preset?
 				{:else if kind === 'clear-history'}
 					Clear entire history?
 				{:else if kind === 'reset-all'}
@@ -72,6 +76,11 @@
 				{:else if kind === 'reset-all'}
 					This will reset all settings to their defaults. Processed result and history will be
 					preserved.
+				{:else if kind === 'apply-preset'}
+					Your current settings have changes. Applying
+					{#if presetName}<span class="font-medium text-foreground">{presetName}</span>{:else}this
+						preset{/if}
+					will replace them.
 				{:else if hasUnsavedEdits}
 					You have unsaved edits to the current image
 					{#if fileName}<span class="font-medium text-foreground">({fileName})</span>{/if}.
@@ -83,16 +92,16 @@
 				{/if}
 			</div>
 
-			<div class="flex items-center justify-end gap-2 border-t border-foreground/30 px-4 py-3">
+			<div class="flex items-center justify-end gap-2 border-t border-divider px-4 py-3">
 				<button
 					onclick={cancel}
-					class="cursor-pointer border border-foreground/30 px-3 py-1 font-mono text-[11px] text-muted-foreground uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+					class="cursor-pointer border border-divider px-3 py-1 font-mono text-[11px] text-muted-foreground uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 				>
 					[<span class="hover:underline"> Cancel </span>]
 				</button>
 				<button
 					onclick={confirm}
-					class="cursor-pointer border border-foreground/30 px-3 py-1 font-mono text-[11px] text-muted-foreground uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+					class="cursor-pointer border border-divider px-3 py-1 font-mono text-[11px] text-muted-foreground uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 				>
 					[<span class="hover:underline"
 						>{kind === 'close'
@@ -101,7 +110,9 @@
 								? 'Clear'
 								: kind === 'reset-all'
 									? 'Reset'
-									: 'Replace'}</span
+									: kind === 'apply-preset'
+										? 'Apply'
+										: 'Replace'}</span
 					>]
 				</button>
 			</div>

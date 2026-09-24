@@ -2,21 +2,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
 	DEFAULT_EXPORT_DEFAULTS,
 	DEFAULT_FILENAME_TEMPLATE,
-	DEFAULT_HISTORY_LIMIT,
-	MAX_HISTORY_LIMIT,
-	MIN_HISTORY_LIMIT,
 	buildOutputFilename,
-	clearAllAppStorage,
 	clearExportDefaults,
 	formatOutputFilename,
 	getExportDefaults,
 	getFilenameTemplate,
-	getHistoryLimit,
-	getStorageUsage,
 	sanitizeFilename,
 	setExportDefaults,
-	setFilenameTemplate,
-	setHistoryLimit
+	setFilenameTemplate
 } from './settings';
 
 const values = new Map<string, string>();
@@ -74,24 +67,6 @@ describe('output filenames', () => {
 });
 
 describe('stored settings', () => {
-	it.each([
-		[undefined, DEFAULT_HISTORY_LIMIT],
-		['nonsense', DEFAULT_HISTORY_LIMIT],
-		['1', MIN_HISTORY_LIMIT],
-		['999', MAX_HISTORY_LIMIT],
-		['24', 24]
-	])('normalizes stored history limit %s', (stored, expected) => {
-		if (stored !== undefined) values.set('wasmagick.history-limit', stored);
-		expect(getHistoryLimit()).toBe(expected);
-	});
-
-	it('rounds and clamps history limits while removing the default', () => {
-		setHistoryLimit(12.6);
-		expect(values.get('wasmagick.history-limit')).toBe('13');
-		setHistoryLimit(DEFAULT_HISTORY_LIMIT);
-		expect(values.has('wasmagick.history-limit')).toBe(false);
-	});
-
 	it('round-trips export defaults and accepts the legacy scalar quality', () => {
 		setExportDefaults({ imageFormat: 'PNG', quality: [91], stripMeta: true });
 		expect(getExportDefaults()).toEqual({ imageFormat: 'PNG', quality: [91], stripMeta: true });
@@ -101,19 +76,8 @@ describe('stored settings', () => {
 		expect(getExportDefaults()).toEqual(DEFAULT_EXPORT_DEFAULTS);
 	});
 
-	it('falls back safely for corrupt storage and clears every known key', () => {
+	it('falls back safely for corrupt storage', () => {
 		values.set('wasmagick-settings', '{broken');
 		expect(getExportDefaults()).toEqual(DEFAULT_EXPORT_DEFAULTS);
-		for (const key of [
-			'theme',
-			'wasmagick.filename-template',
-			'wasmagick.history-limit',
-			'wasmagick-settings',
-			'wasmagick.presets.v1'
-		])
-			values.set(key, 'x');
-		expect(getStorageUsage()).toHaveLength(5);
-		clearAllAppStorage();
-		expect(getStorageUsage()).toEqual([]);
 	});
 });

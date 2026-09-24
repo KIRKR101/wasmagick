@@ -16,7 +16,7 @@ export type EditorSection =
 export interface RailItem {
 	id: EditorSection;
 	label: string;
-	/** Lucide icon component. */
+	/** Icon component. */
 	icon?: unknown;
 	/** Alt+number shortcut digit (1-7). */
 	shortcut: string;

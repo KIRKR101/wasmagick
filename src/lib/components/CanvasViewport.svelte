@@ -1,10 +1,16 @@
 <script lang="ts">
-	import { Columns2, Images, Maximize, ZoomIn, ZoomOut } from 'lucide-svelte';
+	import { onDestroy } from 'svelte';
+	import SquareSplitHorizontal from 'phosphor-svelte/lib/SquareSplitHorizontal';
+	import Images from 'phosphor-svelte/lib/Images';
+	import CornersOut from 'phosphor-svelte/lib/CornersOut';
+	import MagnifyingGlassPlus from 'phosphor-svelte/lib/MagnifyingGlassPlus';
+	import MagnifyingGlassMinus from 'phosphor-svelte/lib/MagnifyingGlassMinus';
 	import FileDropzone from './FileDropzone.svelte';
 	import HoverTooltip from './controls/HoverTooltip.svelte';
 	import { shortcutModifier } from '$lib/shortcuts';
 	import SplitCompare from './SplitCompare.svelte';
 	import CropOverlay from './CropOverlay.svelte';
+	import { dismissToast, toast } from '$lib/components/ui/sonner';
 	import type { SampleImage } from '$lib/editor-types';
 	import type { CropRect } from '$lib/crop-utils';
 	import {
@@ -103,6 +109,26 @@
 		onRequestOriginalFullPreview?: () => void;
 		onOriginalImageError?: () => void;
 	} = $props();
+
+	let previewLoadingToastId: number | undefined;
+
+	$effect(() => {
+		if (originalPreviewLoading && displayedPreviewData) {
+			if (previewLoadingToastId === undefined) {
+				previewLoadingToastId = toast('Loading higher-resolution preview…', {
+					duration: null,
+					loading: true
+				});
+			}
+		} else if (previewLoadingToastId !== undefined) {
+			dismissToast(previewLoadingToastId);
+			previewLoadingToastId = undefined;
+		}
+	});
+
+	onDestroy(() => {
+		if (previewLoadingToastId !== undefined) dismissToast(previewLoadingToastId);
+	});
 
 	let showPlaceholder = $derived(!originalImageUrl);
 	let isInitializing = $derived(!wasmLoaded);
@@ -422,7 +448,7 @@
 	);
 
 	// Warn exactly while the original (which the browser cannot render) is the
-	// image on screen — before processing, and in compare/split views.
+	// image on screen, before processing, and in compare/split views.
 	let imageFailed = $derived(
 		!!originalPreviewFailed &&
 			!originalPreviewData &&
@@ -589,7 +615,7 @@
 	// Re-fit when the processed image changes (history navigation can swap
 	// the <img src> to a cached copy, in which case onload may not refire
 	// and the previous fit would be stale for the new dimensions).
-	// Only refit for the processed image — toggling between processed and
+	// Only refit for the processed image, toggling between processed and
 	// original for hold-to-compare must not reset zoom/pan.
 	$effect(() => {
 		const url = processedImageUrl;
@@ -904,21 +930,6 @@
 					aria-label="Processed image preview"
 				></canvas>
 			{/if}
-			{#if originalPreviewLoading && displayedPreviewData}
-				<div
-					class="pointer-events-none fixed right-3 bottom-12 z-50 max-w-[calc(100%-1.5rem)] sm:right-4"
-				>
-					<div
-						class="flex items-center gap-2 border border-foreground/30 bg-background px-3 py-2 font-mono text-xs text-foreground shadow-sm"
-						role="status"
-					>
-						<span
-							class="size-3 animate-spin rounded-full border border-muted-foreground/30 border-t-primary"
-						></span>
-						Loading higher-resolution preview…
-					</div>
-				</div>
-			{/if}
 			{#if annotationMenuActive && annotationPoint && (annotationPlacementActive || magickSettings?.annotateText?.trim()) && !compareActive}
 				<div
 					class="pointer-events-none absolute z-30 size-5 -translate-x-1/2 -translate-y-1/2 mix-blend-difference"
@@ -989,14 +1000,14 @@
 						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 						aria-label={`Zoom out (${shortcutModifier}+-)`}
 					>
-						<ZoomOut class="size-3.5" />
+						<MagnifyingGlassMinus class="size-3.5" />
 					</button>
 				</HoverTooltip>
-				<HoverTooltip label="Zoom level — click to reset to 100%" side="top">
+				<HoverTooltip label="Zoom level - click to reset to 100%" side="top">
 					<button
 						onclick={zoomToOneToOne}
 						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-						aria-label="Zoom level — click to reset to 100%"
+						aria-label="Zoom level - click to reset to 100%"
 					>
 						<span class="tabular-nums">{Math.round(currentZoom)}%</span>
 					</button>
@@ -1007,7 +1018,7 @@
 						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 						aria-label={`Zoom in (${shortcutModifier}+=)`}
 					>
-						<ZoomIn class="size-3.5" />
+						<MagnifyingGlassPlus class="size-3.5" />
 					</button>
 				</HoverTooltip>
 				<HoverTooltip
@@ -1024,14 +1035,14 @@
 							? 'Fit unavailable (preview failed)'
 							: `Fit to screen (${shortcutModifier}+0)`}
 					>
-						<Maximize class="size-3.5" />
+						<CornersOut class="size-3.5" />
 					</button>
 				</HoverTooltip>
 				<div class="mx-0.5 h-4 w-px bg-border"></div>
 				<HoverTooltip
 					label={processedImageUrl
 						? 'Hold to compare original (Space)'
-						: 'Compare unavailable — process image first'}
+						: 'Compare unavailable, process image first'}
 					side="top"
 				>
 					<button
@@ -1049,30 +1060,30 @@
 						}}
 						disabled={!processedImageUrl}
 						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 {compareActive
-							? 'bg-muted text-foreground'
+							? 'bg-muted/50 text-foreground'
 							: ''}"
 						aria-pressed={compareActive}
 						aria-label={processedImageUrl
 							? 'Hold to compare original (Space)'
-							: 'Compare unavailable — process image first'}
+							: 'Compare unavailable, process image first'}
 					>
 						<Images class="size-3.5" />
 					</button>
 				</HoverTooltip>
 				<HoverTooltip
-					label={canSplit ? 'Split compare (B)' : 'Split unavailable — process image first'}
+					label={canSplit ? 'Split compare (B)' : 'Split unavailable, process image first'}
 					side="top"
 				>
 					<button
 						onclick={toggleSplitCompare}
 						disabled={!canSplit}
 						class="flex size-7 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 {splitMode
-							? 'bg-muted text-foreground'
+							? 'bg-muted/50 text-foreground'
 							: ''}"
 						aria-pressed={splitMode}
-						aria-label={canSplit ? 'Split compare (B)' : 'Split unavailable — process image first'}
+						aria-label={canSplit ? 'Split compare (B)' : 'Split unavailable, process image first'}
 					>
-						<Columns2 class="size-3.5" />
+						<SquareSplitHorizontal class="size-3.5" />
 					</button>
 				</HoverTooltip>
 			</div>
