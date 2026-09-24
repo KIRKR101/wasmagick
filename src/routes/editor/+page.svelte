@@ -203,6 +203,12 @@
 		});
 	}
 
+	function cancelCurrent() {
+		if (!magick.isLoading) return;
+		magick.cancelProcessing();
+		showNotice('Processing cancelled');
+	}
+
 	function handleAnnotationPlace(placement: AnnotationPlacement): void {
 		magick.settings.annotateGravity = placement.gravity;
 		magick.settings.annotateOffsetX = placement.offsetX;
@@ -257,6 +263,19 @@
 		// mounted but must not react to shortcuts (the overlay handles Escape).
 		if (settingsOpen) return;
 		const cmdOrCtrl = usesShortcutModifier(e);
+		const inField =
+			e.target instanceof HTMLInputElement ||
+			e.target instanceof HTMLTextAreaElement ||
+			e.target instanceof HTMLSelectElement;
+
+		// Escape cancels an in-flight process run (annotation placement and
+		// crop overlays handle their own Escape first via the viewport), but
+		// never while typing in a field, where Escape means blur/dismiss.
+		if (e.key === 'Escape' && magick.isLoading && !annotationPlacementActive && !inField) {
+			e.preventDefault();
+			cancelCurrent();
+			return;
+		}
 
 		if (cmdOrCtrl && e.key === 'Enter') {
 			e.preventDefault();
@@ -264,12 +283,7 @@
 			return;
 		}
 
-		if (
-			e.target instanceof HTMLInputElement ||
-			e.target instanceof HTMLTextAreaElement ||
-			e.target instanceof HTMLSelectElement
-		)
-			return;
+		if (inField) return;
 
 		// Undo / Redo
 		if (cmdOrCtrl && !e.shiftKey && (e.key === 'z' || e.key === 'Z')) {
@@ -456,6 +470,7 @@
 		onAnnotationPlacementChange={(active) => (annotationPlacementActive = active)}
 		onAnnotationPlace={handleAnnotationPlace}
 		onProcess={processCurrent}
+		onCancel={cancelCurrent}
 		onReset={() => magick.resetSettings()}
 		onDownload={downloadCurrent}
 		onUndo={handleUndo}
@@ -478,6 +493,7 @@
 		onAnnotationPlace={handleAnnotationPlace}
 		onToggleShortcuts={() => (showShortcuts = !showShortcuts)}
 		onProcess={processCurrent}
+		onCancel={cancelCurrent}
 		onReset={() => magick.resetSettings()}
 		onDownload={downloadCurrent}
 		onUndo={handleUndo}

@@ -32,9 +32,13 @@
 				<span class="max-w-[40ch] truncate">{magick.errorMessage || 'Error'}</span>
 			</button>
 		{:else if magick.isLoading}
-			<span class="flex items-center gap-1 text-foreground/80">
-				<CircleNotch class="size-3 animate-spin" />
-				<span>{magick.currentProcessingStep || 'Processing…'}</span>
+			<span
+				class="flex min-w-0 items-center gap-1 text-foreground/80"
+				role="status"
+				aria-live="polite"
+			>
+				<CircleNotch class="size-3 shrink-0 animate-spin" />
+				<span class="truncate">{magick.currentProcessingStep || 'Processing'}</span>
 			</span>
 		{:else if magick.isStale}
 			<span class="text-amber-500">Unprocessed changes</span>

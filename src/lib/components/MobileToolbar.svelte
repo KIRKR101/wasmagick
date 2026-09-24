@@ -23,6 +23,7 @@
 		onRedo,
 		onDownload,
 		onProcess,
+		onCancel,
 		onToggleTools,
 		onFitToScreen,
 		onCompareStart,
@@ -41,6 +42,7 @@
 		onRedo: () => void;
 		onDownload: () => void;
 		onProcess: () => void;
+		onCancel?: () => void;
 		onToggleTools: () => void;
 		onFitToScreen: () => void;
 		onCompareStart: () => void;
@@ -158,25 +160,33 @@
 		<div class="h-5 w-px bg-divider"></div>
 
 		<!-- Settings -->
-		<button
-			onclick={onProcess}
-			disabled={!canProcess}
-			class="mobile-btn"
-			aria-label={!magick.sourceBytes
-				? 'Process - load an image first'
-				: !magick.wasmLoaded
-					? 'Process - engine loading…'
-					: magick.isStale
-						? 'Settings changed, process to update preview'
-						: 'Process image'}
-		>
-			{#if isLoading}
-				<CircleNotch class="size-4.5 animate-spin" />
-			{:else}
+		{#if isLoading}
+			<button
+				onclick={() => onCancel?.()}
+				disabled={!onCancel}
+				class="mobile-btn"
+				aria-label={`Cancel processing. ${magick.processingStepLabel}`}
+			>
+				<X class="size-4.5" />
+				<span class="text-[11px]">CANCEL</span>
+			</button>
+		{:else}
+			<button
+				onclick={onProcess}
+				disabled={!canProcess}
+				class="mobile-btn"
+				aria-label={!magick.sourceBytes
+					? 'Process image (load an image first)'
+					: !magick.wasmLoaded
+						? 'Process image (engine loading…)'
+						: magick.isStale
+							? 'Settings changed, process to update preview'
+							: 'Process image'}
+			>
 				<Play class="size-4.5" />
-			{/if}
-			<span class="text-[11px]">PROCESS</span>
-		</button>
+				<span class="text-[11px]">PROCESS</span>
+			</button>
+		{/if}
 		<button
 			onclick={onToggleTools}
 			class="mobile-btn {isLoading ? 'text-primary' : ''}"

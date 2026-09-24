@@ -3,7 +3,6 @@
 	import Play from 'phosphor-svelte/lib/Play';
 	import DownloadSimple from 'phosphor-svelte/lib/DownloadSimple';
 	import ArrowCounterClockwise from 'phosphor-svelte/lib/ArrowCounterClockwise';
-	import CircleNotch from 'phosphor-svelte/lib/CircleNotch';
 	import type { MagickState } from '$lib/useMagick.svelte';
 	import type { HistoryState } from '$lib/hooks/useHistory.svelte';
 	import type { PresetsState } from '$lib/hooks/usePresets.svelte';
@@ -32,6 +31,7 @@
 		presets,
 		activeSection = $bindable('geometry'),
 		onProcess,
+		onCancel,
 		onDownload,
 		onReset,
 		onClearRequest,
@@ -46,6 +46,7 @@
 		presets: PresetsState;
 		activeSection?: EditorSection;
 		onProcess: () => void;
+		onCancel?: () => void;
 		onDownload: () => void;
 		onReset: () => void;
 		onClearRequest?: () => void;
@@ -280,29 +281,39 @@
 				<ArrowCounterClockwise class="size-4" />
 				<span>RESET</span>
 			</button>
-			<button
-				onclick={onProcess}
-				disabled={!magick.wasmLoaded || !magick.sourceBytes}
-				class="mobile-action-btn primary gap-2 {magick.isStale
-					? 'font-semibold underline underline-offset-4'
-					: ''}"
-				aria-label={!magick.sourceBytes
-					? 'Process - load an image first'
-					: !magick.wasmLoaded
-						? 'Process - engine loading…'
-						: magick.isStale
-							? 'Settings changed, process to update preview'
-							: 'Process image'}
-			>
-				{#if magick.isLoading}
-					<CircleNotch class="size-4 animate-spin" />
-				{:else if magick.isStale}
-					<Play class="size-4" weight="fill" />
-				{:else}
-					<Play class="size-4" />
-				{/if}
-				<span>PROCESS</span>
-			</button>
+			{#if magick.isLoading}
+				<button
+					onclick={() => onCancel?.()}
+					disabled={!onCancel}
+					class="mobile-action-btn primary gap-2"
+					aria-label={`Cancel processing. ${magick.processingStepLabel}`}
+				>
+					<X class="size-4" />
+					<span>CANCEL</span>
+				</button>
+			{:else}
+				<button
+					onclick={onProcess}
+					disabled={!magick.wasmLoaded || !magick.sourceBytes}
+					class="mobile-action-btn primary gap-2 {magick.isStale
+						? 'font-semibold underline underline-offset-4'
+						: ''}"
+					aria-label={!magick.sourceBytes
+						? 'Process image (load an image first)'
+						: !magick.wasmLoaded
+							? 'Process image (engine loading…)'
+							: magick.isStale
+								? 'Settings changed, process to update preview'
+								: 'Process image'}
+				>
+					{#if magick.isStale}
+						<Play class="size-4" weight="fill" />
+					{:else}
+						<Play class="size-4" />
+					{/if}
+					<span>PROCESS</span>
+				</button>
+			{/if}
 			<button
 				onclick={onDownload}
 				disabled={!canDownload}

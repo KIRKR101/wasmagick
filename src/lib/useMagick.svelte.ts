@@ -504,6 +504,15 @@ export class MagickState {
 	processedHeight = $state(0);
 	annotationTextMetrics = $state<AnnotationTextMetrics | null>(null);
 	currentProcessingStep = $state<string | null>(null);
+	/**
+	 * Progress for the in-flight `processImage()` run: a phase label (which
+	 * engine is working) plus elapsed time ticking via `processingElapsedMs`.
+	 * There is intentionally no step counter because the WASM/native calls are
+	 * single blocking operations with no progress callbacks, so a counter
+	 * would sit frozen at e.g. 2/3 for the whole job.
+	 */
+	processingStartedAt = $state<number | null>(null);
+	processingElapsedMs = $state(0);
 	exif = $state<ExifData | null>(null);
 	exifLoading = $state(false);
 	exifError = $state<string | null>(null);
@@ -600,6 +609,27 @@ export class MagickState {
 		this.lastProcessedSignature = null;
 	}
 
+	/**
+	 * Human-readable progress label for the in-flight process run, e.g.
+	 * "Processing (3.2s)".
+	 */
+	get processingStepLabel(): string {
+		const step = this.currentProcessingStep ?? 'Processing';
+		const elapsed = this.processingElapsedLabel;
+		return elapsed ? `${step} (${elapsed})` : step;
+	}
+
+	/** Elapsed time for the in-flight run, e.g. "3.2s". Empty when idle. */
+	get processingElapsedLabel(): string {
+		if (this.processingStartedAt == null) return '';
+		return `${(this.processingElapsedMs / 1000).toFixed(1)}s`;
+	}
+
+	/** True while a cancellable `processImage()` run owns the loading flag. */
+	get canCancelProcessing(): boolean {
+		return this.isLoading && this._abortController != null;
+	}
+
 	private _worker: Worker | null = null;
 	private _workerSourceRevision: number | null = null;
 	private _nativeSourceRevision: number | null = null;
@@ -608,6 +638,15 @@ export class MagickState {
 	private _previewRequestId = 0;
 	private _requestId = 0;
 	private _latestWorkerRequestId = 0;
+	/**
+	 * Run generation, bumped every time a `processImage()` run starts and
+	 * every time in-flight work is invalidated (`cancelProcessing()`,
+	 * `clearSource()`). Async continuations capture the value at dispatch
+	 * and drop their result when it no longer matches, unlike the
+	 * `AbortController`, which `cancelProcessing()` nulls out and therefore
+	 * cannot be read back afterwards.
+	 */
+	private _processGeneration = 0;
 	cropMode = $state(false);
 	cropAspectRatio = $state<string>('free');
 	// The in-progress visual crop selection, kept outside the overlay so it
@@ -641,6 +680,20 @@ export class MagickState {
 		{ debugMode: boolean; onComplete?: () => void; startTime: number; sourceRevision: number }
 	>();
 	private _processTimer: ReturnType<typeof setTimeout> | null = null;
+	private _abortController: AbortController | null = null;
+	private _elapsedTimer: ReturnType<typeof setInterval> | null = null;
+	/** Local fonts already pushed to the current worker instance. */
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity
+	private _workerSyncedFonts = new Set<string>();
+	private _fontSyncId = 0;
+	// Non-reactive font-sync bookkeeping (intentionally plain Maps).
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity
+	private _pendingFontSyncs = new Map<
+		number,
+		{ name: string; resolve: (ok: boolean) => void }
+	>();
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity
+	private _fontSyncInflight = new Map<string, Promise<boolean>>();
 	// In-flight EXIF extraction. Extractions are chained behind this so two
 	// runs never interleave on the shared ExifTool wasm engine (its output
 	// buffers are module-scoped; concurrent runs corrupt each other).
@@ -852,12 +905,24 @@ export class MagickState {
 
 		try {
 			this._workerSourceRevision = null;
+			// A fresh worker instance knows no fonts; entries are re-synced
+			// on demand before the next local-font job.
+			this._workerSyncedFonts.clear();
 			// eslint-disable-next-line svelte/prefer-svelte-reactivity
 			this._worker = new Worker(new URL('./magick.worker.ts', import.meta.url), {
 				type: 'module'
 			});
 
 			this._worker.onmessage = (e: MessageEvent) => {
+				const envelope = e.data as { type?: string; syncId?: number; names?: string[] };
+				if (envelope && envelope.type === 'fontsRegistered') {
+					const pending = this._pendingFontSyncs.get(envelope.syncId ?? -1);
+					if (pending) {
+						this._pendingFontSyncs.delete(envelope.syncId ?? -1);
+						pending.resolve(envelope.names?.includes(pending.name) ?? false);
+					}
+					return;
+				}
 				const { id, sourceRevision, result, error } = e.data;
 				const pending = this._pendingRequests.get(id);
 				if (!pending) return;
@@ -869,13 +934,17 @@ export class MagickState {
 				) {
 					return;
 				}
+				// Cancelled runs invalidate `_latestWorkerRequestId` first, so
+				// any result arriving after `cancelProcessing()` lands here and
+				// is dropped without touching loading state or the preview.
+				if (this._abortController?.signal.aborted) return;
 
 				if (error) {
 					this.hasError = true;
 					this.errorMessage = error;
 
 					this.isLoading = false;
-					this.currentProcessingStep = null;
+					this._finishProcessingProgress();
 					return;
 				}
 
@@ -914,11 +983,15 @@ export class MagickState {
 				this._worker = null;
 				this._workerSourceRevision = null;
 				this.workerReady = false;
+				this._workerSyncedFonts.clear();
+				for (const [, pending] of this._pendingFontSyncs) pending.resolve(false);
+				this._pendingFontSyncs.clear();
+				this._fontSyncInflight.clear();
 				for (const [, _pending] of this._pendingRequests) {
 					this.hasError = true;
 					this.errorMessage = 'Worker crashed';
 					this.isLoading = false;
-					this.currentProcessingStep = null;
+					this._finishProcessingProgress();
 				}
 				this._pendingRequests.clear();
 			};
@@ -1099,6 +1172,12 @@ export class MagickState {
 			this.errorMessage = validation.error ?? 'Invalid file';
 			return false;
 		}
+		// A newly accepted image supersedes any active process before its bytes
+		// are read. Otherwise the old result is discarded on source revision,
+		// but its stale run can leave the loading UI active indefinitely.
+		this._invalidateInFlightRuns();
+		this.isLoading = false;
+		this._finishProcessingProgress();
 
 		this.originalName = file.name;
 
@@ -1171,6 +1250,11 @@ export class MagickState {
 	}
 
 	clearSource(): void {
+		// Closing mid-process stops the engines the same way explicit
+		// cancellation does; late results are dropped by invalidation.
+		this._invalidateInFlightRuns();
+		this.isLoading = false;
+		this._finishProcessingProgress();
 		this.sourceBytes = null;
 		this._nativeSourceRevision = null;
 		this.revokeImageUrls();
@@ -1429,14 +1513,46 @@ export class MagickState {
 		}
 	}
 
-	// NOTE: Sending font data over postMessage causes OOM errors.
-	// Kept as reference for future font-registration via the worker.
-	syncFontsToWorker(fonts: { name: string; data: Uint8Array }[]): void {
-		if (!this._worker || !this.workerReady) return;
-		this._worker.postMessage({
-			type: 'registerFonts',
-			fonts: fonts.map((f) => ({ name: f.name, data: Array.from(f.data) }))
-		});
+	/**
+	 * Push main-thread font bytes (a local system font) into the worker and
+	 * wait for its `fontsRegistered` ack. The bytes travel as a transferred
+	 * `Uint8Array` (a single copy, detached from the sender) instead of the
+	 * `Array.from` conversion that OOM'd on large fonts. Resolves false when
+	 * there is no worker or the sync fails; callers then fall back to the
+	 * main-thread path. Concurrent syncs for the same font share one flight.
+	 */
+	syncFontToWorker(name: string): Promise<boolean> {
+		if (this._workerSyncedFonts.has(name)) return Promise.resolve(true);
+		const inflight = this._fontSyncInflight.get(name);
+		if (inflight) return inflight;
+		const promise = (async (): Promise<boolean> => {
+			try {
+				const bytes = getFontBytes(name) ?? (await fetchFontBytes(name));
+				const worker = this._worker;
+				if (!bytes || !worker || !this.workerReady) return false;
+				// Copy so the main-thread cache stays valid for the native
+				// engine and canvas metrics; the copy is transferred, not
+				// cloned, so peak memory is ~2x the font, transiently.
+				const copy = bytes.slice();
+				const syncId = ++this._fontSyncId;
+				const ack = new Promise<boolean>((resolve) => {
+					this._pendingFontSyncs.set(syncId, { name, resolve });
+				});
+				worker.postMessage(
+					{ type: 'registerFonts', syncId, fonts: [{ name, data: copy }] },
+					{ transfer: [copy.buffer] }
+				);
+				const ok = await ack;
+				if (ok) this._workerSyncedFonts.add(name);
+				return ok;
+			} catch {
+				return false;
+			} finally {
+				this._fontSyncInflight.delete(name);
+			}
+		})();
+		this._fontSyncInflight.set(name, promise);
+		return promise;
 	}
 
 	processImage(debugMode = false, onComplete?: () => void): void {
@@ -1447,6 +1563,20 @@ export class MagickState {
 			this.statsMessage = 'No Image';
 			return;
 		}
+
+		// A previous run owns the engine; invalidate it before starting the
+		// next one so late worker/native results can never overwrite fresh
+		// output (stale-request protection doubles as cancellation).
+		this._abortController?.abort();
+		this._abortController = new AbortController();
+		this._processGeneration++;
+		this.processingStartedAt = performance.now();
+		this.processingElapsedMs = 0;
+		this._startElapsedTimer();
+		// Single phase label for the whole run; the WASM/native calls are
+		// monolithic with no progress callbacks, so intermediate phases
+		// would sit frozen and mislead.
+		this.currentProcessingStep = 'Processing';
 
 		const useNative =
 			this.nativeAvailable &&
@@ -1459,35 +1589,155 @@ export class MagickState {
 
 		if (!this.wasmLoaded) {
 			this.statsMessage = 'WASM Not Ready';
+			this._finishProcessingProgress();
 			return;
 		}
 
 		this.isLoading = true;
 
-		if (this._worker && this.workerReady && !isLocalFont(this.settings.annotateFontFamily)) {
+		// Local system fonts live in the main-thread cache; push the bytes to
+		// the worker first so every WASM job, including annotation with a
+		// local font, runs off the UI thread and stays cancellable. Both
+		// the signal and the generation are captured because `processImage()`
+		// replaces `_abortController` on every call and invalidation bumps
+		// the generation.
+		const signal = this._abortController.signal;
+		const generation = this._processGeneration;
+		const fontFamily = this.settings.annotateFontFamily?.trim() ?? '';
+		const needsFontSync =
+			this._worker != null &&
+			this.workerReady &&
+			this.settings.annotateText?.trim().length > 0 &&
+			fontFamily.length > 0 &&
+			isLocalFont(fontFamily) &&
+			!this._workerSyncedFonts.has(fontFamily);
+		if (needsFontSync) {
+			void this.syncFontToWorker(fontFamily).then((ok) => {
+				if (signal.aborted || generation !== this._processGeneration) return;
+				if (!ok) {
+					// The worker never got the bytes; render on the main
+					// thread instead (correct output, frozen UI; this matches the old
+					// behavior for every local-font job).
+					this._processOnMainThread(debugMode, onComplete);
+					return;
+				}
+				this._dispatchWasmProcess(debugMode, onComplete);
+			});
+			return;
+		}
+		this._dispatchWasmProcess(debugMode, onComplete);
+	}
+
+	private _dispatchWasmProcess(debugMode = false, onComplete?: () => void): void {
+		if (this._abortController?.signal.aborted) return;
+		if (this._worker && this.workerReady) {
 			this._processViaWorker(debugMode, onComplete);
 		} else {
 			this._processOnMainThread(debugMode, onComplete);
 		}
 	}
 
+	/**
+	 * Cancel the in-flight `processImage()` run. Late worker/native results
+	 * are ignored via invalidation; the worker is additionally restarted so
+	 * a blocked WASM job cannot serialize the next process behind it, and
+	 * the native backend is asked to kill its child process (best effort,
+	 * Electron only).
+	 */
+	cancelProcessing(): void {
+		if (!this.isLoading) return;
+		this._invalidateInFlightRuns();
+		this.isLoading = false;
+		this._finishProcessingProgress();
+		this.statsMessage = 'Cancelled';
+	}
+
+	/**
+	 * Invalidate every in-flight run and stop its engine. Shared by explicit
+	 * cancellation and image close/replace. Engine teardown (worker restart,
+	 * native SIGKILL) only happens when a run is actually in flight so
+	 * closing an idle image stays cheap.
+	 */
+	private _invalidateInFlightRuns(): void {
+		const hadInflight = this.isLoading;
+		this._abortController?.abort();
+		this._abortController = null;
+		this._processGeneration++;
+		// Invalidate every path's stale-request guard.
+		this._requestId++;
+		this._latestWorkerRequestId = this._requestId;
+		this._nativeRequestId++;
+		this._pendingRequests.clear();
+		// Unblock any font sync awaiting a worker ack; its continuation
+		// observes the bumped generation and drops the run.
+		for (const [, pending] of this._pendingFontSyncs) pending.resolve(false);
+		this._pendingFontSyncs.clear();
+		this._fontSyncInflight.clear();
+		if (!hadInflight) return;
+		// A WASM worker blocked in synchronous ImageMagick work cannot
+		// observe the abort until it finishes; restart it so the next
+		// process starts on a fresh engine instead of queueing behind it.
+		// The replacement worker knows no fonts; they re-sync on demand.
+		if (this._worker) {
+			try {
+				this._worker.terminate();
+			} catch {
+				// ignore
+			}
+			this._worker = null;
+			this._workerSourceRevision = null;
+			this.workerReady = false;
+			this.initWorker();
+		}
+		// Best effort: ask the Electron main process to SIGKILL the native
+		// child. Web builds have no native child; the request-id bump above
+		// is the cancellation there.
+		try {
+			if (typeof window !== 'undefined') void window.wasmagick?.cancelNativeProcess?.();
+		} catch {
+			// ignore
+		}
+	}
+
+	private _startElapsedTimer(): void {
+		this._stopElapsedTimer();
+		const startedAt = this.processingStartedAt;
+		if (startedAt == null) return;
+		this._elapsedTimer = setInterval(() => {
+			this.processingElapsedMs = performance.now() - startedAt;
+		}, 100);
+	}
+
+	private _stopElapsedTimer(): void {
+		if (this._elapsedTimer) {
+			clearInterval(this._elapsedTimer);
+			this._elapsedTimer = null;
+		}
+	}
+
+	private _finishProcessingProgress(): void {
+		this._stopElapsedTimer();
+		this.currentProcessingStep = null;
+		this.processingStartedAt = null;
+		this.processingElapsedMs = 0;
+		this._abortController = null;
+	}
+
 	private async _processViaNative(debugMode = false, onComplete?: () => void): Promise<void> {
 		const requestId = ++this._nativeRequestId;
 		const sourceRevision = this._sourceRevision;
+		const generation = this._processGeneration;
 		this.hasError = false;
 		this.errorMessage = null;
 		this.isLoading = true;
-		this.currentProcessingStep = 'Processing with native engine...';
 		const startTime = performance.now();
 
 		try {
+			if (generation !== this._processGeneration) return;
 			const settings = snapSettings(this.settings);
 			const plan = buildNativeProcessingPlan(settings, this.originalName);
-			this.currentProcessingStep =
-				plan.backend === 'magick'
-					? 'Processing with native ImageMagick...'
-					: 'Processing with native engine...';
 			const orientation = settings.autoOrient ? await this.sourceExifOrientation() : null;
+			if (generation !== this._processGeneration) return;
 			const built = buildNativeMagickArgs(settings, {
 				width: this.originalWidth,
 				height: this.originalHeight,
@@ -1499,12 +1749,14 @@ export class MagickState {
 			let clutData: Uint8Array | null = null;
 			if (built.needsClut) {
 				clutData = await renderClutPngBytes(built.needsClut);
+				if (generation !== this._processGeneration) return;
 			}
 
 			let fontData: Uint8Array | null = null;
 			let fontFileName: string | null = null;
 			if (built.needsFont) {
 				fontData = getFontBytes(built.needsFont) ?? (await fetchFontBytes(built.needsFont));
+				if (generation !== this._processGeneration) return;
 				fontFileName = getFontFileName(built.needsFont) ?? `${built.needsFont}.ttf`;
 				if (!fontData) {
 					// No font bytes (e.g. unregistered local font): drop the
@@ -1518,7 +1770,10 @@ export class MagickState {
 				console.log('NativeProcessingPlan', plan);
 				console.log('NativeImageMagick', { args, format: settings.imageFormat });
 			}
-
+			this.currentProcessingStep =
+				plan.backend === 'magick'
+					? 'Processing with native ImageMagick'
+					: 'Processing with native engine';
 			const result = await window.wasmagick!.processNativeImage({
 				inputName: this.originalName,
 				inputData:
@@ -1534,6 +1789,7 @@ export class MagickState {
 				fontFileName
 			});
 			if (requestId !== this._nativeRequestId || sourceRevision !== this._sourceRevision) return;
+			if (generation !== this._processGeneration) return;
 			this._nativeSourceRevision = this._sourceRevision;
 
 			const elapsed = Math.round(performance.now() - startTime);
@@ -1560,6 +1816,8 @@ export class MagickState {
 			);
 			if (onComplete) onComplete();
 		} catch (err: unknown) {
+			if (err instanceof DOMException && err.name === 'AbortError') return;
+			if (generation !== this._processGeneration) return;
 			console.error('Native image processing failed:', err);
 			let message = err instanceof Error ? err.message : 'Unknown error';
 			// Older or manually assembled desktop bundles can still lack LibRaw.
@@ -1584,12 +1842,12 @@ export class MagickState {
 			this.hasError = true;
 			this.errorMessage = message;
 			this.isLoading = false;
-			this.currentProcessingStep = null;
+			this._finishProcessingProgress();
 		}
 	}
 
 	private _processViaWorker(debugMode = false, onComplete?: () => void): void {
-		this.currentProcessingStep = 'Processing in worker...';
+		this.currentProcessingStep = 'Processing in worker';
 		const requestId = ++this._requestId;
 		this._pendingRequests.set(requestId, {
 			debugMode,
@@ -1618,29 +1876,37 @@ export class MagickState {
 	}
 
 	private _processOnMainThread(debugMode = false, onComplete?: () => void): void {
-		// Main-thread fallback for local fonts (the worker cannot receive them
-		// without OOM-prone postMessage copies). Delegates to the same
+		// Fallback for environments without workers and for local-font jobs
+		// whose bytes could not be pushed to the worker. Delegates to the same
 		// `processImageSync` pipeline the worker runs, loaded lazily so the
-		// engine stays out of the initial chunk.
+		// engine stays out of the initial chunk. Note: the synchronous WASM
+		// call below blocks the event loop, so a Cancel click can only be
+		// observed at the await points around it; once inside
+		// `processImageSync` the run completes and a pending cancel drops the
+		// result instead of publishing it.
 		const startTime = performance.now();
 		const settings = snapSettings(this.settings);
 		const sourceBytes = this.sourceBytes;
 		if (!sourceBytes) {
 			this.statsMessage = 'No Image';
+			this._finishProcessingProgress();
 			return;
 		}
 		const inputName = this.originalName;
+		const generation = this._processGeneration;
 
 		const runImageMagick = async (): Promise<void> => {
-			this.currentProcessingStep = 'Processing...';
 			try {
+				if (generation !== this._processGeneration) return;
 				const { processImageSync } = await import('./magick-process');
+				if (generation !== this._processGeneration) return;
 				const result = processImageSync(sourceBytes, settings, inputName);
 				if (this.sourceBytes !== sourceBytes) {
 					this.isLoading = false;
-					this.currentProcessingStep = null;
+					this._finishProcessingProgress();
 					return;
 				}
+				if (generation !== this._processGeneration) return;
 				const elapsed = Math.round(performance.now() - startTime);
 				const appliedOptions: AppliedOptions = {};
 				if (debugMode) {
@@ -1662,12 +1928,14 @@ export class MagickState {
 				);
 				if (onComplete) onComplete();
 			} catch (err: unknown) {
+				if (err instanceof DOMException && err.name === 'AbortError') return;
+				if (generation !== this._processGeneration) return;
 				console.error('Image processing failed:', err);
 				const message = err instanceof Error ? err.message : 'Unknown error';
 				this.hasError = true;
 				this.errorMessage = message;
 				this.isLoading = false;
-				this.currentProcessingStep = null;
+				this._finishProcessingProgress();
 			}
 		};
 
@@ -1747,7 +2015,7 @@ export class MagickState {
 		this.processedBy = processedBy;
 
 		this.isLoading = false;
-		this.currentProcessingStep = null;
+		this._finishProcessingProgress();
 
 		persistSettings(this.settings);
 

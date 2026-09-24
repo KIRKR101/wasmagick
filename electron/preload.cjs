@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld('wasmagick', {
 	isNativeRawAvailable: () => ipcRenderer.invoke('magick:native-raw-available'),
 	listNativeFormats: () => ipcRenderer.invoke('magick:native-formats'),
 	processNativeImage: (payload) => ipcRenderer.invoke('magick:process-native', payload),
+	cancelNativeProcess: () => ipcRenderer.invoke('magick:cancel-native'),
 	getNativeFontMetrics: (payload) => ipcRenderer.invoke('magick:font-metrics', payload),
 	saveFile: (payload) => ipcRenderer.invoke('file:save', payload),
 	revealSavedFile: () => ipcRenderer.send('file:reveal-saved'),

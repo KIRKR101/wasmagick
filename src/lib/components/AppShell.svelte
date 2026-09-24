@@ -23,6 +23,7 @@
 		onToggleShortcuts,
 		onOpenSettings,
 		onProcess,
+		onCancel,
 		onReset,
 		onDownload,
 		onUndo,
@@ -43,6 +44,7 @@
 		onToggleShortcuts: () => void;
 		onOpenSettings: () => void;
 		onProcess: () => void;
+		onCancel?: () => void;
 		onReset: () => void;
 		onDownload: () => void;
 		onUndo: () => void;
@@ -180,6 +182,7 @@
 				{annotationPlacementActive}
 				{onAnnotationPlacementChange}
 				{onProcess}
+				{onCancel}
 				{onDownload}
 				onClearRequest={onClearHistoryRequest}
 				onNavigate={onHistoryNavigate}

@@ -133,6 +133,8 @@ declare global {
 		processNativeImage(
 			payload: WasmagickNativeProcessPayload
 		): Promise<WasmagickNativeProcessResult>;
+		/** Best-effort SIGKILL of the in-flight native job (Electron only). */
+		cancelNativeProcess?(): Promise<void>;
 		getNativeFontMetrics(
 			payload: WasmagickNativeFontMetricsPayload
 		): Promise<WasmagickNativeFontMetrics>;
