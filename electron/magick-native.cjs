@@ -597,7 +597,11 @@ async function processNativeVips(payload) {
 	const canUseCache = Number.isFinite(payload.sourceRevision);
 	const hasCachedSource =
 		canUseCache && cachedSource && cachedSource.revision === payload.sourceRevision;
-	const sourceData = payload.inputData instanceof Uint8Array ? payload.inputData : cachedSource?.data;
+	const sourceData = payload.inputData instanceof Uint8Array
+		? payload.inputData
+		: hasCachedSource
+			? cachedSource.data
+			: undefined;
 	if (!(sourceData instanceof Uint8Array)) {
 		throw new Error('Native source image is unavailable');
 	}

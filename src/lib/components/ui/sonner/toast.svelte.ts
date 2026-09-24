@@ -1,3 +1,4 @@
+import { SvelteMap } from 'svelte/reactivity';
 import { writable } from 'svelte/store';
 
 export type ToastOptions = {
@@ -17,7 +18,7 @@ export type ToastMessage = {
 };
 
 let nextId = 0;
-const dismissTimers = new Map<number, ReturnType<typeof setTimeout>>();
+const dismissTimers = new SvelteMap<number, ReturnType<typeof setTimeout>>();
 export const toastState = writable<ToastMessage[]>([]);
 
 export function toast(message: string, options: ToastOptions = {}): number {

@@ -5,7 +5,6 @@ import { ensureFont, DEFAULT_FONT } from './fonts';
 
 let ready = false;
 let initPromise: Promise<void> | null = null;
-let cachedSourceRevision: number | null = null;
 let cachedSourceBytes: Uint8Array | null = null;
 /** Local/system fonts pushed from the main thread (see `registerFonts`). */
 const registeredFontNames = new Set<string>();
@@ -86,7 +85,6 @@ self.onmessage = async (e: MessageEvent<WorkerRequest | FontSyncMessage>) => {
 		settings: rawSettings
 	} = msg as WorkerRequest;
 	if (incomingSourceBytes) {
-		cachedSourceRevision = sourceRevision;
 		cachedSourceBytes = incomingSourceBytes;
 	}
 	const sourceBytes = cachedSourceBytes;
