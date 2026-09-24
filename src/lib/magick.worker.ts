@@ -85,7 +85,7 @@ self.onmessage = async (e: MessageEvent<WorkerRequest | FontSyncMessage>) => {
 		inputName,
 		settings: rawSettings
 	} = msg as WorkerRequest;
-	if (incomingSourceBytes && sourceRevision !== cachedSourceRevision) {
+	if (incomingSourceBytes) {
 		cachedSourceRevision = sourceRevision;
 		cachedSourceBytes = incomingSourceBytes;
 	}

@@ -32,8 +32,13 @@ import {
 	outputExtensionForFormat,
 	type ExportFormat
 } from './export-formats';
-import { buildOutputFilename } from './settings';
+import { basenameWithoutExtension, buildOutputFilename } from './settings';
 import { BROWSER_RENDERABLE_FORMATS } from './image-capabilities';
+import {
+	isSvgInputName,
+	rasterizeSvgToPng,
+	type RasterizedSvg
+} from './svg-raster';
 
 const AUTO_PROCESS_DELAY = 300;
 const EXIF_UNSUPPORTED_MESSAGE = 'Format probably not supported';
@@ -634,6 +639,14 @@ export class MagickState {
 
 	private _worker: Worker | null = null;
 	private _workerSourceRevision: number | null = null;
+	private _svgRasterCache: {
+		revision: number;
+		data: Uint8Array;
+		width: number;
+		height: number;
+	} | null = null;
+	private _svgRasterInflight: { revision: number; promise: Promise<RasterizedSvg> } | null =
+		null;
 	private _nativeSourceRevision: number | null = null;
 	private _nativeRequestId = 0;
 	private _sourceRevision = 0;
@@ -1199,18 +1212,28 @@ export class MagickState {
 			const source = this.sourceBytes;
 			const sourceRevision = this._sourceRevision;
 			this._nativeSourceRevision = null;
+			this._svgRasterCache = null;
+			this._svgRasterInflight = null;
 			this.originalImageSize = this.sourceBytes.length;
 
 			const fastDims = fastImageDimensions(this.sourceBytes);
 			if (fastDims) {
 				this.originalWidth = fastDims.width;
 				this.originalHeight = fastDims.height;
+			} else if (isSvgInputName(file.name)) {
+				this.originalWidth = 0;
+				this.originalHeight = 0;
+				void this.probeSvgDimensions(source, sourceRevision, file.name);
 			}
 
 			this.revokeImageUrls();
-			this.originalImageUrl = URL.createObjectURL(
-				new Blob([this.sourceBytes as unknown as BlobPart])
-			);
+			// Browsers cannot render gzipped SVG blobs directly on either
+			// platform; probeSvgDimensions supplies a rasterized PNG URL.
+			const isSvgz =
+				file.name.toLowerCase().endsWith('.svgz') && typeof document !== 'undefined';
+			this.originalImageUrl = isSvgz
+				? null
+				: URL.createObjectURL(new Blob([this.sourceBytes as unknown as BlobPart]));
 			this.originalPreviewData = null;
 			this.originalPreviewWidth = 0;
 			this.originalPreviewHeight = 0;
@@ -1260,6 +1283,8 @@ export class MagickState {
 		this._finishProcessingProgress();
 		this.sourceBytes = null;
 		this._nativeSourceRevision = null;
+		this._svgRasterCache = null;
+		this._svgRasterInflight = null;
 		this.revokeImageUrls();
 		this.originalName = 'image';
 		this.originalImageSize = 0;
@@ -1293,6 +1318,84 @@ export class MagickState {
 		this.largeFileWarning = null;
 	}
 
+	private async probeSvgDimensions(
+		source: Uint8Array,
+		sourceRevision: number,
+		inputName: string
+	): Promise<void> {
+		// Both engines lack a usable SVG decoder (WASM needs an external
+		// inkscape binary; the native bundle ships without its SVG delegate),
+		// so learn the intrinsic size up front via the browser. The result is
+		// cached for processing and previews on both platforms.
+		if (typeof document === 'undefined') return;
+		try {
+			const rasterized = await this.svgRasterTask(source, sourceRevision, inputName);
+			if (this.sourceBytes !== source || this._sourceRevision !== sourceRevision) return;
+			this._svgRasterCache = {
+				revision: sourceRevision,
+				data: rasterized.data,
+				width: rasterized.width,
+				height: rasterized.height
+			};
+			if (!this.originalWidth || !this.originalHeight) {
+				this.originalWidth = rasterized.width;
+				this.originalHeight = rasterized.height;
+			}
+			if (inputName.toLowerCase().endsWith('.svgz')) {
+				// Browsers cannot render gzipped SVG blobs directly; display
+				// the rasterized PNG equivalent instead.
+				if (this.originalImageUrl) URL.revokeObjectURL(this.originalImageUrl);
+				this.originalImageUrl = URL.createObjectURL(
+					new Blob([rasterized.data as unknown as BlobPart], { type: 'image/png' })
+				);
+			}
+		} catch {
+			// Rasterization failure surfaces later as a processing error.
+		}
+	}
+
+	/**
+	 * Shared in-flight SVG rasterization: the fire-and-forget dimension
+	 * probe and later preview/processing callers await the same promise
+	 * instead of decoding (and gunzipping `.svgz`) twice per file.
+	 */
+	private svgRasterTask(
+		source: Uint8Array,
+		revision: number,
+		inputName: string
+	): Promise<RasterizedSvg> {
+		if (this._svgRasterInflight?.revision === revision) return this._svgRasterInflight.promise;
+		const promise = rasterizeSvgToPng(source, inputName);
+		this._svgRasterInflight = { revision, promise };
+		// The dimension probe intentionally ignores the result; keep the
+		// rejection handled so it never surfaces as unhandled.
+		promise.catch(() => {});
+		return promise;
+	}
+
+	private async ensureSvgRaster(): Promise<{
+		data: Uint8Array;
+		width: number;
+		height: number;
+	} | null> {
+		const source = this.sourceBytes;
+		if (!source || !isSvgInputName(this.originalName)) return null;
+		if (this._svgRasterCache?.revision === this._sourceRevision) return this._svgRasterCache;
+		const rasterized = await this.svgRasterTask(source, this._sourceRevision, this.originalName);
+		if (this.sourceBytes !== source) throw new Error('Source image changed during processing');
+		this._svgRasterCache = {
+			revision: this._sourceRevision,
+			data: rasterized.data,
+			width: rasterized.width,
+			height: rasterized.height
+		};
+		if (!this.originalWidth || !this.originalHeight) {
+			this.originalWidth = rasterized.width;
+			this.originalHeight = rasterized.height;
+		}
+		return this._svgRasterCache;
+	}
+
 	private async prepareOriginalPreview(
 		source: Uint8Array,
 		sourceRevision: number,
@@ -1301,6 +1404,21 @@ export class MagickState {
 		const previewRequestId = this._previewRequestId;
 		this.originalPreviewLoading = true;
 		try {
+			if (isSvgInputName(this.originalName)) {
+				// Neither engine can decode SVG (WASM needs inkscape, native
+				// lacks its SVG delegate); the browser <img> preview (plain
+				// .svg) and the raster probe (dimensions, plus a renderable
+				// URL for .svgz) are authoritative. Skip the generic decode
+				// paths that would otherwise fail.
+				if (
+					this.sourceBytes !== source ||
+					this._sourceRevision !== sourceRevision ||
+					this._previewRequestId !== previewRequestId
+				)
+					return;
+				this.originalPreviewFailed = false;
+				return;
+			}
 			const format = this.originalImageFormat?.toUpperCase();
 			const browserRenderable = !!format && BROWSER_RENDERABLE_FORMATS.has(format);
 			const oversized = needsInteractivePreview(dimensions, this.nativeAvailable);
@@ -1355,6 +1473,37 @@ export class MagickState {
 			return;
 		this.originalPreviewLoading = true;
 		try {
+			if (isSvgInputName(this.originalName)) {
+				// Neither engine can decode SVG; the raster cache is
+				// authoritative on both platforms. Decode the rasterized PNG
+				// (not the raw SVG bytes, which may be gzipped .svgz) so
+				// preview pixels match processed pixels.
+				try {
+					const rasterized = await this.ensureSvgRaster();
+					if (this.sourceBytes !== source || this._previewRequestId !== previewRequestId)
+						return;
+					if (fullResolution && rasterized) {
+						const preview = await browserPreview(
+							rasterized.data,
+							{ width: rasterized.width, height: rasterized.height },
+							WEB_FULL_PREVIEW_MAX_EDGE
+						);
+						if (this.sourceBytes !== source || this._previewRequestId !== previewRequestId)
+							return;
+						if (preview) {
+							this.originalPreviewData = preview.data;
+							this.originalPreviewWidth = preview.width;
+							this.originalPreviewHeight = preview.height;
+							this.originalPreviewFailed = false;
+							this.originalPreviewFull = true;
+							return;
+						}
+					}
+				} catch (error) {
+					console.warn('Could not render SVG preview:', error);
+				}
+				return;
+			}
 			if (
 				fullResolution &&
 				this.nativeAvailable &&
@@ -1568,19 +1717,22 @@ export class MagickState {
 			return;
 		}
 
-		// A previous run owns the engine; invalidate it before starting the
-		// next one so late worker/native results can never overwrite fresh
-		// output (stale-request protection doubles as cancellation).
+		// Invalidate an older run before starting this one so late results cannot
+		// overwrite fresh output.
 		this._abortController?.abort();
 		this._abortController = new AbortController();
 		this._processGeneration++;
 		this.processingStartedAt = performance.now();
 		this.processingElapsedMs = 0;
 		this._startElapsedTimer();
-		// Single phase label for the whole run; the WASM/native calls are
-		// monolithic with no progress callbacks, so intermediate phases
-		// would sit frozen and mislead.
 		this.currentProcessingStep = 'Processing';
+
+		// Neither engine can decode SVG reliably in our supported builds. Render
+		// it in the browser first so both engines receive the same PNG bytes.
+		if (isSvgInputName(this.originalName)) {
+			void this._processSvg(debugMode, onComplete);
+			return;
+		}
 
 		const useNative =
 			this.nativeAvailable &&
@@ -1642,11 +1794,7 @@ export class MagickState {
 	}
 
 	/**
-	 * Cancel the in-flight `processImage()` run. Late worker/native results
-	 * are ignored via invalidation; the worker is additionally restarted so
-	 * a blocked WASM job cannot serialize the next process behind it, and
-	 * the native backend is asked to kill its child process (best effort,
-	 * Electron only).
+	 * Cancel the in-flight process and ignore any late engine results.
 	 */
 	cancelProcessing(): void {
 		if (!this.isLoading) return;
@@ -1656,32 +1804,20 @@ export class MagickState {
 		this.statsMessage = 'Cancelled';
 	}
 
-	/**
-	 * Invalidate every in-flight run and stop its engine. Shared by explicit
-	 * cancellation and image close/replace. Engine teardown (worker restart,
-	 * native SIGKILL) only happens when a run is actually in flight so
-	 * closing an idle image stays cheap.
-	 */
+	/** Invalidate every in-flight run and stop its engine when necessary. */
 	private _invalidateInFlightRuns(): void {
 		const hadInflight = this.isLoading;
 		this._abortController?.abort();
 		this._abortController = null;
 		this._processGeneration++;
-		// Invalidate every path's stale-request guard.
 		this._requestId++;
 		this._latestWorkerRequestId = this._requestId;
 		this._nativeRequestId++;
 		this._pendingRequests.clear();
-		// Unblock any font sync awaiting a worker ack; its continuation
-		// observes the bumped generation and drops the run.
 		for (const [, pending] of this._pendingFontSyncs) pending.resolve(false);
 		this._pendingFontSyncs.clear();
 		this._fontSyncInflight.clear();
 		if (!hadInflight) return;
-		// A WASM worker blocked in synchronous ImageMagick work cannot
-		// observe the abort until it finishes; restart it so the next
-		// process starts on a fresh engine instead of queueing behind it.
-		// The replacement worker knows no fonts; they re-sync on demand.
 		if (this._worker) {
 			try {
 				this._worker.terminate();
@@ -1693,9 +1829,6 @@ export class MagickState {
 			this.workerReady = false;
 			this.initWorker();
 		}
-		// Best effort: ask the Electron main process to SIGKILL the native
-		// child. Web builds have no native child; the request-id bump above
-		// is the cancellation there.
 		try {
 			if (typeof window !== 'undefined') void window.wasmagick?.cancelNativeProcess?.();
 		} catch {
@@ -1727,7 +1860,58 @@ export class MagickState {
 		this._abortController = null;
 	}
 
-	private async _processViaNative(debugMode = false, onComplete?: () => void): Promise<void> {
+	private async _processSvg(debugMode = false, onComplete?: () => void): Promise<void> {
+		const generation = this._processGeneration;
+		this.isLoading = true;
+		this.currentProcessingStep = 'Rasterizing SVG';
+		try {
+			const rasterized = await this.ensureSvgRaster();
+			if (generation !== this._processGeneration) return;
+			if (!rasterized || !this.sourceBytes) {
+				this.statsMessage = 'No Image';
+				this.isLoading = false;
+				this._finishProcessingProgress();
+				return;
+			}
+			const useNative =
+				this.nativeAvailable &&
+				window.wasmagick?.processNativeImage &&
+				(!isRawInputName(this.originalName) || this.nativeRawAvailable);
+			if (useNative) {
+				await this._processViaNative(
+					debugMode, onComplete, rasterized.data, 'rasterized.png', rasterized.width, rasterized.height
+				);
+				return;
+			}
+			if (!this.wasmLoaded) {
+				this.statsMessage = 'WASM Not Ready';
+				this.isLoading = false;
+				this._finishProcessingProgress();
+				return;
+			}
+			if (this._worker && this.workerReady && !isLocalFont(this.settings.annotateFontFamily)) {
+				this._processViaWorker(debugMode, onComplete, rasterized.data, 'rasterized.png');
+			} else {
+				this._processOnMainThread(debugMode, onComplete, rasterized.data, 'rasterized.png');
+			}
+		} catch (err: unknown) {
+			if (generation !== this._processGeneration) return;
+			console.error('SVG rasterization failed:', err);
+			this.hasError = true;
+			this.errorMessage = err instanceof Error ? err.message : 'Could not rasterize SVG';
+			this.isLoading = false;
+			this._finishProcessingProgress();
+		}
+	}
+
+	private async _processViaNative(
+		debugMode = false,
+		onComplete?: () => void,
+		sourceOverride?: Uint8Array,
+		inputNameOverride?: string,
+		overrideWidth?: number,
+		overrideHeight?: number
+	): Promise<void> {
 		const requestId = ++this._nativeRequestId;
 		const sourceRevision = this._sourceRevision;
 		const generation = this._processGeneration;
@@ -1739,14 +1923,17 @@ export class MagickState {
 		try {
 			if (generation !== this._processGeneration) return;
 			const settings = snapSettings(this.settings);
-			const plan = buildNativeProcessingPlan(settings, this.originalName);
+			const effectiveInputName = inputNameOverride ?? this.originalName;
+			const effectiveWidth = overrideWidth ?? this.originalWidth;
+			const effectiveHeight = overrideHeight ?? this.originalHeight;
+			const plan = buildNativeProcessingPlan(settings, effectiveInputName);
 			const orientation = settings.autoOrient ? await this.sourceExifOrientation() : null;
 			if (generation !== this._processGeneration) return;
 			const built = buildNativeMagickArgs(settings, {
-				width: this.originalWidth,
-				height: this.originalHeight,
+				width: effectiveWidth,
+				height: effectiveHeight,
 				orientation,
-				inputName: this.originalName
+				inputName: effectiveInputName
 			});
 			const args = [...built.args];
 
@@ -1779,9 +1966,10 @@ export class MagickState {
 					? 'Processing with native ImageMagick'
 					: 'Processing with native engine';
 			const result = await window.wasmagick!.processNativeImage({
-				inputName: this.originalName,
+				inputName: effectiveInputName,
 				inputData:
-					this._nativeSourceRevision === this._sourceRevision ? undefined : this.sourceBytes!,
+					sourceOverride ??
+					(this._nativeSourceRevision === this._sourceRevision ? undefined : this.sourceBytes!),
 				sourceRevision: this._sourceRevision,
 				args,
 				outputExtension: built.outputExtension,
@@ -1850,8 +2038,13 @@ export class MagickState {
 		}
 	}
 
-	private _processViaWorker(debugMode = false, onComplete?: () => void): void {
-		this.currentProcessingStep = 'Processing in worker';
+	private _processViaWorker(
+		debugMode = false,
+		onComplete?: () => void,
+		sourceOverride?: Uint8Array,
+		inputNameOverride?: string
+	): void {
+		this.currentProcessingStep = sourceOverride ? 'Processing rasterized image' : 'Processing in worker';
 		const requestId = ++this._requestId;
 		this._pendingRequests.set(requestId, {
 			debugMode,
@@ -1869,19 +2062,26 @@ export class MagickState {
 		} = {
 			id: requestId,
 			sourceRevision: this._sourceRevision,
-			inputName: this.originalName,
+			inputName: inputNameOverride ?? this.originalName,
 			settings: snapSettings(this.settings)
 		};
-		if (this._workerSourceRevision !== this._sourceRevision) {
-			message.sourceBytes = this.sourceBytes!;
-			this._workerSourceRevision = this._sourceRevision;
+		if (sourceOverride || this._workerSourceRevision !== this._sourceRevision) {
+			message.sourceBytes = sourceOverride ?? this.sourceBytes!;
+			// The rasterized bytes are a temporary view of this revision. Force
+			// the original source to be sent on the next ordinary process run.
+			this._workerSourceRevision = sourceOverride ? null : this._sourceRevision;
 		}
 		this._worker!.postMessage(message);
 	}
 
-	private _processOnMainThread(debugMode = false, onComplete?: () => void): void {
-		// Fallback for environments without workers and for local-font jobs
-		// whose bytes could not be pushed to the worker. Delegates to the same
+	private _processOnMainThread(
+		debugMode = false,
+		onComplete?: () => void,
+		sourceOverride?: Uint8Array,
+		inputNameOverride?: string
+	): void {
+		// Fallback for environments without workers and local-font jobs, or for
+		// rasterized SVG input. Delegates to the same
 		// `processImageSync` pipeline the worker runs, loaded lazily so the
 		// engine stays out of the initial chunk. Note: the synchronous WASM
 		// call below blocks the event loop, so a Cancel click can only be
@@ -1890,13 +2090,15 @@ export class MagickState {
 		// result instead of publishing it.
 		const startTime = performance.now();
 		const settings = snapSettings(this.settings);
-		const sourceBytes = this.sourceBytes;
+		const sourceBytes = sourceOverride ?? this.sourceBytes;
 		if (!sourceBytes) {
 			this.statsMessage = 'No Image';
 			this._finishProcessingProgress();
 			return;
 		}
-		const inputName = this.originalName;
+		const inputName = inputNameOverride ?? this.originalName;
+		const expectedSource = this.sourceBytes;
+		const expectedRevision = this._sourceRevision;
 		const generation = this._processGeneration;
 
 		const runImageMagick = async (): Promise<void> => {
@@ -1905,7 +2107,7 @@ export class MagickState {
 				const { processImageSync } = await import('./magick-process');
 				if (generation !== this._processGeneration) return;
 				const result = processImageSync(sourceBytes, settings, inputName);
-				if (this.sourceBytes !== sourceBytes) {
+				if (this.sourceBytes !== expectedSource || this._sourceRevision !== expectedRevision) {
 					this.isLoading = false;
 					this._finishProcessingProgress();
 					return;
@@ -2007,9 +2209,7 @@ export class MagickState {
 		this.hasUnsavedEdits = true;
 		this.markPreviewFresh();
 
-		const nameParts = this.originalName.split('.');
-		if (nameParts.length > 1) nameParts.pop();
-		const baseName = nameParts.join('.') || this.originalName;
+		const baseName = basenameWithoutExtension(this.originalName);
 		this.processedImageName = buildOutputFilename({
 			name: baseName,
 			ext: outputExtension,

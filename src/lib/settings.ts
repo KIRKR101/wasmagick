@@ -84,6 +84,13 @@ function pad2(n: number): string {
 	return String(n).padStart(2, '0');
 }
 
+/** Basename without the final extension (`archive.tar.gz` → `archive.tar`). */
+export function basenameWithoutExtension(filename: string): string {
+	const parts = String(filename ?? '').split('.');
+	if (parts.length > 1) parts.pop();
+	return parts.join('.') || String(filename ?? '');
+}
+
 /** Strip characters that are illegal in file names on common platforms. */
 export function sanitizeFilename(name: string): string {
 	const cleaned = Array.from(name)

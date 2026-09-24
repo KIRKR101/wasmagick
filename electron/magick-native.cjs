@@ -597,7 +597,7 @@ async function processNativeVips(payload) {
 	const canUseCache = Number.isFinite(payload.sourceRevision);
 	const hasCachedSource =
 		canUseCache && cachedSource && cachedSource.revision === payload.sourceRevision;
-	const sourceData = hasCachedSource ? cachedSource.data : payload.inputData;
+	const sourceData = payload.inputData instanceof Uint8Array ? payload.inputData : cachedSource?.data;
 	if (!(sourceData instanceof Uint8Array)) {
 		throw new Error('Native source image is unavailable');
 	}
@@ -877,7 +877,10 @@ async function processNativeMagick(payload) {
 
 	const tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'wasmagick-'));
 	const inputPath = path.join(tmpDir, `input.${inputExtensionFor(payload.inputName)}`);
-	await fs.promises.writeFile(inputPath, hasCachedSource ? cachedSource.data : payload.inputData);
+	await fs.promises.writeFile(
+		inputPath,
+		payload.inputData instanceof Uint8Array ? payload.inputData : cachedSource.data
+	);
 	if (canUseCache && payload.inputData instanceof Uint8Array) {
 		cachedSource = { revision: payload.sourceRevision, data: payload.inputData };
 	}
