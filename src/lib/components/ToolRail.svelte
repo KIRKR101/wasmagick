@@ -294,7 +294,7 @@
 			{@const summary = sectionSummary(item.id)}
 			<HoverTooltip
 				label={summary
-					? `${item.label} (Alt+${item.shortcut}) — ${summary}`
+					? `${item.label} (Alt+${item.shortcut}) - ${summary}`
 					: `${item.label} (Alt+${item.shortcut})`}
 				side="right"
 				triggerClass="w-full"
