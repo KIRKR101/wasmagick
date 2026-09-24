@@ -1,3 +1,5 @@
+import { writable } from 'svelte/store';
+
 export type ToastOptions = {
 	duration?: number | null;
 	loading?: boolean;
@@ -14,19 +16,16 @@ export type ToastMessage = {
 	loading: boolean;
 };
 
-let toasts = $state<ToastMessage[]>([]);
 let nextId = 0;
 const dismissTimers = new Map<number, ReturnType<typeof setTimeout>>();
-
-export const toastState = {
-	get items() {
-		return toasts;
-	}
-};
+export const toastState = writable<ToastMessage[]>([]);
 
 export function toast(message: string, options: ToastOptions = {}): number {
 	const id = ++nextId;
-	toasts = [...toasts, { id, message, action: options.action, loading: options.loading ?? false }];
+	toastState.update((items) => [
+		...items,
+		{ id, message, action: options.action, loading: options.loading ?? false }
+	]);
 	if (options.duration !== null) {
 		dismissTimers.set(
 			id,
@@ -40,11 +39,11 @@ export function dismissToast(id?: number): void {
 	if (id === undefined) {
 		for (const timer of dismissTimers.values()) clearTimeout(timer);
 		dismissTimers.clear();
-		toasts = [];
+		toastState.set([]);
 		return;
 	}
 	const timer = dismissTimers.get(id);
 	if (timer) clearTimeout(timer);
 	dismissTimers.delete(id);
-	toasts = toasts.filter((item) => item.id !== id);
+	toastState.update((items) => items.filter((item) => item.id !== id));
 }

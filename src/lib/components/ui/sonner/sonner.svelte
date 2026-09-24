@@ -2,9 +2,9 @@
 	import { dismissToast, toastState } from './toast.svelte';
 </script>
 
-{#if toastState.items.length > 0}
+{#if $toastState.length > 0}
 	<div class="toast-viewport" aria-live="polite" aria-atomic="false">
-		{#each toastState.items as item (item.id)}
+		{#each $toastState as item (item.id)}
 			<div class="toast-card" role="status">
 				{#if item.loading}
 					<span class="toast-spinner" aria-hidden="true"></span>
