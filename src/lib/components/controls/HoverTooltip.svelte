@@ -2,29 +2,21 @@
 	import type { Snippet } from 'svelte';
 
 	/**
-	 * HoverTooltip - CSS-only popover tooltip that matches the ToolRail style.
+	 * HoverTooltip - the app's single consistent tooltip.
 	 *
-	 * Wraps a trigger element in a `group relative` container and renders a
-	 * popover-style tooltip next to it. Reveals on hover and keyboard focus.
+	 * - Shows after a short delay (`delayMs`, default 500ms) on hover or
+	 *   keyboard focus, hides immediately on leave / blur / scroll / resize /
+	 *   Escape / pointer-down so it never lingers in the way.
+	 * - `position: fixed` with viewport edge-clamping so it escapes overflow
+	 *   containers without being clipped.
+	 * - Hidden on touch / coarse pointers and small viewports where hover
+	 *   doesn't exist.
+	 * - Never renders when there is no content, and never uses the native
+	 *   `title` attribute (callers must not set `title` alongside this).
 	 *
-	 * The tooltip is `position: fixed` (viewport coordinates, very high
-	 * z-index) so it can escape overflow containers, e.g. the properties
-	 * panel's scroll area, without being clipped, and stays above canvas
-	 * overlays. It is edge-clamped: when the chosen side would push the
-	 * tooltip off the viewport, it is nudged back so it always stays on
-	 * screen. On viewports < 768px wide the tooltip is hidden entirely
-	 * (matching the original ToolRail `max-md:hidden` behavior).
-	 *
-	 * `side` controls visual placement:
-	 *   - `auto` (default) - pick the side with the most viewport space
-	 *   - `right` - to the right of the trigger, vertically centered
-	 *   - `bottom` - below the trigger, horizontally centered
-	 *   - `top`    - above the trigger, horizontally centered
-	 *   - `left`   - to the left of the trigger, vertically centered
-	 *
-	 * Pass `label` for a plain string, or `labelChildren` for rich content
-	 * (e.g. mixed text styles for shortcut hints). If both are provided,
-	 * `labelChildren` wins.
+	 * `side` controls visual placement (`auto` picks the roomiest side).
+	 * Pass `label` for plain text or `labelChildren` for rich content.
+	 * Set `enabled={false}` to suppress the tooltip entirely.
 	 */
 	let {
 		label,
@@ -32,6 +24,8 @@
 		side = 'auto',
 		class: className = '',
 		triggerClass = '',
+		delayMs = 500,
+		enabled = true,
 		children
 	}: {
 		label?: string;
@@ -39,6 +33,8 @@
 		side?: 'auto' | 'top' | 'bottom' | 'left' | 'right';
 		class?: string;
 		triggerClass?: string;
+		delayMs?: number;
+		enabled?: boolean;
 		children: Snippet;
 	} = $props();
 
@@ -51,6 +47,19 @@
 	let tooltipRef = $state<HTMLSpanElement | null>(null);
 
 	let positionStyle = $state('');
+	let visible = $state(false);
+	let showTimer: ReturnType<typeof setTimeout> | null = null;
+
+	let hasContent = $derived(
+		enabled && (labelChildren != null || (label != null && label.trim().length > 0))
+	);
+
+	function clearTimer() {
+		if (showTimer !== null) {
+			clearTimeout(showTimer);
+			showTimer = null;
+		}
+	}
 
 	function measure() {
 		if (!wrapperRef || !tooltipRef) return;
@@ -62,10 +71,8 @@
 		// Decide which side to use. For 'auto', prefer the orientation that
 		// matches the trigger's shape (wide triggers want top/bottom, tall
 		// triggers want left/right). A side "fits" when the tooltip can sit
-		// without any clamping in the parallel axis, i.e. it naturally
-		// fits on the screen without being pushed against an edge. If the
-		// preferred side doesn't fit, try the next, falling back to the
-		// first preference with clamping.
+		// without any clamping in the parallel axis. If the preferred side
+		// doesn't fit, try the next, falling back to the first with clamping.
 		let chosen: Side;
 		if (side === 'auto') {
 			const space: Record<Side, number> = {
@@ -81,7 +88,6 @@
 			const requiredPerp = horizontal ? tip.height + GAP : tip.width + GAP;
 			const fits = (s: Side) => {
 				if (space[s] < requiredPerp) return false;
-				// No clamping needed along the parallel axis.
 				if (horizontal && (s === 'bottom' || s === 'top')) {
 					const idealLeft = trigger.left + trigger.width / 2 - tip.width / 2;
 					return idealLeft >= 0 && idealLeft + tip.width <= vw;
@@ -98,20 +104,14 @@
 		}
 
 		// Position the tooltip in viewport coordinates, a small GAP from the
-		// trigger, then shift within the viewport so it never overflows. The
-		// tooltip is centered on the trigger when there's room; if centering
-		// would push the tooltip off-screen, anchor its near edge to the
-		// trigger's near edge so it stays visually attached.
+		// trigger, then clamp so it never overflows. Center on the trigger
+		// when there's room; otherwise anchor the near edge to the trigger.
 		let left: number;
 		let top: number;
 		if (chosen === 'top' || chosen === 'bottom') {
 			const triggerCenterX = trigger.left + trigger.width / 2;
 			const centeredLeft = triggerCenterX - tip.width / 2;
 			const maxLeft = vw - tip.width;
-			// Can the centered tooltip fit horizontally? If yes, center it.
-			// If not, anchor the tooltip's near edge to the trigger's near
-			// edge so it extends rightward from the button (clamped to the
-			// right edge of the screen).
 			const centeredFits = centeredLeft >= 0 && centeredLeft + tip.width <= vw;
 			left = centeredFits ? centeredLeft : Math.max(0, Math.min(maxLeft, trigger.left));
 			top = chosen === 'top' ? trigger.top - tip.height - GAP : trigger.bottom + GAP;
@@ -126,36 +126,69 @@
 		positionStyle = `left: ${left.toFixed(1)}px; top: ${top.toFixed(1)}px;`;
 	}
 
+	function requestShow() {
+		clearTimer();
+		if (!hasContent) return;
+		// Measure now so the tooltip appears in the right place on time.
+		queueMicrotask(measure);
+		showTimer = setTimeout(() => {
+			if (!hasContent) return;
+			measure();
+			visible = true;
+		}, delayMs);
+	}
+
+	function hide() {
+		clearTimer();
+		visible = false;
+	}
+
+	function handleKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') hide();
+	}
+
 	$effect(() => {
 		// Re-measure when the tooltip text or the trigger size changes.
 		void label;
 		void labelChildren;
 		void side;
-		// Wait one frame so the tooltip has its final dimensions.
 		queueMicrotask(measure);
+	});
+
+	$effect(() => {
+		// Suppress a stale visible tooltip when content goes away.
+		if (!hasContent) visible = false;
 	});
 </script>
 
-<svelte:window onresize={measure} onscrollcapture={measure} />
+<svelte:window onresize={hide} onscrollcapture={hide} onkeydown={handleKeydown} />
 
 <span
 	bind:this={wrapperRef}
 	role="group"
-	class="group relative inline-flex {triggerClass}"
-	onmouseenter={measure}
+	class="relative inline-flex {triggerClass}"
+	onmouseenter={requestShow}
+	onmouseleave={hide}
+	onfocusin={requestShow}
+	onfocusout={hide}
+	onpointerdown={hide}
 >
 	{@render children()}
-	<span
-		bind:this={tooltipRef}
-		role="tooltip"
-		aria-hidden="true"
-		style={positionStyle}
-		class="pointer-events-none fixed z-[9999] max-w-48 rounded-xs border bg-popover px-2 py-1 text-[11px] font-medium whitespace-normal text-popover-foreground opacity-0 shadow-md transition-opacity duration-100 group-focus-within:opacity-100 group-hover:opacity-100 group-hover:delay-500 max-md:hidden {className}"
-	>
-		{#if labelChildren}
-			{@render labelChildren()}
-		{:else}
-			{label}
-		{/if}
-	</span>
+	{#if hasContent}
+		<span
+			bind:this={tooltipRef}
+			role="tooltip"
+			aria-hidden="true"
+			style={positionStyle}
+			class="pointer-events-none fixed z-50 max-w-48 rounded-xs border bg-popover px-2 py-1 text-[11px] font-medium whitespace-normal text-popover-foreground opacity-0 shadow-md transition-opacity duration-100 {visible
+				? 'opacity-100'
+				: ''} max-md:hidden [@media(hover:none)]:hidden {className}"
+		>
+			{#if labelChildren}
+				{@render labelChildren()}
+			{:else}
+				{label}
+			{/if}
+		</span>
+	{/if}
 </span>

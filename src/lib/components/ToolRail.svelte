@@ -15,6 +15,7 @@
 	} from '$lib/utils';
 	import { DEFAULT_SETTINGS } from '$lib/useMagick.svelte';
 	import HoverTooltip from './controls/HoverTooltip.svelte';
+	import TruncatedText from './controls/TruncatedText.svelte';
 	import UndoRedoButtons from './controls/UndoRedoButtons.svelte';
 	import { shortcutModifier } from '$lib/shortcuts';
 	import Keyboard from 'phosphor-svelte/lib/Keyboard';
@@ -290,46 +291,44 @@
 	<!-- Section buttons -->
 	<div class="mb-6 flex flex-col gap-1.5">
 		{#each items as item (item.id)}
-			<button
-				onclick={() => onSectionChange(item.id)}
-				class="group flex w-full cursor-pointer items-center justify-between text-left transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {activeSection ===
-				item.id
-					? 'font-semibold text-foreground'
-					: 'text-muted-foreground'}"
-				aria-label="{item.label} (Alt+{item.shortcut})"
-				title="{item.label} (Alt+{item.shortcut})"
-				aria-pressed={activeSection === item.id}
+			{@const summary = sectionSummary(item.id)}
+			<HoverTooltip
+				label={summary
+					? `${item.label} (Alt+${item.shortcut}) — ${summary}`
+					: `${item.label} (Alt+${item.shortcut})`}
+				side="right"
+				triggerClass="w-full"
 			>
-				<span class="inline-flex items-center gap-1.5 truncate"
-					><span>[{activeSection === item.id ? '*' : ' '}]</span><span class="hover:underline"
-						>{item.label}</span
-					></span
+				<button
+					onclick={() => onSectionChange(item.id)}
+					class="group flex w-full cursor-pointer items-center justify-between text-left transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {activeSection ===
+					item.id
+						? 'font-semibold text-foreground'
+						: 'text-muted-foreground'}"
+					aria-label="{item.label} (Alt+{item.shortcut})"
+					aria-pressed={activeSection === item.id}
 				>
-				<div class="flex shrink-0 items-center gap-1">
-					<span
-						class="w-3 text-center text-xs text-muted-foreground/60 {item.dirty ? '' : 'invisible'}"
-						aria-label={item.dirty ? 'Modified' : undefined}>^</span
+					<span class="inline-flex items-center gap-1.5 truncate"
+						><span>[{activeSection === item.id ? '*' : ' '}]</span><span class="hover:underline"
+							>{item.label}</span
+						></span
 					>
-					{#if sectionSummary(item.id)}
-						{@const lines = sectionSummary(item.id).split(' · ')}
-						<span class="group/tip relative">
+					<div class="flex shrink-0 items-center gap-1">
+						<span
+							class="w-3 text-center text-xs text-muted-foreground/60 {item.dirty
+								? ''
+								: 'invisible'}"
+							aria-hidden={item.dirty ? undefined : true}>^</span
+						>
+						{#if summary}
 							<span
 								class="block max-w-24 truncate text-[11px] font-normal text-muted-foreground normal-case hover:text-foreground"
-								>{sectionSummary(item.id)}</span
+								aria-hidden="true">{summary}</span
 							>
-							<span
-								class="pointer-events-none absolute top-1/2 left-full z-50 ml-1.5 -translate-y-1/2 rounded-none border border-divider bg-chrome px-2 py-1 font-mono text-[11px] text-muted-foreground normal-case opacity-0 shadow-md transition-opacity group-hover/tip:opacity-100 group-hover/tip:delay-500 max-md:hidden"
-							>
-								<div class="flex flex-col gap-0.5 whitespace-nowrap">
-									{#each lines as line}
-										<span>{line}</span>
-									{/each}
-								</div>
-							</span>
-						</span>
-					{/if}
-				</div>
-			</button>
+						{/if}
+					</div>
+				</button>
+			</HoverTooltip>
 		{/each}
 	</div>
 
@@ -400,11 +399,8 @@
 				<div
 					class="flex flex-col gap-1.5 border border-divider px-2 py-2 font-mono text-[11px] text-muted-foreground uppercase"
 				>
-					<div
-						class="truncate border-b border-divider pb-1.5 text-foreground/90"
-						title={magick.originalName}
-					>
-						{magick.originalName}
+					<div class="border-b border-divider pb-1.5 text-foreground/90">
+						<TruncatedText text={magick.originalName} />
 					</div>
 					<div class="flex justify-between gap-2">
 						<span class="shrink-0 text-[11px] text-muted-foreground">DIMS</span>

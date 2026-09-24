@@ -3,6 +3,7 @@
 	import type { HistoryState, SettingsDiffItem } from '$lib/hooks/useHistory.svelte';
 	import { formatBytes, formatDimensions } from '$lib/utils';
 	import Trash from 'phosphor-svelte/lib/Trash';
+	import HoverTooltip from '../controls/HoverTooltip.svelte';
 	import UndoRedoButtons from '../controls/UndoRedoButtons.svelte';
 
 	let {
@@ -55,16 +56,18 @@
 			onRedo={redo}
 			undoLabel={history.undoTargetLabel ? `Undo ${history.undoTargetLabel}` : 'Undo'}
 			redoLabel={history.redoTargetLabel ? `Redo ${history.redoTargetLabel}` : 'Redo'}
+			tooltipSide="bottom"
 		/>
-		<button
-			onclick={() => onClearRequest?.()}
-			disabled={history.count === 0}
-			class="cursor-pointer border border-divider px-2 py-1.5 font-mono text-[11px] uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-			aria-label="Clear history"
-			title="Clear history"
-		>
-			<Trash class="size-3.5" aria-hidden="true" />
-		</button>
+		<HoverTooltip label="Clear history" side="bottom">
+			<button
+				onclick={() => onClearRequest?.()}
+				disabled={history.count === 0}
+				class="cursor-pointer border border-divider px-2 py-1.5 font-mono text-[11px] uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+				aria-label="Clear history"
+			>
+				<Trash class="size-3.5" aria-hidden="true" />
+			</button>
+		</HoverTooltip>
 	</div>
 
 	{#if history.entries.length > 1}
