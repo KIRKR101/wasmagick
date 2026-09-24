@@ -5,6 +5,7 @@
 	import Square from 'phosphor-svelte/lib/Square';
 	import X from 'phosphor-svelte/lib/X';
 	import { pwaInstall } from '$lib/stores/pwa.svelte';
+	import { Toaster } from '$lib/components/ui/sonner';
 	import { hasCustomTitleBar, resolveInitialTheme, watchSystemTheme } from '$lib/theme';
 	import './layout.css';
 
@@ -65,3 +66,4 @@
 	<div aria-live="polite" aria-atomic="true" class="sr-only">Image editor ready</div>
 	{@render children()}
 </div>
+<Toaster />

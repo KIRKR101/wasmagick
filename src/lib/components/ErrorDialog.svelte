@@ -7,6 +7,7 @@
 	} from '$lib/components/ui/dialog/index.js';
 	import type { MagickState } from '$lib/useMagick.svelte';
 	import { buildErrorDetailsText, buildErrorIssueBody, buildIssueUrl } from '$lib/issue-report';
+	import { toast } from '$lib/components/ui/sonner';
 	import X from 'phosphor-svelte/lib/X';
 
 	let {
@@ -25,8 +26,6 @@
 		if (magick.hasError && magick.errorMessage) open = true;
 	});
 
-	let copied = $state(false);
-	let copyTimer: ReturnType<typeof setTimeout> | null = null;
 	let nativeVersion = $state<string | null>(null);
 
 	let wasmVersion = $state<string | null>(null);
@@ -81,9 +80,7 @@
 		});
 		try {
 			await navigator.clipboard.writeText(details);
-			copied = true;
-			if (copyTimer) clearTimeout(copyTimer);
-			copyTimer = setTimeout(() => (copied = false), 2000);
+			toast('Error details copied');
 		} catch {
 			// Clipboard unavailable (permissions, non-secure context), the
 			// full text is still visible above for manual copying.
@@ -128,20 +125,18 @@
 				</p>
 			</div>
 
-			<div
-				class="flex flex-wrap items-center justify-end gap-2 border-t border-divider px-4 py-3"
-			>
+			<div class="flex flex-wrap items-center justify-end gap-2 border-t border-divider px-4 py-3">
 				<button
 					onclick={copyDetails}
 					class="cursor-pointer border border-divider px-3 py-1 font-mono text-[11px] text-muted-foreground uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 				>
-					[<span class="hover:underline">{copied ? 'Copied' : 'Copy details'}</span>]
+					[<span class="hover:underline">Copy details</span>]
 				</button>
 				<a
 					href={reportHref}
 					target="_blank"
 					rel="noreferrer"
-				class="border border-divider px-3 py-1 font-mono text-[11px] text-muted-foreground uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+					class="border border-divider px-3 py-1 font-mono text-[11px] text-muted-foreground uppercase focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 				>
 					[<span class="hover:underline">Report issue</span>]
 				</a>

@@ -13,6 +13,7 @@
 	import { takePendingFile } from '$lib/pending-drop';
 	import { resolveInitialTheme } from '$lib/theme';
 	import { usesShortcutModifier } from '$lib/shortcuts';
+	import { toast } from '$lib/components/ui/sonner';
 	import type { EditorSection } from '$lib/editor-types';
 	import type { AnnotationPlacement } from '$lib/annotation-utils';
 
@@ -27,9 +28,6 @@
 	let settingsOpen = $state(false);
 	let activeSection = $state<EditorSection>('geometry');
 	let isMobile = $state(false);
-	let actionNotice = $state('');
-	let actionNoticeTimer: ReturnType<typeof setTimeout> | null = null;
-	let toastCanReveal = $state(false);
 	let annotationPlacementActive = $state(false);
 	installClipboardPaste(guard, replaceImage);
 
@@ -48,13 +46,10 @@
 	});
 
 	function showNotice(message: string, canReveal = false, duration = 2400): void {
-		if (actionNoticeTimer) clearTimeout(actionNoticeTimer);
-		actionNotice = message;
-		toastCanReveal = canReveal;
-		actionNoticeTimer = setTimeout(() => {
-			actionNotice = '';
-			toastCanReveal = false;
-		}, duration);
+		toast(message, {
+			duration,
+			action: canReveal ? { label: 'SHOW IN FOLDER', onClick: revealSavedFile } : undefined
+		});
 	}
 
 	$effect(() => {
@@ -508,21 +503,3 @@
 <KeyboardShortcuts bind:open={showShortcuts} />
 
 <SettingsOverlay bind:open={settingsOpen} />
-
-{#if actionNotice}
-	<div
-		class="fixed right-4 bottom-12 z-50 flex items-center gap-3 border border-divider bg-background px-3 py-2 font-mono text-xs text-foreground shadow-sm"
-		role="status"
-	>
-		{actionNotice}
-		{#if toastCanReveal}
-			<button
-				type="button"
-				onclick={revealSavedFile}
-				class="cursor-pointer border-l border-divider pl-3 text-muted-foreground underline decoration-dashed underline-offset-3 transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-			>
-				SHOW IN FOLDER
-			</button>
-		{/if}
-	</div>
-{/if}

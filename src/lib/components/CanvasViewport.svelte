@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onDestroy } from 'svelte';
 	import SquareSplitHorizontal from 'phosphor-svelte/lib/SquareSplitHorizontal';
 	import Images from 'phosphor-svelte/lib/Images';
 	import CornersOut from 'phosphor-svelte/lib/CornersOut';
@@ -9,6 +10,7 @@
 	import { shortcutModifier } from '$lib/shortcuts';
 	import SplitCompare from './SplitCompare.svelte';
 	import CropOverlay from './CropOverlay.svelte';
+	import { dismissToast, toast } from '$lib/components/ui/sonner';
 	import type { SampleImage } from '$lib/editor-types';
 	import type { CropRect } from '$lib/crop-utils';
 	import {
@@ -107,6 +109,26 @@
 		onRequestOriginalFullPreview?: () => void;
 		onOriginalImageError?: () => void;
 	} = $props();
+
+	let previewLoadingToastId: number | undefined;
+
+	$effect(() => {
+		if (originalPreviewLoading && displayedPreviewData) {
+			if (previewLoadingToastId === undefined) {
+				previewLoadingToastId = toast('Loading higher-resolution preview…', {
+					duration: null,
+					loading: true
+				});
+			}
+		} else if (previewLoadingToastId !== undefined) {
+			dismissToast(previewLoadingToastId);
+			previewLoadingToastId = undefined;
+		}
+	});
+
+	onDestroy(() => {
+		if (previewLoadingToastId !== undefined) dismissToast(previewLoadingToastId);
+	});
 
 	let showPlaceholder = $derived(!originalImageUrl);
 	let isInitializing = $derived(!wasmLoaded);
@@ -907,21 +929,6 @@
 					class="checkerboard max-h-none max-w-none origin-center object-contain"
 					aria-label="Processed image preview"
 				></canvas>
-			{/if}
-			{#if originalPreviewLoading && displayedPreviewData}
-				<div
-					class="pointer-events-none fixed right-3 bottom-12 z-50 max-w-[calc(100%-1.5rem)] sm:right-4"
-				>
-					<div
-						class="flex items-center gap-2 border border-divider bg-background px-3 py-2 font-mono text-xs text-foreground shadow-sm"
-						role="status"
-					>
-						<span
-							class="size-3 animate-spin rounded-full border border-muted-foreground/30 border-t-primary"
-						></span>
-						Loading higher-resolution preview…
-					</div>
-				</div>
 			{/if}
 			{#if annotationMenuActive && annotationPoint && (annotationPlacementActive || magickSettings?.annotateText?.trim()) && !compareActive}
 				<div
