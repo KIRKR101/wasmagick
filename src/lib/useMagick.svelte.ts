@@ -94,8 +94,8 @@ function loadPersistedSettings(): Partial<MagickSettings> {
 		const raw = localStorage.getItem(STORAGE_KEY);
 		if (!raw) return {};
 		const parsed: Record<string, unknown> = JSON.parse(raw);
-		// Only load keys that persistSettings actually writes, so old/corrupt
-		// entries (e.g. stripMeta: false from a prior version) can't override defaults.
+		// Only load keys that persistSettings writes, so unrelated or obsolete
+		// settings from older versions can't override current defaults.
 		const result: Record<string, unknown> = {};
 		for (const key of PERSISTED_KEYS) {
 			if (key in parsed) {
@@ -120,7 +120,8 @@ function persistSettings(s: MagickSettings): void {
 			STORAGE_KEY,
 			JSON.stringify({
 				imageFormat: s.imageFormat,
-				quality: s.quality
+				quality: s.quality,
+				stripMeta: s.stripMeta
 			})
 		);
 	} catch {
