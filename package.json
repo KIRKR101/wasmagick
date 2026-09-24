@@ -1,7 +1,7 @@
 {
 	"name": "wasmagick",
 	"private": true,
-	"version": "0.0.5",
+	"version": "0.0.6",
 	"desktopName": "wasmagick.desktop",
 	"description": "Client-side image editor powered by WebAssembly ImageMagick.",
 	"author": "WASMagick contributors",
