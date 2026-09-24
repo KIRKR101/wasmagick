@@ -25,7 +25,9 @@
 		DEFAULT_HISTORY_LIMIT,
 		MAX_HISTORY_LIMIT,
 		MIN_HISTORY_LIMIT,
+		MAGICK_WASM_URL,
 		MAGICK_WASM_VERSION,
+		REPO_URL,
 		clearAllAppStorage,
 		clearExportDefaults,
 		formatOutputFilename,
@@ -40,6 +42,7 @@
 		type StorageEntry
 	} from '$lib/settings';
 	import { PresetsState, BUILTIN_PRESETS, type UserPreset } from '$lib/hooks/usePresets.svelte';
+	import { buildGeneralIssueBody, buildIssueUrl } from '$lib/issue-report';
 	import { formatBytes } from '$lib/utils';
 	import { FALLBACK_EXPORT_FORMATS } from '$lib/export-formats';
 
@@ -111,6 +114,14 @@
 		historyLimit = Math.min(MAX_HISTORY_LIMIT, Math.max(MIN_HISTORY_LIMIT, Math.round(value)));
 		setHistoryLimit(historyLimit);
 	}
+
+	let issuesHref = $derived.by(() => {
+		try {
+			return buildIssueUrl('Bug report', buildGeneralIssueBody());
+		} catch {
+			return buildIssueUrl('Bug report', '');
+		}
+	});
 
 	let filenamePreview = $derived.by(() => {
 		try {
@@ -569,6 +580,28 @@
 					>{window.wasmagick?.platform ?? 'Web'}</span
 				>
 			</div>
+		</div>
+	</section>
+
+	<!-- About -->
+	<section class="border border-divider p-2.5 sm:p-3">
+		<h3 class="mb-2 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+			About
+		</h3>
+		<p class="mb-3 text-[11px] leading-relaxed text-muted-foreground/80">
+			WASMagick v{APP_VERSION} is a client-side image editor. Processing happens locally in your
+			browser or desktop app; images never leave your device.
+		</p>
+		<div class="flex flex-wrap gap-1.5">
+			<a href={REPO_URL} target="_blank" rel="noopener noreferrer" class="group border border-divider px-2 py-1 font-mono text-[11px] text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none">
+				[<span class="group-hover:underline">GitHub</span>]
+			</a>
+			<a href={issuesHref} target="_blank" rel="noopener noreferrer" class="group border border-divider px-2 py-1 font-mono text-[11px] text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none">
+				[<span class="group-hover:underline">Issues</span>]
+			</a>
+			<a href={MAGICK_WASM_URL} target="_blank" rel="noopener noreferrer" class="group border border-divider px-2 py-1 font-mono text-[11px] text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none">
+				[<span class="group-hover:underline">magick-wasm</span>]
+			</a>
 		</div>
 	</section>
 </div>
