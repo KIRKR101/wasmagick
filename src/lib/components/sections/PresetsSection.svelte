@@ -1,6 +1,8 @@
 <script lang="ts">
 	import Check from 'phosphor-svelte/lib/Check';
 	import type { MagickState } from '$lib/useMagick.svelte';
+	import { isSettingsDirty } from '$lib/utils';
+	import ConfirmDialog from '../ConfirmDialog.svelte';
 	import {
 		PresetsState,
 		BUILTIN_PRESETS,
@@ -11,12 +13,38 @@
 	let { magick, presets }: { magick: MagickState; presets: PresetsState } = $props();
 
 	let newName = $state('');
+	let confirmApplyOpen = $state(false);
+	let pendingPreset = $state<
+		{ kind: 'built-in'; preset: BuiltInPreset } | { kind: 'user'; preset: UserPreset } | null
+	>(null);
 
-	function applyBuiltIn(p: BuiltInPreset) {
-		presets.applyBuiltIn(magick, p);
+	function applyBuiltIn(preset: BuiltInPreset) {
+		presets.applyBuiltIn(magick, preset);
 	}
-	function applyUser(p: UserPreset) {
-		presets.applyUser(magick, p);
+	function applyUser(preset: UserPreset) {
+		presets.applyUser(magick, preset);
+	}
+	function requestApply(preset: NonNullable<typeof pendingPreset>) {
+		if (preset.kind === 'built-in' && presets.isBuiltInActive(magick, preset.preset)) return;
+		if (preset.kind === 'user' && presets.isUserActive(magick, preset.preset)) return;
+
+		if (isSettingsDirty(magick.settings) || magick.isStale || magick.hasUnsavedEdits) {
+			pendingPreset = preset;
+			confirmApplyOpen = true;
+			return;
+		}
+		applyPreset(preset);
+	}
+	function applyPreset(preset: NonNullable<typeof pendingPreset>) {
+		if (preset.kind === 'built-in') applyBuiltIn(preset.preset);
+		else applyUser(preset.preset);
+	}
+	function confirmApplyPreset() {
+		if (pendingPreset) applyPreset(pendingPreset);
+		pendingPreset = null;
+	}
+	function cancelApplyPreset() {
+		pendingPreset = null;
 	}
 	function save() {
 		if (!newName.trim()) return;
@@ -34,7 +62,7 @@
 			{#each BUILTIN_PRESETS as p (p.id)}
 				{@const active = presets.isBuiltInActive(magick, p)}
 				<button
-					onclick={() => applyBuiltIn(p)}
+					onclick={() => requestApply({ kind: 'built-in', preset: p })}
 					aria-pressed={active}
 					class="group flex items-center justify-between gap-3 border px-3 py-2 text-left transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {active
 						? 'border-foreground bg-muted/50'
@@ -97,7 +125,7 @@
 							: 'border-divider bg-transparent hover:border-foreground/60 hover:bg-muted/30'}"
 					>
 						<button
-							onclick={() => applyUser(p)}
+							onclick={() => requestApply({ kind: 'user', preset: p })}
 							aria-pressed={active}
 							class="flex min-w-0 flex-1 items-center justify-between gap-3 text-left focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 						>
@@ -124,3 +152,11 @@
 		{/if}
 	</div>
 </div>
+
+<ConfirmDialog
+	bind:open={confirmApplyOpen}
+	kind="apply-preset"
+	presetName={pendingPreset?.preset.name ?? ''}
+	onConfirm={confirmApplyPreset}
+	onCancel={cancelApplyPreset}
+/>
