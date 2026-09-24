@@ -6,12 +6,15 @@
  * blob URLs (cloned from magick's) so magick's lifecycle (which revokes its
  * own URLs on the next process) never invalidates history entries.
  *
- * Capped by the user's history limit (oldest evicted FIFO) with URL revoke.
+ * Capped at MAX_HISTORY_ENTRIES (oldest evicted FIFO) with URL revoke.
  */
 import type { MagickState } from '$lib/useMagick.svelte';
 import { outputExtensionForFormat } from '$lib/export-formats';
-import { basenameWithoutExtension, buildOutputFilename, getHistoryLimit } from '$lib/settings';
+import { basenameWithoutExtension, buildOutputFilename } from '$lib/settings';
 import type { MagickSettings } from '$lib/types';
+
+/** Max undo entries kept per editor session; oldest is evicted FIFO. */
+export const MAX_HISTORY_ENTRIES = 50;
 
 export interface SettingsDiffItem {
 	label: string;
@@ -312,7 +315,7 @@ export class HistoryState {
 		this.entries = [...this.entries, entry];
 
 		// Enforce the cap (evict oldest, but never the entry we just pushed).
-		while (this.entries.length > getHistoryLimit()) {
+		while (this.entries.length > MAX_HISTORY_ENTRIES) {
 			const evicted = this.entries.shift()!;
 			if (evicted.blobUrl !== entry.blobUrl) this._urlsToRevoke.add(evicted.blobUrl);
 			if (evicted.previewBlobUrl && evicted.previewBlobUrl !== entry.previewBlobUrl)

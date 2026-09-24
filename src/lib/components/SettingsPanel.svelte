@@ -22,22 +22,16 @@
 	import {
 		APP_VERSION,
 		DEFAULT_FILENAME_TEMPLATE,
-		DEFAULT_HISTORY_LIMIT,
-		MAX_HISTORY_LIMIT,
-		MIN_HISTORY_LIMIT,
 		MAGICK_WASM_URL,
 		MAGICK_WASM_VERSION,
 		REPO_URL,
-		clearAllAppStorage,
 		clearExportDefaults,
 		formatOutputFilename,
 		getExportDefaults,
 		getFilenameTemplate,
-		getHistoryLimit,
 		getStorageUsage,
 		setExportDefaults,
 		setFilenameTemplate,
-		setHistoryLimit,
 		type ExportDefaults,
 		type StorageEntry
 	} from '$lib/settings';
@@ -57,7 +51,6 @@
 		stripMeta: false
 	});
 	let filenameTemplate = $state(DEFAULT_FILENAME_TEMPLATE);
-	let historyLimit = $state(DEFAULT_HISTORY_LIMIT);
 	let storage = $state<StorageEntry[]>([]);
 	const isElectron = typeof window !== 'undefined' && Boolean(window.wasmagick);
 	let nativeVersions = $state<WasmagickNativeVersions>({
@@ -107,12 +100,6 @@
 	function resetFilename(): void {
 		filenameTemplate = DEFAULT_FILENAME_TEMPLATE;
 		setFilenameTemplate(DEFAULT_FILENAME_TEMPLATE);
-	}
-
-	function onHistoryLimitInput(value: number): void {
-		if (!Number.isFinite(value)) return;
-		historyLimit = Math.min(MAX_HISTORY_LIMIT, Math.max(MIN_HISTORY_LIMIT, Math.round(value)));
-		setHistoryLimit(historyLimit);
 	}
 
 	let issuesHref = $derived.by(() => {
@@ -206,22 +193,10 @@
 		exportDefaults = getExportDefaults();
 	}
 
-	function resetAllSettings(): void {
-		clearAllAppStorage();
-		themeMode = getThemeMode();
-		applyThemeMode(themeMode);
-		filenameTemplate = getFilenameTemplate();
-		historyLimit = getHistoryLimit();
-		exportDefaults = getExportDefaults();
-		presets.clearUsers();
-		refreshStorage();
-	}
-
 	onMount(() => {
 		themeMode = getThemeMode();
 		exportDefaults = getExportDefaults();
 		filenameTemplate = getFilenameTemplate();
-		historyLimit = getHistoryLimit();
 		presets.load();
 		refreshStorage();
 
@@ -487,54 +462,6 @@
 					e.currentTarget.value = '';
 				}}
 			/>
-		</div>
-	</section>
-
-	<!-- History and storage -->
-	<section class="border border-divider p-2.5 sm:p-3">
-		<h3 class="mb-2 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-			History &amp; storage
-		</h3>
-		<p class="mb-3 text-[11px] text-muted-foreground/70">
-			Undo history stays in memory for each editor session and clears on reload.
-		</p>
-		<div class="mb-3 flex items-center justify-between gap-3">
-			<label for="history-limit" class="text-[11px] text-muted-foreground uppercase">
-				Max entries ({MIN_HISTORY_LIMIT}–{MAX_HISTORY_LIMIT})
-			</label>
-			<input
-				id="history-limit"
-				type="number"
-				min={MIN_HISTORY_LIMIT}
-				max={MAX_HISTORY_LIMIT}
-				step={1}
-				value={historyLimit}
-				oninput={(e) => onHistoryLimitInput(e.currentTarget.valueAsNumber)}
-				class="h-8 w-20 border border-dashed border-foreground/30 bg-transparent px-2 text-right text-xs text-foreground"
-			/>
-		</div>
-		<div class="border-t border-divider pt-3">
-			<div class="mb-2 text-[11px] text-muted-foreground uppercase">Local storage</div>
-			{#if storage.length === 0}
-				<p class="mb-3 text-[11px] text-muted-foreground/60">Nothing stored yet.</p>
-			{:else}
-				<ul class="mb-3 space-y-1 text-[11px]">
-					{#each storage as entry (entry.key)}
-						<li class="flex justify-between gap-3">
-							<span class="truncate text-muted-foreground">{entry.key}</span>
-							<span class="shrink-0 text-foreground tabular-nums">{formatBytes(entry.bytes)}</span>
-						</li>
-					{/each}
-				</ul>
-			{/if}
-			<button
-				type="button"
-				onclick={() => armOrRun('reset-all', resetAllSettings)}
-				class="group flex cursor-pointer items-center gap-1.5 border border-divider px-2 py-1 font-mono text-[11px] text-muted-foreground transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none {armedAction === 'reset-all' ? 'border-destructive text-destructive' : ''}"
-			>
-				<ArrowCounterClockwise class="size-3" />
-				<span class="group-hover:underline">{armedAction === 'reset-all' ? 'CONFIRM RESET' : 'RESET ALL SETTINGS'}</span>
-			</button>
 		</div>
 	</section>
 
