@@ -20,6 +20,7 @@ declare global {
 	}
 
 	interface Window {
+		__wasmagickIsMac?: boolean;
 		queryLocalFonts?(options?: { postscriptNames?: string[] }): Promise<FontData[]>;
 		wasmagick?: WasmagickElectronApi;
 		wasmagickSetDebug?(enabled?: boolean): boolean;

@@ -1,6 +1,7 @@
 export const isMac =
 	typeof window !== 'undefined' &&
-	(window.wasmagick?.platform === 'darwin' || /Mac|iPhone|iPad|iPod/.test(navigator.platform));
+	(window.__wasmagickIsMac ??
+		(window.wasmagick?.platform === 'darwin' || /Mac|iPhone|iPad|iPod/.test(navigator.platform)));
 
 export const shortcutModifier = isMac ? '⌘' : 'Ctrl';
 
