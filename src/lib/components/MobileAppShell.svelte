@@ -190,23 +190,6 @@
 <div class="mobile-layout">
 	<!-- Full-screen canvas -->
 	<div class="mobile-canvas">
-		{#if magick.isLoading}
-			<div
-				class="pointer-events-none absolute top-2 left-1/2 z-30 max-w-[calc(100%-1rem)] -translate-x-1/2"
-			>
-				<div
-					class="flex items-center gap-2 border border-divider bg-chrome/90 px-2.5 py-1.5 font-mono text-[11px] text-foreground backdrop-blur-sm"
-					role="status"
-					aria-live="polite"
-				>
-					<span
-						class="size-3 shrink-0 animate-spin rounded-full border border-muted-foreground/30 border-t-primary"
-						aria-hidden="true"
-					></span>
-					<span class="truncate tabular-nums">{magick.processingStepLabel}</span>
-				</div>
-			</div>
-		{/if}
 		<CanvasViewport
 			bind:this={viewport}
 			originalImageUrl={magick.originalImageUrl}

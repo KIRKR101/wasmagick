@@ -281,39 +281,38 @@
 				<ArrowCounterClockwise class="size-4" />
 				<span>RESET</span>
 			</button>
-			{#if magick.isLoading}
-				<button
-					onclick={() => onCancel?.()}
-					disabled={!onCancel}
-					class="mobile-action-btn primary gap-2"
-					aria-label={`Cancel processing. ${magick.processingStepLabel}`}
-				>
-					<X class="size-4" />
-					<span>CANCEL</span>
-				</button>
-			{:else}
-				<button
-					onclick={onProcess}
-					disabled={!magick.wasmLoaded || !magick.sourceBytes}
-					class="mobile-action-btn primary gap-2 {magick.isStale
-						? 'font-semibold underline underline-offset-4'
-						: ''}"
-					aria-label={!magick.sourceBytes
+			<!-- Process / Cancel: a single flex:1 button (plus min-w-0 so ticking
+				time can't force it wider) so RESET/EXPORT never shift when the
+				label swaps or the timer ticks. -->
+			<button
+				onclick={magick.isLoading ? () => onCancel?.() : onProcess}
+				disabled={magick.isLoading ? !onCancel : !magick.wasmLoaded || !magick.sourceBytes}
+				class="mobile-action-btn primary min-w-0 gap-2 {magick.isStale && !magick.isLoading
+					? 'font-semibold underline underline-offset-4'
+					: ''}"
+				aria-label={magick.isLoading
+					? `Cancel processing. ${magick.processingStepLabel}`
+					: !magick.sourceBytes
 						? 'Process image (load an image first)'
 						: !magick.wasmLoaded
 							? 'Process image (engine loading…)'
 							: magick.isStale
 								? 'Settings changed, process to update preview'
 								: 'Process image'}
-				>
+			>
+				{#if magick.isLoading}
+					<X class="size-4" />
+					<span>CANCEL</span>
+					<span class="tabular-nums" aria-hidden="true">({magick.processingElapsedLabel})</span>
+				{:else}
 					{#if magick.isStale}
 						<Play class="size-4" weight="fill" />
 					{:else}
 						<Play class="size-4" />
 					{/if}
 					<span>PROCESS</span>
-				</button>
-			{/if}
+				{/if}
+			</button>
 			<button
 				onclick={onDownload}
 				disabled={!canDownload}

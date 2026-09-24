@@ -160,33 +160,32 @@
 		<div class="h-5 w-px bg-divider"></div>
 
 		<!-- Settings -->
-		{#if isLoading}
-			<button
-				onclick={() => onCancel?.()}
-				disabled={!onCancel}
-				class="mobile-btn"
-				aria-label={`Cancel processing. ${magick.processingStepLabel}`}
-			>
-				<X class="size-4.5" />
-				<span class="text-[11px]">CANCEL</span>
-			</button>
-		{:else}
-			<button
-				onclick={onProcess}
-				disabled={!canProcess}
-				class="mobile-btn"
-				aria-label={!magick.sourceBytes
+		<!-- Process / Cancel: a single button so the slot keeps its size when the
+			label swaps (no time shown here, just PROCESS <-> CANCEL). The label
+			gets a fixed 7ch slot (both words fit, mono font) so neighbours never shift. -->
+		<button
+			onclick={isLoading ? () => onCancel?.() : onProcess}
+			disabled={isLoading ? !onCancel : !canProcess}
+			class="mobile-btn"
+			aria-label={isLoading
+				? `Cancel processing. ${magick.processingStepLabel}`
+				: !magick.sourceBytes
 					? 'Process image (load an image first)'
 					: !magick.wasmLoaded
 						? 'Process image (engine loading…)'
 						: magick.isStale
 							? 'Settings changed, process to update preview'
 							: 'Process image'}
-			>
+		>
+			{#if isLoading}
+				<X class="size-4.5" />
+			{:else}
 				<Play class="size-4.5" />
-				<span class="text-[11px]">PROCESS</span>
-			</button>
-		{/if}
+			{/if}
+			<span class="inline-block w-[7ch] text-center text-[11px]"
+				>{isLoading ? 'CANCEL' : 'PROCESS'}</span
+			>
+		</button>
 		<button
 			onclick={onToggleTools}
 			class="mobile-btn {isLoading ? 'text-primary' : ''}"
