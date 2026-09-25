@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { DownloadSimple, Globe } from 'phosphor-svelte';
+	import DownloadSimple from 'phosphor-svelte/lib/DownloadSimple';
+	import Globe from 'phosphor-svelte/lib/Globe';
 	import { resolveInitialTheme } from '$lib/theme';
 
 	let platform = $state<'windows' | 'macos' | 'linux' | 'unknown'>('unknown');
