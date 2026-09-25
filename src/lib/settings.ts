@@ -19,7 +19,6 @@ export const APP_VERSION = packageJson.version;
 export const MAGICK_WASM_VERSION =
 	packageJson.dependencies['@imagemagick/magick-wasm']?.replace(/^[^\d]*/, '') || 'Unknown';
 export const REPO_URL = 'https://github.com/KIRKR101/wasmagick';
-export const MAGICK_WASM_URL = 'https://github.com/dlemstra/magick-wasm';
 
 const FILENAME_KEY = 'wasmagick.filename-template';
 const EXPORT_DEFAULTS_KEY = 'wasmagick-settings';

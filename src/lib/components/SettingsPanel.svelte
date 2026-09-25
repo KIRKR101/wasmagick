@@ -22,7 +22,6 @@
 	import {
 		APP_VERSION,
 		DEFAULT_FILENAME_TEMPLATE,
-		MAGICK_WASM_URL,
 		MAGICK_WASM_VERSION,
 		REPO_URL,
 		clearExportDefaults,
@@ -525,9 +524,6 @@
 			</a>
 			<a href={issuesHref} target="_blank" rel="noopener noreferrer" class="group border border-divider px-2 py-1 font-mono text-[11px] text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none">
 				[<span class="group-hover:underline">Issues</span>]
-			</a>
-			<a href={MAGICK_WASM_URL} target="_blank" rel="noopener noreferrer" class="group border border-divider px-2 py-1 font-mono text-[11px] text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none">
-				[<span class="group-hover:underline">magick-wasm</span>]
 			</a>
 		</div>
 	</section>
