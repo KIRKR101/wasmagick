@@ -34,11 +34,7 @@ import {
 } from './export-formats';
 import { basenameWithoutExtension, buildOutputFilename } from './settings';
 import { BROWSER_RENDERABLE_FORMATS } from './image-capabilities';
-import {
-	isSvgInputName,
-	rasterizeSvgToPng,
-	type RasterizedSvg
-} from './svg-raster';
+import { isSvgInputName, rasterizeSvgToPng, type RasterizedSvg } from './svg-raster';
 
 const AUTO_PROCESS_DELAY = 300;
 const EXIF_UNSUPPORTED_MESSAGE = 'Format probably not supported';
@@ -645,8 +641,7 @@ export class MagickState {
 		width: number;
 		height: number;
 	} | null = null;
-	private _svgRasterInflight: { revision: number; promise: Promise<RasterizedSvg> } | null =
-		null;
+	private _svgRasterInflight: { revision: number; promise: Promise<RasterizedSvg> } | null = null;
 	private _nativeSourceRevision: number | null = null;
 	private _nativeRequestId = 0;
 	private _sourceRevision = 0;
@@ -703,10 +698,7 @@ export class MagickState {
 	private _fontSyncId = 0;
 	// Non-reactive font-sync bookkeeping (intentionally plain Maps).
 	// eslint-disable-next-line svelte/prefer-svelte-reactivity
-	private _pendingFontSyncs = new Map<
-		number,
-		{ name: string; resolve: (ok: boolean) => void }
-	>();
+	private _pendingFontSyncs = new Map<number, { name: string; resolve: (ok: boolean) => void }>();
 	// eslint-disable-next-line svelte/prefer-svelte-reactivity
 	private _fontSyncInflight = new Map<string, Promise<boolean>>();
 	// In-flight EXIF extraction. Extractions are chained behind this so two
@@ -1229,8 +1221,7 @@ export class MagickState {
 			this.revokeImageUrls();
 			// Browsers cannot render gzipped SVG blobs directly on either
 			// platform; probeSvgDimensions supplies a rasterized PNG URL.
-			const isSvgz =
-				file.name.toLowerCase().endsWith('.svgz') && typeof document !== 'undefined';
+			const isSvgz = file.name.toLowerCase().endsWith('.svgz') && typeof document !== 'undefined';
 			this.originalImageUrl = isSvgz
 				? null
 				: URL.createObjectURL(new Blob([this.sourceBytes as unknown as BlobPart]));
@@ -1480,16 +1471,14 @@ export class MagickState {
 				// preview pixels match processed pixels.
 				try {
 					const rasterized = await this.ensureSvgRaster();
-					if (this.sourceBytes !== source || this._previewRequestId !== previewRequestId)
-						return;
+					if (this.sourceBytes !== source || this._previewRequestId !== previewRequestId) return;
 					if (fullResolution && rasterized) {
 						const preview = await browserPreview(
 							rasterized.data,
 							{ width: rasterized.width, height: rasterized.height },
 							WEB_FULL_PREVIEW_MAX_EDGE
 						);
-						if (this.sourceBytes !== source || this._previewRequestId !== previewRequestId)
-							return;
+						if (this.sourceBytes !== source || this._previewRequestId !== previewRequestId) return;
 						if (preview) {
 							this.originalPreviewData = preview.data;
 							this.originalPreviewWidth = preview.width;
@@ -1879,7 +1868,12 @@ export class MagickState {
 				(!isRawInputName(this.originalName) || this.nativeRawAvailable);
 			if (useNative) {
 				await this._processViaNative(
-					debugMode, onComplete, rasterized.data, 'rasterized.png', rasterized.width, rasterized.height
+					debugMode,
+					onComplete,
+					rasterized.data,
+					'rasterized.png',
+					rasterized.width,
+					rasterized.height
 				);
 				return;
 			}
@@ -2044,7 +2038,9 @@ export class MagickState {
 		sourceOverride?: Uint8Array,
 		inputNameOverride?: string
 	): void {
-		this.currentProcessingStep = sourceOverride ? 'Processing rasterized image' : 'Processing in worker';
+		this.currentProcessingStep = sourceOverride
+			? 'Processing rasterized image'
+			: 'Processing in worker';
 		const requestId = ++this._requestId;
 		this._pendingRequests.set(requestId, {
 			debugMode,

@@ -194,12 +194,7 @@ export interface StorageEntry {
 	bytes: number;
 }
 
-const KNOWN_STORAGE_KEYS = [
-	'theme',
-	FILENAME_KEY,
-	EXPORT_DEFAULTS_KEY,
-	'wasmagick.presets.v1'
-];
+const KNOWN_STORAGE_KEYS = ['theme', FILENAME_KEY, EXPORT_DEFAULTS_KEY, 'wasmagick.presets.v1'];
 
 export function getStorageUsage(): StorageEntry[] {
 	const entries: StorageEntry[] = [];

@@ -127,10 +127,6 @@ export function isAnnotateDirty(s: MagickSettings): boolean {
 
 export function isSettingsDirty(s: MagickSettings): boolean {
 	return (
-		isGeoDirty(s) ||
-		isColorDirty(s) ||
-		isFiltersDirty(s) ||
-		isAnnotateDirty(s) ||
-		isExportDirty(s)
+		isGeoDirty(s) || isColorDirty(s) || isFiltersDirty(s) || isAnnotateDirty(s) || isExportDirty(s)
 	);
 }

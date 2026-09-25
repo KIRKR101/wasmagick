@@ -2,7 +2,7 @@ name: Parity Tests
 
 on:
   push:
-    branches: [main, new-ui]
+    branches: [main]
     paths:
       - 'src/lib/magick-process.ts'
       - 'src/lib/magick.worker.ts'
@@ -18,7 +18,7 @@ on:
       - 'vite.config.ts'
       - '.github/workflows/parity.yml'
   pull_request:
-    branches: [main, new-ui]
+    branches: [main]
     paths:
       - 'src/lib/magick-process.ts'
       - 'src/lib/magick.worker.ts'

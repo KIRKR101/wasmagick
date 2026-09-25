@@ -43,9 +43,9 @@ export async function decodeSvgText(bytes: Uint8Array, filename: string): Promis
 		if (typeof DecompressionStream === 'undefined') {
 			throw new Error('SVGZ (gzipped SVG) is not supported in this browser');
 		}
-		const stream = new Blob([bytes as unknown as BlobPart]).stream().pipeThrough(
-			new DecompressionStream('gzip')
-		);
+		const stream = new Blob([bytes as unknown as BlobPart])
+			.stream()
+			.pipeThrough(new DecompressionStream('gzip'));
 		const decompressed = new Uint8Array(await new Response(stream).arrayBuffer());
 		return new TextDecoder().decode(decompressed);
 	}
@@ -238,9 +238,7 @@ export async function rasterizeSvgToPng(
 		context.clearRect(0, 0, width, height);
 		context.drawImage(img, 0, 0, width, height);
 
-		const blob = await new Promise<Blob | null>((resolve) =>
-			canvas.toBlob(resolve, 'image/png')
-		);
+		const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
 		if (!blob) throw new Error('Could not rasterize SVG in this browser');
 		const data = new Uint8Array(await blob.arrayBuffer());
 		return { data, width, height };

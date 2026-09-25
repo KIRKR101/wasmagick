@@ -246,7 +246,10 @@ function verifyJxlSupport(slug: Slug): void {
 	const libDir = join(slugDir, 'lib');
 	const coderDir = join(libDir, 'ImageMagick', 'modules-Q16HDRI', 'coders');
 	const filterDir = join(libDir, 'ImageMagick', 'modules-Q16HDRI', 'filters');
-	const configDirs = [join(slugDir, 'etc', 'ImageMagick-7'), join(libDir, 'ImageMagick', 'config-Q16HDRI')];
+	const configDirs = [
+		join(slugDir, 'etc', 'ImageMagick-7'),
+		join(libDir, 'ImageMagick', 'config-Q16HDRI')
+	];
 
 	if (existsSync(libDir)) {
 		env.DYLD_LIBRARY_PATH = [libDir, env.DYLD_LIBRARY_PATH].filter(Boolean).join(delimiter);
@@ -867,7 +870,9 @@ function ensureMac(slugDir: string, arch: 'x64' | 'arm64'): void {
 				console.log(`ImageMagick ${IM_VERSION} (${slugDir}) already installed.`);
 				return;
 			} catch {
-				console.log(`Existing bundle at ${slugDir} lacks working JPEG XL support; rebuilding from Homebrew...`);
+				console.log(
+					`Existing bundle at ${slugDir} lacks working JPEG XL support; rebuilding from Homebrew...`
+				);
 			}
 		}
 		if (hostArchMatches) {

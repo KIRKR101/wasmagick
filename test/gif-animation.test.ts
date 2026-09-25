@@ -366,37 +366,40 @@ describe('animated GIF processing', () => {
 		expect(decoded).toBeGreaterThan(0.15);
 	});
 
-	it.runIf(hasNative)('routes animated inputs with animated outputs to the magick backend', async () => {
-		// sharp applies geometry to the stacked page strip and reads the
-		// strip height for the oversize check (a hugely upscaled second
-		// animated encode), so multi-frame inputs with animated outputs must
-		// not stay on VIPS even when the plan allows it.
-		const settings = gifSettings({ imageFormat: 'WEBP', resizeW: 10, resizeH: 10 });
-		const plan = buildNativeProcessingPlan(settings, 'anim-2frame.gif');
-		expect(plan.backend).toBe('vips');
-		const built = buildNativeMagickArgs(settings, { inputName: 'anim-2frame.gif' });
-		const result = await processNative({
-			inputName: 'anim-2frame.gif',
-			inputData: readFixture('anim-2frame.gif'),
-			sourceRevision: Date.now() + 3,
-			args: built.args,
-			outputExtension: built.outputExtension,
-			outputFormat: 'WEBP',
-			plan
-		});
+	it.runIf(hasNative)(
+		'routes animated inputs with animated outputs to the magick backend',
+		async () => {
+			// sharp applies geometry to the stacked page strip and reads the
+			// strip height for the oversize check (a hugely upscaled second
+			// animated encode), so multi-frame inputs with animated outputs must
+			// not stay on VIPS even when the plan allows it.
+			const settings = gifSettings({ imageFormat: 'WEBP', resizeW: 10, resizeH: 10 });
+			const plan = buildNativeProcessingPlan(settings, 'anim-2frame.gif');
+			expect(plan.backend).toBe('vips');
+			const built = buildNativeMagickArgs(settings, { inputName: 'anim-2frame.gif' });
+			const result = await processNative({
+				inputName: 'anim-2frame.gif',
+				inputData: readFixture('anim-2frame.gif'),
+				sourceRevision: Date.now() + 3,
+				args: built.args,
+				outputExtension: built.outputExtension,
+				outputFormat: 'WEBP',
+				plan
+			});
 
-		expect(result.backend).toBe('magick');
-		expect([result.width, result.height]).toEqual([10, 10]);
-		const frames = inspectFrames(result.data);
-		expect(frames).toHaveLength(2);
-		// Lossy WebP corners get tolerance; they must stay clearly red/blue.
-		expect(frames[0].corner[0]).toBeGreaterThanOrEqual(200);
-		expect(frames[0].corner[1]).toBeLessThanOrEqual(60);
-		expect(frames[0].corner[2]).toBeLessThanOrEqual(60);
-		expect(frames[1].corner[2]).toBeGreaterThanOrEqual(200);
-		expect(frames[1].corner[0]).toBeLessThanOrEqual(60);
-		expect(frames[1].corner[1]).toBeLessThanOrEqual(60);
-	});
+			expect(result.backend).toBe('magick');
+			expect([result.width, result.height]).toEqual([10, 10]);
+			const frames = inspectFrames(result.data);
+			expect(frames).toHaveLength(2);
+			// Lossy WebP corners get tolerance; they must stay clearly red/blue.
+			expect(frames[0].corner[0]).toBeGreaterThanOrEqual(200);
+			expect(frames[0].corner[1]).toBeLessThanOrEqual(60);
+			expect(frames[0].corner[2]).toBeLessThanOrEqual(60);
+			expect(frames[1].corner[2]).toBeGreaterThanOrEqual(200);
+			expect(frames[1].corner[0]).toBeLessThanOrEqual(60);
+			expect(frames[1].corner[1]).toBeLessThanOrEqual(60);
+		}
+	);
 
 	it.runIf(hasNative)('preserves pages through the native magick TIFF backend', async () => {
 		const settings = gifSettings({ imageFormat: 'TIFF', resizeW: 10, resizeH: 10 });
@@ -420,28 +423,31 @@ describe('animated GIF processing', () => {
 		expect(pages[1].corner).toEqual([0, 0, 255]);
 	});
 
-	it.runIf(hasNative)('routes multi-frame inputs with TIFF outputs to the magick backend', async () => {
-		// Same stacked-strip hazard as animated outputs: multipage inputs
-		// with TIFF outputs must not stay on VIPS even when the plan allows it.
-		const settings = gifSettings({ imageFormat: 'TIFF', resizeW: 10, resizeH: 10 });
-		const plan = buildNativeProcessingPlan(settings, 'anim-2frame.gif');
-		expect(plan.backend).toBe('vips');
-		const built = buildNativeMagickArgs(settings, { inputName: 'anim-2frame.gif' });
-		const result = await processNative({
-			inputName: 'anim-2frame.gif',
-			inputData: readFixture('anim-2frame.gif'),
-			sourceRevision: Date.now() + 8,
-			args: built.args,
-			outputExtension: built.outputExtension,
-			outputFormat: 'TIFF',
-			plan
-		});
+	it.runIf(hasNative)(
+		'routes multi-frame inputs with TIFF outputs to the magick backend',
+		async () => {
+			// Same stacked-strip hazard as animated outputs: multipage inputs
+			// with TIFF outputs must not stay on VIPS even when the plan allows it.
+			const settings = gifSettings({ imageFormat: 'TIFF', resizeW: 10, resizeH: 10 });
+			const plan = buildNativeProcessingPlan(settings, 'anim-2frame.gif');
+			expect(plan.backend).toBe('vips');
+			const built = buildNativeMagickArgs(settings, { inputName: 'anim-2frame.gif' });
+			const result = await processNative({
+				inputName: 'anim-2frame.gif',
+				inputData: readFixture('anim-2frame.gif'),
+				sourceRevision: Date.now() + 8,
+				args: built.args,
+				outputExtension: built.outputExtension,
+				outputFormat: 'TIFF',
+				plan
+			});
 
-		expect(result.backend).toBe('magick');
-		expect([result.width, result.height]).toEqual([10, 10]);
-		const pages = inspectFrames(result.data);
-		expect(pages).toHaveLength(2);
-	});
+			expect(result.backend).toBe('magick');
+			expect([result.width, result.height]).toEqual([10, 10]);
+			const pages = inspectFrames(result.data);
+			expect(pages).toHaveLength(2);
+		}
+	);
 
 	it('keeps single-frame inputs with animated outputs on VIPS', async () => {
 		const settings = gifSettings({ imageFormat: 'WEBP', resizeW: 10, resizeH: 10 });

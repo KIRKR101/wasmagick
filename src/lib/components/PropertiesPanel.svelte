@@ -221,7 +221,7 @@
 				<Select type="single" bind:value={magick.settings.imageFormat}>
 					<SelectTrigger
 						aria-label="Output format"
-						class="!my-0 !h-auto !py-0 gap-0 border-0 bg-transparent p-0 text-xs text-muted-foreground uppercase underline underline-offset-2 hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none [&_svg]:hidden"
+						class="!my-0 !h-auto gap-0 border-0 bg-transparent p-0 !py-0 text-xs text-muted-foreground uppercase underline underline-offset-2 hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none [&_svg]:hidden"
 					>
 						{magick.settings.imageFormat}
 					</SelectTrigger>

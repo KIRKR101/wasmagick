@@ -515,14 +515,24 @@
 			About
 		</h3>
 		<p class="mb-3 text-[11px] leading-relaxed text-muted-foreground/80">
-			WASMagick v{APP_VERSION} is a client-side image editor. Processing happens locally in your
-			browser or desktop app; images never leave your device.
+			WASMagick v{APP_VERSION} is a client-side image editor. Processing happens locally in your browser
+			or desktop app; images never leave your device.
 		</p>
 		<div class="flex flex-wrap gap-1.5">
-			<a href={REPO_URL} target="_blank" rel="noopener noreferrer" class="group border border-divider px-2 py-1 font-mono text-[11px] text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none">
+			<a
+				href={REPO_URL}
+				target="_blank"
+				rel="noopener noreferrer"
+				class="group border border-divider px-2 py-1 font-mono text-[11px] text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+			>
 				[<span class="group-hover:underline">GitHub</span>]
 			</a>
-			<a href={issuesHref} target="_blank" rel="noopener noreferrer" class="group border border-divider px-2 py-1 font-mono text-[11px] text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none">
+			<a
+				href={issuesHref}
+				target="_blank"
+				rel="noopener noreferrer"
+				class="group border border-divider px-2 py-1 font-mono text-[11px] text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+			>
 				[<span class="group-hover:underline">Issues</span>]
 			</a>
 		</div>
