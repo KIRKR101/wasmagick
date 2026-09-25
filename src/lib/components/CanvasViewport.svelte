@@ -11,7 +11,6 @@
 	import SplitCompare from './SplitCompare.svelte';
 	import CropOverlay from './CropOverlay.svelte';
 	import { dismissToast, toast } from '$lib/components/ui/sonner';
-	import type { SampleImage } from '$lib/editor-types';
 	import type { CropRect } from '$lib/crop-utils';
 	import {
 		annotationPlacementFromPoint,
@@ -48,7 +47,6 @@
 		initialCrop = null,
 		onBrowse = () => {},
 		onPaste = () => {},
-		onSelectSample = () => {},
 		onStateChange = () => {},
 		onAnnotationPlace = () => {},
 		onAnnotationPlacementChange = () => {},
@@ -98,7 +96,6 @@
 		initialCrop?: { x: number; y: number; w: number; h: number } | null;
 		onBrowse?: () => void;
 		onPaste?: (file: File) => void;
-		onSelectSample?: (s: SampleImage) => void;
 		onStateChange?: (s: { zoom: number }) => void;
 		onAnnotationPlace?: (placement: AnnotationPlacement) => void;
 		onAnnotationPlacementChange?: (active: boolean) => void;
@@ -858,7 +855,7 @@
 				<p class="font-mono text-[11px]">Loading ImageMagick…</p>
 			</div>
 		{:else if showPlaceholder}
-			<FileDropzone {onBrowse} {onPaste} {onSelectSample} />
+			<FileDropzone {onBrowse} {onPaste} />
 		{:else if previewUnavailable}
 			<div class="text-center text-muted-foreground" role="status" aria-live="polite">
 				<div class="mx-auto mb-4 flex size-16 items-center justify-center">

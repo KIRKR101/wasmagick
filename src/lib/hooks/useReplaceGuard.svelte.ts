@@ -1,6 +1,6 @@
 /**
- * useReplaceGuard - coordinates image replacement (drop, paste, file input,
- * sample selection) with a dirty-state confirmation.
+ * useReplaceGuard - coordinates image replacement (drop, paste, file input)
+ * with a dirty-state confirmation.
  *
  * "Dirty" means the current image has a processed result that would be lost
  * on replacement or close (regardless of whether it was downloaded). When

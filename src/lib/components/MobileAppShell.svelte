@@ -10,7 +10,7 @@
 	import type { HistoryState } from '$lib/hooks/useHistory.svelte';
 	import type { PresetsState } from '$lib/hooks/usePresets.svelte';
 	import type { ReplaceGuardState } from '$lib/hooks/useReplaceGuard.svelte';
-	import type { EditorSection, SampleImage } from '$lib/editor-types';
+	import type { EditorSection } from '$lib/editor-types';
 	import { computeCropPreview } from '$lib/crop-utils';
 
 	let {
@@ -73,20 +73,6 @@
 			guard.requestReplace(target.files[0], onReplace);
 		}
 		target.value = '';
-	}
-
-	async function onSelectSample(s: SampleImage) {
-		try {
-			const res = await fetch(s.url);
-			const blob = await res.blob();
-			const file = new File([blob], `${s.name.toLowerCase()}.png`, {
-				type: blob.type || 'image/png'
-			});
-			guard.requestReplace(file, onReplace);
-		} catch {
-			magick.hasError = true;
-			magick.errorMessage = 'Could not load sample image';
-		}
 	}
 
 	function togglePanel() {
@@ -222,7 +208,6 @@
 			onPaste={(file) => guard.requestReplace(file, onReplace)}
 			onRequestOriginalFullPreview={() => magick.renderOriginalPreview(true)}
 			onOriginalImageError={() => magick.handleOriginalImageError()}
-			{onSelectSample}
 			{onAnnotationPlace}
 			{onAnnotationPlacementChange}
 			onStateChange={onViewportStateChange}

@@ -23,9 +23,3 @@ export interface RailItem {
 	/** Whether the section has non-default state (drives the dirty dot). */
 	dirty?: boolean;
 }
-
-/** Sample image descriptor for the empty state. */
-export interface SampleImage {
-	name: string;
-	url: string;
-}

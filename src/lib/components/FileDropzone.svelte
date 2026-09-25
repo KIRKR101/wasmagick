@@ -1,30 +1,15 @@
 <script lang="ts">
-	import type { SampleImage } from '$lib/editor-types';
 	import { shortcutModifier } from '$lib/shortcuts';
 
 	let {
 		onBrowse,
-		onPaste,
-		onSelectSample
+		onPaste
 	}: {
 		onBrowse: () => void;
 		onPaste: (file: File) => void;
-		onSelectSample: (s: SampleImage) => void;
 	} = $props();
 	let pasteError = $state('');
 	let cameraInputEl = $state<HTMLInputElement | null>(null);
-
-	const samples: SampleImage[] = [
-		{ name: 'Circle Packing', url: '/samples/circle packing.png' },
-		{ name: 'Geometric', url: '/samples/geometric.png' },
-		{ name: 'Particle Burst', url: '/samples/particle burst.png' },
-		{ name: 'Contour Bands', url: '/samples/contour bands.png' }
-	];
-
-	function pickRandom() {
-		const s = samples[Math.floor(Math.random() * samples.length)];
-		onSelectSample(s);
-	}
 
 	function onCameraChange(e: Event) {
 		const target = e.target as HTMLInputElement;
@@ -101,13 +86,4 @@
 	{#if pasteError}<p class="-mt-4 font-mono text-[11px] text-destructive" role="status">
 			{pasteError}
 		</p>{/if}
-
-	<div class="w-full border-t border-divider pt-5">
-		<button
-			onclick={pickRandom}
-			class="w-full cursor-pointer border border-divider px-3 py-2 font-mono text-[11px] text-muted-foreground uppercase transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-		>
-			[<span class="hover:underline"> Random sample </span>]
-		</button>
-	</div>
 </div>

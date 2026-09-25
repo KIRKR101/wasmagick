@@ -7,7 +7,7 @@ const isElectron = process.env.ELECTRON === '1';
 
 const pwaPlugin = SvelteKitPWA({
 	registerType: 'autoUpdate',
-	includeAssets: ['favicon.svg', 'robots.txt', 'fonts/*.ttf', 'samples/*.png'],
+	includeAssets: ['favicon.svg', 'robots.txt', 'fonts/*.ttf'],
 	manifest: {
 		name: 'WASMagick',
 		short_name: 'WASMagick',
