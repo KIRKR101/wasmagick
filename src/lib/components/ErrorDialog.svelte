@@ -113,7 +113,7 @@
 				Error
 			</div>
 
-			<div class="max-h-[50vh] overflow-y-auto px-4 py-4">
+			<div class="editor-scroll max-h-[50vh] overflow-y-auto px-4 py-4">
 				<p
 					class="text-xs leading-relaxed break-words whitespace-pre-wrap text-foreground"
 					role="alert"

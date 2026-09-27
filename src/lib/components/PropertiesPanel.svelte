@@ -187,7 +187,7 @@
 	<!-- Body -->
 	<div
 		bind:this={bodyEl}
-		class="properties-panel-inner @container min-h-0 flex-1 overflow-y-auto p-4 {meta.scroll ===
+		class="properties-panel-inner editor-scroll @container min-h-0 flex-1 overflow-y-auto p-4 {meta.scroll ===
 		false
 			? 'overflow-hidden'
 			: ''}"

@@ -116,7 +116,7 @@
 				</h2>
 			</div>
 
-			<div class="max-h-[60vh] space-y-6 overflow-y-auto pr-4">
+			<div class="editor-scroll max-h-[60vh] space-y-6 overflow-y-auto pr-4">
 				{#each shortcuts as section}
 					<div class="space-y-3">
 						<h3

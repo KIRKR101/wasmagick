@@ -249,7 +249,7 @@
 		</div>
 
 		<!-- Section content -->
-		<div bind:this={contentRef} class="mobile-sheet-content @container">
+		<div bind:this={contentRef} class="mobile-sheet-content editor-scroll @container">
 			{#key activeSection}
 				{#if activeSection === 'geometry'}
 					<GeometrySection {magick} />
