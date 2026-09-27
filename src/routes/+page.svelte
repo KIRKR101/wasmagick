@@ -29,23 +29,11 @@
 	);
 </script>
 
-<div class="relative h-full overflow-y-auto bg-background">
-	<!-- Mobile: image as full background -->
-	<img
-		src="/images/lake.jpg"
-		alt=""
-		aria-hidden="true"
-		class="fixed inset-0 h-full w-full object-cover sm:hidden"
-	/>
+<div class="relative h-full overflow-x-clip overflow-y-auto bg-background">
+	<div class="grid-bg" aria-hidden="true"></div>
+	<div class="grain-bg" aria-hidden="true"></div>
 	<div
-		class="fixed inset-0 bg-gradient-to-b from-background/70 via-background/20 to-background/80 sm:hidden"
-		aria-hidden="true"
-	></div>
-
-	<div class="grid-bg hidden sm:block" aria-hidden="true"></div>
-	<div class="grain-bg hidden sm:block" aria-hidden="true"></div>
-	<div
-		class="pointer-events-none absolute -top-[300px] -left-[220px] hidden h-[760px] w-[760px] rounded-full bg-[radial-gradient(circle,color-mix(in_oklch,var(--foreground)_4%,transparent),transparent_68%)] sm:block"
+		class="pointer-events-none fixed -top-[300px] -left-[220px] h-[760px] w-[760px] rounded-full bg-[radial-gradient(circle,color-mix(in_oklch,var(--foreground)_4%,transparent),transparent_68%)]"
 		aria-hidden="true"
 	></div>
 
@@ -54,12 +42,7 @@
 		class="relative z-10 mx-auto flex min-h-full w-full max-w-3xl flex-1 flex-col justify-center px-3 py-6 text-foreground sm:px-6 sm:py-16"
 	>
 		<section class="relative sm:overflow-hidden sm:rounded-3xl sm:border sm:border-border">
-			<img
-				src="/images/lake.jpg"
-				alt=""
-				aria-hidden="true"
-				class="absolute inset-0 hidden h-full w-full object-cover sm:block"
-			/>
+			<div class="hero-bg absolute inset-0 hidden sm:block" aria-hidden="true"></div>
 
 			<div
 				class="relative mx-auto my-2 w-full max-w-xl overflow-hidden rounded-xl border border-border bg-card p-5 text-card-foreground shadow-xl sm:my-10 sm:rounded-2xl sm:p-10 sm:shadow-none"
@@ -168,8 +151,20 @@
 </div>
 
 <style>
+	.hero-bg {
+		background-size: cover;
+		background-position: center;
+		background-image: url('/images/lake-hero.jpg');
+		background-image: image-set(
+			url('/images/lake-hero-896.avif') type('image/avif') 1x,
+			url('/images/lake-hero-1792.avif') type('image/avif') 2x,
+			url('/images/lake-hero.jpg') type('image/jpeg') 1x,
+			url('/images/lake-hero-1792.jpg') type('image/jpeg') 2x
+		);
+	}
+
 	.grid-bg {
-		position: absolute;
+		position: fixed;
 		inset: 0;
 		pointer-events: none;
 		background-image:
@@ -188,7 +183,7 @@
 	}
 
 	.grain-bg {
-		position: absolute;
+		position: fixed;
 		inset: 0;
 		pointer-events: none;
 		background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
