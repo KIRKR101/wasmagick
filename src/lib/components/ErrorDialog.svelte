@@ -121,7 +121,7 @@
 					{magick.errorMessage || 'Unknown error'}
 				</p>
 				<p class="mt-3 text-[11px] leading-relaxed text-muted-foreground">
-					Your images never leave your device, only include details you want to.
+					Only include details you want to, but more info helps to debug.
 				</p>
 			</div>
 
