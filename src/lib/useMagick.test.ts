@@ -333,10 +333,30 @@ describe('MagickState', () => {
 		});
 
 		it.each([
-			['All blackpoint', () => (magick.settings.levelBlackpoint.All = [5])],
-			['Red whitepoint', () => (magick.settings.levelWhitepoint.Red = [90])],
-			['Green gamma', () => (magick.settings.levelGamma.Green = [1.5])],
-			['Blue blackpoint', () => (magick.settings.levelBlackpoint.Blue = [50])]
+			[
+				'All blackpoint',
+				(): void => {
+					magick.settings.levelBlackpoint.All = [5];
+				}
+			],
+			[
+				'Red whitepoint',
+				(): void => {
+					magick.settings.levelWhitepoint.Red = [90];
+				}
+			],
+			[
+				'Green gamma',
+				(): void => {
+					magick.settings.levelGamma.Green = [1.5];
+				}
+			],
+			[
+				'Blue blackpoint',
+				(): void => {
+					magick.settings.levelBlackpoint.Blue = [50];
+				}
+			]
 		] as const)('becomes dirty when %s changes', (_channel, change) => {
 			change();
 			expect(isColorDirty(magick.settings)).toBe(true);
@@ -363,9 +383,24 @@ describe('MagickState', () => {
 		});
 
 		it.each([
-			['black color', () => (magick.settings.levelColorsBlack = '#e74c3c')],
-			['white color', () => (magick.settings.levelColorsWhite = '#3498db')],
-			['inverse', () => (magick.settings.levelColorsInverse = true)]
+			[
+				'black color',
+				(): void => {
+					magick.settings.levelColorsBlack = '#e74c3c';
+				}
+			],
+			[
+				'white color',
+				(): void => {
+					magick.settings.levelColorsWhite = '#3498db';
+				}
+			],
+			[
+				'inverse',
+				(): void => {
+					magick.settings.levelColorsInverse = true;
+				}
+			]
 		] as const)('becomes dirty when %s changes', (_field, change) => {
 			change();
 			expect(isColorDirty(magick.settings)).toBe(true);
