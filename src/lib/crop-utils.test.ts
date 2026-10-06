@@ -120,12 +120,11 @@ describe('constrainAspect', () => {
 });
 
 describe('ensurePositiveDimensions', () => {
-	it('flips negative width', () => {
-		expect(ensurePositiveDimensions(rect(20, 0, -10, 30))).toEqual(rect(10, 0, 10, 30));
-	});
-
-	it('flips negative height', () => {
-		expect(ensurePositiveDimensions(rect(0, 20, 30, -10))).toEqual(rect(0, 10, 30, 10));
+	it.each([
+		[rect(20, 0, -10, 30), rect(10, 0, 10, 30)],
+		[rect(0, 20, 30, -10), rect(0, 10, 30, 10)]
+	] as const)('normalizes negative dimensions in %o', (input, expected) => {
+		expect(ensurePositiveDimensions(input)).toEqual(expected);
 	});
 });
 

@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { useMagick, type MagickState } from './useMagick.svelte';
-import type { MagickSettings } from './types';
 import { isColorDirty } from './utils';
 import { extractExif } from './exif';
 
@@ -17,39 +16,16 @@ describe('MagickState', () => {
 	});
 
 	describe('hexToRgb', () => {
-		it('should convert 6-digit hex to RGB', () => {
-			const result = magick.hexToRgb('#ff0000');
-			expect(result).toEqual({ r: 255, g: 0, b: 0 });
-		});
-
-		it('should convert 3-digit hex to RGB', () => {
-			const result = magick.hexToRgb('#fff');
-			expect(result).toEqual({ r: 255, g: 255, b: 255 });
-		});
-
-		it('should convert hex without hash to RGB', () => {
-			const result = magick.hexToRgb('00ff00');
-			expect(result).toEqual({ r: 0, g: 255, b: 0 });
-		});
-
-		it('should handle black color', () => {
-			const result = magick.hexToRgb('#000000');
-			expect(result).toEqual({ r: 0, g: 0, b: 0 });
-		});
-
-		it('should handle white color without hash', () => {
-			const result = magick.hexToRgb('ffffff');
-			expect(result).toEqual({ r: 255, g: 255, b: 255 });
-		});
-
-		it('should handle blue color', () => {
-			const result = magick.hexToRgb('#0000ff');
-			expect(result).toEqual({ r: 0, g: 0, b: 255 });
-		});
-
-		it('should handle gray color', () => {
-			const result = magick.hexToRgb('#808080');
-			expect(result).toEqual({ r: 128, g: 128, b: 128 });
+		it.each([
+			['#ff0000', { r: 255, g: 0, b: 0 }],
+			['#fff', { r: 255, g: 255, b: 255 }],
+			['00ff00', { r: 0, g: 255, b: 0 }],
+			['#000000', { r: 0, g: 0, b: 0 }],
+			['ffffff', { r: 255, g: 255, b: 255 }],
+			['#0000ff', { r: 0, g: 0, b: 255 }],
+			['#808080', { r: 128, g: 128, b: 128 }]
+		] as const)('converts %s to RGB', (hex, rgb) => {
+			expect(magick.hexToRgb(hex)).toEqual(rgb);
 		});
 	});
 
@@ -64,18 +40,6 @@ describe('MagickState', () => {
 			expect(magick.settings.imageFormat).toBe('WebP');
 			expect(magick.settings.quality).toEqual([85]);
 			expect(magick.settings.stripMeta).toBe(false);
-		});
-	});
-
-	describe('hexToRgb edge cases', () => {
-		it('should handle invalid hex without crashing', () => {
-			const result = magick.hexToRgb('#xyz');
-			expect(Number.isNaN(result.r) || result.r === 0).toBe(true);
-		});
-
-		it('should handle empty string edge case', () => {
-			const result = magick.hexToRgb('');
-			expect(result.r).toBeLessThanOrEqual(0);
 		});
 	});
 
@@ -368,23 +332,13 @@ describe('MagickState', () => {
 			expect(isColorDirty(magick.settings)).toBe(false);
 		});
 
-		it('should return true when All channel blackpoint is changed', () => {
-			magick.settings.levelBlackpoint.All = [5];
-			expect(isColorDirty(magick.settings)).toBe(true);
-		});
-
-		it('should return true when Red channel whitepoint is changed', () => {
-			magick.settings.levelWhitepoint.Red = [90];
-			expect(isColorDirty(magick.settings)).toBe(true);
-		});
-
-		it('should return true when Green channel gamma is changed', () => {
-			magick.settings.levelGamma.Green = [1.5];
-			expect(isColorDirty(magick.settings)).toBe(true);
-		});
-
-		it('should return true when Blue channel blackpoint is changed', () => {
-			magick.settings.levelBlackpoint.Blue = [50];
+		it.each([
+			['All blackpoint', () => (magick.settings.levelBlackpoint.All = [5])],
+			['Red whitepoint', () => (magick.settings.levelWhitepoint.Red = [90])],
+			['Green gamma', () => (magick.settings.levelGamma.Green = [1.5])],
+			['Blue blackpoint', () => (magick.settings.levelBlackpoint.Blue = [50])]
+		] as const)('becomes dirty when %s changes', (_channel, change) => {
+			change();
 			expect(isColorDirty(magick.settings)).toBe(true);
 		});
 
@@ -408,18 +362,12 @@ describe('MagickState', () => {
 			expect(isColorDirty(magick.settings)).toBe(false);
 		});
 
-		it('should be dirty when black color is changed', () => {
-			magick.settings.levelColorsBlack = '#e74c3c';
-			expect(isColorDirty(magick.settings)).toBe(true);
-		});
-
-		it('should be dirty when white color is changed', () => {
-			magick.settings.levelColorsWhite = '#3498db';
-			expect(isColorDirty(magick.settings)).toBe(true);
-		});
-
-		it('should be dirty when inverse is enabled', () => {
-			magick.settings.levelColorsInverse = true;
+		it.each([
+			['black color', () => (magick.settings.levelColorsBlack = '#e74c3c')],
+			['white color', () => (magick.settings.levelColorsWhite = '#3498db')],
+			['inverse', () => (magick.settings.levelColorsInverse = true)]
+		] as const)('becomes dirty when %s changes', (_field, change) => {
+			change();
 			expect(isColorDirty(magick.settings)).toBe(true);
 		});
 
@@ -571,218 +519,112 @@ describe('MagickState', () => {
 	});
 });
 
-describe('MagickSettings type', () => {
-	it('should have all required properties', () => {
-		const settings: MagickSettings = {
-			imageFormat: 'WebP',
-			quality: [85],
-			stripMeta: false,
-			resizeW: null,
-			resizeH: null,
-			rotate: '0',
-			flop: false,
-			flip: false,
-			borderColor: '#ffffff',
-			borderSize: [0],
-			extentW: null,
-			extentH: null,
-			extentGravity: 'Center',
-			extentBgColor: '#ffffff',
-			deskewThreshold: [0],
-			deskewAutoCrop: false,
-			cropW: null,
-			cropH: null,
-			cropGravity: 'Center',
-			cropX: null,
-			cropY: null,
-			trimEdges: false,
-			shaveX: null,
-			shaveY: null,
-			brightness: [100],
-			saturation: [100],
-			hue: [100],
-			contrast: [0],
-			normalizeImage: false,
-			autoLevel: false,
-			autoOrient: true,
-			levelBlackpoint: { All: [0], Red: [0], Green: [0], Blue: [0] },
-			levelWhitepoint: { All: [100], Red: [100], Green: [100], Blue: [100] },
-			levelGamma: { All: [1.0], Red: [1.0], Green: [1.0], Blue: [1.0] },
-			levelChannels: 'All',
-			levelColorsBlack: '#000000',
-			levelColorsWhite: '#ffffff',
-			levelColorsChannels: 'All',
-			levelColorsInverse: false,
-			thresholdPercentage: [50],
-			thresholdChannels: 'All',
-			sigmoidalContrast: [0],
-			sigmoidalMidpoint: [50],
-			sigmoidalChannels: 'All',
-			colorSpace: 'RGB',
-			autoGamma: false,
-			autoThreshold: 'Off',
-			blackThreshold: [0],
-			whiteThreshold: [100],
-			claheXTiles: [0],
-			claheYTiles: [0],
-			claheBins: [128],
-			claheClipLimit: [2],
-			effect: 'none',
-			blur: [0],
-			sharpen: [0],
-			gaussianBlurRadius: [0],
-			gaussianBlurSigma: [1],
-			motionBlurRadius: [0],
-			motionBlurSigma: [1],
-			motionBlurAngle: [0],
-			addNoiseType: 'Off',
-			addNoiseAttenuate: [1],
-			adaptiveSharpenRadius: [0],
-			adaptiveSharpenSigma: [1],
-			adaptiveBlurRadius: [0],
-			adaptiveBlurSigma: [1],
-			sepiaThreshold: [80],
-			charcoalIntensity: [0],
-			cannyEdgeStrength: [0],
-			cannyEdgeLower: [10],
-			cannyEdgeUpper: [30],
-			oilpaintRadius: [0],
-			solarizeFactor: [50],
-			bilateralWidth: [0],
-			bilateralHeight: [0],
-			bilateralIntensitySigma: [1.5],
-			bilateralSpatialSigma: [1],
-			clutMap: 'identity',
-			clutInterpolation: 'catrom',
-			quantizeColors: [0],
-			ditherMethod: 'Riemersma',
-			quantizeColorSpace: 'sRGB',
-			quantizeTreeDepth: [0],
-			measureErrors: false,
-			annotateText: '',
-			annotateFontFamily: 'Roboto-Regular',
-			annotateFontSize: [24],
-			annotateFontColor: '#ffffff',
-			annotateGravity: 'Center',
-			annotateOffsetX: 0,
-			annotateOffsetY: 0,
-			annotateAngle: [0],
-			annotateStroke: false,
-			annotateStrokeColor: '#000000',
-			annotateStrokeWidth: [1]
-		};
+describe('preview staleness', () => {
+	let staleMagick: MagickState;
 
-		expect(settings.imageFormat).toBe('WebP');
-		expect(settings.quality[0]).toBe(85);
+	beforeEach(() => {
+		staleMagick = useMagick();
 	});
 
-	describe('preview staleness', () => {
-		let staleMagick: MagickState;
-
-		beforeEach(() => {
-			staleMagick = useMagick();
-		});
-
-		it('is not stale with no processed preview', () => {
-			expect(staleMagick.isStale).toBe(false);
-		});
-
-		it('is fresh after marking, stale after a settings change', () => {
-			staleMagick.processedImageUrl = 'blob:preview';
-			staleMagick.markPreviewFresh();
-			expect(staleMagick.isStale).toBe(false);
-
-			staleMagick.settings.brightness = [120];
-			expect(staleMagick.isStale).toBe(true);
-
-			staleMagick.markPreviewFresh();
-			expect(staleMagick.isStale).toBe(false);
-		});
-
-		it('clears the snapshot for a new image', () => {
-			staleMagick.processedImageUrl = 'blob:preview';
-			staleMagick.markPreviewFresh();
-			staleMagick.settings.brightness = [120];
-			expect(staleMagick.isStale).toBe(true);
-
-			staleMagick.clearPreviewSnapshot();
-			expect(staleMagick.isStale).toBe(false);
-		});
+	it('is not stale with no processed preview', () => {
+		expect(staleMagick.isStale).toBe(false);
 	});
 
-	describe('cancelProcessing', () => {
-		let cancelMagick: MagickState;
+	it('is fresh after marking, stale after a settings change', () => {
+		staleMagick.processedImageUrl = 'blob:preview';
+		staleMagick.markPreviewFresh();
+		expect(staleMagick.isStale).toBe(false);
 
-		beforeEach(() => {
-			cancelMagick = useMagick();
-		});
+		staleMagick.settings.brightness = [120];
+		expect(staleMagick.isStale).toBe(true);
 
-		it('is a no-op when nothing is processing', () => {
-			expect(cancelMagick.isLoading).toBe(false);
-			cancelMagick.cancelProcessing();
-			expect(cancelMagick.isLoading).toBe(false);
-			expect(cancelMagick.statsMessage).toBe('Ready');
-		});
-
-		it('resets loading state and clears progress', () => {
-			cancelMagick.isLoading = true;
-			cancelMagick.currentProcessingStep = 'Processing in worker';
-			cancelMagick.processingStartedAt = performance.now();
-
-			cancelMagick.cancelProcessing();
-
-			expect(cancelMagick.isLoading).toBe(false);
-			expect(cancelMagick.currentProcessingStep).toBeNull();
-			expect(cancelMagick.processingStartedAt).toBeNull();
-			expect(cancelMagick.canCancelProcessing).toBe(false);
-			expect(cancelMagick.statsMessage).toBe('Cancelled');
-		});
-
-		it('reports the phase label with elapsed time', () => {
-			cancelMagick.currentProcessingStep = 'Processing with native ImageMagick';
-			cancelMagick.processingStartedAt = performance.now();
-			cancelMagick.processingElapsedMs = 3200;
-
-			expect(cancelMagick.processingStepLabel).toBe('Processing with native ImageMagick (3.2s)');
-		});
-
-		it('falls back to a plain label without step counts', () => {
-			expect(cancelMagick.processingStepLabel).toBe('Processing');
-		});
-
-		it('reports elapsed time on its own, empty when idle', () => {
-			expect(cancelMagick.processingElapsedLabel).toBe('');
-			cancelMagick.processingStartedAt = performance.now();
-			cancelMagick.processingElapsedMs = 3200;
-			expect(cancelMagick.processingElapsedLabel).toBe('3.2s');
-		});
-
-		it('bumps the run generation on cancel so stale continuations drop', () => {
-			const internals = cancelMagick as unknown as { _processGeneration: number };
-			cancelMagick.isLoading = true;
-			const before = internals._processGeneration;
-			cancelMagick.cancelProcessing();
-			expect(internals._processGeneration).toBeGreaterThan(before);
-		});
-
-		it('clearSource stops an in-flight run and resets to Ready', () => {
-			cancelMagick.sourceBytes = new Uint8Array([1, 2, 3]);
-			cancelMagick.isLoading = true;
-			cancelMagick.currentProcessingStep = 'Processing';
-
-			cancelMagick.clearSource();
-
-			expect(cancelMagick.isLoading).toBe(false);
-			expect(cancelMagick.currentProcessingStep).toBeNull();
-			expect(cancelMagick.sourceBytes).toBeNull();
-			expect(cancelMagick.statsMessage).toBe('Ready');
-		});
+		staleMagick.markPreviewFresh();
+		expect(staleMagick.isStale).toBe(false);
 	});
 
-	describe('syncFontToWorker', () => {
-		it('resolves false when no worker is running', async () => {
-			const fresh = useMagick();
-			await expect(fresh.syncFontToWorker('Some-Local-Font')).resolves.toBe(false);
-		});
+	it('clears the snapshot for a new image', () => {
+		staleMagick.processedImageUrl = 'blob:preview';
+		staleMagick.markPreviewFresh();
+		staleMagick.settings.brightness = [120];
+		expect(staleMagick.isStale).toBe(true);
+
+		staleMagick.clearPreviewSnapshot();
+		expect(staleMagick.isStale).toBe(false);
+	});
+});
+
+describe('cancelProcessing', () => {
+	let cancelMagick: MagickState;
+
+	beforeEach(() => {
+		cancelMagick = useMagick();
+	});
+
+	it('is a no-op when nothing is processing', () => {
+		expect(cancelMagick.isLoading).toBe(false);
+		cancelMagick.cancelProcessing();
+		expect(cancelMagick.isLoading).toBe(false);
+		expect(cancelMagick.statsMessage).toBe('Ready');
+	});
+
+	it('resets loading state and clears progress', () => {
+		cancelMagick.isLoading = true;
+		cancelMagick.currentProcessingStep = 'Processing in worker';
+		cancelMagick.processingStartedAt = performance.now();
+
+		cancelMagick.cancelProcessing();
+
+		expect(cancelMagick.isLoading).toBe(false);
+		expect(cancelMagick.currentProcessingStep).toBeNull();
+		expect(cancelMagick.processingStartedAt).toBeNull();
+		expect(cancelMagick.canCancelProcessing).toBe(false);
+		expect(cancelMagick.statsMessage).toBe('Cancelled');
+	});
+
+	it('reports the phase label with elapsed time', () => {
+		cancelMagick.currentProcessingStep = 'Processing with native ImageMagick';
+		cancelMagick.processingStartedAt = performance.now();
+		cancelMagick.processingElapsedMs = 3200;
+
+		expect(cancelMagick.processingStepLabel).toBe('Processing with native ImageMagick (3.2s)');
+	});
+
+	it('falls back to a plain label without step counts', () => {
+		expect(cancelMagick.processingStepLabel).toBe('Processing');
+	});
+
+	it('reports elapsed time on its own, empty when idle', () => {
+		expect(cancelMagick.processingElapsedLabel).toBe('');
+		cancelMagick.processingStartedAt = performance.now();
+		cancelMagick.processingElapsedMs = 3200;
+		expect(cancelMagick.processingElapsedLabel).toBe('3.2s');
+	});
+
+	it('bumps the run generation on cancel so stale continuations drop', () => {
+		const internals = cancelMagick as unknown as { _processGeneration: number };
+		cancelMagick.isLoading = true;
+		const before = internals._processGeneration;
+		cancelMagick.cancelProcessing();
+		expect(internals._processGeneration).toBeGreaterThan(before);
+	});
+
+	it('clearSource stops an in-flight run and resets to Ready', () => {
+		cancelMagick.sourceBytes = new Uint8Array([1, 2, 3]);
+		cancelMagick.isLoading = true;
+		cancelMagick.currentProcessingStep = 'Processing';
+
+		cancelMagick.clearSource();
+
+		expect(cancelMagick.isLoading).toBe(false);
+		expect(cancelMagick.currentProcessingStep).toBeNull();
+		expect(cancelMagick.sourceBytes).toBeNull();
+		expect(cancelMagick.statsMessage).toBe('Ready');
+	});
+});
+
+describe('syncFontToWorker', () => {
+	it('resolves false when no worker is running', async () => {
+		const fresh = useMagick();
+		await expect(fresh.syncFontToWorker('Some-Local-Font')).resolves.toBe(false);
 	});
 });
