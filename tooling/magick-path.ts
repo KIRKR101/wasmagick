@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import path from 'node:path';
+import path, { delimiter } from 'node:path';
 
 function slugFor(): string {
 	if (process.platform === 'win32') return 'win-x64';
@@ -29,4 +29,28 @@ export function magickCommand(): string {
 	throw new Error(
 		`ImageMagick not found (tried ${candidates.join(', ')}). Run: npm run setup:imagemagick`
 	);
+}
+
+/** Environment needed to keep a bundled ImageMagick from using host config/modules. */
+export function magickEnvironment(): NodeJS.ProcessEnv {
+	const command = magickCommand();
+	const slugDir =
+		process.platform === 'win32' ? path.dirname(command) : path.dirname(path.dirname(command));
+	const coderDir = path.join(slugDir, 'lib', 'ImageMagick', 'modules-Q16HDRI', 'coders');
+	const filterDir = path.join(slugDir, 'lib', 'ImageMagick', 'modules-Q16HDRI', 'filters');
+	const configDirs = [
+		path.join(slugDir, 'etc', 'ImageMagick-7'),
+		path.join(slugDir, 'lib', 'ImageMagick', 'config-Q16HDRI')
+	];
+	const env: NodeJS.ProcessEnv = { ...process.env };
+	const libDir = path.join(slugDir, 'lib');
+	if (process.platform === 'linux' && existsSync(libDir)) {
+		env.LD_LIBRARY_PATH = [libDir, env.LD_LIBRARY_PATH].filter(Boolean).join(delimiter);
+	}
+	if (existsSync(coderDir)) env.MAGICK_CODER_MODULE_PATH = coderDir;
+	if (existsSync(filterDir)) env.MAGICK_FILTER_MODULE_PATH = filterDir;
+	const existingConfigDirs = configDirs.filter(existsSync);
+	if (existingConfigDirs.length) env.MAGICK_CONFIGURE_PATH = existingConfigDirs.join(delimiter);
+	if (process.platform === 'win32') env.MAGICK_HOME = slugDir;
+	return env;
 }

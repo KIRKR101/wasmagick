@@ -8,9 +8,10 @@ import type { MagickSettings } from '../../src/lib/types';
 import { DEFAULT_SETTINGS } from '../../src/lib/useMagick.svelte';
 import { compareImages } from './compare';
 import { execSync } from 'node:child_process';
-import { magickCommand } from '../../tooling/magick-path';
+import { magickCommand, magickEnvironment } from '../../tooling/magick-path';
 
 const MAGICK = magickCommand();
+const MAGICK_ENV = magickEnvironment();
 
 const FIXTURES = 'test/fixtures';
 const SOURCE = `${FIXTURES}/source`;
@@ -97,7 +98,7 @@ function goldenPath(operation: string, file: string): string {
 function sourceDimensions(src: string): { w: number; h: number } {
 	const info = execSync(
 		`"${MAGICK}" identify -format "%wx%h" "${path.resolve(`${SOURCE}/${src}`)}"`,
-		{ encoding: 'utf-8', timeout: 10000 }
+		{ encoding: 'utf-8', timeout: 10000, env: MAGICK_ENV }
 	).trim();
 	const [w, h] = info.split('x').map(Number);
 	return { w, h };

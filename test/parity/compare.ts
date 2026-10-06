@@ -2,10 +2,11 @@ import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
 import fs from 'node:fs';
 import path from 'node:path';
-import { execSync } from 'node:child_process';
-import { magickCommand } from '../../tooling/magick-path';
+import { spawnSync } from 'node:child_process';
+import { magickCommand, magickEnvironment } from '../../tooling/magick-path';
 
 const MAGICK = magickCommand();
+const MAGICK_ENV = magickEnvironment();
 
 export interface CompareOptions {
 	threshold?: number;
@@ -92,59 +93,71 @@ function compareViaMagick(
 	fs.writeFileSync(tmpActual, Buffer.from(actualBuffer));
 
 	const aeThreshold = Math.ceil(threshold * 100);
-	let diffPixels = 999999;
 	try {
-		const stderr = execSync(
-			`"${MAGICK}" compare -metric AE -fuzz ${aeThreshold}% "${expectedPath}" "${tmpActual}" "null:"`,
-			{ encoding: 'utf-8', timeout: 30000, stdio: ['pipe', 'pipe', 'pipe'] }
+		const comparison = spawnSync(
+			MAGICK,
+			['compare', '-metric', 'AE', '-fuzz', `${aeThreshold}%`, expectedPath, tmpActual, 'null:'],
+			{ encoding: 'utf8', timeout: 30000, env: MAGICK_ENV }
 		);
-
-		const match = /(\d+)/.exec(stderr);
-		diffPixels = match ? parseInt(match[1], 10) : 0;
-	} catch (e: unknown) {
-		if (e instanceof Error && 'stderr' in e) {
-			const stderrStr = String((e as { stderr: Buffer }).stderr);
-			const match = /(\d+)/.exec(stderrStr);
-			diffPixels = match ? parseInt(match[1], 10) : 999999;
+		const metricOutput = `${comparison.stdout ?? ''}\n${comparison.stderr ?? ''}`;
+		// ImageMagick prints its AE metric as a standalone number, sometimes
+		// followed by a normalized value in parentheses. Ignore unrelated digits.
+		const metric = /^\s*(\d+(?:\.\d+)?(?:e[+-]?\d+)?)(?:\s+\([^)]*\))?\s*$/im.exec(
+			metricOutput
+		);
+		if (comparison.error || comparison.signal || comparison.status === null) {
+			throw new Error(
+				`ImageMagick compare failed: ${comparison.error?.message ?? comparison.signal}`
+			);
 		}
-	}
-
-	const totalPixels = estimateTotalPixels(expectedPath);
-	const diffPercent = totalPixels > 0 ? (diffPixels / totalPixels) * 100 : 0;
-	const pass = diffPixels <= maxDiffPixels;
-
-	if (!pass) {
-		try {
-			const diffOut = path.join(tmpDir, 'diff.png');
-			execSync(`"${MAGICK}" compare "${expectedPath}" "${tmpActual}" "${diffOut}"`, {
-				encoding: 'utf-8',
-				timeout: 30000
-			});
-			const diffData = fs.readFileSync(diffOut);
-			const diff = PNG.sync.read(diffData);
-			const expectedData = fs.readFileSync(expectedPath);
-			const actualData = fs.readFileSync(tmpActual);
-			writeDiffArtifacts(resultsDir, label, diff, expectedData, actualData, ext);
-		} catch {
-			/* ignore diff image errors */
+		if ((comparison.status !== 0 && comparison.status !== 1) || !metric) {
+			const detail = metricOutput.trim() || `exit code ${comparison.status}`;
+			throw new Error(`ImageMagick compare failed: ${detail}`);
 		}
-	}
 
-	cleanupTmp(tmpDir);
-	return { pass, diffPixels, totalPixels, diffPercent };
+		const diffPixels = Number(metric[1]);
+		const totalPixels = estimateTotalPixels(expectedPath);
+		const diffPercent = totalPixels > 0 ? (diffPixels / totalPixels) * 100 : 0;
+		const pass = diffPixels <= maxDiffPixels;
+
+		if (!pass) {
+			try {
+				const diffOut = path.join(tmpDir, 'diff.png');
+				const diffResult = spawnSync(MAGICK, ['compare', expectedPath, tmpActual, diffOut], {
+					encoding: 'utf8',
+					timeout: 30000,
+					env: MAGICK_ENV
+				});
+				if (diffResult.error || diffResult.status !== 0)
+					throw diffResult.error ?? new Error('diff generation failed');
+				const diffData = fs.readFileSync(diffOut);
+				const diff = PNG.sync.read(diffData);
+				const expectedData = fs.readFileSync(expectedPath);
+				const actualData = fs.readFileSync(tmpActual);
+				writeDiffArtifacts(resultsDir, label, diff, expectedData, actualData, ext);
+			} catch {
+				/* ignore diff image errors */
+			}
+		}
+
+		return { pass, diffPixels, totalPixels, diffPercent };
+	} finally {
+		cleanupTmp(tmpDir);
+	}
 }
 
 function estimateTotalPixels(imagePath: string): number {
-	try {
-		const info = execSync(`"${MAGICK}" identify -format "%wx%h" "${imagePath}"`, {
-			encoding: 'utf-8',
-			timeout: 10000
-		}).trim();
-		const [w, h] = info.split('x').map(Number);
-		return w * h;
-	} catch {
-		return 1;
+	const result = spawnSync(MAGICK, ['identify', '-format', '%wx%h', imagePath], {
+		encoding: 'utf8',
+		timeout: 10000,
+		env: MAGICK_ENV
+	});
+	const dimensions = result.stdout?.trim().match(/^(\d+)x(\d+)$/);
+	if (result.error || result.status !== 0 || !dimensions) {
+		const detail = result.stderr?.trim() || result.error?.message || `exit code ${result.status}`;
+		throw new Error(`ImageMagick identify failed for ${imagePath}: ${detail}`);
 	}
+	return Number(dimensions[1]) * Number(dimensions[2]);
 }
 
 function writeDiffArtifacts(

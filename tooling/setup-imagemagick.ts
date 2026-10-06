@@ -769,7 +769,13 @@ function bundleFromBrew(slugDir: string): void {
 		for (const dep of otool(file)) {
 			const dest = destFor(dep);
 			if (!dest) continue;
-			const replacement = `${prefix}${basename(dest)}`;
+			// dyld keys loaded images by install name. ImageMagick's core and
+			// its coder modules otherwise name the same libomp via different
+			// @executable_path/@loader_path strings, causing two OpenMP runtimes
+			// to initialize in one process. Give every reference one shared name.
+			const replacement = basename(dest).startsWith('libomp')
+				? `@executable_path/../lib/${basename(dest)}`
+				: `${prefix}${basename(dest)}`;
 			if (dep === replacement) continue;
 			execSync(`install_name_tool -change "${dep}" "${replacement}" "${file}"`);
 		}
@@ -984,13 +990,59 @@ function ensureSlug(slug: Slug): void {
 	const slugDir = join(TOOL_DIR, slug);
 	if (slug === 'linux-x64') ensureLinux(slugDir);
 	else if (slug === 'win-x64') ensureWindows(slugDir);
-	else ensureMac(slugDir, slug === 'mac-arm64' ? 'arm64' : 'x64');
+	else {
+		ensureMac(slugDir, slug === 'mac-arm64' ? 'arm64' : 'x64');
+		normalizeMacOpenMpLinks(slugDir);
+	}
 	if (!existsSync(slugBin(slug))) {
 		throw new Error(`Setup finished but no binary at ${slugBin(slug)}`);
 	}
 	allowTiffCoder(slug);
 	removeExternalRawDelegate(slug);
 	ensureWebpTools(slug);
+}
+
+/** Ensure existing and newly assembled macOS bundles use one libomp install name. */
+function normalizeMacOpenMpLinks(slugDir: string): void {
+	const binDir = join(slugDir, 'bin');
+	const libDir = join(slugDir, 'lib');
+	const magick = join(binDir, 'magick');
+	if (!existsSync(magick)) return;
+	const files = [magick];
+	for (const root of [libDir]) {
+		if (!existsSync(root)) continue;
+		files.push(
+			...execSync(`find "${root}" -type f \\( -name '*.dylib' -o -name '*.so' \\)`, {
+				encoding: 'utf8'
+			})
+				.split('\n')
+				.filter(Boolean)
+		);
+	}
+	const changed: string[] = [];
+	for (const file of files) {
+		const deps = execSync(`otool -L "${file}" 2>/dev/null`, { encoding: 'utf8' })
+			.split('\n')
+			.slice(1)
+			.map((line) => line.trim().split(' ')[0])
+			.filter((dep) => dep && basename(dep) === 'libomp.dylib');
+		for (const dep of deps) {
+			const canonical = '@executable_path/../lib/libomp.dylib';
+			if (dep === canonical) continue;
+			execSync(`install_name_tool -change "${dep}" "${canonical}" "${file}"`);
+			changed.push(file);
+		}
+	}
+	if (changed.length > 0) {
+		try {
+			execSync(`codesign --force --sign - ${changed.map((file) => `"${file}"`).join(' ')}`, {
+				stdio: 'pipe'
+			});
+		} catch {
+			throw new Error('Could not re-sign ImageMagick files after normalizing libomp references.');
+		}
+		console.log(`Normalized libomp references in ${changed.length} ImageMagick files.`);
+	}
 }
 
 function parseArgs(): { slugs: Slug[] } {
