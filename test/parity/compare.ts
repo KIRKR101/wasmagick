@@ -102,9 +102,7 @@ function compareViaMagick(
 		const metricOutput = `${comparison.stdout ?? ''}\n${comparison.stderr ?? ''}`;
 		// ImageMagick prints its AE metric as a standalone number, sometimes
 		// followed by a normalized value in parentheses. Ignore unrelated digits.
-		const metric = /^\s*(\d+(?:\.\d+)?(?:e[+-]?\d+)?)(?:\s+\([^)]*\))?\s*$/im.exec(
-			metricOutput
-		);
+		const metric = /^\s*(\d+(?:\.\d+)?(?:e[+-]?\d+)?)(?:\s+\([^)]*\))?\s*$/im.exec(metricOutput);
 		if (comparison.error || comparison.signal || comparison.status === null) {
 			throw new Error(
 				`ImageMagick compare failed: ${comparison.error?.message ?? comparison.signal}`
