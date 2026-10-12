@@ -824,8 +824,8 @@
 <main class="canvas-area relative flex h-full min-h-0 w-full flex-col bg-canvas">
 	<div
 		bind:this={viewportRef}
-		role="img"
-		aria-label="Image preview viewport. Use mouse wheel to zoom, drag to pan."
+		role="region"
+		aria-label="Image preview"
 		onwheel={onWheel}
 		ondblclick={onDblClick}
 		onpointerdown={onPointerDown}
