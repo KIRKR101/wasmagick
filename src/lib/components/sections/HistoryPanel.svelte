@@ -119,6 +119,8 @@
 									<img
 										src={entry.blobUrl}
 										alt={entry.label}
+										loading="lazy"
+										decoding="async"
 										class="size-full object-cover"
 										draggable="false"
 									/>
