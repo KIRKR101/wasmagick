@@ -141,16 +141,21 @@
 		: ''}"
 	style="left: {handlePct}%"
 	role="slider"
-	aria-label="Compare wipe handle"
-	aria-orientation="vertical"
+	aria-label="Original and processed image split"
+	aria-orientation="horizontal"
 	aria-valuenow={Math.round(handlePct)}
 	aria-valuemin={0}
 	aria-valuemax={100}
+	aria-valuetext={`${Math.round(handlePct)}% original, ${100 - Math.round(handlePct)}% processed`}
 	tabindex="0"
 	onpointerdown={onHandlePointerDown}
 	onkeydown={(e) => {
 		if (e.key === 'ArrowLeft') handlePct = Math.max(0, handlePct - 2);
 		else if (e.key === 'ArrowRight') handlePct = Math.min(100, handlePct + 2);
+		else if (e.key === 'Home') handlePct = 0;
+		else if (e.key === 'End') handlePct = 100;
+		else return;
+		e.preventDefault();
 	}}
 >
 	<div
