@@ -236,7 +236,12 @@
 
 <div class="settings-page space-y-2 font-mono sm:space-y-3">
 	<div class="flex items-center justify-between gap-3 border-b border-divider pb-2">
-		<h2 id="settings-dialog-title" class="text-[11px] tracking-wider text-muted-foreground uppercase">Settings</h2>
+		<h2
+			id="settings-dialog-title"
+			class="text-[11px] tracking-wider text-muted-foreground uppercase"
+		>
+			Settings
+		</h2>
 		<button
 			type="button"
 			onclick={onClose}
