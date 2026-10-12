@@ -1,7 +1,24 @@
 <script lang="ts">
+	import { tick, untrack } from 'svelte';
 	import SettingsPanel from './SettingsPanel.svelte';
 
 	let { open = $bindable(false) }: { open?: boolean } = $props();
+	let dialogRef = $state<HTMLDivElement | null>(null);
+
+	$effect(() => {
+		if (!open) return;
+		const returnFocusTo = document.activeElement;
+		let cancelled = false;
+		void tick().then(() => {
+			if (!cancelled) untrack(() => dialogRef?.focus());
+		});
+		return () => {
+			cancelled = true;
+			if (returnFocusTo instanceof HTMLElement && returnFocusTo.isConnected) {
+				returnFocusTo.focus();
+			}
+		};
+	});
 
 	function close(): void {
 		open = false;
@@ -20,6 +37,29 @@
 		}
 		close();
 	}
+
+	function onDialogKeydown(e: KeyboardEvent): void {
+		if (e.key !== 'Tab' || !dialogRef) return;
+		const focusable = Array.from(
+			dialogRef.querySelectorAll<HTMLElement>(
+				'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+			)
+		).filter((element) => element.getClientRects().length > 0);
+		if (focusable.length === 0) {
+			e.preventDefault();
+			dialogRef.focus();
+			return;
+		}
+		const first = focusable[0];
+		const last = focusable[focusable.length - 1];
+		if (e.shiftKey && (document.activeElement === first || document.activeElement === dialogRef)) {
+			e.preventDefault();
+			last.focus();
+		} else if (!e.shiftKey && document.activeElement === last) {
+			e.preventDefault();
+			first.focus();
+		}
+	}
 </script>
 
 <svelte:window onkeydown={onWindowKeydown} />
@@ -33,9 +73,12 @@
 			class="absolute inset-0 cursor-default bg-black/45 backdrop-blur-[2px]"
 		></button>
 		<div
+			bind:this={dialogRef}
 			role="dialog"
 			aria-modal="true"
-			aria-label="App settings"
+			aria-labelledby="settings-dialog-title"
+			tabindex="-1"
+			onkeydown={onDialogKeydown}
 			class="relative z-10 flex max-h-[92dvh] w-full max-w-2xl animate-in flex-col overflow-hidden rounded-t-xl border border-b-0 border-divider bg-chrome shadow-2xl fade-in-0 slide-in-from-bottom-4 sm:max-h-[min(88vh,52rem)] sm:rounded-none sm:border-b sm:slide-in-from-bottom-0 sm:zoom-in-95"
 		>
 			<div
