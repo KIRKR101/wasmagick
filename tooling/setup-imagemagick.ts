@@ -34,7 +34,7 @@ import { join, dirname, basename, delimiter } from 'node:path';
 import { tmpdir } from 'node:os';
 import { describeRawCapability, isRawCapable } from './raw-support.js';
 
-const IM_VERSION = '7.1.2-32';
+const IM_VERSION = '7.1.2-33';
 const TOOL_DIR = join(import.meta.dirname, 'imagemagick');
 const WEBP_VERSION = '1.6.0';
 const WEBP_DIR = join(import.meta.dirname, 'webp');
@@ -525,17 +525,22 @@ function ensureWindows(slugDir: string): void {
  * deliberately omits libraw and must never be used to assemble a desktop
  * bundle that advertises camera RAW input.
  */
-function resolveBrewPrefix(): { prefix: string; formula: 'imagemagick-full' } {
-	try {
-		const prefix = execSync('brew --prefix imagemagick-full', { encoding: 'utf-8' }).trim();
-		if (prefix && existsSync(join(prefix, 'bin', 'magick'))) {
-			return { prefix, formula: 'imagemagick-full' };
+function resolveBrewPrefix(): { prefix: string; formula: string } {
+	const versionedFormula = `imagemagick-full@${IM_VERSION}`;
+	for (const formula of [versionedFormula, 'imagemagick-full']) {
+		try {
+			const prefix = execSync(`brew --prefix ${formula}`, { encoding: 'utf-8' }).trim();
+			const bin = join(prefix, 'bin', 'magick');
+			if (prefix && existsSync(bin) && cachedVersionMatches(bin)) {
+				return { prefix, formula };
+			}
+		} catch {
+			// Try the next installed formula, then report the actionable error.
 		}
-	} catch {
-		// report the actionable installation command below
 	}
 	throw new Error(
-		'RAW-capable Homebrew ImageMagick not found. Install it with: brew install imagemagick-full'
+		`RAW-capable Homebrew ImageMagick ${IM_VERSION} not found. Install ` +
+			`imagemagick-full@${IM_VERSION} or use a matching imagemagick-full formula.`
 	);
 }
 
@@ -865,6 +870,10 @@ function ensureMac(slugDir: string, arch: 'x64' | 'arm64'): void {
 	const bin = join(slugDir, 'bin', 'magick');
 	const hostArchMatches =
 		process.platform === 'darwin' && (arch === 'x64') === (process.arch !== 'arm64');
+	if (existsSync(bin) && !cachedVersionMatches(bin)) {
+		console.log(`Existing bundle at ${slugDir} is not ImageMagick ${IM_VERSION}; rebuilding...`);
+		rmSync(slugDir, { recursive: true, force: true });
+	}
 	if (existsSync(bin)) {
 		if (existingBundleHasRaw(slugDir)) {
 			if (!hostArchMatches) {

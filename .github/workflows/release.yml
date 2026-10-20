@@ -14,6 +14,9 @@ on:
 permissions:
   contents: write
 
+env:
+  IM_VERSION: 7.1.2-33
+
 concurrency:
   group: release-${{ inputs.tag || github.ref }}
   cancel-in-progress: false
@@ -31,9 +34,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential libraw-dev libjpeg-dev libpng-dev libtiff-dev libwebp-dev libxml2-dev libfontconfig1-dev libfreetype6-dev libltdl-dev liblcms2-dev libopenjp2-7-dev libheif-dev libzstd-dev liblzma-dev
           rm -rf /tmp/ImageMagick
-          curl -fsSL "https://github.com/ImageMagick/ImageMagick/archive/refs/tags/7.1.2-30.tar.gz" -o /tmp/imagemagick.tar.gz
+          curl -fsSL "https://github.com/ImageMagick/ImageMagick/archive/refs/tags/${IM_VERSION}.tar.gz" -o /tmp/imagemagick.tar.gz
           tar -xzf /tmp/imagemagick.tar.gz -C /tmp
-          cd /tmp/ImageMagick-7.1.2-30
+          cd "/tmp/ImageMagick-${IM_VERSION}"
           ./configure --prefix="$GITHUB_WORKSPACE/tooling/imagemagick/linux-x64" --with-quantum-depth=16 --with-modules --with-raw=yes --without-perl --without-x
           make -j"$(nproc)"
           make install
@@ -104,7 +107,10 @@ jobs:
           node-version: 22
           cache: npm
       - name: Install ImageMagick for bundling
-        run: brew install imagemagick-full
+        run: |
+          brew tap-new local/wasmagick-formulae --no-git
+          install -m 644 "$GITHUB_WORKSPACE/tooling/homebrew/imagemagick-full@${IM_VERSION}.rb" "$(brew --repository local/wasmagick-formulae)/Formula/imagemagick-full@${IM_VERSION}.rb"
+          brew install --build-from-source "local/wasmagick-formulae/imagemagick-full@${IM_VERSION}"
       - run: npm ci
       - run: npm run build:electron -- --mac dmg --publish never
       - uses: actions/upload-artifact@v4
@@ -124,7 +130,10 @@ jobs:
           node-version: 22
           cache: npm
       - name: Install ImageMagick for bundling
-        run: brew install imagemagick-full
+        run: |
+          brew tap-new local/wasmagick-formulae --no-git
+          install -m 644 "$GITHUB_WORKSPACE/tooling/homebrew/imagemagick-full@${IM_VERSION}.rb" "$(brew --repository local/wasmagick-formulae)/Formula/imagemagick-full@${IM_VERSION}.rb"
+          brew install --build-from-source "local/wasmagick-formulae/imagemagick-full@${IM_VERSION}"
       - run: npm ci
       - run: npm run build:electron -- --mac dmg --publish never
       - uses: actions/upload-artifact@v4
