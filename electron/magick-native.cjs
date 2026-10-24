@@ -23,6 +23,7 @@ const TOKENS = {
 };
 
 const PROCESS_TIMEOUT_MS = 120000;
+const MAX_STDOUT_BYTES = 1024 * 1024;
 const MAX_STDERR_BYTES = 64 * 1024;
 const MAX_PREVIEW_EDGE = 2048;
 const MAX_INTERACTIVE_PREVIEW_EDGE = 8192;
@@ -478,7 +479,7 @@ function runBinary(bin, args, { timeout = PROCESS_TIMEOUT_MS, inputName } = {}) 
 		}, timeout);
 
 		child.stdout.on('data', (chunk) => {
-			if (stdout.length < MAX_STDERR_BYTES) stdout = Buffer.concat([stdout, chunk]);
+			if (stdout.length < MAX_STDOUT_BYTES) stdout = Buffer.concat([stdout, chunk]);
 		});
 		child.stderr.on('data', (chunk) => {
 			if (stderr.length < MAX_STDERR_BYTES) stderr = Buffer.concat([stderr, chunk]);
