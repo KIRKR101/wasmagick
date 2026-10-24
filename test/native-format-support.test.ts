@@ -139,13 +139,17 @@ ImageMagick version: 7.1.2-29
 		]);
 	});
 
+	// Spawning the bundled magick binary for the first time can stall well past
+	// 15s while macOS verifies the ad-hoc-signed provenance-tracked executable.
+	// Give the tests the same budget runBinary uses (PROCESS_TIMEOUT_MS) and one
+	// retry so a slow first launch cannot fail the suite.
 	it.skipIf(!resolveMagickBin() || !resolveWebpTool('cwebp'))(
 		'keeps delegate-backed WebP available when the format table omits it',
+		{ retry: 1, timeout: 120_000 },
 		async () => {
 			const formats = await listNativeFormats();
 			expect(formats.some((format) => format.format === 'WEBP')).toBe(true);
-		},
-		15_000
+		}
 	);
 
 	it('filters the complete non-image and video denylist for native capabilities', () => {
@@ -190,6 +194,7 @@ ImageMagick version: 7.1.2-29
 
 	it.skipIf(!resolveMagickBin())(
 		'exports a real TIFF through the native bundle',
+		{ retry: 1, timeout: 120_000 },
 		async () => {
 			expect(outputSpecifierFor('TIFF', '/tmp/output.tiff')).toBe('TIFF:/tmp/output.tiff');
 			expect(outputSpecifierFor('TIFF64', '/tmp/output.tiff')).toBe('TIFF64:/tmp/output.tiff');
@@ -210,7 +215,6 @@ ImageMagick version: 7.1.2-29
 				[...result.data.slice(0, 4)].join(',') === '73,73,42,0' ||
 					[...result.data.slice(0, 4)].join(',') === '77,77,0,42'
 			).toBe(true);
-		},
-		15_000
+		}
 	);
 });
