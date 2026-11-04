@@ -85,4 +85,44 @@ describe('preset state', () => {
 		editor.settings.contrast[0] = 30;
 		expect(preset.settings.contrast).toEqual([15]);
 	});
+
+	/** A snapshot saved before `bilateralWidth` existed, plus a retired key. */
+	function legacySettings(): Record<string, unknown> {
+		const settings = structuredClone(DEFAULT_SETTINGS) as unknown as Record<string, unknown>;
+		delete settings.bilateralWidth;
+		delete (settings.levelGamma as Record<string, unknown>).Green;
+		settings.retiredSetting = true;
+		return settings;
+	}
+
+	it('backfills settings missing from a legacy preset snapshot', () => {
+		const state = new PresetsState();
+		const editor = magick();
+		state.applyUser(editor, {
+			id: 'user-legacy',
+			name: 'Legacy',
+			settings: legacySettings() as unknown as typeof DEFAULT_SETTINGS,
+			createdAt: 1
+		});
+
+		expect(editor.settings.bilateralWidth).toEqual(DEFAULT_SETTINGS.bilateralWidth);
+		expect(editor.settings.levelGamma.Green).toEqual(DEFAULT_SETTINGS.levelGamma.Green);
+		expect('retiredSetting' in editor.settings).toBe(false);
+	});
+
+	it('normalizes legacy presets loaded from storage', () => {
+		values.set(
+			'wasmagick.presets.v1',
+			JSON.stringify([
+				{ id: 'user-legacy', name: 'Legacy', settings: legacySettings(), createdAt: 1 }
+			])
+		);
+		const state = new PresetsState();
+		state.load();
+
+		expect(state.userPresets[0].settings.bilateralWidth).toEqual(DEFAULT_SETTINGS.bilateralWidth);
+		expect(state.userPresets[0].settings.levelGamma.Green).toEqual(
+			DEFAULT_SETTINGS.levelGamma.Green
+		);
+	});
 });

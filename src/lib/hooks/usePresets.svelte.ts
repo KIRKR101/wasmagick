@@ -39,6 +39,40 @@ function snapSettings(settings: MagickSettings): MagickSettings {
 	return JSON.parse(JSON.stringify(settings));
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+	return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function mergeOverDefaults(base: Record<string, unknown>, override: Record<string, unknown>) {
+	const merged: Record<string, unknown> = { ...base };
+	for (const key of Object.keys(merged)) {
+		if (!(key in override)) continue;
+		const current = merged[key];
+		const next = override[key];
+		merged[key] =
+			isPlainObject(current) && isPlainObject(next) ? mergeOverDefaults(current, next) : next;
+	}
+	return merged;
+}
+
+/**
+ * Merge stored settings over the current defaults.
+ *
+ * User presets are full snapshots, but a snapshot taken before a setting was
+ * added lacks that key. Assigning it wholesale leaves the key undefined, and
+ * the control bindings read `settings.foo[0]`, which throws. Unknown keys are
+ * dropped as well, so settings removed from the app do not leak back in.
+ */
+export function normalizeSettings(raw: unknown): MagickSettings {
+	const base = snapSettings(DEFAULT_SETTINGS) as unknown as Record<string, unknown>;
+	if (!isPlainObject(raw)) return base as unknown as MagickSettings;
+	const override = snapSettings(raw as unknown as MagickSettings) as unknown as Record<
+		string,
+		unknown
+	>;
+	return mergeOverDefaults(base, override) as unknown as MagickSettings;
+}
+
 /** Stable serialized form of a settings object, for equality comparison. */
 function settingsKey(settings: MagickSettings): string {
 	return JSON.stringify(settings);
@@ -166,8 +200,17 @@ export class PresetsState {
 		try {
 			const raw = localStorage.getItem(STORAGE_KEY);
 			if (raw) {
-				const parsed = JSON.parse(raw) as UserPreset[];
-				if (Array.isArray(parsed)) this.userPresets = parsed;
+				const parsed = JSON.parse(raw) as unknown;
+				if (Array.isArray(parsed)) {
+					this.userPresets = parsed
+						.filter(
+							(preset): preset is UserPreset =>
+								typeof preset === 'object' &&
+								preset !== null &&
+								typeof (preset as UserPreset).name === 'string'
+						)
+						.map((preset) => ({ ...preset, settings: normalizeSettings(preset.settings) }));
+				}
 			}
 		} catch {
 			// ignore corrupt storage
@@ -191,7 +234,7 @@ export class PresetsState {
 	}
 
 	applyUser(magick: MagickState, preset: UserPreset): void {
-		magick.settings = snapSettings(preset.settings);
+		magick.settings = normalizeSettings(preset.settings);
 		magick.ensureSelectedExportFormat();
 	}
 
@@ -244,7 +287,7 @@ export class PresetsState {
 			imported.push({
 				id: `user-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
 				name: source.name.trim() || 'Untitled Preset',
-				settings: snapSettings(source.settings),
+				settings: normalizeSettings(source.settings),
 				createdAt:
 					typeof source.createdAt === 'number' && Number.isFinite(source.createdAt)
 						? source.createdAt
