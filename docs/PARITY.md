@@ -1,17 +1,20 @@
 # MagickImage API Parity
 
-> Auto-generated from `magick-image.ts` and codebase analysis.
 > Tracks which `IMagickImage` methods/properties are used in WASMagick and which are not.
 
 ## Overview
 
 | Category   | Used   | Not Used | Total   |
 | ---------- | ------ | -------- | ------- |
-| Properties | 7      | 46       | 53      |
-| Methods    | 45     | 71       | 118     |
-| **Total**  | **52** | **117**  | **171** |
+| Properties | 7      | 43       | 50      |
+| Methods    | 46     | 119      | 165     |
+| **Total**  | **53** | **162**  | **215** |
 
-**Coverage: 30.4% (52/171)**
+**Coverage: 24.7% (53/215)**
+
+> Counts are unique names, tallied against the `IMagickImage` interface in
+> magick-wasm 0.0.46. `MagickImage.create()` is the only listed entry that lives
+> on the class rather than the interface.
 
 ---
 
@@ -173,54 +176,101 @@
 
 ### Geometry (Not Used)
 
-| Method                | Signature                                                   | Description                                                                                                       |
-| --------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `adaptiveResize()`    | `(width: number, height: number): void`                     | Resize using mesh interpolation. It works well for small resizes of less than +/- 50% of the original image size. |
-| `adaptiveThreshold()` | `(width: number, height: number, channels: Channels): void` | Local adaptive threshold image.                                                                                   |
-| `chop()`              | `(geometry: MagickGeometry): void`                          | Chop image (remove vertical or horizontal subregion of image) using the specified geometry.                       |
-| `chopHorizontal()`    | `(x: number, width: number): void`                          | Chop image (remove vertical or horizontal subregion of image).                                                    |
-| `chopVertical()`      | `(y: number, height: number): void`                         | Chop image (remove vertical or horizontal subregion of image).                                                    |
-| `cropToTiles()`       | `(geometry: IMagickGeometry, func): T`                      | Creates tiles of the current image in the specified dimension.                                                    |
-| `liquidRescale()`     | `(width: number, height: number): void`                     | Rescales image with seam carving.                                                                                 |
-| `resetPage()`         | `(): void`                                                  | Resets the page property of this image.                                                                           |
-| `roll()`              | `(x: number, y: number): void`                              | Roll image (rolls image vertically and horizontally).                                                             |
-| `splice()`            | `(geometry: IMagickGeometry, gravity: Gravity): void`       | Splice the background color into the image.                                                                       |
-| `thumbnail()`         | `(width: number, height: number): void`                     | Resize image to thumbnail size and remove all the image profiles except the icc/icm profile.                      |
+| Method                | Signature                                                               | Description                                                                                                                                                        |
+| --------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `adaptiveResize()`    | `(width: number, height: number): void`                                 | Resize using mesh interpolation. It works well for small resizes of less than +/- 50% of the original image size.                                                  |
+| `adaptiveThreshold()` | `(width: number, height: number, channels: Channels): void`             | Local adaptive threshold image.                                                                                                                                    |
+| `chop()`              | `(geometry: MagickGeometry): void`                                      | Chop image (remove vertical or horizontal subregion of image) using the specified geometry.                                                                        |
+| `chopHorizontal()`    | `(x: number, width: number): void`                                      | Chop image (remove vertical or horizontal subregion of image).                                                                                                     |
+| `chopVertical()`      | `(y: number, height: number): void`                                     | Chop image (remove vertical or horizontal subregion of image).                                                                                                     |
+| `cropToTiles()`       | `(geometry: IMagickGeometry, func): T`                                  | Creates tiles of the current image in the specified dimension.                                                                                                     |
+| `liquidRescale()`     | `(width: number, height: number): void`                                 | Rescales image with seam carving.                                                                                                                                  |
+| `magnify()`           | `(): void`                                                              | Magnify the image by an integral size (2× pixel replication).                                                                                                      |
+| `minify()`            | `(): void`                                                              | Reduce the image by an integral size (0.5× block averaging).                                                                                                       |
+| `resample()`          | `(resolutionX: number, resolutionY: number, filter?: FilterType): void` | Resize image in terms of its pixel size by changing the resolution; also accepts a `Point` density and an optional `FilterType`.                                   |
+| `resetPage()`         | `(): void`                                                              | Resets the page property of this image.                                                                                                                            |
+| `roll()`              | `(x: number, y: number): void`                                          | Roll image (rolls image vertically and horizontally).                                                                                                              |
+| `sample()`            | `(width: number, height: number): void`                                 | Resize by pixel sampling (nearest neighbour); fits the image inside the requested size instead of filling it. Also accepts a geometry or width/height percentages. |
+| `scale()`             | `(width: number, height: number): void`                                 | Resize by the simple ratio algorithm (box average); also accepts a geometry.                                                                                       |
+| `shear()`             | `(xAngle: number, yAngle: number): void`                                | Shear the image along the X or Y axis to create a parallelogram.                                                                                                   |
+| `splice()`            | `(geometry: IMagickGeometry, gravity: Gravity): void`                   | Splice the background color into the image.                                                                                                                        |
+| `thumbnail()`         | `(width: number, height: number): void`                                 | Resize image to thumbnail size and remove all the image profiles except the icc/icm profile.                                                                       |
+| `transpose()`         | `(): void`                                                              | Mirror the image across the TL–BR diagonal (flip plus 90° rotation).                                                                                               |
+| `transverse()`        | `(): void`                                                              | Mirror the image across the TR–BL diagonal (flip plus 270° rotation).                                                                                              |
 
 ---
 
 ### Color / Adjustment (Not Used)
 
-| Method                       | Signature                                                                                   | Description                                                                                                                                       |
-| ---------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `contrast()`                 | `(): void`                                                                                  | Contrast image (enhance intensity differences in image).                                                                                          |
-| `contrastStretch()`          | `(blackPoint: Percentage, whitePoint: Percentage, channels: Channels): void`                | A simple image enhancement technique that attempts to improve the contrast in an image by 'stretching' the range of intensity values it contains. |
-| `cycleColormap()`            | `(amount: number): void`                                                                    | Displaces an image's colormap by a given number of positions.                                                                                     |
-| `evaluate()`                 | `(channels: Channels, operator: EvaluateOperator, value: number): void`                     | Apply an arithmetic or bitwise operator to the image pixel quantums.                                                                              |
-| `gammaCorrect()`             | `(gamma: number, channels: Channels): void`                                                 | Gamma correct image.                                                                                                                              |
-| `inverseContrast()`          | `(): void`                                                                                  | Inverse contrast image (diminish intensity differences in image).                                                                                 |
-| `inverseLevel()`             | `(blackPoint: Percentage, whitePoint: Percentage, gamma: number, channels: Channels): void` | Applies the reversed level operation to just the specific channels specified.                                                                     |
-| `inverseSigmoidalContrast()` | `(contrast: number, midpoint: number, channels: Channels): void`                            | Adjust the image contrast with an inverse non-linear sigmoidal contrast algorithm.                                                                |
-| `linearStretch()`            | `(blackPoint: Percentage, whitePoint: Percentage): void`                                    | Discards any pixels below the black point and above the white point and levels the remaining pixels.                                              |
-| `modulate()`                 | _(brightness-only overload)_ `(brightness: Percentage): void`                               | Modulate percent brightness of an image.                                                                                                          |
-| `negateGrayScale()`          | `(channels: Channels): void`                                                                | Negate the grayscale colors in image.                                                                                                             |
+| Method                       | Signature                                                                                          | Description                                                                                                                                       |
+| ---------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `colorMatrix()`              | `(matrix: IMagickColorMatrix): void`                                                               | Apply a color matrix to the image channels.                                                                                                       |
+| `contrast()`                 | `(): void`                                                                                         | Contrast image (enhance intensity differences in image).                                                                                          |
+| `contrastStretch()`          | `(blackPoint: Percentage, whitePoint: Percentage, channels: Channels): void`                       | A simple image enhancement technique that attempts to improve the contrast in an image by 'stretching' the range of intensity values it contains. |
+| `cycleColormap()`            | `(amount: number): void`                                                                           | Displaces an image's colormap by a given number of positions.                                                                                     |
+| `equalize()`                 | `(channels?: Channels): void`                                                                      | Apply histogram equalization (redistributes intensities to flatten the histogram); independent of `autoLevel()`/`normalize()`.                    |
+| `fx()`                       | `(expression: string, channels?: Channels): void`                                                  | Apply a user-supplied mathematical expression to every pixel (`u`/`v` coordinates, `p` channels).                                                 |
+| `evaluate()`                 | `(channels: Channels, operator: EvaluateOperator, value: number): void`                            | Apply an arithmetic or bitwise operator to the image pixel quantums.                                                                              |
+| `gammaCorrect()`             | `(gamma: number, channels: Channels): void`                                                        | Gamma correct image.                                                                                                                              |
+| `inverseContrast()`          | `(): void`                                                                                         | Inverse contrast image (diminish intensity differences in image).                                                                                 |
+| `inverseLevel()`             | `(blackPoint: Percentage, whitePoint: Percentage, gamma: number, channels: Channels): void`        | Applies the reversed level operation to just the specific channels specified.                                                                     |
+| `inverseSigmoidalContrast()` | `(contrast: number, midpoint: number, channels: Channels): void`                                   | Adjust the image contrast with an inverse non-linear sigmoidal contrast algorithm.                                                                |
+| `linearStretch()`            | `(blackPoint: Percentage, whitePoint: Percentage): void`                                           | Discards any pixels below the black point and above the white point and levels the remaining pixels.                                              |
+| `modulate()`                 | _(brightness-only overload)_ `(brightness: Percentage): void`                                      | Modulate percent brightness of an image.                                                                                                          |
+| `negateGrayScale()`          | `(channels: Channels): void`                                                                       | Negate the grayscale colors in image.                                                                                                             |
+| `rangeThreshold()`           | `(lowBlack: Percentage, lowWhite: Percentage, highWhite: Percentage, highBlack: Percentage): void` | Apply soft and hard thresholding between four points; also accepts quantum `number` values.                                                       |
+| `segment()`                  | `(): void`                                                                                         | Segment the image into homogeneous regions with fuzzy c-means; the overload takes a `ColorSpace`, cluster threshold and smoothing threshold.      |
+| `tint()`                     | `(opacity: IMagickGeometry, color: IMagickColor): void`                                            | Apply a color vector to each pixel, weighted toward the midtones (`f(x) = 1 - 4(x - 0.5)²`).                                                      |
 
 ---
 
 ### Effects / Filters (Not Used)
 
-| Method              | Signature                                                                             | Description                                                                                                                  |
-| ------------------- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `affineTransform()` | `(affineMatrix: IDrawableAffine): void`                                               | Applies an affine transformation to the image.                                                                               |
-| `alpha()`           | `(value: AlphaAction): void`                                                          | Applies the specified alpha action.                                                                                          |
-| `annotate()`        | `(text: string, boundingArea: MagickGeometry, gravity: Gravity, angle: number): void` | Annotate using specified text, bounding area, and placement gravity. (Note: annotation is done via `Drawables` API instead.) |
-| `bilateralBlur()`   | _(2-arg overload)_ `(width: number, height: number): void`                            | Applies a non-linear, edge-preserving, and noise-reducing smoothing filter.                                                  |
-| `blueShift()`       | `(factor: number): void`                                                              | Simulate a scene at nighttime in the moonlight.                                                                              |
-| `colorAlpha()`      | `(color: IMagickColor): void`                                                         | Sets the alpha channel to the specified color.                                                                               |
-| `morphology()`      | `(settings: MorphologySettings): void`                                                | Applies a kernel to the image according to the given morphology settings.                                                    |
-| `shadow()`          | `(x: number, y: number, sigma: number, alpha: Percentage): void`                      | Simulate an image shadow.                                                                                                    |
-| `vignette()`        | `(radius: number, sigma: number, x: number, y: number): void`                         | Softens the edges of the image in vignette style.                                                                            |
-| `wave()`            | `(method: PixelInterpolateMethod, amplitude: number, length: number): void`           | Map image pixels to a sine wave.                                                                                             |
+| Method              | Signature                                                                                       | Description                                                                                                                                  |
+| ------------------- | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `affineTransform()` | `(affineMatrix: IDrawableAffine): void`                                                         | Applies an affine transformation to the image.                                                                                               |
+| `alpha()`           | `(value: AlphaAction): void`                                                                    | Applies the specified alpha action.                                                                                                          |
+| `annotate()`        | `(text: string, boundingArea: MagickGeometry, gravity: Gravity, angle: number): void`           | Annotate using specified text, bounding area, and placement gravity. (Note: annotation is done via `Drawables` API instead.)                 |
+| `bilateralBlur()`   | _(2-arg overload)_ `(width: number, height: number): void`                                      | Applies a non-linear, edge-preserving, and noise-reducing smoothing filter.                                                                  |
+| `blueShift()`       | `(factor: number): void`                                                                        | Simulate a scene at nighttime in the moonlight.                                                                                              |
+| `colorAlpha()`      | `(color: IMagickColor): void`                                                                   | Sets the alpha channel to the specified color.                                                                                               |
+| `convolve()`        | `(matrix: IConvolveMatrix): void`                                                               | Convolve the image with a user-supplied kernel.                                                                                              |
+| `despeckle()`       | `(): void`                                                                                      | Reduce speckle noise by replacing each pixel with the closest of its neighbours.                                                             |
+| `edge()`            | `(radius: number): void`                                                                        | Highlight edges using a Marr–Hildreth style operator. Not scale-invariant, unlike `cannyEdge()`.                                             |
+| `emboss()`          | `(): void`                                                                                      | Emboss the image (3D highlight/shadow edges, default 0×1); also accepts a radius and sigma.                                                  |
+| `frame()`           | `(): void`                                                                                      | Frame the image with a 3D bevel (default geometry 25×25+6+6); also accepts a geometry, width/height, or width/height plus inner/outer bevel. |
+| `implode()`         | `(amount: number, method: PixelInterpolateMethod): void`                                        | Implode (pinch) pixels toward the centre by the given amount.                                                                                |
+| `kuwahara()`        | `(): void`                                                                                      | Apply an edge-preserving painterly smoothing filter (default 0×1); also accepts a radius and sigma.                                          |
+| `lower()`           | `(size: number): void`                                                                          | Darken the image edges to give a 3D lowered effect.                                                                                          |
+| `meanShift()`       | `(size: number, colorDistance?: Percentage): void`                                              | Delineate arbitrarily shaped clusters with mean-shift smoothing; also accepts width/height and an optional color distance (default 10%).     |
+| `medianFilter()`    | `(radius?: number): void`                                                                       | Replace each pixel channel with the median of its circular neighbourhood.                                                                    |
+| `polaroid()`        | `(caption: string, angle: number, method: PixelInterpolateMethod): void`                        | Simulate a polaroid print: white border, drop shadow, rotation and optional caption.                                                         |
+| `morphology()`      | `(settings: MorphologySettings): void`                                                          | Applies a kernel to the image according to the given morphology settings.                                                                    |
+| `raise()`           | `(size: number): void`                                                                          | Lighten the image edges to give a 3D raised effect.                                                                                          |
+| `reduceNoise()`     | `(order?: number): void`                                                                        | Reduce noise with a noise-peak-elimination filter (default order 3).                                                                         |
+| `rotationalBlur()`  | `(angle: number, channels?: Channels): void`                                                    | Blur rotationally around the image centre by the given angle.                                                                                |
+| `selectiveBlur()`   | `(radius: number, sigma: number, threshold: number, channels?: Channels): void`                 | Blur only pixels within a contrast threshold (surface blur); also accepts a `Percentage` threshold.                                          |
+| `shade()`           | `(azimuth: number, elevation: number, channels?: Channels): void`                               | Shade the image from a distant light source (default 30° azimuth/elevation).                                                                 |
+| `shadeGrayscale()`  | `(azimuth: number, elevation: number, channels?: Channels): void`                               | Shade the image from a distant light source and desaturate the result.                                                                       |
+| `shadow()`          | `(x: number, y: number, sigma: number, alpha: Percentage): void`                                | Simulate an image shadow.                                                                                                                    |
+| `sketch()`          | `(radius: number, sigma: number, angle: number): void`                                          | Simulate a pencil sketch; the no-argument overload uses ImageMagick's defaults.                                                              |
+| `spread()`          | `(radius?: number): void`                                                                       | Randomly displace pixels within a radius (default 3) using the image's interpolation method.                                                 |
+| `swirl()`           | `(degrees: number): void`                                                                       | Swirl pixels around the image centre by the given degrees; also accepts an explicit `PixelInterpolateMethod`.                                |
+| `unsharpMask()`     | `(radius: number, sigma: number, amount: number, threshold: number, channels?: Channels): void` | Sharpen with the unsharp-mask algorithm; the 2-argument overload uses the image defaults.                                                    |
+| `vignette()`        | `(radius: number, sigma: number, x: number, y: number): void`                                   | Softens the edges of the image in vignette style.                                                                                            |
+| `wave()`            | `(method: PixelInterpolateMethod, amplitude: number, length: number): void`                     | Map image pixels to a sine wave.                                                                                                             |
+| `waveletDenoise()`  | `(threshold: number, softness?: number): void`                                                  | Remove noise with a wavelet transform; also accepts a `Percentage` threshold.                                                                |
+
+---
+
+### Quantize / CLUT / Dithering (Not Used)
+
+| Method            | Signature                                                       | Description                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ----------------- | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `haldClut()`      | `(image: IMagickImage, channels?: Channels): void`              | Apply a Hald colour lookup table image to the image.                                                                                                                                                                                                                                                                                                                                                        |
+| `kmeans()`        | `(settings: KmeansSettings): void`                              | Reduce colours with k-means clustering (`KmeansSettings`: colour count, max iterations, tolerance, optional seed colours).                                                                                                                                                                                                                                                                                  |
+| `orderedDither()` | `(thresholdMap: string, channels?: Channels): void`             | Apply ordered dithering with a named threshold map (e.g. `checks`, `o4x4`, `o8x8`).                                                                                                                                                                                                                                                                                                                         |
+| `posterize()`     | `(levels: number, dither?: boolean, channels?: Channels): void` | Reduce each channel to `levels` evenly spaced steps, producing a fixed `levels³` palette rather than an adaptive one. The `dither` flag is passed straight through as ImageMagick's `DitherMethod` enum, so `true` selects `NoDitherMethod` (no dithering) and `false` selects the undefined (Floyd–Steinberg) default — the opposite of the parameter name. Dithering only applies when `1 < levels < 17`. |
 
 ---
 
@@ -233,6 +283,9 @@
 | `compositeGravity()`    | `(image: IMagickImage, gravity: Gravity, compose: CompositeOperator): void` | Compose an image onto another using the specified algorithm and gravity.                                                     |
 | `connectedComponents()` | `(settings: ConnectedComponentsSettings): ConnectedComponent[]`             | Determines the connected-components of the image.                                                                            |
 | `distort()`             | `(method: DistortMethod, params: number[]): void`                           | Distorts an image using various distortion methods, by mapping color lookups of the source image to a new destination image. |
+| `houghLine()`           | `(width: number, height: number, threshold: number): void`                  | Detect lines with a Hough transform; the no-argument overload uses 200×200 with threshold 40.                                |
+| `stegano()`             | `(watermark: IMagickImage): void`                                           | Embed a digital watermark image in the low-order bits of the image.                                                          |
+| `stereo()`              | `(rightImage: IMagickImage): void`                                          | Combine the image with a right-eye image into a red/blue anaglyph.                                                           |
 
 ---
 
@@ -243,8 +296,10 @@
 | `clone()`               | `(func: SyncImageCallback<T>): T`                                                | Creates a clone of the current image.                                                                   |
 | `cloneArea()`           | `(geometry: MagickGeometry, func: SyncImageCallback<T>): T`                      | Creates a clone of the current image with the specified geometry.                                       |
 | `colorDecisionList()`   | `(colorCorrectionCollection: string): void`                                      | Applies the color decision list from the specified ASC CDL data.                                        |
+| `decipher()`            | `(passphrase: string): void`                                                     | Decipher an image previously enciphered with the given passphrase.                                      |
 | `determineBitDepth()`   | `(channels: Channels): number`                                                   | Determines the bit depth (bits allocated to red/green/blue components).                                 |
 | `draw()`                | `(...drawables: IDrawable[]): void`                                              | Draw on image using one or more drawables. (Note: `Drawables.draw(image)` is used instead.)             |
+| `encipher()`            | `(passphrase: string): void`                                                     | Encipher the image pixels with the given passphrase.                                                    |
 | `floodFill()`           | `(color: IMagickColor, x: number, y: number, target: IMagickColor): void`        | Floodfill pixels matching color (within fuzz factor) of target pixel(x,y) with replacement alpha value. |
 | `formatExpression()`    | `(expression: string): string \| null`                                           | Formats the specified expression (ImageMagick escape syntax).                                           |
 | `getArtifact()`         | `(name: string): string \| null`                                                 | Returns the value of the artifact with the specified name.                                              |
@@ -255,6 +310,7 @@
 | `getWriteMask()`        | `(func: (mask: IMagickImage \| null) => T): T`                                   | Gets the associated write mask of the image.                                                            |
 | `hasProfile()`          | `(name: string): boolean`                                                        | Gets a value indicating whether a profile with the specified name already exists on the image.          |
 | `histogram()`           | `(): Map<string, number>`                                                        | Creates a color histogram.                                                                              |
+| `integral()`            | `(func: (image: IMagickImage \| null) => T): T`                                  | Build the summed-area (integral) table of the image and pass it to a callback.                          |
 | `inverseFloodFill()`    | `(color: IMagickColor, x: number, y: number, target: IMagickColor): void`        | Floodfill pixels matching color with inversion.                                                         |
 | `inverseOpaque()`       | `(target: IMagickColor, fill: IMagickColor): void`                               | Changes any pixel that does not match the target with the color defined by fill.                        |
 | `inverseTransparent()`  | `(color: IMagickColor): void`                                                    | Add alpha channel to image, setting pixels that don't match the specified color to transparent.         |
@@ -276,6 +332,7 @@
 | `statistics()`          | `(channels: Channels): IStatistics`                                              | Returns the image statistics.                                                                           |
 | `transformColorSpace()` | `(target: IColorProfile): boolean`                                               | Transforms the image from the colorspace of the source profile to the target profile.                   |
 | `toString()`            | `(): string`                                                                     | Returns a string that represents the current image.                                                     |
+| `uniqueColors()`        | `(func: (image: IMagickImage) => T): T`                                          | Pass an image containing only the unique colours to a callback; its `width` is the unique colour count. |
 | `writeToCanvas()`       | `(canvas: HTMLCanvasElement, settings?: CanvasRenderingContext2DSettings): void` | Writes the image to the specified canvas.                                                               |
 
 ---
@@ -338,7 +395,9 @@ The processing order in both pipelines is:
 
 ## Notes
 
-- The `annotate()` method exists in the interface but WASMagick uses the `Drawables` API (`draws.draw(image)`) for text annotation instead, which offers more control over font, gravity, affine transforms, and stroke.
+- The `MagickImage` methods added in magick-wasm 0.0.46 are all listed in the NOT USED tables, even where no UI is planned, so the coverage table stays complete. `emboss()` is new in 0.0.46 but was missing from that release's notes; `transparent()` predates 0.0.46 and is still unlisted.
+- `posterize()`'s `dither` argument is passed straight through as ImageMagick's `DitherMethod` enum, which inverts its meaning: `true` → `NoDitherMethod` (no dithering), `false` → the undefined (Floyd–Steinberg) default. It is also ignored outside `1 < levels < 17`, and `levels < 2` produces an all-black image.
+- `annotate()` method exists in the interface but WASMagick uses the `Drawables` API (`draws.draw(image)`) for text annotation instead, which offers more control over font, gravity, affine transforms, and stroke.
 - The `draw()` method on `MagickImage` exists but is not called directly; the `Drawables` class manages the drawing pipeline.
 - The `read()` method on `MagickImage` is not called directly; the `ImageMagick.readCollection()` static method is used instead, so multi-image inputs (animated GIF/WebP frames, TIFF pages, PSD layers) process every frame rather than just the first. Disposal-based animations (GIF/WebP) are coalesced to full frames before geometry, mirroring the native CLI's `-coalesce` for those inputs.
 - The `getPixels()` method is only used in `luts.ts` for CLUT generation, not in the main processing pipeline.
