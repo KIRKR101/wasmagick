@@ -69,6 +69,7 @@ export function isColorDirty(s: MagickSettings): boolean {
 		s.normalizeImage ||
 		s.autoLevel ||
 		s.autoGamma ||
+		s.equalize ||
 		s.brightness[0] !== 100 ||
 		s.contrast[0] !== 0 ||
 		s.saturation[0] !== 100 ||

@@ -215,6 +215,7 @@ export function buildNativeMagickArgs(
 	// magick-wasm autoGamma() defaults to Composite (RGB) channels; force RGB
 	// for parity (see golden-gen).
 	if (settings.autoGamma) args.push('-channel', 'RGB', '-auto-gamma', '+channel');
+	if (settings.equalize) args.push('-equalize');
 
 	for (const ch of ['All', 'Red', 'Green', 'Blue'] as const) {
 		const bp = settings.levelBlackpoint[ch][0];

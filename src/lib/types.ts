@@ -115,6 +115,7 @@ export interface MagickSettings {
 	sigmoidalChannels: LevelChannel;
 	colorSpace: ColorSpaceOption;
 	autoGamma: boolean;
+	equalize: boolean;
 	autoThreshold: AutoThresholdOption;
 	blackThreshold: [number];
 	whiteThreshold: [number];
@@ -205,6 +206,7 @@ export interface AppliedOptions {
 	levelColors?: { black: string; white: string; channels: string; inverse: boolean };
 	threshold?: { percent: number; channels: string };
 	autoGamma?: boolean;
+	equalize?: boolean;
 	autoThreshold?: string;
 	blackThreshold?: number;
 	whiteThreshold?: number;

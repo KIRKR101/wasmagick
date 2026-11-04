@@ -175,6 +175,7 @@ export function buildNativeProcessingPlan(
 	if (
 		settings.autoLevel ||
 		settings.autoGamma ||
+		settings.equalize ||
 		settings.colorSpace !== 'RGB' ||
 		settings.levelColorsBlack !== '#000000' ||
 		settings.levelColorsWhite !== '#ffffff' ||

@@ -341,6 +341,10 @@ describe('Color operations', () => {
 		testAllSources('auto-gamma', '{base}.png', { autoGamma: true });
 	});
 
+	it('equalize', () => {
+		testAllSources('equalize', '{base}.png', { equalize: true });
+	});
+
 	it('auto-threshold (Kapur)', () => {
 		// auto-threshold picks the threshold from the image histogram, so pixels
 		// sitting exactly on the chosen value can flip black/white between the

@@ -97,6 +97,7 @@
 				if (s.normalizeImage) parts.push('Normalize');
 				if (s.autoLevel) parts.push('Auto-Level');
 				if (s.autoGamma) parts.push('Auto-Gamma');
+				if (s.equalize) parts.push('Equalize');
 				const levelParts: string[] = [];
 				for (const ch of ['All', 'Red', 'Green', 'Blue'] as const) {
 					const bp = s.levelBlackpoint[ch][0];

@@ -361,6 +361,7 @@ export function processImageSync(
 			if (settings.normalizeImage) image.normalize();
 			if (settings.autoLevel) image.autoLevel();
 			if (settings.autoGamma) image.autoGamma();
+			if (settings.equalize) image.equalize();
 
 			{
 				const levelChs: LevelChannel[] = ['All', 'Red', 'Green', 'Blue'];

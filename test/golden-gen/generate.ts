@@ -254,6 +254,10 @@ genAllSources('adaptive-blur', ['-adaptive-blur', '2x1'], '{base}.png');
 console.log('-- auto-gamma --');
 genAllSources('auto-gamma', ['-channel', 'RGB', '-auto-gamma', '+channel'], '{base}.png');
 
+// -- EQUALIZE --
+console.log('-- equalize --');
+genAllSources('equalize', ['-equalize'], '{base}.png');
+
 // -- AUTO-THRESHOLD --
 console.log('-- auto-threshold --');
 genAllSources('auto-threshold', ['-auto-threshold', 'Kapur'], '{base}.png');

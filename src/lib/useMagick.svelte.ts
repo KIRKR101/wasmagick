@@ -177,6 +177,7 @@ export const DEFAULT_SETTINGS: MagickSettings = {
 	sigmoidalChannels: 'All',
 	colorSpace: 'RGB',
 	autoGamma: false,
+	equalize: false,
 	autoThreshold: 'Off',
 	blackThreshold: [0],
 	whiteThreshold: [100],
@@ -1083,6 +1084,7 @@ export class MagickState {
 		this.settings.sigmoidalMidpoint = [...DEFAULT_SETTINGS.sigmoidalMidpoint];
 		this.settings.sigmoidalChannels = DEFAULT_SETTINGS.sigmoidalChannels;
 		this.settings.autoGamma = DEFAULT_SETTINGS.autoGamma;
+		this.settings.equalize = DEFAULT_SETTINGS.equalize;
 		this.settings.autoThreshold = DEFAULT_SETTINGS.autoThreshold;
 		this.settings.blackThreshold = [...DEFAULT_SETTINGS.blackThreshold];
 		this.settings.whiteThreshold = [...DEFAULT_SETTINGS.whiteThreshold];

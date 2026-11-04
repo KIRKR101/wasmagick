@@ -72,6 +72,7 @@ function diffSettings(a: MagickSettings, b: MagickSettings): SettingsDiffItem[] 
 	push('Contrast', a.contrast[0], b.contrast[0]);
 	push('Normalize', a.normalizeImage, b.normalizeImage);
 	push('Auto level', a.autoLevel, b.autoLevel);
+	push('Equalize', a.equalize, b.equalize);
 	push('Auto gamma', a.autoGamma, b.autoGamma);
 	push('Auto orient', a.autoOrient, b.autoOrient);
 	push('Color space', a.colorSpace, b.colorSpace);

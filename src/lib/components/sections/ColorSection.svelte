@@ -87,7 +87,10 @@
 	<!-- Auto corrections run before manual levels -->
 	<SectionCard
 		title="Auto Correct"
-		dirty={magick.settings.normalizeImage || magick.settings.autoLevel || magick.settings.autoGamma}
+		dirty={magick.settings.normalizeImage ||
+			magick.settings.autoLevel ||
+			magick.settings.autoGamma ||
+			magick.settings.equalize}
 	>
 		<div class="grid grid-cols-2 gap-2">
 			<ToggleRow
@@ -97,6 +100,7 @@
 			/>
 			<ToggleRow id="clr-autolevel" label="Auto Level" bind:checked={magick.settings.autoLevel} />
 			<ToggleRow id="clr-autogamma" label="Auto Gamma" bind:checked={magick.settings.autoGamma} />
+			<ToggleRow id="clr-equalize" label="Equalize" bind:checked={magick.settings.equalize} />
 		</div>
 	</SectionCard>
 

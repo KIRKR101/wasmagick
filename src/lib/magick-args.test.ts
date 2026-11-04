@@ -52,6 +52,7 @@ function baseSettings(): MagickSettings {
 		sigmoidalChannels: 'All',
 		colorSpace: 'RGB',
 		autoGamma: false,
+		equalize: false,
 		autoThreshold: 'Off',
 		blackThreshold: [0],
 		whiteThreshold: [100],
@@ -210,6 +211,7 @@ describe('buildNativeMagickArgs', () => {
 		expect(build({ autoGamma: true }).args).toEqual(
 			expect.arrayContaining(['-channel', 'RGB', '-auto-gamma', '+channel'])
 		);
+		expect(build({ equalize: true }).args).toContain('-equalize');
 	});
 
 	it('emits level and level-colors with channel handling', () => {
