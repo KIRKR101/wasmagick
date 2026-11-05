@@ -162,6 +162,10 @@ export interface MagickSettings {
 	quantizeColorSpace: ColorSpaceOption;
 	quantizeTreeDepth: [number];
 	measureErrors: boolean;
+	posterizeEnabled: boolean;
+	posterizeLevels: [number];
+	posterizeDither: boolean;
+	orderedDitherMap: 'Off' | 'checks' | 'threshold';
 
 	// Annotate / text settings
 	annotateText: string;
@@ -222,6 +226,8 @@ export interface AppliedOptions {
 		colorSpace: string;
 		treeDepth: number;
 	};
+	posterize?: { levels: number; dither: boolean };
+	orderedDither?: string;
 	blur?: number;
 	sharpen?: number;
 	gaussianBlur?: { radius: number; sigma: number };

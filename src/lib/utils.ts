@@ -101,6 +101,8 @@ export function isFiltersDirty(s: MagickSettings): boolean {
 		s.despeckle ||
 		s.medianEnabled ||
 		s.quantizeColors[0] > 0 ||
+		s.posterizeEnabled ||
+		s.orderedDitherMap !== 'Off' ||
 		s.quantizeTreeDepth[0] > 0 ||
 		s.clutMap !== 'identity'
 	);

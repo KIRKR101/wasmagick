@@ -266,6 +266,14 @@ genAllSources('auto-gamma', ['-channel', 'RGB', '-auto-gamma', '+channel'], '{ba
 console.log('-- equalize --');
 genAllSources('equalize', ['-equalize'], '{base}.png');
 
+// -- POSTERIZE --
+console.log('-- posterize --');
+genAllSources('posterize', ['+dither', '-posterize', '4'], '{base}.png');
+
+// -- ORDERED DITHER --
+console.log('-- ordered-dither-checks --');
+genAllSources('ordered-dither-checks', ['-ordered-dither', 'checks'], '{base}.png');
+
 // -- AUTO-THRESHOLD --
 console.log('-- auto-threshold --');
 genAllSources('auto-threshold', ['-auto-threshold', 'Kapur'], '{base}.png');

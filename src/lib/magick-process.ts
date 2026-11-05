@@ -265,6 +265,11 @@ export interface ProcessResult {
 	width: number;
 	height: number;
 	format: string;
+	errorInfo?: {
+		meanErrorPerPixel: number;
+		normalizedMaximumError: number;
+		normalizedMeanError: number;
+	};
 }
 
 export function processImageSync(
@@ -292,6 +297,7 @@ export function processImageSync(
 				collection.coalesce();
 			}
 		}
+		let errorInfo: ProcessResult['errorInfo'];
 		for (const image of collection) {
 			// Normalize EXIF orientation before geometry. Some ImageMagick builds
 			// clear or expose the orientation attribute differently after resize/crop,
@@ -545,16 +551,21 @@ export function processImageSync(
 				lut.dispose();
 			}
 
+			if (settings.posterizeEnabled) {
+				image.posterize(settings.posterizeLevels[0], !settings.posterizeDither);
+			}
+			if (settings.orderedDitherMap !== 'Off') image.orderedDither(settings.orderedDitherMap);
+
 			if (settings.quantizeColors[0] > 0) {
 				const qs = new QuantizeSettings();
 				qs.colors = settings.quantizeColors[0];
 				qs.colorSpace = ColorSpace[settings.quantizeColorSpace as keyof typeof ColorSpace];
 				qs.treeDepth = settings.quantizeTreeDepth[0];
-				qs.measureErrors = settings.measureErrors;
+				qs.measureErrors = true;
 				if (settings.ditherMethod !== 'Undefined') {
 					qs.ditherMethod = DitherMethod[settings.ditherMethod as keyof typeof DitherMethod];
 				}
-				image.quantize(qs);
+				errorInfo = image.quantize(qs) ?? undefined;
 			}
 
 			if (settings.annotateText?.trim().length > 0) {
@@ -660,7 +671,8 @@ export function processImageSync(
 				previewHeight: needsPreview ? finalHeight : 0,
 				width: outputWidth,
 				height: outputHeight,
-				format: settings.imageFormat
+				format: settings.imageFormat,
+				errorInfo
 			};
 		});
 	});

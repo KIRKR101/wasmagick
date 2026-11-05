@@ -203,6 +203,8 @@ export function buildNativeProcessingPlan(
 		settings.motionBlurRadius[0] > 0 ||
 		settings.despeckle ||
 		settings.medianEnabled ||
+		settings.posterizeEnabled ||
+		settings.orderedDitherMap !== 'Off' ||
 		settings.addNoiseType !== 'Off' ||
 		settings.adaptiveSharpenRadius[0] > 0 ||
 		settings.adaptiveBlurRadius[0] > 0 ||

@@ -428,6 +428,14 @@ export function buildNativeMagickArgs(
 	}
 
 	// -- Quantize --
+	if (settings.posterizeEnabled) {
+		if (settings.posterizeDither) args.push('-dither', 'FloydSteinberg');
+		else args.push('+dither');
+		args.push('-posterize', fmtNum(settings.posterizeLevels[0]));
+	}
+	if (settings.orderedDitherMap !== 'Off') {
+		args.push('-ordered-dither', settings.orderedDitherMap);
+	}
 	if (settings.quantizeColors[0] > 0) {
 		// The WASM quantize colorSpace only affects quantization, but the CLI
 		// has no such scoped option: only emit when it differs from the sRGB

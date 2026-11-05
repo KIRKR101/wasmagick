@@ -83,6 +83,7 @@ const ARRAY_KEYS = new Set([
 	'claheClipLimit',
 	'quantizeColors',
 	'quantizeTreeDepth',
+	'posterizeLevels',
 	'annotateFontSize',
 	'annotateAngle',
 	'annotateStrokeWidth'
@@ -220,6 +221,10 @@ export const DEFAULT_SETTINGS: MagickSettings = {
 	quantizeColorSpace: 'sRGB',
 	quantizeTreeDepth: [0],
 	measureErrors: false,
+	posterizeEnabled: false,
+	posterizeLevels: [4],
+	posterizeDither: false,
+	orderedDitherMap: 'Off',
 	annotateText: '',
 	annotateFontFamily: 'Roboto-Regular',
 	annotateFontSize: [24],
@@ -478,6 +483,11 @@ export class MagickState {
 	hasError = $state(false);
 	errorMessage = $state<string | null>(null);
 	statsMessage = $state('Ready');
+	quantizeErrorInfo = $state<{
+		meanErrorPerPixel: number;
+		normalizedMaximumError: number;
+		normalizedMeanError: number;
+	} | null>(null);
 	hasUnsavedEdits = $state(false);
 	sourceBytes = $state<Uint8Array | null>(null);
 	originalName = $state('image');
@@ -960,6 +970,7 @@ export class MagickState {
 				}
 
 				const { data, previewData, previewWidth, previewHeight, width, height, format } = result;
+				this.quantizeErrorInfo = result.errorInfo ?? null;
 				const elapsed = Math.round(performance.now() - pending.startTime);
 
 				const appliedOptions: AppliedOptions = {};
@@ -1137,6 +1148,10 @@ export class MagickState {
 		this.settings.quantizeColorSpace = DEFAULT_SETTINGS.quantizeColorSpace;
 		this.settings.quantizeTreeDepth = [...DEFAULT_SETTINGS.quantizeTreeDepth];
 		this.settings.measureErrors = DEFAULT_SETTINGS.measureErrors;
+		this.settings.posterizeLevels = [...DEFAULT_SETTINGS.posterizeLevels];
+		this.settings.posterizeEnabled = DEFAULT_SETTINGS.posterizeEnabled;
+		this.settings.posterizeDither = DEFAULT_SETTINGS.posterizeDither;
+		this.settings.orderedDitherMap = DEFAULT_SETTINGS.orderedDitherMap;
 	}
 
 	resetExport(): void {
@@ -1985,6 +2000,7 @@ export class MagickState {
 			if (requestId !== this._nativeRequestId || sourceRevision !== this._sourceRevision) return;
 			if (generation !== this._processGeneration) return;
 			this._nativeSourceRevision = this._sourceRevision;
+			this.quantizeErrorInfo = null;
 
 			const elapsed = Math.round(performance.now() - startTime);
 			const appliedOptions: AppliedOptions = {};

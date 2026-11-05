@@ -95,6 +95,10 @@ function baseSettings(): MagickSettings {
 		quantizeColorSpace: 'sRGB',
 		quantizeTreeDepth: [0],
 		measureErrors: false,
+		posterizeEnabled: false,
+		posterizeLevels: [4],
+		posterizeDither: false,
+		orderedDitherMap: 'Off',
 		annotateText: '',
 		annotateFontFamily: 'Roboto-Regular',
 		annotateFontSize: [24],
@@ -297,6 +301,15 @@ describe('buildNativeMagickArgs', () => {
 				bilateralSpatialSigma: [1]
 			}).args
 		).toEqual(expect.arrayContaining(['-bilateral-blur', '5x5+1.5+1']));
+		expect(build({ posterizeEnabled: true, posterizeLevels: [4] }).args).toEqual(
+			expect.arrayContaining(['+dither', '-posterize', '4'])
+		);
+		expect(build({ posterizeEnabled: true, posterizeDither: true }).args).toEqual(
+			expect.arrayContaining(['-dither', 'FloydSteinberg', '-posterize', '4'])
+		);
+		expect(build({ orderedDitherMap: 'checks' }).args).toEqual(
+			expect.arrayContaining(['-ordered-dither', 'checks'])
+		);
 	});
 
 	it('matches golden blur/sharpen/noise flags', () => {

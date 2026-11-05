@@ -136,6 +136,10 @@ function diffSettings(a: MagickSettings, b: MagickSettings): SettingsDiffItem[] 
 	push('Dither', a.ditherMethod, b.ditherMethod);
 	push('Quantize space', a.quantizeColorSpace, b.quantizeColorSpace);
 	push('Quantize depth', a.quantizeTreeDepth[0], b.quantizeTreeDepth[0]);
+	push('Posterize levels', a.posterizeLevels[0], b.posterizeLevels[0]);
+	push('Posterize enabled', a.posterizeEnabled, b.posterizeEnabled);
+	push('Posterize dither', a.posterizeDither, b.posterizeDither);
+	push('Ordered dither', a.orderedDitherMap, b.orderedDitherMap);
 
 	// Annotate
 	push('Text', a.annotateText, b.annotateText);

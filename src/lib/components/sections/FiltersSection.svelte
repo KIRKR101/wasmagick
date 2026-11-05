@@ -390,9 +390,51 @@
 		</div>
 	</SectionCard>
 
-	<!-- Quantize / Dithering: keep last, it must run near-end -->
-	<SectionCard title="Quantize / Dithering" dirty={magick.settings.quantizeColors[0] > 0}>
+	<!-- Reduce Colors: posterize, ordered dither, and palette quantization -->
+	<SectionCard
+		title="Reduce Colors"
+		dirty={magick.settings.quantizeColors[0] > 0 ||
+			magick.settings.posterizeEnabled ||
+			magick.settings.orderedDitherMap !== 'Off'}
+	>
 		<div class="space-y-3">
+			<div class="space-y-3 border-b border-divider pb-3">
+				<ToggleRow
+					id="flt-posterize-enabled"
+					label="Posterize"
+					bind:checked={magick.settings.posterizeEnabled}
+				/>
+				<SliderRow
+					label="Posterize levels"
+					bind:value={magick.settings.posterizeLevels}
+					min={2}
+					max={16}
+					resetValue={DEFAULT_SETTINGS.posterizeLevels[0]}
+					disabled={!magick.settings.posterizeEnabled}
+				/>
+				{#if magick.settings.posterizeEnabled}
+					<ToggleRow
+						id="flt-posterize-dither"
+						label="Dither"
+						bind:checked={magick.settings.posterizeDither}
+					/>
+				{/if}
+			</div>
+
+			<div class="space-y-1.5 border-b border-divider pb-3">
+				<span class="font-mono text-[11px] text-muted-foreground uppercase">Ordered Dither</span>
+				<Select type="single" bind:value={magick.settings.orderedDitherMap}>
+					<SelectTrigger class="h-8 w-full font-mono text-xs">
+						{magick.settings.orderedDitherMap === 'Off' ? 'Off' : magick.settings.orderedDitherMap}
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="Off">Off</SelectItem>
+						<SelectItem value="checks">Checks</SelectItem>
+						<SelectItem value="threshold">Threshold</SelectItem>
+					</SelectContent>
+				</Select>
+			</div>
+
 			<SliderRow
 				label="Colors"
 				bind:value={magick.settings.quantizeColors}
@@ -443,6 +485,12 @@
 					max={8}
 					class="pb-1"
 				/>
+			{/if}
+			{#if magick.quantizeErrorInfo && magick.settings.quantizeColors[0] > 0}
+				<div class="border-t border-divider pt-2 font-mono text-[11px] text-muted-foreground">
+					Quantize error: mean {(magick.quantizeErrorInfo.normalizedMeanError * 100).toFixed(2)}% ·
+					max {(magick.quantizeErrorInfo.normalizedMaximumError * 100).toFixed(2)}%
+				</div>
 			{/if}
 		</div>
 	</SectionCard>

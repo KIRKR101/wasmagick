@@ -462,6 +462,18 @@ describe('Color operations', () => {
 });
 
 describe('Filter / Effect operations', () => {
+	it('posterize without dither', () => {
+		testAllSources('posterize', '{base}.png', {
+			posterizeEnabled: true,
+			posterizeLevels: [4]
+		});
+	});
+
+	it('ordered dither checks', () => {
+		// The WASM and CLI threshold-map builds differ slightly in pattern phase.
+		testAllSources('ordered-dither-checks', '{base}.png', { orderedDitherMap: 'checks' }, 0.05, 100);
+	});
+
 	it('despeckle', () => {
 		testAllSources('despeckle', '{base}.png', { despeckle: true });
 	});

@@ -198,6 +198,8 @@
 						parts.push(s.ditherMethod === 'No' ? 'No dither' : s.ditherMethod);
 					if (s.quantizeColorSpace !== 'sRGB') parts.push(`CS: ${s.quantizeColorSpace}`);
 				}
+				if (s.posterizeEnabled) parts.push(`Posterize ${s.posterizeLevels[0]}`);
+				if (s.orderedDitherMap !== 'Off') parts.push(`Ordered ${s.orderedDitherMap}`);
 				return parts.join(' · ');
 			}
 			case 'export': {
