@@ -100,6 +100,8 @@ export function isFiltersDirty(s: MagickSettings): boolean {
 		s.adaptiveBlurRadius[0] > 0 ||
 		s.despeckle ||
 		s.medianEnabled ||
+		s.unsharpEnabled ||
+		s.rotationalBlurAngle[0] > 0 ||
 		s.quantizeColors[0] > 0 ||
 		s.posterizeEnabled ||
 		s.orderedDitherMap !== 'Off' ||

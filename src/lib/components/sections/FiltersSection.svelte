@@ -189,7 +189,9 @@
 			magick.settings.gaussianBlurRadius[0] > 0 ||
 			magick.settings.motionBlurRadius[0] > 0 ||
 			magick.settings.adaptiveSharpenRadius[0] > 0 ||
-			magick.settings.adaptiveBlurRadius[0] > 0}
+			magick.settings.adaptiveBlurRadius[0] > 0 ||
+			magick.settings.unsharpEnabled ||
+			magick.settings.rotationalBlurAngle[0] > 0}
 	>
 		<div class="space-y-3">
 			<div class="grid grid-cols-2 gap-3">
@@ -293,6 +295,53 @@
 						class="pb-1"
 					/>
 				</div>
+			</div>
+
+			<div class="space-y-3 border-t border-foreground/10 pt-3">
+				<div class="font-mono text-[11px] text-muted-foreground uppercase">Unsharp Mask</div>
+				<ToggleRow
+					id="flt-unsharp-enabled"
+					label="Enabled"
+					bind:checked={magick.settings.unsharpEnabled}
+				/>
+				<SliderRow
+					label="Radius"
+					bind:value={magick.settings.unsharpRadius}
+					min={0.5}
+					max={10}
+					step={0.5}
+					disabled={!magick.settings.unsharpEnabled}
+				/>
+				<SliderRow
+					label="Amount"
+					bind:value={magick.settings.unsharpAmount}
+					min={0.1}
+					max={5}
+					step={0.1}
+					resetValue={DEFAULT_SETTINGS.unsharpAmount[0]}
+					disabled={!magick.settings.unsharpEnabled}
+				/>
+				<SliderRow
+					label="Threshold"
+					bind:value={magick.settings.unsharpThreshold}
+					min={0}
+					max={0.5}
+					step={0.05}
+					resetValue={DEFAULT_SETTINGS.unsharpThreshold[0]}
+					disabled={!magick.settings.unsharpEnabled}
+				/>
+			</div>
+
+			<div class="space-y-3 border-t border-foreground/10 pt-3">
+				<div class="font-mono text-[11px] text-muted-foreground uppercase">Rotational Blur</div>
+				<SliderRow
+					label="Angle"
+					bind:value={magick.settings.rotationalBlurAngle}
+					suffix="°"
+					min={0}
+					max={360}
+					resetValue={DEFAULT_SETTINGS.rotationalBlurAngle[0]}
+				/>
 			</div>
 		</div>
 	</SectionCard>

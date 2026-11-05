@@ -124,6 +124,11 @@ function diffSettings(a: MagickSettings, b: MagickSettings): SettingsDiffItem[] 
 	push('Despeckle', a.despeckle, b.despeckle);
 	push('Median enabled', a.medianEnabled, b.medianEnabled);
 	push('Median size', a.medianSize[0], b.medianSize[0]);
+	push('Unsharp enabled', a.unsharpEnabled, b.unsharpEnabled);
+	push('Unsharp radius', a.unsharpRadius[0], b.unsharpRadius[0]);
+	push('Unsharp amount', a.unsharpAmount[0], b.unsharpAmount[0]);
+	push('Unsharp threshold', a.unsharpThreshold[0], b.unsharpThreshold[0]);
+	push('Rotational blur', a.rotationalBlurAngle[0], b.rotationalBlurAngle[0]);
 	push('Bilateral W', a.bilateralWidth[0], b.bilateralWidth[0]);
 	push('Bilateral H', a.bilateralHeight[0], b.bilateralHeight[0]);
 	push('Bilateral iΣ', a.bilateralIntensitySigma[0], b.bilateralIntensitySigma[0]);

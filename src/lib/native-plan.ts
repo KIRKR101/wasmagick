@@ -201,6 +201,8 @@ export function buildNativeProcessingPlan(
 			settings.effect !== 'grayscale' &&
 			settings.effect !== 'negate') ||
 		settings.motionBlurRadius[0] > 0 ||
+		settings.unsharpEnabled ||
+		settings.rotationalBlurAngle[0] > 0 ||
 		settings.despeckle ||
 		settings.medianEnabled ||
 		settings.posterizeEnabled ||

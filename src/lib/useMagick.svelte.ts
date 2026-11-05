@@ -84,6 +84,10 @@ const ARRAY_KEYS = new Set([
 	'quantizeColors',
 	'quantizeTreeDepth',
 	'posterizeLevels',
+	'unsharpRadius',
+	'unsharpAmount',
+	'unsharpThreshold',
+	'rotationalBlurAngle',
 	'annotateFontSize',
 	'annotateAngle',
 	'annotateStrokeWidth'
@@ -210,6 +214,11 @@ export const DEFAULT_SETTINGS: MagickSettings = {
 	despeckle: false,
 	medianEnabled: false,
 	medianSize: [3],
+	unsharpEnabled: false,
+	unsharpRadius: [2],
+	unsharpAmount: [1],
+	unsharpThreshold: [0.05],
+	rotationalBlurAngle: [0],
 	bilateralWidth: [0],
 	bilateralHeight: [0],
 	bilateralIntensitySigma: [1.5],
@@ -1133,6 +1142,11 @@ export class MagickState {
 		this.settings.despeckle = DEFAULT_SETTINGS.despeckle;
 		this.settings.medianEnabled = DEFAULT_SETTINGS.medianEnabled;
 		this.settings.medianSize = [...DEFAULT_SETTINGS.medianSize];
+		this.settings.unsharpEnabled = DEFAULT_SETTINGS.unsharpEnabled;
+		this.settings.unsharpRadius = [...DEFAULT_SETTINGS.unsharpRadius];
+		this.settings.unsharpAmount = [...DEFAULT_SETTINGS.unsharpAmount];
+		this.settings.unsharpThreshold = [...DEFAULT_SETTINGS.unsharpThreshold];
+		this.settings.rotationalBlurAngle = [...DEFAULT_SETTINGS.rotationalBlurAngle];
 		this.settings.bilateralWidth = [...DEFAULT_SETTINGS.bilateralWidth];
 		this.settings.bilateralHeight = [...DEFAULT_SETTINGS.bilateralHeight];
 		this.settings.bilateralIntensitySigma = [...DEFAULT_SETTINGS.bilateralIntensitySigma];

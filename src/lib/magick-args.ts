@@ -354,12 +354,21 @@ export function buildNativeMagickArgs(
 			`${fmtNum(settings.adaptiveBlurRadius[0])}x${fmtNum(settings.adaptiveBlurSigma[0])}`
 		);
 	}
+	if (settings.unsharpEnabled) {
+		args.push(
+			'-unsharp',
+			`${fmtNum(settings.unsharpRadius[0])}x${fmtNum(settings.unsharpRadius[0] / 2)}+${fmtNum(settings.unsharpAmount[0])}+${fmtNum(settings.unsharpThreshold[0])}`
+		);
+	}
 
 	if (settings.motionBlurRadius[0] > 0) {
 		args.push(
 			'-motion-blur',
 			`${fmtNum(settings.motionBlurRadius[0])}x${fmtNum(settings.motionBlurSigma[0])}+${fmtNum(settings.motionBlurAngle[0])}`
 		);
+	}
+	if (settings.rotationalBlurAngle[0] > 0) {
+		args.push('-rotational-blur', fmtNum(settings.rotationalBlurAngle[0]));
 	}
 
 	if (settings.addNoiseType !== 'Off') {

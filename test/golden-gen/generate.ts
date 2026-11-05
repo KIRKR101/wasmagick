@@ -247,6 +247,14 @@ genAllSources('adaptive-sharpen', ['-adaptive-sharpen', '2x1'], '{base}.png');
 console.log('-- adaptive-blur --');
 genAllSources('adaptive-blur', ['-adaptive-blur', '2x1'], '{base}.png');
 
+// -- UNSHARP MASK --
+console.log('-- unsharp-mask --');
+genAllSources('unsharp-mask', ['-unsharp', '2x1+1+0.05'], '{base}.png');
+
+// -- ROTATIONAL BLUR --
+console.log('-- rotational-blur --');
+genAllSources('rotational-blur', ['-rotational-blur', '12'], '{base}.png');
+
 // -- DESPECKLE --
 console.log('-- despeckle --');
 genAllSources('despeckle', ['-despeckle'], '{base}.png');

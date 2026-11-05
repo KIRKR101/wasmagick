@@ -462,6 +462,14 @@ describe('Color operations', () => {
 });
 
 describe('Filter / Effect operations', () => {
+	it('unsharp mask', () => {
+		testAllSources('unsharp-mask', '{base}.png', { unsharpEnabled: true });
+	});
+
+	it('rotational blur', () => {
+		testAllSources('rotational-blur', '{base}.png', { rotationalBlurAngle: [12] });
+	});
+
 	it('posterize without dither', () => {
 		testAllSources('posterize', '{base}.png', {
 			posterizeEnabled: true,
@@ -471,7 +479,13 @@ describe('Filter / Effect operations', () => {
 
 	it('ordered dither checks', () => {
 		// The WASM and CLI threshold-map builds differ slightly in pattern phase.
-		testAllSources('ordered-dither-checks', '{base}.png', { orderedDitherMap: 'checks' }, 0.05, 100);
+		testAllSources(
+			'ordered-dither-checks',
+			'{base}.png',
+			{ orderedDitherMap: 'checks' },
+			0.05,
+			100
+		);
 	});
 
 	it('despeckle', () => {

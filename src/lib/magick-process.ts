@@ -480,6 +480,14 @@ export function processImageSync(
 			if (settings.adaptiveBlurRadius[0] > 0) {
 				image.adaptiveBlur(settings.adaptiveBlurRadius[0], settings.adaptiveBlurSigma[0]);
 			}
+			if (settings.unsharpEnabled) {
+				image.unsharpMask(
+					settings.unsharpRadius[0],
+					settings.unsharpRadius[0] / 2,
+					settings.unsharpAmount[0],
+					settings.unsharpThreshold[0]
+				);
+			}
 
 			if (settings.motionBlurRadius[0] > 0) {
 				image.motionBlur(
@@ -487,6 +495,9 @@ export function processImageSync(
 					settings.motionBlurSigma[0],
 					settings.motionBlurAngle[0]
 				);
+			}
+			if (settings.rotationalBlurAngle[0] > 0) {
+				image.rotationalBlur(settings.rotationalBlurAngle[0]);
 			}
 
 			if (settings.addNoiseType !== 'Off') {

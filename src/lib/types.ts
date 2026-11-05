@@ -149,6 +149,11 @@ export interface MagickSettings {
 	despeckle: boolean;
 	medianEnabled: boolean;
 	medianSize: [number];
+	unsharpEnabled: boolean;
+	unsharpRadius: [number];
+	unsharpAmount: [number];
+	unsharpThreshold: [number];
+	rotationalBlurAngle: [number];
 	bilateralWidth: [number];
 	bilateralHeight: [number];
 	bilateralIntensitySigma: [number];
@@ -228,6 +233,8 @@ export interface AppliedOptions {
 	};
 	posterize?: { levels: number; dither: boolean };
 	orderedDither?: string;
+	unsharpMask?: { radius: number; amount: number; threshold: number };
+	rotationalBlur?: number;
 	blur?: number;
 	sharpen?: number;
 	gaussianBlur?: { radius: number; sigma: number };

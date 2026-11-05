@@ -191,6 +191,8 @@
 				if (s.adaptiveBlurRadius[0] > 0) parts.push(`AdptBlur ${s.adaptiveBlurRadius[0]}`);
 				if (s.despeckle) parts.push('Despeckle');
 				if (s.medianEnabled) parts.push(`Median ${s.medianSize[0]}`);
+				if (s.unsharpEnabled) parts.push(`Unsharp ${s.unsharpAmount[0]}`);
+				if (s.rotationalBlurAngle[0] > 0) parts.push(`Rotational ${s.rotationalBlurAngle[0]}°`);
 				if (s.quantizeColors[0] > 0) {
 					parts.push(`Quantize ${s.quantizeColors[0]} colors`);
 					if (s.quantizeTreeDepth[0] > 0) parts.push(`TreeDepth ${s.quantizeTreeDepth[0]}`);

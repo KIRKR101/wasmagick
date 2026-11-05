@@ -84,6 +84,11 @@ function baseSettings(): MagickSettings {
 		despeckle: false,
 		medianEnabled: false,
 		medianSize: [3],
+		unsharpEnabled: false,
+		unsharpRadius: [2],
+		unsharpAmount: [1],
+		unsharpThreshold: [0.05],
+		rotationalBlurAngle: [0],
 		bilateralWidth: [0],
 		bilateralHeight: [0],
 		bilateralIntensitySigma: [1.5],
@@ -333,6 +338,12 @@ describe('buildNativeMagickArgs', () => {
 		expect(build({ despeckle: true }).args).toContain('-despeckle');
 		expect(build({ medianEnabled: true, medianSize: [5] }).args).toEqual(
 			expect.arrayContaining(['-statistic', 'median', '5x5'])
+		);
+		expect(build({ unsharpEnabled: true }).args).toEqual(
+			expect.arrayContaining(['-unsharp', '2x1+1+0.05'])
+		);
+		expect(build({ rotationalBlurAngle: [12] }).args).toEqual(
+			expect.arrayContaining(['-rotational-blur', '12'])
 		);
 		// Poisson slider is inverted (higher slider = more noise).
 		expect(build({ addNoiseType: 'Poisson', addNoiseAttenuate: [0.5] }).args).toEqual(
