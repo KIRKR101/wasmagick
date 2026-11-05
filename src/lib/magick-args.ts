@@ -159,14 +159,6 @@ export function buildNativeMagickArgs(
 	}
 
 	if (parseInt(settings.rotate) !== 0) args.push('-rotate', String(parseInt(settings.rotate)));
-	if (settings.shearEnabled) {
-		args.push(
-			'-background',
-			settings.extentBgColor,
-			'-shear',
-			`${fmtNum(settings.shearX[0])}x${fmtNum(settings.shearY[0])}`
-		);
-	}
 	if (settings.flop) args.push('-flop');
 	if (settings.flip) args.push('-flip');
 

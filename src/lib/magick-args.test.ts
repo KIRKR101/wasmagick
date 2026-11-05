@@ -96,9 +96,6 @@ function baseSettings(): MagickSettings {
 		swirlDegrees: [90],
 		implodeAmount: [0.5],
 		spreadRadius: [5],
-		shearEnabled: false,
-		shearX: [0],
-		shearY: [0],
 		bilateralWidth: [0],
 		bilateralHeight: [0],
 		bilateralIntensitySigma: [1.5],
@@ -360,9 +357,6 @@ describe('buildNativeMagickArgs', () => {
 		);
 		expect(build({ distortion: 'spread', spreadRadius: [5] }).args).toEqual(
 			expect.arrayContaining(['-interpolate', 'Bilinear', '-spread', '5'])
-		);
-		expect(build({ shearEnabled: true, shearX: [10], shearY: [0] }).args).toEqual(
-			expect.arrayContaining(['-background', '#ffffff', '-shear', '10x0'])
 		);
 		expect(build({ unsharpEnabled: true }).args).toEqual(
 			expect.arrayContaining(['-unsharp', '2x1+1+0.05'])

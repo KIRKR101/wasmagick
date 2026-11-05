@@ -93,8 +93,6 @@ const ARRAY_KEYS = new Set([
 	'swirlDegrees',
 	'implodeAmount',
 	'spreadRadius',
-	'shearX',
-	'shearY',
 	'annotateFontSize',
 	'annotateAngle',
 	'annotateStrokeWidth'
@@ -233,9 +231,6 @@ export const DEFAULT_SETTINGS: MagickSettings = {
 	swirlDegrees: [90],
 	implodeAmount: [0.5],
 	spreadRadius: [5],
-	shearEnabled: false,
-	shearX: [0],
-	shearY: [0],
 	bilateralWidth: [0],
 	bilateralHeight: [0],
 	bilateralIntensitySigma: [1.5],
@@ -1100,9 +1095,6 @@ export class MagickState {
 		this.settings.autoOrient = DEFAULT_SETTINGS.autoOrient;
 		this.settings.shaveX = DEFAULT_SETTINGS.shaveX;
 		this.settings.shaveY = DEFAULT_SETTINGS.shaveY;
-		this.settings.shearEnabled = DEFAULT_SETTINGS.shearEnabled;
-		this.settings.shearX = [...DEFAULT_SETTINGS.shearX];
-		this.settings.shearY = [...DEFAULT_SETTINGS.shearY];
 	}
 
 	resetColor(): void {

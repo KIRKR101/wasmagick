@@ -71,7 +71,6 @@
 				}
 				if (s.resizeW || s.resizeH) parts.push(`Resize ${s.resizeW ?? 'A'}×${s.resizeH ?? 'A'}`);
 				if (s.rotate !== '0') parts.push(`Rotate ${s.rotate}°`);
-				if (s.shearEnabled) parts.push(`Shear ${s.shearX[0]}×${s.shearY[0]}`);
 				if (s.flip) parts.push('Flip');
 				if (s.flop) parts.push('Flop');
 				if (!s.autoOrient) parts.push('Auto-Orient Off');

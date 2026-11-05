@@ -164,9 +164,6 @@ export interface MagickSettings {
 	swirlDegrees: [number];
 	implodeAmount: [number];
 	spreadRadius: [number];
-	shearEnabled: boolean;
-	shearX: [number];
-	shearY: [number];
 	bilateralWidth: [number];
 	bilateralHeight: [number];
 	bilateralIntensitySigma: [number];
@@ -249,7 +246,6 @@ export interface AppliedOptions {
 	unsharpMask?: { radius: number; amount: number; threshold: number };
 	rotationalBlur?: number;
 	distortion?: string;
-	shear?: { x: number; y: number };
 	blur?: number;
 	sharpen?: number;
 	gaussianBlur?: { radius: number; sigma: number };

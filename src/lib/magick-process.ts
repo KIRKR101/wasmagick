@@ -316,11 +316,6 @@ export function processImageSync(
 			if (parseInt(settings.rotate) !== 0) {
 				image.rotate(parseInt(settings.rotate));
 			}
-			if (settings.shearEnabled) {
-				const { r, g, b } = hexToRgb(settings.extentBgColor);
-				image.backgroundColor = new MagickColor(r, g, b);
-				image.shear(settings.shearX[0], settings.shearY[0]);
-			}
 
 			if (settings.flop) image.flop();
 			if (settings.flip) image.flip();

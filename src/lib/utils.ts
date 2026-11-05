@@ -53,7 +53,6 @@ export function isGeoDirty(s: MagickSettings): boolean {
 		s.deskewThreshold[0] > 0 ||
 		s.autoOrient !== true ||
 		s.shaveX != null ||
-		s.shearEnabled ||
 		s.shaveY != null
 	);
 }

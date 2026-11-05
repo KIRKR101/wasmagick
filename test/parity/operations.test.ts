@@ -166,10 +166,6 @@ function testAllSources(
 }
 
 describe('Geometry operations', () => {
-	it('shear', () => {
-		testAllSources('shear', '{base}.png', { shearEnabled: true, shearX: [10], shearY: [0] });
-	});
-
 	it('resize', () => {
 		testAllSources('resize', '{base}-50x50.png', { resizeW: 50, resizeH: 50 });
 	});

@@ -47,9 +47,6 @@ function diffSettings(a: MagickSettings, b: MagickSettings): SettingsDiffItem[] 
 	push('Resize W', a.resizeW, b.resizeW);
 	push('Resize H', a.resizeH, b.resizeH);
 	push('Rotate', a.rotate, b.rotate);
-	push('Shear enabled', a.shearEnabled, b.shearEnabled);
-	push('Shear X', a.shearX[0], b.shearX[0]);
-	push('Shear Y', a.shearY[0], b.shearY[0]);
 	push('Flop', a.flop, b.flop);
 	push('Flip', a.flip, b.flip);
 	push('Border', a.borderSize[0], b.borderSize[0]);

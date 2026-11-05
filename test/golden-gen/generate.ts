@@ -77,10 +77,6 @@ genAllSources('rotate', ['-rotate', '180'], '{base}-180.png');
 console.log('-- rotate -90 --');
 genAllSources('rotate', ['-rotate', '-90'], '{base}-m90.png');
 
-// -- SHEAR --
-console.log('-- shear --');
-genAllSources('shear', ['-background', '#ffffff', '-shear', '10x0'], '{base}.png');
-
 // -- FLIP --
 console.log('-- flip --');
 genAllSources('flip', ['-flip'], '{base}.png');

@@ -274,7 +274,6 @@
 	<SectionCard
 		title="Orient"
 		dirty={magick.settings.rotate !== '0' ||
-			magick.settings.shearEnabled ||
 			magick.settings.flip ||
 			magick.settings.flop ||
 			magick.settings.autoOrient !== true}
@@ -320,31 +319,6 @@
 						<span class="font-mono text-[11px] uppercase group-hover:underline">Flop</span>
 					</button>
 				</div>
-			</div>
-			<div class="space-y-3 border-t border-foreground/10 pt-3">
-				<ToggleRow
-					id="geo-shear-enabled"
-					label="Shear"
-					bind:checked={magick.settings.shearEnabled}
-				/>
-				<SliderRow
-					label="Horizontal"
-					bind:value={magick.settings.shearX}
-					suffix="°"
-					min={-45}
-					max={45}
-					step={1}
-					disabled={!magick.settings.shearEnabled}
-				/>
-				<SliderRow
-					label="Vertical"
-					bind:value={magick.settings.shearY}
-					suffix="°"
-					min={-45}
-					max={45}
-					step={1}
-					disabled={!magick.settings.shearEnabled}
-				/>
 			</div>
 		</div>
 	</SectionCard>

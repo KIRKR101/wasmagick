@@ -125,7 +125,6 @@ export function buildNativeProcessingPlan(
 	}
 	if (settings.flip) operations.push({ type: 'flip' });
 	if (settings.flop) operations.push({ type: 'flop' });
-	if (settings.shearEnabled) unsupported.push('shear');
 
 	if (settings.shaveX != null || settings.shaveY != null) unsupported.push('shave');
 	if (settings.trimEdges) operations.push({ type: 'trim' });
