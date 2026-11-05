@@ -136,17 +136,15 @@ export const BUILTIN_PRESETS: BuiltInPreset[] = [
 	{
 		id: 'poster-print',
 		name: 'Poster Print',
-		description: 'Posterize · 16-color dither · punchy',
+		description: 'Posterize · bold tonal steps · punchy',
 		patch: {
 			sigmoidalContrast: [10],
 			brightness: [80],
 			saturation: [160],
 			autoLevel: true,
 			sharpen: [2],
-			quantizeColors: [16],
-			ditherMethod: 'FloydSteinberg',
-			quantizeColorSpace: 'Oklab',
-			quantizeTreeDepth: [4],
+			posterizeEnabled: true,
+			posterizeLevels: [4],
 			imageFormat: 'PNG',
 			quality: [100]
 		}
