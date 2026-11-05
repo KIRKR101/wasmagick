@@ -47,6 +47,9 @@ function diffSettings(a: MagickSettings, b: MagickSettings): SettingsDiffItem[] 
 	push('Resize W', a.resizeW, b.resizeW);
 	push('Resize H', a.resizeH, b.resizeH);
 	push('Rotate', a.rotate, b.rotate);
+	push('Shear enabled', a.shearEnabled, b.shearEnabled);
+	push('Shear X', a.shearX[0], b.shearX[0]);
+	push('Shear Y', a.shearY[0], b.shearY[0]);
 	push('Flop', a.flop, b.flop);
 	push('Flip', a.flip, b.flip);
 	push('Border', a.borderSize[0], b.borderSize[0]);
@@ -135,6 +138,11 @@ function diffSettings(a: MagickSettings, b: MagickSettings): SettingsDiffItem[] 
 	push('Bilateral sΣ', a.bilateralSpatialSigma[0], b.bilateralSpatialSigma[0]);
 	push('Mean shift size', a.meanShiftSize[0], b.meanShiftSize[0]);
 	push('Mean shift distance', a.meanShiftColorDistance[0], b.meanShiftColorDistance[0]);
+	push('Distortion', a.distortion, b.distortion);
+	push('Distortion interpolation', a.distortionInterpolation, b.distortionInterpolation);
+	push('Swirl', a.swirlDegrees[0], b.swirlDegrees[0]);
+	push('Implode', a.implodeAmount[0], b.implodeAmount[0]);
+	push('Spread', a.spreadRadius[0], b.spreadRadius[0]);
 	push('CLUT', a.clutMap, b.clutMap);
 	push('CLUT interp', a.clutInterpolation, b.clutInterpolation);
 

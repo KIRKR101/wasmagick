@@ -53,6 +53,7 @@ export function isGeoDirty(s: MagickSettings): boolean {
 		s.deskewThreshold[0] > 0 ||
 		s.autoOrient !== true ||
 		s.shaveX != null ||
+		s.shearEnabled ||
 		s.shaveY != null
 	);
 }
@@ -91,6 +92,7 @@ export function isColorDirty(s: MagickSettings): boolean {
 export function isFiltersDirty(s: MagickSettings): boolean {
 	return (
 		s.effect !== 'none' ||
+		s.distortion !== 'none' ||
 		s.blur[0] > 0 ||
 		s.sharpen[0] > 0 ||
 		s.gaussianBlurRadius[0] > 0 ||

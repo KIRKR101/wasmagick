@@ -166,6 +166,10 @@ function testAllSources(
 }
 
 describe('Geometry operations', () => {
+	it('shear', () => {
+		testAllSources('shear', '{base}.png', { shearEnabled: true, shearX: [10], shearY: [0] });
+	});
+
 	it('resize', () => {
 		testAllSources('resize', '{base}-50x50.png', { resizeW: 50, resizeH: 50 });
 	});
@@ -462,6 +466,14 @@ describe('Color operations', () => {
 });
 
 describe('Filter / Effect operations', () => {
+	it('swirl distortion', () => {
+		testAllSources('swirl', '{base}.png', { distortion: 'swirl', swirlDegrees: [90] });
+	});
+
+	it('implode distortion', () => {
+		testAllSources('implode', '{base}.png', { distortion: 'implode', implodeAmount: [0.5] });
+	});
+
 	it('mean shift', () => {
 		testAllSources('mean-shift', '{base}.png', { effect: 'meanShift' });
 	});

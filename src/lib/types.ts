@@ -40,6 +40,8 @@ export type EffectPreset =
 	| 'bilateralBlur'
 	| 'meanShift';
 
+export type DistortionPreset = 'none' | 'swirl' | 'implode' | 'spread';
+
 /** Auto threshold method options */
 export type AutoThresholdOption = 'Off' | 'Kapur' | 'OTSU' | 'Triangle';
 
@@ -157,6 +159,14 @@ export interface MagickSettings {
 	rotationalBlurAngle: [number];
 	meanShiftSize: [number];
 	meanShiftColorDistance: [number];
+	distortion: DistortionPreset;
+	distortionInterpolation: ClutInterpolation;
+	swirlDegrees: [number];
+	implodeAmount: [number];
+	spreadRadius: [number];
+	shearEnabled: boolean;
+	shearX: [number];
+	shearY: [number];
 	bilateralWidth: [number];
 	bilateralHeight: [number];
 	bilateralIntensitySigma: [number];
@@ -238,6 +248,8 @@ export interface AppliedOptions {
 	orderedDither?: string;
 	unsharpMask?: { radius: number; amount: number; threshold: number };
 	rotationalBlur?: number;
+	distortion?: string;
+	shear?: { x: number; y: number };
 	blur?: number;
 	sharpen?: number;
 	gaussianBlur?: { radius: number; sigma: number };

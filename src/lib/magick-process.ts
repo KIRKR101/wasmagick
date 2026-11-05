@@ -316,6 +316,11 @@ export function processImageSync(
 			if (parseInt(settings.rotate) !== 0) {
 				image.rotate(parseInt(settings.rotate));
 			}
+			if (settings.shearEnabled) {
+				const { r, g, b } = hexToRgb(settings.extentBgColor);
+				image.backgroundColor = new MagickColor(r, g, b);
+				image.shear(settings.shearX[0], settings.shearY[0]);
+			}
 
 			if (settings.flop) image.flop();
 			if (settings.flip) image.flip();
@@ -560,6 +565,19 @@ export function processImageSync(
 						);
 						break;
 				}
+			}
+
+			const interpolation = getPixelInterpolateMethod(settings.distortionInterpolation);
+			switch (settings.distortion) {
+				case 'swirl':
+					image.swirl(interpolation, settings.swirlDegrees[0]);
+					break;
+				case 'implode':
+					image.implode(settings.implodeAmount[0], interpolation);
+					break;
+				case 'spread':
+					image.spread(interpolation, settings.spreadRadius[0]);
+					break;
 			}
 
 			if (settings.clutMap !== 'identity') {

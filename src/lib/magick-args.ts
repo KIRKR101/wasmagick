@@ -159,6 +159,14 @@ export function buildNativeMagickArgs(
 	}
 
 	if (parseInt(settings.rotate) !== 0) args.push('-rotate', String(parseInt(settings.rotate)));
+	if (settings.shearEnabled) {
+		args.push(
+			'-background',
+			settings.extentBgColor,
+			'-shear',
+			`${fmtNum(settings.shearX[0])}x${fmtNum(settings.shearY[0])}`
+		);
+	}
 	if (settings.flop) args.push('-flop');
 	if (settings.flip) args.push('-flip');
 
@@ -429,6 +437,33 @@ export function buildNativeMagickArgs(
 				);
 				break;
 		}
+	}
+
+	switch (settings.distortion) {
+		case 'swirl':
+			args.push(
+				'-interpolate',
+				interpolateCliKeyword(settings.distortionInterpolation),
+				'-swirl',
+				fmtNum(settings.swirlDegrees[0])
+			);
+			break;
+		case 'implode':
+			args.push(
+				'-interpolate',
+				interpolateCliKeyword(settings.distortionInterpolation),
+				'-implode',
+				fmtNum(settings.implodeAmount[0])
+			);
+			break;
+		case 'spread':
+			args.push(
+				'-interpolate',
+				interpolateCliKeyword(settings.distortionInterpolation),
+				'-spread',
+				fmtNum(settings.spreadRadius[0])
+			);
+			break;
 	}
 
 	// -- CLUT (needs the CLUT PNG supplied by the renderer) --

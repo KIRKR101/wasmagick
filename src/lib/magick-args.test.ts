@@ -91,6 +91,14 @@ function baseSettings(): MagickSettings {
 		rotationalBlurAngle: [0],
 		meanShiftSize: [5],
 		meanShiftColorDistance: [10],
+		distortion: 'none',
+		distortionInterpolation: 'bilinear',
+		swirlDegrees: [90],
+		implodeAmount: [0.5],
+		spreadRadius: [5],
+		shearEnabled: false,
+		shearX: [0],
+		shearY: [0],
 		bilateralWidth: [0],
 		bilateralHeight: [0],
 		bilateralIntensitySigma: [1.5],
@@ -343,6 +351,18 @@ describe('buildNativeMagickArgs', () => {
 		expect(build({ despeckle: true }).args).toContain('-despeckle');
 		expect(build({ medianEnabled: true, medianSize: [5] }).args).toEqual(
 			expect.arrayContaining(['-statistic', 'median', '5x5'])
+		);
+		expect(build({ distortion: 'swirl', swirlDegrees: [90] }).args).toEqual(
+			expect.arrayContaining(['-interpolate', 'Bilinear', '-swirl', '90'])
+		);
+		expect(build({ distortion: 'implode', implodeAmount: [0.5] }).args).toEqual(
+			expect.arrayContaining(['-interpolate', 'Bilinear', '-implode', '0.5'])
+		);
+		expect(build({ distortion: 'spread', spreadRadius: [5] }).args).toEqual(
+			expect.arrayContaining(['-interpolate', 'Bilinear', '-spread', '5'])
+		);
+		expect(build({ shearEnabled: true, shearX: [10], shearY: [0] }).args).toEqual(
+			expect.arrayContaining(['-background', '#ffffff', '-shear', '10x0'])
 		);
 		expect(build({ unsharpEnabled: true }).args).toEqual(
 			expect.arrayContaining(['-unsharp', '2x1+1+0.05'])

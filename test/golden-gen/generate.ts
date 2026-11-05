@@ -77,6 +77,10 @@ genAllSources('rotate', ['-rotate', '180'], '{base}-180.png');
 console.log('-- rotate -90 --');
 genAllSources('rotate', ['-rotate', '-90'], '{base}-m90.png');
 
+// -- SHEAR --
+console.log('-- shear --');
+genAllSources('shear', ['-background', '#ffffff', '-shear', '10x0'], '{base}.png');
+
 // -- FLIP --
 console.log('-- flip --');
 genAllSources('flip', ['-flip'], '{base}.png');
@@ -234,6 +238,12 @@ genAllSources('bilateral-blur', ['-bilateral-blur', '5x5+1.5+1.0'], '{base}.png'
 // -- MEAN-SHIFT --
 console.log('-- mean-shift --');
 genAllSources('mean-shift', ['-mean-shift', '5x5+10%'], '{base}.png');
+
+// -- DISTORTIONS --
+console.log('-- swirl --');
+genAllSources('swirl', ['-interpolate', 'Bilinear', '-swirl', '90'], '{base}.png');
+console.log('-- implode --');
+genAllSources('implode', ['-interpolate', 'Bilinear', '-implode', '0.5'], '{base}.png');
 
 // -- BLUR --
 console.log('-- blur --');

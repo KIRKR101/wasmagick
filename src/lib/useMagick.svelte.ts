@@ -90,6 +90,11 @@ const ARRAY_KEYS = new Set([
 	'rotationalBlurAngle',
 	'meanShiftSize',
 	'meanShiftColorDistance',
+	'swirlDegrees',
+	'implodeAmount',
+	'spreadRadius',
+	'shearX',
+	'shearY',
 	'annotateFontSize',
 	'annotateAngle',
 	'annotateStrokeWidth'
@@ -223,6 +228,14 @@ export const DEFAULT_SETTINGS: MagickSettings = {
 	rotationalBlurAngle: [0],
 	meanShiftSize: [5],
 	meanShiftColorDistance: [10],
+	distortion: 'none',
+	distortionInterpolation: 'bilinear',
+	swirlDegrees: [90],
+	implodeAmount: [0.5],
+	spreadRadius: [5],
+	shearEnabled: false,
+	shearX: [0],
+	shearY: [0],
 	bilateralWidth: [0],
 	bilateralHeight: [0],
 	bilateralIntensitySigma: [1.5],
@@ -1087,6 +1100,9 @@ export class MagickState {
 		this.settings.autoOrient = DEFAULT_SETTINGS.autoOrient;
 		this.settings.shaveX = DEFAULT_SETTINGS.shaveX;
 		this.settings.shaveY = DEFAULT_SETTINGS.shaveY;
+		this.settings.shearEnabled = DEFAULT_SETTINGS.shearEnabled;
+		this.settings.shearX = [...DEFAULT_SETTINGS.shearX];
+		this.settings.shearY = [...DEFAULT_SETTINGS.shearY];
 	}
 
 	resetColor(): void {
@@ -1153,12 +1169,15 @@ export class MagickState {
 		this.settings.rotationalBlurAngle = [...DEFAULT_SETTINGS.rotationalBlurAngle];
 		this.settings.meanShiftSize = [...DEFAULT_SETTINGS.meanShiftSize];
 		this.settings.meanShiftColorDistance = [...DEFAULT_SETTINGS.meanShiftColorDistance];
+		this.settings.distortion = DEFAULT_SETTINGS.distortion;
+		this.settings.distortionInterpolation = DEFAULT_SETTINGS.distortionInterpolation;
+		this.settings.swirlDegrees = [...DEFAULT_SETTINGS.swirlDegrees];
+		this.settings.implodeAmount = [...DEFAULT_SETTINGS.implodeAmount];
+		this.settings.spreadRadius = [...DEFAULT_SETTINGS.spreadRadius];
 		this.settings.bilateralWidth = [...DEFAULT_SETTINGS.bilateralWidth];
 		this.settings.bilateralHeight = [...DEFAULT_SETTINGS.bilateralHeight];
 		this.settings.bilateralIntensitySigma = [...DEFAULT_SETTINGS.bilateralIntensitySigma];
 		this.settings.bilateralSpatialSigma = [...DEFAULT_SETTINGS.bilateralSpatialSigma];
-		this.settings.meanShiftSize = [...DEFAULT_SETTINGS.meanShiftSize];
-		this.settings.meanShiftColorDistance = [...DEFAULT_SETTINGS.meanShiftColorDistance];
 		this.settings.clutMap = DEFAULT_SETTINGS.clutMap;
 		this.settings.clutInterpolation = DEFAULT_SETTINGS.clutInterpolation;
 		this.resetQuantize();

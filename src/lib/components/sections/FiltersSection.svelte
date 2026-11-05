@@ -35,6 +35,13 @@
 		{ value: 'FloydSteinberg', label: 'Floyd–Steinberg', helper: 'Classic grainy diffusion.' }
 	];
 
+	const DISTORTION_OPTIONS = [
+		{ value: 'none', label: 'None' },
+		{ value: 'swirl', label: 'Swirl' },
+		{ value: 'implode', label: 'Implode' },
+		{ value: 'spread', label: 'Spread' }
+	] as const;
+
 	const COLOR_SPACE_OPTIONS = [
 		{ value: 'sRGB', label: 'sRGB' },
 		{ value: 'Lab', label: 'Lab' },
@@ -199,6 +206,57 @@
 			</div>
 		</SectionCard>
 	{/if}
+
+	<!-- Distortions -->
+	<SectionCard title="Distort" dirty={magick.settings.distortion !== 'none'}>
+		<div class="space-y-3">
+			<Select type="single" bind:value={magick.settings.distortion}>
+				<SelectTrigger class="h-8 w-full font-mono text-xs">
+					{DISTORTION_OPTIONS.find((o) => o.value === magick.settings.distortion)?.label ?? 'None'}
+				</SelectTrigger>
+				<SelectContent>
+					{#each DISTORTION_OPTIONS as opt (opt.value)}
+						<SelectItem value={opt.value}>{opt.label}</SelectItem>
+					{/each}
+				</SelectContent>
+			</Select>
+			{#if magick.settings.distortion !== 'none'}
+				{#if magick.settings.distortion === 'swirl'}
+					<SliderRow
+						label="Degrees"
+						bind:value={magick.settings.swirlDegrees}
+						min={-360}
+						max={360}
+					/>
+				{:else if magick.settings.distortion === 'implode'}
+					<SliderRow
+						label="Amount"
+						bind:value={magick.settings.implodeAmount}
+						min={-1}
+						max={1}
+						step={0.05}
+					/>
+				{:else}
+					<SliderRow label="Radius" bind:value={magick.settings.spreadRadius} min={1} max={20} />
+				{/if}
+				<div class="space-y-1.5">
+					<span class="font-mono text-[11px] text-muted-foreground uppercase">Interpolation</span>
+					<Select type="single" bind:value={magick.settings.distortionInterpolation}>
+						<SelectTrigger class="h-8 w-full font-mono text-xs">
+							{INTERPOLATION_OPTIONS.find(
+								(o) => o.value === magick.settings.distortionInterpolation
+							)?.label ?? magick.settings.distortionInterpolation}
+						</SelectTrigger>
+						<SelectContent>
+							{#each INTERPOLATION_OPTIONS as opt (opt.value)}
+								<SelectItem value={opt.value}>{opt.label}</SelectItem>
+							{/each}
+						</SelectContent>
+					</Select>
+				</div>
+			{/if}
+		</div>
+	</SectionCard>
 
 	<!-- Blur / Sharpen: all blur ops merged, pipeline order -->
 	<SectionCard
