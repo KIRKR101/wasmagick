@@ -201,6 +201,8 @@ export function buildNativeProcessingPlan(
 			settings.effect !== 'grayscale' &&
 			settings.effect !== 'negate') ||
 		settings.motionBlurRadius[0] > 0 ||
+		settings.despeckle ||
+		settings.medianEnabled ||
 		settings.addNoiseType !== 'Off' ||
 		settings.adaptiveSharpenRadius[0] > 0 ||
 		settings.adaptiveBlurRadius[0] > 0 ||

@@ -146,6 +146,9 @@ export interface MagickSettings {
 	cannyEdgeUpper: [number];
 	oilpaintRadius: [number];
 	solarizeFactor: [number];
+	despeckle: boolean;
+	medianEnabled: boolean;
+	medianSize: [number];
 	bilateralWidth: [number];
 	bilateralHeight: [number];
 	bilateralIntensitySigma: [number];
@@ -232,6 +235,9 @@ export interface AppliedOptions {
 	cannyEdge?: { strength: number; lower: number; upper: number };
 	oilPaintRadius?: number;
 	solarizeFactor?: number;
+	despeckle?: boolean;
+	medianEnabled?: boolean;
+	medianSize?: number;
 	bilateral?: { w: number; h: number; iSig: number; sSig: number };
 	clutMap?: string;
 	clutInterpolation?: string;

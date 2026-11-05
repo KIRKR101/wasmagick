@@ -7,6 +7,7 @@
 	} from '$lib/components/ui/select/index.js';
 	import { DEFAULT_SETTINGS, type MagickState } from '$lib/useMagick.svelte';
 	import SliderRow from '$lib/components/controls/SliderRow.svelte';
+	import ToggleRow from '$lib/components/controls/ToggleRow.svelte';
 	import SectionCard from '$lib/components/controls/SectionCard.svelte';
 	import { getClutPresets, getInterpolationOptions } from '$lib/luts';
 
@@ -293,6 +294,31 @@
 					/>
 				</div>
 			</div>
+		</div>
+	</SectionCard>
+
+	<!-- Reduce Noise -->
+	<SectionCard
+		title="Reduce Noise"
+		dirty={magick.settings.despeckle || magick.settings.medianEnabled}
+	>
+		<div class="space-y-3">
+			<ToggleRow id="flt-despeckle" label="Despeckle" bind:checked={magick.settings.despeckle} />
+			<ToggleRow
+				id="flt-median-enabled"
+				label="Median Filter"
+				bind:checked={magick.settings.medianEnabled}
+			/>
+			<SliderRow
+				label="Window size"
+				bind:value={magick.settings.medianSize}
+				min={3}
+				max={9}
+				step={2}
+				resetValue={DEFAULT_SETTINGS.medianSize[0]}
+				disabled={!magick.settings.medianEnabled}
+				class="pb-1"
+			/>
 		</div>
 	</SectionCard>
 

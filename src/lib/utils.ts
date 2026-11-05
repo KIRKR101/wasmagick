@@ -98,6 +98,8 @@ export function isFiltersDirty(s: MagickSettings): boolean {
 		s.addNoiseType !== 'Off' ||
 		s.adaptiveSharpenRadius[0] > 0 ||
 		s.adaptiveBlurRadius[0] > 0 ||
+		s.despeckle ||
+		s.medianEnabled ||
 		s.quantizeColors[0] > 0 ||
 		s.quantizeTreeDepth[0] > 0 ||
 		s.clutMap !== 'identity'

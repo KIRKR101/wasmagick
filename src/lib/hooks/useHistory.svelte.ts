@@ -121,6 +121,9 @@ function diffSettings(a: MagickSettings, b: MagickSettings): SettingsDiffItem[] 
 	push('Canny upper', a.cannyEdgeUpper[0], b.cannyEdgeUpper[0]);
 	push('Oil paint', a.oilpaintRadius[0], b.oilpaintRadius[0]);
 	push('Solarize', a.solarizeFactor[0], b.solarizeFactor[0]);
+	push('Despeckle', a.despeckle, b.despeckle);
+	push('Median enabled', a.medianEnabled, b.medianEnabled);
+	push('Median size', a.medianSize[0], b.medianSize[0]);
 	push('Bilateral W', a.bilateralWidth[0], b.bilateralWidth[0]);
 	push('Bilateral H', a.bilateralHeight[0], b.bilateralHeight[0]);
 	push('Bilateral iΣ', a.bilateralIntensitySigma[0], b.bilateralIntensitySigma[0]);

@@ -247,6 +247,14 @@ genAllSources('adaptive-sharpen', ['-adaptive-sharpen', '2x1'], '{base}.png');
 console.log('-- adaptive-blur --');
 genAllSources('adaptive-blur', ['-adaptive-blur', '2x1'], '{base}.png');
 
+// -- DESPECKLE --
+console.log('-- despeckle --');
+genAllSources('despeckle', ['-despeckle'], '{base}.png');
+
+// -- MEDIAN FILTER --
+console.log('-- median-filter --');
+genAllSources('median-filter', ['-statistic', 'median', '3x3'], '{base}.png');
+
 // -- AUTO-GAMMA --
 // magick-wasm autoGamma() defaults to Composite channels (RGB+alpha), which
 // behaves like the CLI's `-channel RGB`. The CLI's default `-auto-gamma`

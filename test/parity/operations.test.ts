@@ -462,6 +462,14 @@ describe('Color operations', () => {
 });
 
 describe('Filter / Effect operations', () => {
+	it('despeckle', () => {
+		testAllSources('despeckle', '{base}.png', { despeckle: true });
+	});
+
+	it('median filter', () => {
+		testAllSources('median-filter', '{base}.png', { medianEnabled: true, medianSize: [3] });
+	});
+
 	it('grayscale', () => {
 		testAllSources('grayscale', '{base}.png', { effect: 'grayscale' }, 0.05, 200);
 	});

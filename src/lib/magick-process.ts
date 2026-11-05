@@ -20,6 +20,7 @@ import {
 import type { MagickSettings, LevelChannel, ClutInterpolation } from './types';
 import type { IMagickImage, IMagickImageCollection } from '@imagemagick/magick-wasm';
 import { getClutPresetMap } from './clut-data';
+import { medianWindowSize } from './filter-utils';
 import { isSequenceOutputFormat, isOpaqueOutputFormat } from './export-formats';
 
 /**
@@ -448,6 +449,10 @@ export function processImageSync(
 					settings.claheClipLimit[0]
 				);
 			}
+
+			if (settings.despeckle) image.despeckle();
+
+			if (settings.medianEnabled) image.medianFilter(medianWindowSize(settings.medianSize[0]));
 
 			if (settings.blur[0] > 0) {
 				image.blur(settings.blur[0], settings.blur[0] / 2);

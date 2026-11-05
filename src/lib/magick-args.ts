@@ -17,6 +17,7 @@
 
 import type { MagickSettings } from './types';
 import { interpolateCliKeyword } from './clut-data';
+import { medianWindowSize } from './filter-utils';
 import {
 	isOpaqueOutputFormat,
 	isSequenceOutputFormat,
@@ -315,6 +316,13 @@ export function buildNativeMagickArgs(
 			'-clahe',
 			`${fmtNum(settings.claheXTiles[0])}x${fmtNum(settings.claheYTiles[0])}+${fmtNum(settings.claheBins[0])}+${fmtNum(settings.claheClipLimit[0])}`
 		);
+	}
+
+	// -- Noise reduction --
+	if (settings.despeckle) args.push('-despeckle');
+	if (settings.medianEnabled) {
+		const size = medianWindowSize(settings.medianSize[0]);
+		args.push('-statistic', 'median', `${size}x${size}`);
 	}
 
 	// -- Blur / sharpen --

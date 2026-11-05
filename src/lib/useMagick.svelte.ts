@@ -206,6 +206,9 @@ export const DEFAULT_SETTINGS: MagickSettings = {
 	cannyEdgeUpper: [30],
 	oilpaintRadius: [0],
 	solarizeFactor: [50],
+	despeckle: false,
+	medianEnabled: false,
+	medianSize: [3],
 	bilateralWidth: [0],
 	bilateralHeight: [0],
 	bilateralIntensitySigma: [1.5],
@@ -1116,6 +1119,9 @@ export class MagickState {
 		this.settings.cannyEdgeUpper = [...DEFAULT_SETTINGS.cannyEdgeUpper];
 		this.settings.oilpaintRadius = [...DEFAULT_SETTINGS.oilpaintRadius];
 		this.settings.solarizeFactor = [...DEFAULT_SETTINGS.solarizeFactor];
+		this.settings.despeckle = DEFAULT_SETTINGS.despeckle;
+		this.settings.medianEnabled = DEFAULT_SETTINGS.medianEnabled;
+		this.settings.medianSize = [...DEFAULT_SETTINGS.medianSize];
 		this.settings.bilateralWidth = [...DEFAULT_SETTINGS.bilateralWidth];
 		this.settings.bilateralHeight = [...DEFAULT_SETTINGS.bilateralHeight];
 		this.settings.bilateralIntensitySigma = [...DEFAULT_SETTINGS.bilateralIntensitySigma];
