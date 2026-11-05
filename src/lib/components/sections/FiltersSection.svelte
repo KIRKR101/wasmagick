@@ -22,7 +22,8 @@
 		{ value: 'cannyEdge', label: 'Edge Detection' },
 		{ value: 'oilpaint', label: 'Oil Paint' },
 		{ value: 'solarize', label: 'Solarize' },
-		{ value: 'bilateralBlur', label: 'Bilateral Blur' }
+		{ value: 'bilateralBlur', label: 'Bilateral Blur' },
+		{ value: 'meanShift', label: 'Mean Shift' }
 	];
 
 	const CLUT_PRESETS = getClutPresets();
@@ -147,6 +148,24 @@
 						min={0}
 						max={20}
 						resetValue={DEFAULT_SETTINGS.bilateralWidth[0]}
+					/>
+				{:else if magick.settings.effect === 'meanShift'}
+					<SliderRow
+						label="Size"
+						bind:value={magick.settings.meanShiftSize}
+						min={1}
+						max={15}
+						step={2}
+						resetValue={DEFAULT_SETTINGS.meanShiftSize[0]}
+					/>
+					<SliderRow
+						label="Color distance"
+						bind:value={magick.settings.meanShiftColorDistance}
+						suffix="%"
+						min={1}
+						max={100}
+						resetValue={DEFAULT_SETTINGS.meanShiftColorDistance[0]}
+						class="pb-1"
 					/>
 					<SliderRow
 						label="Height"

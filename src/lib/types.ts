@@ -37,7 +37,8 @@ export type EffectPreset =
 	| 'cannyEdge'
 	| 'oilpaint'
 	| 'solarize'
-	| 'bilateralBlur';
+	| 'bilateralBlur'
+	| 'meanShift';
 
 /** Auto threshold method options */
 export type AutoThresholdOption = 'Off' | 'Kapur' | 'OTSU' | 'Triangle';
@@ -154,6 +155,8 @@ export interface MagickSettings {
 	unsharpAmount: [number];
 	unsharpThreshold: [number];
 	rotationalBlurAngle: [number];
+	meanShiftSize: [number];
+	meanShiftColorDistance: [number];
 	bilateralWidth: [number];
 	bilateralHeight: [number];
 	bilateralIntensitySigma: [number];

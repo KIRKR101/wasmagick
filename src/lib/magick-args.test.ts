@@ -89,6 +89,8 @@ function baseSettings(): MagickSettings {
 		unsharpAmount: [1],
 		unsharpThreshold: [0.05],
 		rotationalBlurAngle: [0],
+		meanShiftSize: [5],
+		meanShiftColorDistance: [10],
 		bilateralWidth: [0],
 		bilateralHeight: [0],
 		bilateralIntensitySigma: [1.5],
@@ -306,6 +308,9 @@ describe('buildNativeMagickArgs', () => {
 				bilateralSpatialSigma: [1]
 			}).args
 		).toEqual(expect.arrayContaining(['-bilateral-blur', '5x5+1.5+1']));
+		expect(
+			build({ effect: 'meanShift', meanShiftSize: [5], meanShiftColorDistance: [10] }).args
+		).toEqual(expect.arrayContaining(['-mean-shift', '5x5+10%']));
 		expect(build({ posterizeEnabled: true, posterizeLevels: [4] }).args).toEqual(
 			expect.arrayContaining(['+dither', '-posterize', '4'])
 		);

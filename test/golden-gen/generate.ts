@@ -231,6 +231,10 @@ genAllSources('solarize', ['-channel', 'RGB', '-solarize', '50%'], '{base}.png')
 console.log('-- bilateral-blur --');
 genAllSources('bilateral-blur', ['-bilateral-blur', '5x5+1.5+1.0'], '{base}.png');
 
+// -- MEAN-SHIFT --
+console.log('-- mean-shift --');
+genAllSources('mean-shift', ['-mean-shift', '5x5+10%'], '{base}.png');
+
 // -- BLUR --
 console.log('-- blur --');
 genAllSources('blur', ['-blur', '3x1.5'], '{base}.png');

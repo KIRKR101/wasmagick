@@ -462,6 +462,10 @@ describe('Color operations', () => {
 });
 
 describe('Filter / Effect operations', () => {
+	it('mean shift', () => {
+		testAllSources('mean-shift', '{base}.png', { effect: 'meanShift' });
+	});
+
 	it('unsharp mask', () => {
 		testAllSources('unsharp-mask', '{base}.png', { unsharpEnabled: true });
 	});

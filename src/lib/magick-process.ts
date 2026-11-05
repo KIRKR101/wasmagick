@@ -553,6 +553,12 @@ export function processImageSync(
 							settings.bilateralSpatialSigma[0]
 						);
 						break;
+					case 'meanShift':
+						image.meanShift(
+							settings.meanShiftSize[0],
+							new Percentage(settings.meanShiftColorDistance[0])
+						);
+						break;
 				}
 			}
 

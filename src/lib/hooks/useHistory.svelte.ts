@@ -133,6 +133,8 @@ function diffSettings(a: MagickSettings, b: MagickSettings): SettingsDiffItem[] 
 	push('Bilateral H', a.bilateralHeight[0], b.bilateralHeight[0]);
 	push('Bilateral iΣ', a.bilateralIntensitySigma[0], b.bilateralIntensitySigma[0]);
 	push('Bilateral sΣ', a.bilateralSpatialSigma[0], b.bilateralSpatialSigma[0]);
+	push('Mean shift size', a.meanShiftSize[0], b.meanShiftSize[0]);
+	push('Mean shift distance', a.meanShiftColorDistance[0], b.meanShiftColorDistance[0]);
 	push('CLUT', a.clutMap, b.clutMap);
 	push('CLUT interp', a.clutInterpolation, b.clutInterpolation);
 

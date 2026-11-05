@@ -172,6 +172,9 @@
 								parts.push(`iΣ ${s.bilateralIntensitySigma[0]}`);
 							if (s.bilateralSpatialSigma[0] !== 1) parts.push(`sΣ ${s.bilateralSpatialSigma[0]}`);
 							break;
+						case 'meanShift':
+							parts.push(`${s.meanShiftSize[0]}px · ${s.meanShiftColorDistance[0]}%`);
+							break;
 					}
 				}
 				if (s.clutMap !== 'identity') {

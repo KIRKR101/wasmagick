@@ -422,6 +422,12 @@ export function buildNativeMagickArgs(
 					`${fmtNum(settings.bilateralWidth[0])}x${fmtNum(settings.bilateralHeight[0])}+${fmtNum(settings.bilateralIntensitySigma[0])}+${fmtNum(settings.bilateralSpatialSigma[0])}`
 				);
 				break;
+			case 'meanShift':
+				args.push(
+					'-mean-shift',
+					`${fmtNum(settings.meanShiftSize[0])}x${fmtNum(settings.meanShiftSize[0])}+${fmtNum(settings.meanShiftColorDistance[0])}%`
+				);
+				break;
 		}
 	}
 

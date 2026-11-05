@@ -88,6 +88,8 @@ const ARRAY_KEYS = new Set([
 	'unsharpAmount',
 	'unsharpThreshold',
 	'rotationalBlurAngle',
+	'meanShiftSize',
+	'meanShiftColorDistance',
 	'annotateFontSize',
 	'annotateAngle',
 	'annotateStrokeWidth'
@@ -219,6 +221,8 @@ export const DEFAULT_SETTINGS: MagickSettings = {
 	unsharpAmount: [1],
 	unsharpThreshold: [0.05],
 	rotationalBlurAngle: [0],
+	meanShiftSize: [5],
+	meanShiftColorDistance: [10],
 	bilateralWidth: [0],
 	bilateralHeight: [0],
 	bilateralIntensitySigma: [1.5],
@@ -1147,10 +1151,14 @@ export class MagickState {
 		this.settings.unsharpAmount = [...DEFAULT_SETTINGS.unsharpAmount];
 		this.settings.unsharpThreshold = [...DEFAULT_SETTINGS.unsharpThreshold];
 		this.settings.rotationalBlurAngle = [...DEFAULT_SETTINGS.rotationalBlurAngle];
+		this.settings.meanShiftSize = [...DEFAULT_SETTINGS.meanShiftSize];
+		this.settings.meanShiftColorDistance = [...DEFAULT_SETTINGS.meanShiftColorDistance];
 		this.settings.bilateralWidth = [...DEFAULT_SETTINGS.bilateralWidth];
 		this.settings.bilateralHeight = [...DEFAULT_SETTINGS.bilateralHeight];
 		this.settings.bilateralIntensitySigma = [...DEFAULT_SETTINGS.bilateralIntensitySigma];
 		this.settings.bilateralSpatialSigma = [...DEFAULT_SETTINGS.bilateralSpatialSigma];
+		this.settings.meanShiftSize = [...DEFAULT_SETTINGS.meanShiftSize];
+		this.settings.meanShiftColorDistance = [...DEFAULT_SETTINGS.meanShiftColorDistance];
 		this.settings.clutMap = DEFAULT_SETTINGS.clutMap;
 		this.settings.clutInterpolation = DEFAULT_SETTINGS.clutInterpolation;
 		this.resetQuantize();
