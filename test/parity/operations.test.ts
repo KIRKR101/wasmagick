@@ -821,6 +821,7 @@ describe('Quantize / Dithering operations', () => {
 				quantizeColors: [16]
 			};
 			const result = processImageSync(sourceBytes, merged);
+			expect(result.errorInfo?.normalizedMeanError).toBeGreaterThanOrEqual(0);
 			const png = PNG.sync.read(Buffer.from(result.data));
 			const colors = countUniqueColors(png);
 			expect(colors, `${src}: expected <= 16 colors, got ${colors}`).toBeLessThanOrEqual(16);

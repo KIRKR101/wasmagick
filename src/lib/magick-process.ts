@@ -600,7 +600,14 @@ export function processImageSync(
 				if (settings.ditherMethod !== 'Undefined') {
 					qs.ditherMethod = DitherMethod[settings.ditherMethod as keyof typeof DitherMethod];
 				}
-				errorInfo = image.quantize(qs) ?? undefined;
+				const measuredError = image.quantize(qs);
+				if (measuredError) {
+					errorInfo = {
+						meanErrorPerPixel: measuredError.meanErrorPerPixel,
+						normalizedMaximumError: measuredError.normalizedMaximumError,
+						normalizedMeanError: measuredError.normalizedMeanError
+					};
+				}
 			}
 
 			if (settings.annotateText?.trim().length > 0) {
