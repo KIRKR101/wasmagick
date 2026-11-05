@@ -7,6 +7,7 @@
 	} from '$lib/components/ui/select/index.js';
 	import { DEFAULT_SETTINGS, type MagickState } from '$lib/useMagick.svelte';
 	import SliderRow from '$lib/components/controls/SliderRow.svelte';
+	import ToggleRow from '$lib/components/controls/ToggleRow.svelte';
 	import SectionCard from '$lib/components/controls/SectionCard.svelte';
 	import { getClutPresets, getInterpolationOptions } from '$lib/luts';
 
@@ -21,7 +22,8 @@
 		{ value: 'cannyEdge', label: 'Edge Detection' },
 		{ value: 'oilpaint', label: 'Oil Paint' },
 		{ value: 'solarize', label: 'Solarize' },
-		{ value: 'bilateralBlur', label: 'Bilateral Blur' }
+		{ value: 'bilateralBlur', label: 'Bilateral Blur' },
+		{ value: 'meanShift', label: 'Mean Shift' }
 	];
 
 	const CLUT_PRESETS = getClutPresets();
@@ -32,6 +34,13 @@
 		{ value: 'Riemersma', label: 'Riemersma (default)', helper: 'Smooth, organic dither.' },
 		{ value: 'FloydSteinberg', label: 'Floyd–Steinberg', helper: 'Classic grainy diffusion.' }
 	];
+
+	const DISTORTION_OPTIONS = [
+		{ value: 'none', label: 'None' },
+		{ value: 'swirl', label: 'Swirl' },
+		{ value: 'implode', label: 'Implode' },
+		{ value: 'spread', label: 'Spread' }
+	] as const;
 
 	const COLOR_SPACE_OPTIONS = [
 		{ value: 'sRGB', label: 'sRGB' },
@@ -147,6 +156,24 @@
 						max={20}
 						resetValue={DEFAULT_SETTINGS.bilateralWidth[0]}
 					/>
+				{:else if magick.settings.effect === 'meanShift'}
+					<SliderRow
+						label="Size"
+						bind:value={magick.settings.meanShiftSize}
+						min={1}
+						max={15}
+						step={2}
+						resetValue={DEFAULT_SETTINGS.meanShiftSize[0]}
+					/>
+					<SliderRow
+						label="Color distance"
+						bind:value={magick.settings.meanShiftColorDistance}
+						suffix="%"
+						min={1}
+						max={100}
+						resetValue={DEFAULT_SETTINGS.meanShiftColorDistance[0]}
+						class="pb-1"
+					/>
 					<SliderRow
 						label="Height"
 						bind:value={magick.settings.bilateralHeight}
@@ -180,6 +207,57 @@
 		</SectionCard>
 	{/if}
 
+	<!-- Distortions -->
+	<SectionCard title="Distort" dirty={magick.settings.distortion !== 'none'}>
+		<div class="space-y-3">
+			<Select type="single" bind:value={magick.settings.distortion}>
+				<SelectTrigger class="h-8 w-full font-mono text-xs">
+					{DISTORTION_OPTIONS.find((o) => o.value === magick.settings.distortion)?.label ?? 'None'}
+				</SelectTrigger>
+				<SelectContent>
+					{#each DISTORTION_OPTIONS as opt (opt.value)}
+						<SelectItem value={opt.value}>{opt.label}</SelectItem>
+					{/each}
+				</SelectContent>
+			</Select>
+			{#if magick.settings.distortion !== 'none'}
+				{#if magick.settings.distortion === 'swirl'}
+					<SliderRow
+						label="Degrees"
+						bind:value={magick.settings.swirlDegrees}
+						min={-360}
+						max={360}
+					/>
+				{:else if magick.settings.distortion === 'implode'}
+					<SliderRow
+						label="Amount"
+						bind:value={magick.settings.implodeAmount}
+						min={-1}
+						max={1}
+						step={0.05}
+					/>
+				{:else}
+					<SliderRow label="Radius" bind:value={magick.settings.spreadRadius} min={1} max={20} />
+				{/if}
+				<div class="space-y-1.5">
+					<span class="font-mono text-[11px] text-muted-foreground uppercase">Interpolation</span>
+					<Select type="single" bind:value={magick.settings.distortionInterpolation}>
+						<SelectTrigger class="h-8 w-full font-mono text-xs">
+							{INTERPOLATION_OPTIONS.find(
+								(o) => o.value === magick.settings.distortionInterpolation
+							)?.label ?? magick.settings.distortionInterpolation}
+						</SelectTrigger>
+						<SelectContent>
+							{#each INTERPOLATION_OPTIONS as opt (opt.value)}
+								<SelectItem value={opt.value}>{opt.label}</SelectItem>
+							{/each}
+						</SelectContent>
+					</Select>
+				</div>
+			{/if}
+		</div>
+	</SectionCard>
+
 	<!-- Blur / Sharpen: all blur ops merged, pipeline order -->
 	<SectionCard
 		title="Blur / Sharpen"
@@ -188,7 +266,9 @@
 			magick.settings.gaussianBlurRadius[0] > 0 ||
 			magick.settings.motionBlurRadius[0] > 0 ||
 			magick.settings.adaptiveSharpenRadius[0] > 0 ||
-			magick.settings.adaptiveBlurRadius[0] > 0}
+			magick.settings.adaptiveBlurRadius[0] > 0 ||
+			magick.settings.unsharpEnabled ||
+			magick.settings.rotationalBlurAngle[0] > 0}
 	>
 		<div class="space-y-3">
 			<div class="grid grid-cols-2 gap-3">
@@ -293,6 +373,78 @@
 					/>
 				</div>
 			</div>
+
+			<div class="space-y-3 border-t border-foreground/10 pt-3">
+				<div class="font-mono text-[11px] text-muted-foreground uppercase">Unsharp Mask</div>
+				<ToggleRow
+					id="flt-unsharp-enabled"
+					label="Enabled"
+					bind:checked={magick.settings.unsharpEnabled}
+				/>
+				<SliderRow
+					label="Radius"
+					bind:value={magick.settings.unsharpRadius}
+					min={0.5}
+					max={10}
+					step={0.5}
+					disabled={!magick.settings.unsharpEnabled}
+				/>
+				<SliderRow
+					label="Amount"
+					bind:value={magick.settings.unsharpAmount}
+					min={0.1}
+					max={5}
+					step={0.1}
+					resetValue={DEFAULT_SETTINGS.unsharpAmount[0]}
+					disabled={!magick.settings.unsharpEnabled}
+				/>
+				<SliderRow
+					label="Threshold"
+					bind:value={magick.settings.unsharpThreshold}
+					min={0}
+					max={0.5}
+					step={0.05}
+					resetValue={DEFAULT_SETTINGS.unsharpThreshold[0]}
+					disabled={!magick.settings.unsharpEnabled}
+				/>
+			</div>
+
+			<div class="space-y-3 border-t border-foreground/10 pt-3">
+				<div class="font-mono text-[11px] text-muted-foreground uppercase">Rotational Blur</div>
+				<SliderRow
+					label="Angle"
+					bind:value={magick.settings.rotationalBlurAngle}
+					suffix="°"
+					min={0}
+					max={360}
+					resetValue={DEFAULT_SETTINGS.rotationalBlurAngle[0]}
+				/>
+			</div>
+		</div>
+	</SectionCard>
+
+	<!-- Reduce Noise -->
+	<SectionCard
+		title="Reduce Noise"
+		dirty={magick.settings.despeckle || magick.settings.medianEnabled}
+	>
+		<div class="space-y-3">
+			<ToggleRow id="flt-despeckle" label="Despeckle" bind:checked={magick.settings.despeckle} />
+			<ToggleRow
+				id="flt-median-enabled"
+				label="Median Filter"
+				bind:checked={magick.settings.medianEnabled}
+			/>
+			<SliderRow
+				label="Window size"
+				bind:value={magick.settings.medianSize}
+				min={3}
+				max={9}
+				step={2}
+				resetValue={DEFAULT_SETTINGS.medianSize[0]}
+				disabled={!magick.settings.medianEnabled}
+				class="pb-1"
+			/>
 		</div>
 	</SectionCard>
 
@@ -364,9 +516,51 @@
 		</div>
 	</SectionCard>
 
-	<!-- Quantize / Dithering: keep last, it must run near-end -->
-	<SectionCard title="Quantize / Dithering" dirty={magick.settings.quantizeColors[0] > 0}>
+	<!-- Reduce Colors: posterize, ordered dither, and palette quantization -->
+	<SectionCard
+		title="Reduce Colors"
+		dirty={magick.settings.quantizeColors[0] > 0 ||
+			magick.settings.posterizeEnabled ||
+			magick.settings.orderedDitherMap !== 'Off'}
+	>
 		<div class="space-y-3">
+			<div class="space-y-3 border-b border-divider pb-3">
+				<ToggleRow
+					id="flt-posterize-enabled"
+					label="Posterize"
+					bind:checked={magick.settings.posterizeEnabled}
+				/>
+				<SliderRow
+					label="Posterize levels"
+					bind:value={magick.settings.posterizeLevels}
+					min={2}
+					max={16}
+					resetValue={DEFAULT_SETTINGS.posterizeLevels[0]}
+					disabled={!magick.settings.posterizeEnabled}
+				/>
+				{#if magick.settings.posterizeEnabled}
+					<ToggleRow
+						id="flt-posterize-dither"
+						label="Dither"
+						bind:checked={magick.settings.posterizeDither}
+					/>
+				{/if}
+			</div>
+
+			<div class="space-y-1.5 border-b border-divider pb-3">
+				<span class="font-mono text-[11px] text-muted-foreground uppercase">Ordered Dither</span>
+				<Select type="single" bind:value={magick.settings.orderedDitherMap}>
+					<SelectTrigger class="h-8 w-full font-mono text-xs">
+						{magick.settings.orderedDitherMap === 'Off' ? 'Off' : magick.settings.orderedDitherMap}
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="Off">Off</SelectItem>
+						<SelectItem value="checks">Checks</SelectItem>
+						<SelectItem value="threshold">Threshold</SelectItem>
+					</SelectContent>
+				</Select>
+			</div>
+
 			<SliderRow
 				label="Colors"
 				bind:value={magick.settings.quantizeColors}
@@ -417,6 +611,12 @@
 					max={8}
 					class="pb-1"
 				/>
+			{/if}
+			{#if magick.quantizeErrorInfo && magick.settings.quantizeColors[0] > 0}
+				<div class="border-t border-divider pt-2 font-mono text-[11px] text-muted-foreground">
+					Quantize error: mean {(magick.quantizeErrorInfo.normalizedMeanError * 100).toFixed(2)}% ·
+					max {(magick.quantizeErrorInfo.normalizedMaximumError * 100).toFixed(2)}%
+				</div>
 			{/if}
 		</div>
 	</SectionCard>

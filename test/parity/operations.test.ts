@@ -341,6 +341,10 @@ describe('Color operations', () => {
 		testAllSources('auto-gamma', '{base}.png', { autoGamma: true });
 	});
 
+	it('equalize', () => {
+		testAllSources('equalize', '{base}.png', { equalize: true });
+	});
+
 	it('auto-threshold (Kapur)', () => {
 		// auto-threshold picks the threshold from the image histogram, so pixels
 		// sitting exactly on the chosen value can flip black/white between the
@@ -458,6 +462,52 @@ describe('Color operations', () => {
 });
 
 describe('Filter / Effect operations', () => {
+	it('swirl distortion', () => {
+		testAllSources('swirl', '{base}.png', { distortion: 'swirl', swirlDegrees: [90] });
+	});
+
+	it('implode distortion', () => {
+		testAllSources('implode', '{base}.png', { distortion: 'implode', implodeAmount: [0.5] });
+	});
+
+	it('mean shift', () => {
+		testAllSources('mean-shift', '{base}.png', { effect: 'meanShift' });
+	});
+
+	it('unsharp mask', () => {
+		testAllSources('unsharp-mask', '{base}.png', { unsharpEnabled: true });
+	});
+
+	it('rotational blur', () => {
+		testAllSources('rotational-blur', '{base}.png', { rotationalBlurAngle: [12] });
+	});
+
+	it('posterize without dither', () => {
+		testAllSources('posterize', '{base}.png', {
+			posterizeEnabled: true,
+			posterizeLevels: [4]
+		});
+	});
+
+	it('ordered dither checks', () => {
+		// The WASM and CLI threshold-map builds differ slightly in pattern phase.
+		testAllSources(
+			'ordered-dither-checks',
+			'{base}.png',
+			{ orderedDitherMap: 'checks' },
+			0.05,
+			100
+		);
+	});
+
+	it('despeckle', () => {
+		testAllSources('despeckle', '{base}.png', { despeckle: true });
+	});
+
+	it('median filter', () => {
+		testAllSources('median-filter', '{base}.png', { medianEnabled: true, medianSize: [3] });
+	});
+
 	it('grayscale', () => {
 		testAllSources('grayscale', '{base}.png', { effect: 'grayscale' }, 0.05, 200);
 	});
@@ -767,6 +817,7 @@ describe('Quantize / Dithering operations', () => {
 				quantizeColors: [16]
 			};
 			const result = processImageSync(sourceBytes, merged);
+			expect(result.errorInfo?.normalizedMeanError).toBeGreaterThanOrEqual(0);
 			const png = PNG.sync.read(Buffer.from(result.data));
 			const colors = countUniqueColors(png);
 			expect(colors, `${src}: expected <= 16 colors, got ${colors}`).toBeLessThanOrEqual(16);

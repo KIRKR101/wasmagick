@@ -20,6 +20,7 @@ import {
 import type { MagickSettings, LevelChannel, ClutInterpolation } from './types';
 import type { IMagickImage, IMagickImageCollection } from '@imagemagick/magick-wasm';
 import { getClutPresetMap } from './clut-data';
+import { medianWindowSize } from './filter-utils';
 import { isSequenceOutputFormat, isOpaqueOutputFormat } from './export-formats';
 
 /**
@@ -264,6 +265,11 @@ export interface ProcessResult {
 	width: number;
 	height: number;
 	format: string;
+	errorInfo?: {
+		meanErrorPerPixel: number;
+		normalizedMaximumError: number;
+		normalizedMeanError: number;
+	};
 }
 
 export function processImageSync(
@@ -291,6 +297,7 @@ export function processImageSync(
 				collection.coalesce();
 			}
 		}
+		let errorInfo: ProcessResult['errorInfo'];
 		for (const image of collection) {
 			// Normalize EXIF orientation before geometry. Some ImageMagick builds
 			// clear or expose the orientation attribute differently after resize/crop,
@@ -361,6 +368,7 @@ export function processImageSync(
 			if (settings.normalizeImage) image.normalize();
 			if (settings.autoLevel) image.autoLevel();
 			if (settings.autoGamma) image.autoGamma();
+			if (settings.equalize) image.equalize();
 
 			{
 				const levelChs: LevelChannel[] = ['All', 'Red', 'Green', 'Blue'];
@@ -448,6 +456,10 @@ export function processImageSync(
 				);
 			}
 
+			if (settings.despeckle) image.despeckle();
+
+			if (settings.medianEnabled) image.medianFilter(medianWindowSize(settings.medianSize[0]));
+
 			if (settings.blur[0] > 0) {
 				image.blur(settings.blur[0], settings.blur[0] / 2);
 			}
@@ -468,6 +480,14 @@ export function processImageSync(
 			if (settings.adaptiveBlurRadius[0] > 0) {
 				image.adaptiveBlur(settings.adaptiveBlurRadius[0], settings.adaptiveBlurSigma[0]);
 			}
+			if (settings.unsharpEnabled) {
+				image.unsharpMask(
+					settings.unsharpRadius[0],
+					settings.unsharpRadius[0] / 2,
+					settings.unsharpAmount[0],
+					settings.unsharpThreshold[0]
+				);
+			}
 
 			if (settings.motionBlurRadius[0] > 0) {
 				image.motionBlur(
@@ -475,6 +495,9 @@ export function processImageSync(
 					settings.motionBlurSigma[0],
 					settings.motionBlurAngle[0]
 				);
+			}
+			if (settings.rotationalBlurAngle[0] > 0) {
+				image.rotationalBlur(settings.rotationalBlurAngle[0]);
 			}
 
 			if (settings.addNoiseType !== 'Off') {
@@ -530,7 +553,26 @@ export function processImageSync(
 							settings.bilateralSpatialSigma[0]
 						);
 						break;
+					case 'meanShift':
+						image.meanShift(
+							settings.meanShiftSize[0],
+							new Percentage(settings.meanShiftColorDistance[0])
+						);
+						break;
 				}
+			}
+
+			const interpolation = getPixelInterpolateMethod(settings.distortionInterpolation);
+			switch (settings.distortion) {
+				case 'swirl':
+					image.swirl(interpolation, settings.swirlDegrees[0]);
+					break;
+				case 'implode':
+					image.implode(settings.implodeAmount[0], interpolation);
+					break;
+				case 'spread':
+					image.spread(interpolation, settings.spreadRadius[0]);
+					break;
 			}
 
 			if (settings.clutMap !== 'identity') {
@@ -539,16 +581,28 @@ export function processImageSync(
 				lut.dispose();
 			}
 
+			if (settings.posterizeEnabled) {
+				image.posterize(settings.posterizeLevels[0], !settings.posterizeDither);
+			}
+			if (settings.orderedDitherMap !== 'Off') image.orderedDither(settings.orderedDitherMap);
+
 			if (settings.quantizeColors[0] > 0) {
 				const qs = new QuantizeSettings();
 				qs.colors = settings.quantizeColors[0];
 				qs.colorSpace = ColorSpace[settings.quantizeColorSpace as keyof typeof ColorSpace];
 				qs.treeDepth = settings.quantizeTreeDepth[0];
-				qs.measureErrors = settings.measureErrors;
+				qs.measureErrors = true;
 				if (settings.ditherMethod !== 'Undefined') {
 					qs.ditherMethod = DitherMethod[settings.ditherMethod as keyof typeof DitherMethod];
 				}
-				image.quantize(qs);
+				const measuredError = image.quantize(qs);
+				if (measuredError) {
+					errorInfo = {
+						meanErrorPerPixel: measuredError.meanErrorPerPixel,
+						normalizedMaximumError: measuredError.normalizedMaximumError,
+						normalizedMeanError: measuredError.normalizedMeanError
+					};
+				}
 			}
 
 			if (settings.annotateText?.trim().length > 0) {
@@ -654,7 +708,8 @@ export function processImageSync(
 				previewHeight: needsPreview ? finalHeight : 0,
 				width: outputWidth,
 				height: outputHeight,
-				format: settings.imageFormat
+				format: settings.imageFormat,
+				errorInfo
 			};
 		});
 	});

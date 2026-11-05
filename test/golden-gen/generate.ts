@@ -231,6 +231,16 @@ genAllSources('solarize', ['-channel', 'RGB', '-solarize', '50%'], '{base}.png')
 console.log('-- bilateral-blur --');
 genAllSources('bilateral-blur', ['-bilateral-blur', '5x5+1.5+1.0'], '{base}.png');
 
+// -- MEAN-SHIFT --
+console.log('-- mean-shift --');
+genAllSources('mean-shift', ['-mean-shift', '5x5+10%'], '{base}.png');
+
+// -- DISTORTIONS --
+console.log('-- swirl --');
+genAllSources('swirl', ['-interpolate', 'Bilinear', '-swirl', '90'], '{base}.png');
+console.log('-- implode --');
+genAllSources('implode', ['-interpolate', 'Bilinear', '-implode', '0.5'], '{base}.png');
+
 // -- BLUR --
 console.log('-- blur --');
 genAllSources('blur', ['-blur', '3x1.5'], '{base}.png');
@@ -247,12 +257,40 @@ genAllSources('adaptive-sharpen', ['-adaptive-sharpen', '2x1'], '{base}.png');
 console.log('-- adaptive-blur --');
 genAllSources('adaptive-blur', ['-adaptive-blur', '2x1'], '{base}.png');
 
+// -- UNSHARP MASK --
+console.log('-- unsharp-mask --');
+genAllSources('unsharp-mask', ['-unsharp', '2x1+1+0.05'], '{base}.png');
+
+// -- ROTATIONAL BLUR --
+console.log('-- rotational-blur --');
+genAllSources('rotational-blur', ['-rotational-blur', '12'], '{base}.png');
+
+// -- DESPECKLE --
+console.log('-- despeckle --');
+genAllSources('despeckle', ['-despeckle'], '{base}.png');
+
+// -- MEDIAN FILTER --
+console.log('-- median-filter --');
+genAllSources('median-filter', ['-statistic', 'median', '3x3'], '{base}.png');
+
 // -- AUTO-GAMMA --
 // magick-wasm autoGamma() defaults to Composite channels (RGB+alpha), which
 // behaves like the CLI's `-channel RGB`. The CLI's default `-auto-gamma`
 // operates on a different (no-op) channel set, so force RGB for parity.
 console.log('-- auto-gamma --');
 genAllSources('auto-gamma', ['-channel', 'RGB', '-auto-gamma', '+channel'], '{base}.png');
+
+// -- EQUALIZE --
+console.log('-- equalize --');
+genAllSources('equalize', ['-equalize'], '{base}.png');
+
+// -- POSTERIZE --
+console.log('-- posterize --');
+genAllSources('posterize', ['+dither', '-posterize', '4'], '{base}.png');
+
+// -- ORDERED DITHER --
+console.log('-- ordered-dither-checks --');
+genAllSources('ordered-dither-checks', ['-ordered-dither', 'checks'], '{base}.png');
 
 // -- AUTO-THRESHOLD --
 console.log('-- auto-threshold --');

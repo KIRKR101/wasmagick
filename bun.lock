@@ -6,7 +6,7 @@
       "name": "wasmagick-svelte",
       "dependencies": {
         "@fontsource-variable/google-sans-code": "^5.3.1",
-        "@imagemagick/magick-wasm": "^0.0.45",
+        "@imagemagick/magick-wasm": "^0.0.46",
         "@uswriting/exiftool": "^1.0.9",
         "phosphor-svelte": "^3.1.0",
         "sharp": "^0.35.4",
@@ -389,7 +389,7 @@
 
     "@humanwhocodes/retry": ["@humanwhocodes/retry@0.4.3", "", {}, ""],
 
-    "@imagemagick/magick-wasm": ["@imagemagick/magick-wasm@0.0.45", "", {}, "sha512-ef8FHka4xLWo5/tGTV6P45bPjTvnKZz/oHN6sCDTbY8zaCdM2MeaoQHLsy9IHuiVHQhomG3TQ6ErgTnEDyuzvw=="],
+    "@imagemagick/magick-wasm": ["@imagemagick/magick-wasm@0.0.46", "", {}, "sha512-0HKJmmqUTFwXm6Z/1lGtOx7JE/FpZiJg8sXBnAho1NgzunEOkgUILU7rskUnYbtdG/hJiFe9viVatWuWDZ9S0g=="],
 
     "@img/colour": ["@img/colour@1.1.0", "", {}, ""],
 

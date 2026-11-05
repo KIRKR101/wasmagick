@@ -83,6 +83,16 @@ const ARRAY_KEYS = new Set([
 	'claheClipLimit',
 	'quantizeColors',
 	'quantizeTreeDepth',
+	'posterizeLevels',
+	'unsharpRadius',
+	'unsharpAmount',
+	'unsharpThreshold',
+	'rotationalBlurAngle',
+	'meanShiftSize',
+	'meanShiftColorDistance',
+	'swirlDegrees',
+	'implodeAmount',
+	'spreadRadius',
 	'annotateFontSize',
 	'annotateAngle',
 	'annotateStrokeWidth'
@@ -177,6 +187,7 @@ export const DEFAULT_SETTINGS: MagickSettings = {
 	sigmoidalChannels: 'All',
 	colorSpace: 'RGB',
 	autoGamma: false,
+	equalize: false,
 	autoThreshold: 'Off',
 	blackThreshold: [0],
 	whiteThreshold: [100],
@@ -205,6 +216,21 @@ export const DEFAULT_SETTINGS: MagickSettings = {
 	cannyEdgeUpper: [30],
 	oilpaintRadius: [0],
 	solarizeFactor: [50],
+	despeckle: false,
+	medianEnabled: false,
+	medianSize: [3],
+	unsharpEnabled: false,
+	unsharpRadius: [2],
+	unsharpAmount: [1],
+	unsharpThreshold: [0.05],
+	rotationalBlurAngle: [0],
+	meanShiftSize: [5],
+	meanShiftColorDistance: [10],
+	distortion: 'none',
+	distortionInterpolation: 'bilinear',
+	swirlDegrees: [90],
+	implodeAmount: [0.5],
+	spreadRadius: [5],
 	bilateralWidth: [0],
 	bilateralHeight: [0],
 	bilateralIntensitySigma: [1.5],
@@ -216,6 +242,10 @@ export const DEFAULT_SETTINGS: MagickSettings = {
 	quantizeColorSpace: 'sRGB',
 	quantizeTreeDepth: [0],
 	measureErrors: false,
+	posterizeEnabled: false,
+	posterizeLevels: [4],
+	posterizeDither: false,
+	orderedDitherMap: 'Off',
 	annotateText: '',
 	annotateFontFamily: 'Roboto-Regular',
 	annotateFontSize: [24],
@@ -474,6 +504,11 @@ export class MagickState {
 	hasError = $state(false);
 	errorMessage = $state<string | null>(null);
 	statsMessage = $state('Ready');
+	quantizeErrorInfo = $state<{
+		meanErrorPerPixel: number;
+		normalizedMaximumError: number;
+		normalizedMeanError: number;
+	} | null>(null);
 	hasUnsavedEdits = $state(false);
 	sourceBytes = $state<Uint8Array | null>(null);
 	originalName = $state('image');
@@ -956,6 +991,7 @@ export class MagickState {
 				}
 
 				const { data, previewData, previewWidth, previewHeight, width, height, format } = result;
+				this.quantizeErrorInfo = result.errorInfo ?? null;
 				const elapsed = Math.round(performance.now() - pending.startTime);
 
 				const appliedOptions: AppliedOptions = {};
@@ -1083,6 +1119,7 @@ export class MagickState {
 		this.settings.sigmoidalMidpoint = [...DEFAULT_SETTINGS.sigmoidalMidpoint];
 		this.settings.sigmoidalChannels = DEFAULT_SETTINGS.sigmoidalChannels;
 		this.settings.autoGamma = DEFAULT_SETTINGS.autoGamma;
+		this.settings.equalize = DEFAULT_SETTINGS.equalize;
 		this.settings.autoThreshold = DEFAULT_SETTINGS.autoThreshold;
 		this.settings.blackThreshold = [...DEFAULT_SETTINGS.blackThreshold];
 		this.settings.whiteThreshold = [...DEFAULT_SETTINGS.whiteThreshold];
@@ -1114,6 +1151,21 @@ export class MagickState {
 		this.settings.cannyEdgeUpper = [...DEFAULT_SETTINGS.cannyEdgeUpper];
 		this.settings.oilpaintRadius = [...DEFAULT_SETTINGS.oilpaintRadius];
 		this.settings.solarizeFactor = [...DEFAULT_SETTINGS.solarizeFactor];
+		this.settings.despeckle = DEFAULT_SETTINGS.despeckle;
+		this.settings.medianEnabled = DEFAULT_SETTINGS.medianEnabled;
+		this.settings.medianSize = [...DEFAULT_SETTINGS.medianSize];
+		this.settings.unsharpEnabled = DEFAULT_SETTINGS.unsharpEnabled;
+		this.settings.unsharpRadius = [...DEFAULT_SETTINGS.unsharpRadius];
+		this.settings.unsharpAmount = [...DEFAULT_SETTINGS.unsharpAmount];
+		this.settings.unsharpThreshold = [...DEFAULT_SETTINGS.unsharpThreshold];
+		this.settings.rotationalBlurAngle = [...DEFAULT_SETTINGS.rotationalBlurAngle];
+		this.settings.meanShiftSize = [...DEFAULT_SETTINGS.meanShiftSize];
+		this.settings.meanShiftColorDistance = [...DEFAULT_SETTINGS.meanShiftColorDistance];
+		this.settings.distortion = DEFAULT_SETTINGS.distortion;
+		this.settings.distortionInterpolation = DEFAULT_SETTINGS.distortionInterpolation;
+		this.settings.swirlDegrees = [...DEFAULT_SETTINGS.swirlDegrees];
+		this.settings.implodeAmount = [...DEFAULT_SETTINGS.implodeAmount];
+		this.settings.spreadRadius = [...DEFAULT_SETTINGS.spreadRadius];
 		this.settings.bilateralWidth = [...DEFAULT_SETTINGS.bilateralWidth];
 		this.settings.bilateralHeight = [...DEFAULT_SETTINGS.bilateralHeight];
 		this.settings.bilateralIntensitySigma = [...DEFAULT_SETTINGS.bilateralIntensitySigma];
@@ -1129,6 +1181,10 @@ export class MagickState {
 		this.settings.quantizeColorSpace = DEFAULT_SETTINGS.quantizeColorSpace;
 		this.settings.quantizeTreeDepth = [...DEFAULT_SETTINGS.quantizeTreeDepth];
 		this.settings.measureErrors = DEFAULT_SETTINGS.measureErrors;
+		this.settings.posterizeLevels = [...DEFAULT_SETTINGS.posterizeLevels];
+		this.settings.posterizeEnabled = DEFAULT_SETTINGS.posterizeEnabled;
+		this.settings.posterizeDither = DEFAULT_SETTINGS.posterizeDither;
+		this.settings.orderedDitherMap = DEFAULT_SETTINGS.orderedDitherMap;
 	}
 
 	resetExport(): void {
@@ -1977,6 +2033,7 @@ export class MagickState {
 			if (requestId !== this._nativeRequestId || sourceRevision !== this._sourceRevision) return;
 			if (generation !== this._processGeneration) return;
 			this._nativeSourceRevision = this._sourceRevision;
+			this.quantizeErrorInfo = null;
 
 			const elapsed = Math.round(performance.now() - startTime);
 			const appliedOptions: AppliedOptions = {};

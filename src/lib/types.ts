@@ -37,7 +37,10 @@ export type EffectPreset =
 	| 'cannyEdge'
 	| 'oilpaint'
 	| 'solarize'
-	| 'bilateralBlur';
+	| 'bilateralBlur'
+	| 'meanShift';
+
+export type DistortionPreset = 'none' | 'swirl' | 'implode' | 'spread';
 
 /** Auto threshold method options */
 export type AutoThresholdOption = 'Off' | 'Kapur' | 'OTSU' | 'Triangle';
@@ -115,6 +118,7 @@ export interface MagickSettings {
 	sigmoidalChannels: LevelChannel;
 	colorSpace: ColorSpaceOption;
 	autoGamma: boolean;
+	equalize: boolean;
 	autoThreshold: AutoThresholdOption;
 	blackThreshold: [number];
 	whiteThreshold: [number];
@@ -145,6 +149,21 @@ export interface MagickSettings {
 	cannyEdgeUpper: [number];
 	oilpaintRadius: [number];
 	solarizeFactor: [number];
+	despeckle: boolean;
+	medianEnabled: boolean;
+	medianSize: [number];
+	unsharpEnabled: boolean;
+	unsharpRadius: [number];
+	unsharpAmount: [number];
+	unsharpThreshold: [number];
+	rotationalBlurAngle: [number];
+	meanShiftSize: [number];
+	meanShiftColorDistance: [number];
+	distortion: DistortionPreset;
+	distortionInterpolation: ClutInterpolation;
+	swirlDegrees: [number];
+	implodeAmount: [number];
+	spreadRadius: [number];
 	bilateralWidth: [number];
 	bilateralHeight: [number];
 	bilateralIntensitySigma: [number];
@@ -158,6 +177,10 @@ export interface MagickSettings {
 	quantizeColorSpace: ColorSpaceOption;
 	quantizeTreeDepth: [number];
 	measureErrors: boolean;
+	posterizeEnabled: boolean;
+	posterizeLevels: [number];
+	posterizeDither: boolean;
+	orderedDitherMap: 'Off' | 'checks' | 'threshold';
 
 	// Annotate / text settings
 	annotateText: string;
@@ -205,6 +228,7 @@ export interface AppliedOptions {
 	levelColors?: { black: string; white: string; channels: string; inverse: boolean };
 	threshold?: { percent: number; channels: string };
 	autoGamma?: boolean;
+	equalize?: boolean;
 	autoThreshold?: string;
 	blackThreshold?: number;
 	whiteThreshold?: number;
@@ -217,6 +241,11 @@ export interface AppliedOptions {
 		colorSpace: string;
 		treeDepth: number;
 	};
+	posterize?: { levels: number; dither: boolean };
+	orderedDither?: string;
+	unsharpMask?: { radius: number; amount: number; threshold: number };
+	rotationalBlur?: number;
+	distortion?: string;
 	blur?: number;
 	sharpen?: number;
 	gaussianBlur?: { radius: number; sigma: number };
@@ -230,6 +259,9 @@ export interface AppliedOptions {
 	cannyEdge?: { strength: number; lower: number; upper: number };
 	oilPaintRadius?: number;
 	solarizeFactor?: number;
+	despeckle?: boolean;
+	medianEnabled?: boolean;
+	medianSize?: number;
 	bilateral?: { w: number; h: number; iSig: number; sSig: number };
 	clutMap?: string;
 	clutInterpolation?: string;

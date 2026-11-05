@@ -175,6 +175,7 @@ export function buildNativeProcessingPlan(
 	if (
 		settings.autoLevel ||
 		settings.autoGamma ||
+		settings.equalize ||
 		settings.colorSpace !== 'RGB' ||
 		settings.levelColorsBlack !== '#000000' ||
 		settings.levelColorsWhite !== '#ffffff' ||
@@ -200,6 +201,13 @@ export function buildNativeProcessingPlan(
 			settings.effect !== 'grayscale' &&
 			settings.effect !== 'negate') ||
 		settings.motionBlurRadius[0] > 0 ||
+		settings.distortion !== 'none' ||
+		settings.unsharpEnabled ||
+		settings.rotationalBlurAngle[0] > 0 ||
+		settings.despeckle ||
+		settings.medianEnabled ||
+		settings.posterizeEnabled ||
+		settings.orderedDitherMap !== 'Off' ||
 		settings.addNoiseType !== 'Off' ||
 		settings.adaptiveSharpenRadius[0] > 0 ||
 		settings.adaptiveBlurRadius[0] > 0 ||

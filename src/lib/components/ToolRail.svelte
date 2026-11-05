@@ -97,6 +97,7 @@
 				if (s.normalizeImage) parts.push('Normalize');
 				if (s.autoLevel) parts.push('Auto-Level');
 				if (s.autoGamma) parts.push('Auto-Gamma');
+				if (s.equalize) parts.push('Equalize');
 				const levelParts: string[] = [];
 				for (const ch of ['All', 'Red', 'Green', 'Blue'] as const) {
 					const bp = s.levelBlackpoint[ch][0];
@@ -171,8 +172,12 @@
 								parts.push(`iΣ ${s.bilateralIntensitySigma[0]}`);
 							if (s.bilateralSpatialSigma[0] !== 1) parts.push(`sΣ ${s.bilateralSpatialSigma[0]}`);
 							break;
+						case 'meanShift':
+							parts.push(`${s.meanShiftSize[0]}px · ${s.meanShiftColorDistance[0]}%`);
+							break;
 					}
 				}
+				if (s.distortion !== 'none') parts.push(`${s.distortion} distortion`);
 				if (s.clutMap !== 'identity') {
 					const preset = getClutPresets().find((p) => p.id === s.clutMap);
 					parts.push(`LUT: ${preset?.label ?? s.clutMap}`);
@@ -188,6 +193,10 @@
 				if (s.addNoiseType !== 'Off') parts.push(`Noise ${s.addNoiseType}`);
 				if (s.adaptiveSharpenRadius[0] > 0) parts.push(`AdptSharpen ${s.adaptiveSharpenRadius[0]}`);
 				if (s.adaptiveBlurRadius[0] > 0) parts.push(`AdptBlur ${s.adaptiveBlurRadius[0]}`);
+				if (s.despeckle) parts.push('Despeckle');
+				if (s.medianEnabled) parts.push(`Median ${s.medianSize[0]}`);
+				if (s.unsharpEnabled) parts.push(`Unsharp ${s.unsharpAmount[0]}`);
+				if (s.rotationalBlurAngle[0] > 0) parts.push(`Rotational ${s.rotationalBlurAngle[0]}°`);
 				if (s.quantizeColors[0] > 0) {
 					parts.push(`Quantize ${s.quantizeColors[0]} colors`);
 					if (s.quantizeTreeDepth[0] > 0) parts.push(`TreeDepth ${s.quantizeTreeDepth[0]}`);
@@ -195,6 +204,8 @@
 						parts.push(s.ditherMethod === 'No' ? 'No dither' : s.ditherMethod);
 					if (s.quantizeColorSpace !== 'sRGB') parts.push(`CS: ${s.quantizeColorSpace}`);
 				}
+				if (s.posterizeEnabled) parts.push(`Posterize ${s.posterizeLevels[0]}`);
+				if (s.orderedDitherMap !== 'Off') parts.push(`Ordered ${s.orderedDitherMap}`);
 				return parts.join(' · ');
 			}
 			case 'export': {
@@ -243,6 +254,8 @@
 				return 'Solarize';
 			case 'bilateralBlur':
 				return 'Bilateral Blur';
+			case 'meanShift':
+				return 'Mean Shift';
 			default:
 				return effect;
 		}

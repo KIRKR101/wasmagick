@@ -17,6 +17,7 @@
 
 import type { MagickSettings } from './types';
 import { interpolateCliKeyword } from './clut-data';
+import { medianWindowSize } from './filter-utils';
 import {
 	isOpaqueOutputFormat,
 	isSequenceOutputFormat,
@@ -215,6 +216,7 @@ export function buildNativeMagickArgs(
 	// magick-wasm autoGamma() defaults to Composite (RGB) channels; force RGB
 	// for parity (see golden-gen).
 	if (settings.autoGamma) args.push('-channel', 'RGB', '-auto-gamma', '+channel');
+	if (settings.equalize) args.push('-equalize');
 
 	for (const ch of ['All', 'Red', 'Green', 'Blue'] as const) {
 		const bp = settings.levelBlackpoint[ch][0];
@@ -316,6 +318,13 @@ export function buildNativeMagickArgs(
 		);
 	}
 
+	// -- Noise reduction --
+	if (settings.despeckle) args.push('-despeckle');
+	if (settings.medianEnabled) {
+		const size = medianWindowSize(settings.medianSize[0]);
+		args.push('-statistic', 'median', `${size}x${size}`);
+	}
+
 	// -- Blur / sharpen --
 	if (settings.blur[0] > 0) {
 		args.push('-blur', `${fmtNum(settings.blur[0])}x${fmtNum(settings.blur[0] / 2)}`);
@@ -345,12 +354,21 @@ export function buildNativeMagickArgs(
 			`${fmtNum(settings.adaptiveBlurRadius[0])}x${fmtNum(settings.adaptiveBlurSigma[0])}`
 		);
 	}
+	if (settings.unsharpEnabled) {
+		args.push(
+			'-unsharp',
+			`${fmtNum(settings.unsharpRadius[0])}x${fmtNum(settings.unsharpRadius[0] / 2)}+${fmtNum(settings.unsharpAmount[0])}+${fmtNum(settings.unsharpThreshold[0])}`
+		);
+	}
 
 	if (settings.motionBlurRadius[0] > 0) {
 		args.push(
 			'-motion-blur',
 			`${fmtNum(settings.motionBlurRadius[0])}x${fmtNum(settings.motionBlurSigma[0])}+${fmtNum(settings.motionBlurAngle[0])}`
 		);
+	}
+	if (settings.rotationalBlurAngle[0] > 0) {
+		args.push('-rotational-blur', fmtNum(settings.rotationalBlurAngle[0]));
 	}
 
 	if (settings.addNoiseType !== 'Off') {
@@ -404,7 +422,40 @@ export function buildNativeMagickArgs(
 					`${fmtNum(settings.bilateralWidth[0])}x${fmtNum(settings.bilateralHeight[0])}+${fmtNum(settings.bilateralIntensitySigma[0])}+${fmtNum(settings.bilateralSpatialSigma[0])}`
 				);
 				break;
+			case 'meanShift':
+				args.push(
+					'-mean-shift',
+					`${fmtNum(settings.meanShiftSize[0])}x${fmtNum(settings.meanShiftSize[0])}+${fmtNum(settings.meanShiftColorDistance[0])}%`
+				);
+				break;
 		}
+	}
+
+	switch (settings.distortion) {
+		case 'swirl':
+			args.push(
+				'-interpolate',
+				interpolateCliKeyword(settings.distortionInterpolation),
+				'-swirl',
+				fmtNum(settings.swirlDegrees[0])
+			);
+			break;
+		case 'implode':
+			args.push(
+				'-interpolate',
+				interpolateCliKeyword(settings.distortionInterpolation),
+				'-implode',
+				fmtNum(settings.implodeAmount[0])
+			);
+			break;
+		case 'spread':
+			args.push(
+				'-interpolate',
+				interpolateCliKeyword(settings.distortionInterpolation),
+				'-spread',
+				fmtNum(settings.spreadRadius[0])
+			);
+			break;
 	}
 
 	// -- CLUT (needs the CLUT PNG supplied by the renderer) --
@@ -419,6 +470,14 @@ export function buildNativeMagickArgs(
 	}
 
 	// -- Quantize --
+	if (settings.posterizeEnabled) {
+		if (settings.posterizeDither) args.push('-dither', 'FloydSteinberg');
+		else args.push('+dither');
+		args.push('-posterize', fmtNum(settings.posterizeLevels[0]));
+	}
+	if (settings.orderedDitherMap !== 'Off') {
+		args.push('-ordered-dither', settings.orderedDitherMap);
+	}
 	if (settings.quantizeColors[0] > 0) {
 		// The WASM quantize colorSpace only affects quantization, but the CLI
 		// has no such scoped option: only emit when it differs from the sRGB

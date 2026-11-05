@@ -15,7 +15,7 @@ permissions:
   contents: write
 
 env:
-  IM_VERSION: 7.1.2-33
+  IM_VERSION: 7.1.2-35
 
 concurrency:
   group: release-${{ inputs.tag || github.ref }}
@@ -110,7 +110,7 @@ jobs:
         run: |
           brew tap-new local/wasmagick-formulae --no-git
           install -m 644 "$GITHUB_WORKSPACE/tooling/homebrew/imagemagick-full@${IM_VERSION}.rb" "$(brew --repository local/wasmagick-formulae)/Formula/imagemagick-full@${IM_VERSION}.rb"
-          brew install --build-from-source "local/wasmagick-formulae/imagemagick-full@${IM_VERSION}"
+          brew install --build-from-source --skip-link "local/wasmagick-formulae/imagemagick-full@${IM_VERSION}"
       - run: npm ci
       - run: npm run build:electron -- --mac dmg --publish never
       - uses: actions/upload-artifact@v4
@@ -133,7 +133,7 @@ jobs:
         run: |
           brew tap-new local/wasmagick-formulae --no-git
           install -m 644 "$GITHUB_WORKSPACE/tooling/homebrew/imagemagick-full@${IM_VERSION}.rb" "$(brew --repository local/wasmagick-formulae)/Formula/imagemagick-full@${IM_VERSION}.rb"
-          brew install --build-from-source "local/wasmagick-formulae/imagemagick-full@${IM_VERSION}"
+          brew install --build-from-source --skip-link "local/wasmagick-formulae/imagemagick-full@${IM_VERSION}"
       - run: npm ci
       - run: npm run build:electron -- --mac dmg --publish never
       - uses: actions/upload-artifact@v4

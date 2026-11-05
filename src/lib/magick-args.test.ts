@@ -52,6 +52,7 @@ function baseSettings(): MagickSettings {
 		sigmoidalChannels: 'All',
 		colorSpace: 'RGB',
 		autoGamma: false,
+		equalize: false,
 		autoThreshold: 'Off',
 		blackThreshold: [0],
 		whiteThreshold: [100],
@@ -80,6 +81,21 @@ function baseSettings(): MagickSettings {
 		cannyEdgeUpper: [30],
 		oilpaintRadius: [0],
 		solarizeFactor: [50],
+		despeckle: false,
+		medianEnabled: false,
+		medianSize: [3],
+		unsharpEnabled: false,
+		unsharpRadius: [2],
+		unsharpAmount: [1],
+		unsharpThreshold: [0.05],
+		rotationalBlurAngle: [0],
+		meanShiftSize: [5],
+		meanShiftColorDistance: [10],
+		distortion: 'none',
+		distortionInterpolation: 'bilinear',
+		swirlDegrees: [90],
+		implodeAmount: [0.5],
+		spreadRadius: [5],
 		bilateralWidth: [0],
 		bilateralHeight: [0],
 		bilateralIntensitySigma: [1.5],
@@ -91,6 +107,10 @@ function baseSettings(): MagickSettings {
 		quantizeColorSpace: 'sRGB',
 		quantizeTreeDepth: [0],
 		measureErrors: false,
+		posterizeEnabled: false,
+		posterizeLevels: [4],
+		posterizeDither: false,
+		orderedDitherMap: 'Off',
 		annotateText: '',
 		annotateFontFamily: 'Roboto-Regular',
 		annotateFontSize: [24],
@@ -210,6 +230,7 @@ describe('buildNativeMagickArgs', () => {
 		expect(build({ autoGamma: true }).args).toEqual(
 			expect.arrayContaining(['-channel', 'RGB', '-auto-gamma', '+channel'])
 		);
+		expect(build({ equalize: true }).args).toContain('-equalize');
 	});
 
 	it('emits level and level-colors with channel handling', () => {
@@ -292,6 +313,18 @@ describe('buildNativeMagickArgs', () => {
 				bilateralSpatialSigma: [1]
 			}).args
 		).toEqual(expect.arrayContaining(['-bilateral-blur', '5x5+1.5+1']));
+		expect(
+			build({ effect: 'meanShift', meanShiftSize: [5], meanShiftColorDistance: [10] }).args
+		).toEqual(expect.arrayContaining(['-mean-shift', '5x5+10%']));
+		expect(build({ posterizeEnabled: true, posterizeLevels: [4] }).args).toEqual(
+			expect.arrayContaining(['+dither', '-posterize', '4'])
+		);
+		expect(build({ posterizeEnabled: true, posterizeDither: true }).args).toEqual(
+			expect.arrayContaining(['-dither', 'FloydSteinberg', '-posterize', '4'])
+		);
+		expect(build({ orderedDitherMap: 'checks' }).args).toEqual(
+			expect.arrayContaining(['-ordered-dither', 'checks'])
+		);
 	});
 
 	it('matches golden blur/sharpen/noise flags', () => {
@@ -311,6 +344,25 @@ describe('buildNativeMagickArgs', () => {
 		).toEqual(expect.arrayContaining(['-motion-blur', '3x1.5+45']));
 		expect(build({ addNoiseType: 'Gaussian', addNoiseAttenuate: [1] }).args).toEqual(
 			expect.arrayContaining(['-attenuate', '1', '+noise', 'Gaussian'])
+		);
+		expect(build({ despeckle: true }).args).toContain('-despeckle');
+		expect(build({ medianEnabled: true, medianSize: [5] }).args).toEqual(
+			expect.arrayContaining(['-statistic', 'median', '5x5'])
+		);
+		expect(build({ distortion: 'swirl', swirlDegrees: [90] }).args).toEqual(
+			expect.arrayContaining(['-interpolate', 'Bilinear', '-swirl', '90'])
+		);
+		expect(build({ distortion: 'implode', implodeAmount: [0.5] }).args).toEqual(
+			expect.arrayContaining(['-interpolate', 'Bilinear', '-implode', '0.5'])
+		);
+		expect(build({ distortion: 'spread', spreadRadius: [5] }).args).toEqual(
+			expect.arrayContaining(['-interpolate', 'Bilinear', '-spread', '5'])
+		);
+		expect(build({ unsharpEnabled: true }).args).toEqual(
+			expect.arrayContaining(['-unsharp', '2x1+1+0.05'])
+		);
+		expect(build({ rotationalBlurAngle: [12] }).args).toEqual(
+			expect.arrayContaining(['-rotational-blur', '12'])
 		);
 		// Poisson slider is inverted (higher slider = more noise).
 		expect(build({ addNoiseType: 'Poisson', addNoiseAttenuate: [0.5] }).args).toEqual(

@@ -72,6 +72,7 @@ function diffSettings(a: MagickSettings, b: MagickSettings): SettingsDiffItem[] 
 	push('Contrast', a.contrast[0], b.contrast[0]);
 	push('Normalize', a.normalizeImage, b.normalizeImage);
 	push('Auto level', a.autoLevel, b.autoLevel);
+	push('Equalize', a.equalize, b.equalize);
 	push('Auto gamma', a.autoGamma, b.autoGamma);
 	push('Auto orient', a.autoOrient, b.autoOrient);
 	push('Color space', a.colorSpace, b.colorSpace);
@@ -120,10 +121,25 @@ function diffSettings(a: MagickSettings, b: MagickSettings): SettingsDiffItem[] 
 	push('Canny upper', a.cannyEdgeUpper[0], b.cannyEdgeUpper[0]);
 	push('Oil paint', a.oilpaintRadius[0], b.oilpaintRadius[0]);
 	push('Solarize', a.solarizeFactor[0], b.solarizeFactor[0]);
+	push('Despeckle', a.despeckle, b.despeckle);
+	push('Median enabled', a.medianEnabled, b.medianEnabled);
+	push('Median size', a.medianSize[0], b.medianSize[0]);
+	push('Unsharp enabled', a.unsharpEnabled, b.unsharpEnabled);
+	push('Unsharp radius', a.unsharpRadius[0], b.unsharpRadius[0]);
+	push('Unsharp amount', a.unsharpAmount[0], b.unsharpAmount[0]);
+	push('Unsharp threshold', a.unsharpThreshold[0], b.unsharpThreshold[0]);
+	push('Rotational blur', a.rotationalBlurAngle[0], b.rotationalBlurAngle[0]);
 	push('Bilateral W', a.bilateralWidth[0], b.bilateralWidth[0]);
 	push('Bilateral H', a.bilateralHeight[0], b.bilateralHeight[0]);
 	push('Bilateral iΣ', a.bilateralIntensitySigma[0], b.bilateralIntensitySigma[0]);
 	push('Bilateral sΣ', a.bilateralSpatialSigma[0], b.bilateralSpatialSigma[0]);
+	push('Mean shift size', a.meanShiftSize[0], b.meanShiftSize[0]);
+	push('Mean shift distance', a.meanShiftColorDistance[0], b.meanShiftColorDistance[0]);
+	push('Distortion', a.distortion, b.distortion);
+	push('Distortion interpolation', a.distortionInterpolation, b.distortionInterpolation);
+	push('Swirl', a.swirlDegrees[0], b.swirlDegrees[0]);
+	push('Implode', a.implodeAmount[0], b.implodeAmount[0]);
+	push('Spread', a.spreadRadius[0], b.spreadRadius[0]);
 	push('CLUT', a.clutMap, b.clutMap);
 	push('CLUT interp', a.clutInterpolation, b.clutInterpolation);
 
@@ -132,6 +148,10 @@ function diffSettings(a: MagickSettings, b: MagickSettings): SettingsDiffItem[] 
 	push('Dither', a.ditherMethod, b.ditherMethod);
 	push('Quantize space', a.quantizeColorSpace, b.quantizeColorSpace);
 	push('Quantize depth', a.quantizeTreeDepth[0], b.quantizeTreeDepth[0]);
+	push('Posterize levels', a.posterizeLevels[0], b.posterizeLevels[0]);
+	push('Posterize enabled', a.posterizeEnabled, b.posterizeEnabled);
+	push('Posterize dither', a.posterizeDither, b.posterizeDither);
+	push('Ordered dither', a.orderedDitherMap, b.orderedDitherMap);
 
 	// Annotate
 	push('Text', a.annotateText, b.annotateText);
