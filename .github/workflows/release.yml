@@ -10,6 +10,11 @@ on:
         description: 'Existing tag to (re)release (for example, v0.0.5)'
         required: true
         type: string
+      dry_run:
+        description: 'Build and upload artifacts, but skip publishing the release and the cask'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -120,6 +125,7 @@ jobs:
 
   release:
     name: Publish GitHub Release
+    if: ${{ inputs.dry_run != true }}
     needs: [linux, windows, macos-arm64]
     runs-on: ubuntu-latest
     steps:
