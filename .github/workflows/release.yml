@@ -95,29 +95,6 @@ jobs:
           name: windows
           path: release/*.exe
 
-  macos-intel:
-    name: macOS Intel DMG
-    runs-on: macos-15-intel
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.tag || github.ref }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - name: Install ImageMagick for bundling
-        run: |
-          brew tap-new local/wasmagick-formulae --no-git
-          install -m 644 "$GITHUB_WORKSPACE/tooling/homebrew/imagemagick-full@${IM_VERSION}.rb" "$(brew --repository local/wasmagick-formulae)/Formula/imagemagick-full@${IM_VERSION}.rb"
-          brew install --build-from-source --skip-link "local/wasmagick-formulae/imagemagick-full@${IM_VERSION}"
-      - run: npm ci
-      - run: npm run build:electron -- --mac dmg --publish never
-      - uses: actions/upload-artifact@v4
-        with:
-          name: macos-intel
-          path: release/*.dmg
-
   macos-arm64:
     name: macOS Apple Silicon DMG
     runs-on: macos-15
@@ -143,7 +120,7 @@ jobs:
 
   release:
     name: Publish GitHub Release
-    needs: [linux, windows, macos-intel, macos-arm64]
+    needs: [linux, windows, macos-arm64]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4

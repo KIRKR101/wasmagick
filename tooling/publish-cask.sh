@@ -8,7 +8,9 @@ set -euo pipefail
 #
 # Each <dmg> is a path to a built WASMagick DMG, or a directory containing
 # DMGs. The script detects the architecture from the filename (*-arm64.dmg /
-# *-x64.dmg) and embeds the sha256 in the matching cask block.
+# *-x64.dmg) and embeds the sha256 in the matching cask block. Releases only
+# ship an arm64 DMG, so a single-arch cask pins the URL and refuses Intel Macs
+# with a clear error instead of downloading a nonexistent asset.
 #
 # Environment:
 #   HOMEBREW_TAP_TOKEN  Fine-grained PAT with Contents: write on the tap repo (required)
@@ -67,7 +69,13 @@ fi
 
 RUBY=""
 RUBY+="cask \"wasmagick\" do\n"
-RUBY+="  arch arm: \"arm64\", intel: \"x64\"\n\n"
+if [[ -n "$ARM_SHA" && -n "$INTEL_SHA" ]]; then
+  RUBY+="  arch arm: \"arm64\", intel: \"x64\"\n\n"
+elif [[ -n "$ARM_SHA" ]]; then
+  RUBY+="  depends_on arch: :arm64\n\n"
+else
+  RUBY+="  depends_on arch: :x86_64\n\n"
+fi
 RUBY+="  version \"$VERSION\"\n"
 
 if [[ -n "$ARM_SHA" && -n "$INTEL_SHA" ]]; then
@@ -79,7 +87,15 @@ else
   RUBY+="  sha256 \"$INTEL_SHA\"\n\n"
 fi
 
-RUBY+="  url \"${BASE_URL}/${PRODUCT}-#{version}-#{arch}.dmg\",\n"
+if [[ -n "$ARM_SHA" && -n "$INTEL_SHA" ]]; then
+  DMG_NAME="${PRODUCT}-#{version}-#{arch}.dmg"
+elif [[ -n "$ARM_SHA" ]]; then
+  DMG_NAME="${PRODUCT}-#{version}-arm64.dmg"
+else
+  DMG_NAME="${PRODUCT}-#{version}-x64.dmg"
+fi
+
+RUBY+="  url \"${BASE_URL}/${DMG_NAME}\",\n"
 RUBY+="      verified: \"github.com/${SOURCE_REPO%%/*}/\"\n"
 RUBY+="  name \"WASMagick\"\n"
 RUBY+="  desc \"$DESC\"\n"
